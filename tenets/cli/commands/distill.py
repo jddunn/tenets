@@ -1,6 +1,7 @@
 """Distill command - extract relevant context from codebase."""
 
 import json
+import sys
 from pathlib import Path
 from typing import Optional, List
 
@@ -136,11 +137,57 @@ def distill(
                 exclude_patterns=exclude_patterns,
             )
 
+        # Prepare metadata and interactivity flags
+        metadata = getattr(result, "metadata", {}) or {}
+        files_included = metadata.get("files_included", 0)
+        files_analyzed = metadata.get("files_analyzed", 0)
+        token_count = getattr(result, "token_count", 0)
+        interactive = (output is None) and (not quiet) and sys.stdout.isatty()
+
         # Format output
         if format == "json":
             output_text = json.dumps(result.to_dict(), indent=2)
         else:
             output_text = result.context
+
+        # Build summary details
+        include_display = ",".join(include_patterns) if include_patterns else "(none)"
+        exclude_display = ",".join(exclude_patterns) if exclude_patterns else "(none)"
+        git_display = "disabled" if no_git else "enabled (ranking only)"
+        session_display = session or "(none)"
+        max_tokens_display = str(max_tokens) if max_tokens else "model default"
+
+        # Show a concise summary before content in interactive mode
+        if interactive:
+            console.print(
+                Panel(
+                    f"[bold]Prompt[/bold]: {str(prompt)[:80]}\n"
+                    f"Path: {str(path)}\n"
+                    f"Mode: {metadata.get('mode', 'unknown')}  •  Format: {format}\n"
+                    f"Files: {files_included}/{files_analyzed}  •  Tokens: {token_count:,} / {max_tokens_display}\n"
+                    f"Include: {include_display}\n"
+                    f"Exclude: {exclude_display}\n"
+                    f"Git: {git_display}  •  Session: {session_display}",
+                    title="Tenets Context",
+                    border_style="green",
+                )
+            )
+
+        # Output result
+        if output:
+            output.write_text(output_text, encoding="utf-8")
+            if not quiet:
+                console.print(f"[green]✓[/green] Context saved to {output}")
+        else:
+            if format == "json":
+                console.print_json(output_text)
+            else:
+                # Draw clear context boundaries in interactive TTY only
+                if interactive:
+                    console.rule("Context")
+                print(output_text)
+                if interactive:
+                    console.rule("End")
 
         # Show cost estimation if requested
         if estimate_cost and model:
@@ -162,32 +209,36 @@ def distill(
                     )
                 )
 
+        # If no files included, provide actionable suggestions (interactive only)
+        if interactive and files_included == 0:
+            console.print(
+                Panel(
+                    "No files were included in the context.\n\n"
+                    "Try: \n"
+                    "• Increase --max-tokens\n"
+                    "• Relax filters: remove or adjust --include/--exclude\n"
+                    "• Use --mode thorough for deeper analysis\n"
+                    "• Run with --verbose to see why files were skipped\n"
+                    "• Add --stats to view generation metrics",
+                    title="Suggestions",
+                    border_style="red",
+                )
+            )
+
         # Show statistics if requested
         if show_stats and not quiet:
-            metadata = result.metadata
             console.print(
                 Panel(
                     f"[bold]Distillation Statistics[/bold]\n"
                     f"Mode: {metadata.get('mode', 'unknown')}\n"
-                    f"Files found: {metadata.get('files_analyzed', 0)}\n"
-                    f"Files included: {metadata.get('files_included', 0)}\n"
-                    f"Token usage: {result.token_count:,} / {max_tokens or 'model default'}\n"
+                    f"Files found: {files_analyzed}\n"
+                    f"Files included: {files_included}\n"
+                    f"Token usage: {token_count:,} / {max_tokens or 'model default'}\n"
                     f"Analysis time: {metadata.get('analysis_time', '?')}s",
                     title="📊 Statistics",
                     border_style="blue",
                 )
             )
-
-        # Output result
-        if output:
-            output.write_text(output_text, encoding="utf-8")
-            if not quiet:
-                console.print(f"[green]✓[/green] Context saved to {output}")
-        else:
-            if format == "json":
-                console.print_json(output_text)
-            else:
-                print(output_text)
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {str(e)}")

@@ -95,10 +95,7 @@ class ContextFormatter:
         )
         lines.append("")
 
-        # Git context if available
-        if aggregated.get("git_context"):
-            lines.extend(self._format_git_context_markdown(aggregated["git_context"]))
-            lines.append("")
+        # Note: Git context is intentionally not included in output
 
         # Files
         lines.append("## Relevant Files")
@@ -107,6 +104,16 @@ class ContextFormatter:
         # Group by status
         full_files = [f for f in aggregated["included_files"] if not f["summarized"]]
         summarized_files = [f for f in aggregated["included_files"] if f["summarized"]]
+
+        if not full_files and not summarized_files:
+            lines.append("No files included in the context.")
+            lines.append("")
+            lines.append("> Suggestions:")
+            lines.append("- Lower the relevance threshold or use `--mode greedy`.")
+            lines.append("- Increase token budget with `--max-tokens`.")
+            lines.append("- Provide include patterns, e.g., `--include \"*.py,*.md\"`.")
+            lines.append("- Ensure your prompt has keywords present in the repo.")
+            lines.append("")
 
         if full_files:
             lines.append("### Complete Files")
@@ -234,8 +241,7 @@ class ContextFormatter:
         lines.append("  </files>")
 
         # Git context
-        if aggregated.get("git_context"):
-            lines.extend(self._format_git_context_xml(aggregated["git_context"]))
+        # Note: Git context is intentionally not included in XML output
 
         lines.append("</context>")
 
@@ -285,9 +291,7 @@ class ContextFormatter:
 
             data["files"].append(file_data)
 
-        # Add git context
-        if aggregated.get("git_context"):
-            data["git_context"] = aggregated["git_context"]
+        # Note: Git context is intentionally not included in JSON output
 
         return json.dumps(data, indent=2)
 

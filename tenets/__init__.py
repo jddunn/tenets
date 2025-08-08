@@ -26,8 +26,8 @@ Example:
     >>> result = ten.distill("add user model")  # Context now includes tenets
 """
 
-__version__ = "0.5.0"
-__author__ = "manic.agency"
+__version__ = "0.1.0"
+__author__ = "Johnny Dunn"
 __license__ = "MIT"
 
 import os

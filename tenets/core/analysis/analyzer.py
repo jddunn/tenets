@@ -174,17 +174,15 @@ class CodeAnalyzer:
 
         # Check cache first
         if use_cache and self.cache:
-            cache_key = self._get_cache_key(file_path)
-            cached = self.cache.get(cache_key)
-
-            if cached and self._is_cache_valid(cached, file_path):
+            cached_analysis = self.cache.get_file_analysis(file_path)
+            if cached_analysis:
                 self.stats["cache_hits"] += 1
                 self.logger.debug(f"Cache hit for {file_path}")
 
                 if progress_callback:
                     progress_callback("cache_hit", file_path)
 
-                return FileAnalysis.from_dict(cached["analysis"])
+                return cached_analysis
             else:
                 self.stats["cache_misses"] += 1
 
@@ -242,13 +240,11 @@ class CodeAnalyzer:
 
             # Cache the result
             if use_cache and self.cache and not analysis.error:
-                cache_data = {
-                    "analysis": analysis.to_dict(),
-                    "timestamp": datetime.now().isoformat(),
-                    "file_mtime": file_path.stat().st_mtime,
-                    "file_size": file_path.stat().st_size,
-                }
-                self.cache.put(cache_key, cache_data)
+                try:
+                    self.cache.put_file_analysis(file_path, analysis)
+                except Exception as e:
+                    self.logger.debug(f"Failed to write analysis cache for {file_path}: {e}")
+                    analysis.error = "Cache write error"
 
             # Update statistics
             self.stats["files_analyzed"] += 1

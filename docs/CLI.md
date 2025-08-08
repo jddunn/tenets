@@ -711,3 +711,22 @@ output:
 ---
 
 For more information, visit [https://github.com/jddunn/tenets](https://github.com/jddunn/tenets)
+
+### Verbosity & Output Controls
+
+Control log verbosity globally:
+
+```bash
+# Default (warnings and above only)
+TENETS_LOG_LEVEL=WARNING tenets distill "add caching layer"
+
+# Verbose
+tenets --verbose distill "add caching layer"
+
+# Quiet / errors only
+tenets --quiet distill "add caching layer"
+# or
+tenets --silent distill "add caching layer"
+```
+
+The `distill` command includes a Suggestions section when no files are included, with tips to adjust relevance thresholds, token budget, and include patterns.

@@ -79,9 +79,9 @@ class ContextAggregator:
 
         strat = self.strategies.get(strategy, self.strategies["balanced"])
 
-        # Reserve tokens for structure and git context
+        # Reserve tokens for structure; do not reserve for git context in output
         structure_tokens = 500  # Headers, formatting, etc.
-        git_tokens = self._estimate_git_tokens(git_context) if git_context else 0
+        git_tokens = 0  # Git context not emitted in output
         available_tokens = max_tokens - structure_tokens - git_tokens
 
         # Select files to include
@@ -92,6 +92,9 @@ class ContextAggregator:
         for i, file in enumerate(files):
             # Skip files below minimum relevance
             if file.relevance_score < strat.min_relevance:
+                self.logger.debug(
+                    f"Skipping {file.path} (relevance {file.relevance_score:.2f} < {strat.min_relevance})"
+                )
                 continue
 
             # Estimate tokens for this file
@@ -139,6 +142,14 @@ class ContextAggregator:
                         }
                     )
                     total_tokens += summary.summary_tokens
+                else:
+                    self.logger.debug(
+                        f"Skipping {file.path} summary (insufficient remaining tokens: {remaining_tokens})"
+                    )
+            else:
+                self.logger.debug(
+                    f"Skipping {file.path} (token budget exceeded: {total_tokens + file_tokens} > {available_tokens})"
+                )
 
         # Combine full and summarized files
         all_files = included_files + summarized_files
@@ -151,7 +162,7 @@ class ContextAggregator:
             "included_files": all_files,
             "total_tokens": total_tokens,
             "available_tokens": available_tokens,
-            "git_context": git_context,
+            # git_context intentionally omitted from output structure
             "statistics": {
                 "files_analyzed": len(files),
                 "files_included": len(included_files),

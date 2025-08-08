@@ -20,6 +20,7 @@ from tenets.cli.commands.tenet import tenet_app
 from tenets.cli.commands.session import session_app
 from tenets.cli.commands.viz import viz_app
 from tenets.cli.commands.config import config_app
+from tenets.utils.logger import get_logger
 
 # Create main app
 app = typer.Typer(
@@ -70,6 +71,7 @@ def main_callback(
     ctx: typer.Context,
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress non-essential output"),
+    silent: bool = typer.Option(False, "--silent", help="Only show errors"),
 ):
     """
     Tenets - Context that feeds your prompts.
@@ -80,17 +82,19 @@ def main_callback(
     # Store options in context for commands to access
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
-    ctx.obj["quiet"] = quiet
+    ctx.obj["quiet"] = quiet or silent
+    ctx.obj["silent"] = silent
 
-    # Set up logging based on verbosity
+    # Configure logging level
+    import logging
+
     if verbose:
-        import logging
-
-        logging.basicConfig(level=logging.DEBUG)
-    elif quiet:
-        import logging
-
-        logging.basicConfig(level=logging.ERROR)
+        get_logger(level=logging.DEBUG)
+    elif quiet or silent:
+        get_logger(level=logging.ERROR)
+    else:
+        # Default to WARNING to avoid noisy INFO
+        get_logger(level=logging.WARNING)
 
 
 def run():

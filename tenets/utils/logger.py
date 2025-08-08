@@ -19,11 +19,19 @@ except Exception:  # pragma: no cover
     _RICH_INSTALLED = False
 
 _CONFIGURED = False
+_CURRENT_LEVEL = None
 
 
 def _configure_root(level: int) -> None:
-    global _CONFIGURED
+    global _CONFIGURED, _CURRENT_LEVEL
+    # If already configured, just update levels if different
     if _CONFIGURED:
+        if _CURRENT_LEVEL != level:
+            root = logging.getLogger()
+            root.setLevel(level)
+            for h in root.handlers:
+                h.setLevel(level)
+            _CURRENT_LEVEL = level
         return
 
     handlers = []
@@ -36,6 +44,7 @@ def _configure_root(level: int) -> None:
 
     logging.basicConfig(level=level, format=fmt, handlers=handlers)
     _CONFIGURED = True
+    _CURRENT_LEVEL = level
 
 
 def get_logger(name: Optional[str] = None, level: Optional[int] = None) -> logging.Logger:
@@ -44,7 +53,9 @@ def get_logger(name: Optional[str] = None, level: Optional[int] = None) -> loggi
     Environment variables:
       - TENETS_LOG_LEVEL: DEBUG|INFO|WARNING|ERROR|CRITICAL
     """
-    env_level = os.getenv("TENETS_LOG_LEVEL", "INFO").upper()
+    env_level = os.getenv("TENETS_LOG_LEVEL")
+    # Default to ERROR unless explicitly overridden
+    default_level_name = env_level.upper() if env_level else "ERROR"
     level_map = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
@@ -52,12 +63,11 @@ def get_logger(name: Optional[str] = None, level: Optional[int] = None) -> loggi
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
     }
-    resolved_level = level if level is not None else level_map.get(env_level, logging.INFO)
+    resolved_level = level if level is not None else level_map.get(default_level_name, logging.ERROR)
 
     _configure_root(resolved_level)
 
     logger = logging.getLogger(name or "tenets")
-    # Avoid double propagation noise if user configures logging separately
     logger.propagate = True
     logger.setLevel(resolved_level)
     return logger

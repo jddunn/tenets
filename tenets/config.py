@@ -246,7 +246,7 @@ class TenetsConfig:
     config_file: Optional[Path] = None
     project_root: Optional[Path] = None
     max_tokens: int = 100_000
-    version: str = "0.5.0"
+    version: str = "0.1.0"
     debug: bool = False
     quiet: bool = False
 

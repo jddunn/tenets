@@ -23,6 +23,7 @@ class ImportInfo:
         line: Line number where import appears
         type: Type of import (import, from, require, include)
         is_relative: Whether this is a relative import
+        level: Relative import level (Python), 0 for absolute
     """
 
     module: str
@@ -30,6 +31,8 @@ class ImportInfo:
     line: int = 0
     type: str = "import"
     is_relative: bool = False
+    # Compatibility: some analyzers provide 'level' for Python relative imports
+    level: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation.
@@ -110,6 +113,9 @@ class FunctionInfo:
         line_end: Ending line number
         parameters: List of parameter names
         complexity: Cyclomatic complexity of the function
+        line: Compatibility alias for line_start
+        end_line: Compatibility alias for line_end
+        is_toplevel: Whether function is top-level (for some analyzers)
     """
 
     name: str
@@ -117,6 +123,17 @@ class FunctionInfo:
     line_end: int = 0
     parameters: List[str] = field(default_factory=list)
     complexity: int = 1
+    # Compatibility fields accepted by analyzers/tests
+    line: int = 0
+    end_line: int = 0
+    is_toplevel: bool = False
+
+    def __post_init__(self):
+        # Map compatibility fields to canonical ones when provided
+        if not self.line_start and self.line:
+            self.line_start = self.line
+        if not self.line_end and self.end_line:
+            self.line_end = self.end_line
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation.
@@ -139,6 +156,7 @@ class ClassInfo:
         line_end: Ending line number
         methods: List of methods in the class
         base_classes: List of base/parent class names
+        line: Compatibility alias for line_start
     """
 
     name: str
@@ -146,6 +164,12 @@ class ClassInfo:
     line_end: int = 0
     methods: List[FunctionInfo] = field(default_factory=list)
     base_classes: List[str] = field(default_factory=list)
+    # Compatibility alias used in some tests/analyzers
+    line: int = 0
+
+    def __post_init__(self):
+        if not self.line_start and self.line:
+            self.line_start = self.line
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation.
@@ -154,6 +178,7 @@ class ClassInfo:
             Dict containing class information with serialized methods
         """
         data = asdict(self)
+        # Keep methods serialized
         data["methods"] = [m.to_dict() for m in self.methods]
         return data
 
