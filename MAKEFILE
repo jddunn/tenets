@@ -1,0 +1,176 @@
+# tenets Development Makefile
+# Simplifies common development tasks
+
+.PHONY: help install dev test lint format clean build docs serve-docs release
+
+# Default target
+help:
+	@echo "tenets Development Commands:"
+	@echo "  make install    - Install tenets in production mode"
+	@echo "  make dev        - Install tenets in development mode with all extras"
+	@echo "  make test       - Run all tests"
+	@echo "  make test-fast  - Run tests excluding slow ones"
+	@echo "  make lint       - Run all linters"
+	@echo "  make format     - Auto-format code"
+	@echo "  make clean      - Remove build artifacts"
+	@echo "  make build      - Build distribution packages"
+	@echo "  make docs       - Build documentation"
+	@echo "  make serve-docs - Serve documentation locally"
+	@echo "  make release    - Create a new release (interactive)"
+
+# Install production dependencies
+install:
+	pip install --upgrade pip
+	pip install -e .
+
+# Install development environment
+dev:
+	pip install --upgrade pip
+	pip install -e ".[all,dev,test,docs]"
+	pre-commit install
+	pre-commit install --hook-type commit-msg
+	pre-commit install --hook-type push
+	@echo "✓ Development environment ready!"
+
+# Run all tests
+test:
+	pytest -v --cov=tenets --cov-report=term-missing --cov-report=html
+
+# Run fast tests only
+test-fast:
+	pytest -v -m "not slow" --cov=tenets
+
+# Run specific test file
+test-file:
+	@read -p "Test file path: " filepath; \
+	pytest -v $$filepath
+
+# Run all linters
+lint:
+	@echo "Running black..."
+	black --check --diff .
+	@echo "\nRunning isort..."
+	isort --check-only --diff .
+	@echo "\nRunning ruff..."
+	ruff check .
+	@echo "\nRunning mypy..."
+	mypy tenets --strict
+	@echo "\nRunning bandit..."
+	bandit -r tenets -ll
+	@echo "\nRunning safety..."
+	safety check || true
+	@echo "\n✓ All linting checks complete!"
+
+# Auto-format code
+format:
+	@echo "Running autoflake..."
+	autoflake --in-place --remove-all-unused-imports --recursive tenets tests
+	@echo "Running isort..."
+	isort .
+	@echo "Running black..."
+	black .
+	@echo "Running ruff with fixes..."
+	ruff check --fix .
+	@echo "\n✓ Code formatting complete!"
+
+# Clean build artifacts
+clean:
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info
+	rm -rf .coverage
+	rm -rf htmlcov/
+	rm -rf .pytest_cache/
+	rm -rf .mypy_cache/
+	rm -rf .ruff_cache/
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	@echo "✓ Cleaned all build artifacts!"
+
+# Build distribution packages
+build: clean
+	python -m build
+	twine check dist/*
+	@echo "\n✓ Build complete! Packages in dist/"
+
+# Build documentation
+docs:
+	mkdocs build --strict
+	@echo "\n✓ Documentation built in site/"
+
+# Serve documentation locally
+serve-docs:
+	mkdocs serve --dev-addr localhost:8000
+
+# Run pre-commit on all files
+pre-commit:
+	pre-commit run --all-files
+
+# Create a new release (interactive)
+release:
+	@echo "Creating a new release..."
+	@echo "Current version: $$(grep version pyproject.toml | head -1 | cut -d'"' -f2)"
+	@echo "\nThis will:"
+	@echo "1. Run all tests"
+	@echo "2. Update version numbers"
+	@echo "3. Update CHANGELOG.md"
+	@echo "4. Create a git commit and tag"
+	@echo "5. Push to GitHub (triggering release workflow)"
+	@echo ""
+	@read -p "Continue? [y/N] " confirm; \
+	if [ "$$confirm" = "y" ]; then \
+		make test && \
+		cz bump && \
+		git push && \
+		git push --tags; \
+	fi
+
+# Install git hooks
+install-hooks:
+	pre-commit install --install-hooks
+	@echo "✓ Git hooks installed!"
+
+# Update dependencies
+update-deps:
+	pip install --upgrade pip pip-tools
+	pip-compile --upgrade
+	@echo "✓ Dependencies updated!"
+
+# Run security checks
+security:
+	bandit -r tenets -f json -o security-report.json
+	safety check --json --output safety-report.json
+	@echo "✓ Security reports generated!"
+
+# Profile code performance
+profile:
+	@read -p "Script to profile: " script; \
+	python -m cProfile -o profile.stats $$script
+	python -m pstats profile.stats
+
+# Generate coverage badge
+coverage-badge:
+	coverage-badge -o assets/coverage.svg -f
+	@echo "✓ Coverage badge generated!"
+
+# Quick commit with commitizen
+commit:
+	cz commit
+
+# Check commit history
+check-commits:
+	cz check --rev-range origin/main..HEAD
+
+# Show project statistics
+stats:
+	@echo "Project Statistics:"
+	@echo "==================="
+	@echo "Lines of code:"
+	@find tenets -name "*.py" -type f -exec wc -l {} + | tail -1
+	@echo "\nNumber of Python files:"
+	@find tenets -name "*.py" -type f | wc -l
+	@echo "\nNumber of tests:"
+	@find tests -name "test_*.py" -type f -exec grep -E "def test_" {} + | wc -l
+	@echo "\nTODO items:"
+	@grep -r "TODO" tenets tests --include="*.py" | wc -l

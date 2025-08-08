@@ -1,0 +1,269 @@
+"""Context aggregation - intelligently combine files within token limits.
+
+The aggregator is responsible for selecting and combining files in a way that
+maximizes relevance while staying within token constraints.
+"""
+
+from typing import List, Dict, Any, Optional, Tuple
+from dataclasses import dataclass
+
+from tenets.config import TenetsConfig
+from tenets.models.analysis import FileAnalysis
+from tenets.models.context import PromptContext
+from tenets.models.summary import FileSummary
+from tenets.core.summarizer import Summarizer
+from tenets.utils.tokens import count_tokens
+from tenets.utils.logger import get_logger
+
+
+@dataclass
+class AggregationStrategy:
+    """Strategy for how to aggregate files."""
+    name: str
+    max_full_files: int = 10
+    summarize_threshold: float = 0.7  # Files below this score get summarized
+    min_relevance: float = 0.3  # Don't include files below this
+    preserve_structure: bool = True  # Try to keep related files together
+
+
+class ContextAggregator:
+    """Aggregates files intelligently within token constraints."""
+    
+    def __init__(self, config: TenetsConfig):
+        """Initialize the aggregator.
+        
+        Args:
+            config: Tenets configuration
+        """
+        self.config = config
+        self.logger = get_logger(__name__)
+        self.summarizer = Summarizer(config)
+        
+        # Define aggregation strategies
+        self.strategies = {
+            'greedy': AggregationStrategy(
+                name='greedy',
+                max_full_files=20,
+                summarize_threshold=0.6,
+                min_relevance=0.2
+            ),
+            'balanced': AggregationStrategy(
+                name='balanced',
+                max_full_files=10,
+                summarize_threshold=0.7,
+                min_relevance=0.3
+            ),
+            'conservative': AggregationStrategy(
+                name='conservative',
+                max_full_files=5,
+                summarize_threshold=0.8,
+                min_relevance=0.4
+            )
+        }
+    
+    def aggregate(
+        self,
+        files: List[FileAnalysis],
+        prompt_context: PromptContext,
+        max_tokens: int,
+        model: Optional[str] = None,
+        git_context: Optional[Dict[str, Any]] = None,
+        strategy: str = 'balanced'
+    ) -> Dict[str, Any]:
+        """Aggregate files within token budget.
+        
+        Args:
+            files: Ranked files to aggregate
+            prompt_context: Context about the prompt
+            max_tokens: Maximum token budget
+            model: Target model for token counting
+            git_context: Optional git context to include
+            strategy: Aggregation strategy to use
+            
+        Returns:
+            Dictionary with aggregated content and metadata
+        """
+        self.logger.info(f"Aggregating {len(files)} files with {strategy} strategy")
+        
+        strat = self.strategies.get(strategy, self.strategies['balanced'])
+        
+        # Reserve tokens for structure and git context
+        structure_tokens = 500  # Headers, formatting, etc.
+        git_tokens = self._estimate_git_tokens(git_context) if git_context else 0
+        available_tokens = max_tokens - structure_tokens - git_tokens
+        
+        # Select files to include
+        included_files = []
+        summarized_files = []
+        total_tokens = 0
+        
+        for i, file in enumerate(files):
+            # Skip files below minimum relevance
+            if file.relevance_score < strat.min_relevance:
+                continue
+                
+            # Estimate tokens for this file
+            file_tokens = count_tokens(file.content, model)
+            
+            # Decide whether to include full or summarized
+            if (
+                i < strat.max_full_files and 
+                file.relevance_score >= strat.summarize_threshold and
+                total_tokens + file_tokens <= available_tokens
+            ):
+                # Include full file
+                included_files.append({
+                    'file': file,
+                    'content': file.content,
+                    'tokens': file_tokens,
+                    'summarized': False
+                })
+                total_tokens += file_tokens
+                
+            elif total_tokens < available_tokens * 0.9:  # Leave some buffer
+                # Try to summarize
+                remaining_tokens = available_tokens - total_tokens
+                summary_tokens = min(
+                    file_tokens // 4,  # Aim for 25% of original
+                    remaining_tokens // 2  # Don't use more than half remaining
+                )
+                
+                if summary_tokens > 100:  # Worth summarizing
+                    summary = self.summarizer.summarize_file(
+                        file=file,
+                        max_tokens=summary_tokens,
+                        preserve_sections=['imports', 'exports', 'class_signatures']
+                    )
+                    
+                    summarized_files.append({
+                        'file': file,
+                        'content': summary.content,
+                        'tokens': summary.summary_tokens,
+                        'summarized': True,
+                        'summary': summary
+                    })
+                    total_tokens += summary.summary_tokens
+        
+        # Combine full and summarized files
+        all_files = included_files + summarized_files
+        
+        # Sort by relevance to maintain importance order
+        all_files.sort(key=lambda x: x['file'].relevance_score, reverse=True)
+        
+        # Build result
+        result = {
+            'included_files': all_files,
+            'total_tokens': total_tokens,
+            'available_tokens': available_tokens,
+            'git_context': git_context,
+            'statistics': {
+                'files_analyzed': len(files),
+                'files_included': len(included_files),
+                'files_summarized': len(summarized_files),
+                'files_skipped': len(files) - len(all_files),
+                'token_utilization': total_tokens / available_tokens if available_tokens > 0 else 0
+            }
+        }
+        
+        self.logger.info(
+            f"Aggregated {len(all_files)} files "
+            f"({len(included_files)} full, {len(summarized_files)} summarized) "
+            f"using {total_tokens:,} tokens"
+        )
+        
+        return result
+    
+    def _estimate_git_tokens(self, git_context: Dict[str, Any]) -> int:
+        """Estimate tokens needed for git context."""
+        if not git_context:
+            return 0
+            
+        # Rough estimates
+        tokens = 0
+        
+        if 'recent_commits' in git_context:
+            # ~50 tokens per commit
+            tokens += len(git_context['recent_commits']) * 50
+            
+        if 'contributors' in git_context:
+            # ~20 tokens per contributor
+            tokens += len(git_context['contributors']) * 20
+            
+        if 'recent_changes' in git_context:
+            # ~100 tokens for change summary
+            tokens += 100
+            
+        return tokens
+    
+    def optimize_packing(
+        self,
+        files: List[FileAnalysis],
+        max_tokens: int,
+        model: Optional[str] = None
+    ) -> List[Tuple[FileAnalysis, bool]]:
+        """Optimize file packing using dynamic programming.
+        
+        This is a more sophisticated packing algorithm that tries to
+        maximize total relevance score within token constraints.
+        
+        Args:
+            files: Files to pack
+            max_tokens: Token budget
+            model: Model for token counting
+            
+        Returns:
+            List of (file, should_summarize) tuples
+        """
+        n = len(files)
+        if n == 0:
+            return []
+            
+        # Calculate tokens for each file (full and summarized)
+        file_tokens = []
+        for file in files:
+            full_tokens = count_tokens(file.content, model)
+            summary_tokens = full_tokens // 4  # Rough estimate
+            file_tokens.append((full_tokens, summary_tokens))
+        
+        # Dynamic programming: dp[i][j] = max score using first i files with j tokens
+        dp = [[0.0 for _ in range(max_tokens + 1)] for _ in range(n + 1)]
+        choice = [[None for _ in range(max_tokens + 1)] for _ in range(n + 1)]
+        
+        for i in range(1, n + 1):
+            file = files[i - 1]
+            full_tokens, summary_tokens = file_tokens[i - 1]
+            
+            for j in range(max_tokens + 1):
+                # Option 1: Skip this file
+                dp[i][j] = dp[i - 1][j]
+                choice[i][j] = 'skip'
+                
+                # Option 2: Include full file
+                if j >= full_tokens:
+                    score = dp[i - 1][j - full_tokens] + file.relevance_score
+                    if score > dp[i][j]:
+                        dp[i][j] = score
+                        choice[i][j] = 'full'
+                
+                # Option 3: Include summarized file
+                if j >= summary_tokens:
+                    score = dp[i - 1][j - summary_tokens] + file.relevance_score * 0.6
+                    if score > dp[i][j]:
+                        dp[i][j] = score
+                        choice[i][j] = 'summary'
+        
+        # Backtrack to find optimal selection
+        result = []
+        i, j = n, max_tokens
+        
+        while i > 0 and j > 0:
+            if choice[i][j] == 'full':
+                result.append((files[i - 1], False))
+                j -= file_tokens[i - 1][0]
+            elif choice[i][j] == 'summary':
+                result.append((files[i - 1], True))
+                j -= file_tokens[i - 1][1]
+            i -= 1
+        
+        result.reverse()
+        return result
