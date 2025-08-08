@@ -6,16 +6,28 @@ intelligently selecting what to include and what to summarize.
 
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
+from pathlib import Path
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
-from tenets.utils.tokens import count_tokens, get_model_limits
+from tenets.utils.tokens import count_tokens
+from tenets.models.llm import get_model_limits
 from tenets.utils.logger import get_logger
 
 
 @dataclass
 class TokenBudget:
-    """Manages token allocation for context building."""
+    """Manages token allocation for context building.
+    
+    Attributes:
+        total_limit: Total token budget available.
+        model: Optional target model name.
+        prompt_tokens: Tokens consumed by the prompt/instructions.
+        response_reserve: Reserved tokens for model output.
+        structure_tokens: Reserved tokens for headers/formatting.
+        git_tokens: Reserved tokens for git metadata.
+        tenet_tokens: Reserved tokens for tenet injection.
+    """
     
     total_limit: int
     model: Optional[str] = None
@@ -66,21 +78,21 @@ class TokenOptimizer:
         """Create a token budget for context generation.
         
         Args:
-            model: Target model name
-            max_tokens: Maximum tokens (overrides model default)
-            prompt_tokens: Tokens used by the prompt
-            has_git_context: Whether git context will be included
-            has_tenets: Whether tenets will be injected
+            model: Target model name.
+            max_tokens: Optional hard cap on total tokens; overrides model default.
+            prompt_tokens: Tokens used by the prompt/instructions.
+            has_git_context: Whether git context will be included.
+            has_tenets: Whether tenets will be injected.
             
         Returns:
-            TokenBudget instance
+            TokenBudget: Configured budget with reserves.
         """
         # Determine total limit
         if max_tokens:
             total_limit = max_tokens
         elif model:
-            model_limits = get_model_limits(model)
-            total_limit = model_limits.get('context_window', 100_000)
+            limits = get_model_limits(model)
+            total_limit = limits.max_context
         else:
             total_limit = self.config.max_tokens
             

@@ -10,7 +10,7 @@ import hashlib
 import json
 import concurrent.futures
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set, Callable
+from typing import List, Dict, Any, Optional, Set, Callable, Union
 from datetime import datetime, timedelta
 
 # Replacement imports after directory move

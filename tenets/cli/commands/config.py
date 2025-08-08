@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import yaml
+from typing import Optional
 
 import typer
 from rich import print
