@@ -8,6 +8,7 @@ safe to use in environments where the installed package directory may be
 read-only (e.g., pip installs) because the SQLite database lives under
 Tenets' cache directory.
 """
+
 from __future__ import annotations
 
 import json
@@ -110,12 +111,16 @@ class SessionDB:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
-            cur.execute("SELECT id, name, created_at, metadata FROM sessions ORDER BY created_at DESC")
+            cur.execute(
+                "SELECT id, name, created_at, metadata FROM sessions ORDER BY created_at DESC"
+            )
             rows = cur.fetchall()
             records: List[SessionRecord] = []
             for row in rows:
                 meta = json.loads(row[3]) if row[3] else {}
-                records.append(SessionRecord(id=row[0], name=row[1], created_at=row[2], metadata=meta))
+                records.append(
+                    SessionRecord(id=row[0], name=row[1], created_at=row[2], metadata=meta)
+                )
             return records
         finally:
             conn.close()

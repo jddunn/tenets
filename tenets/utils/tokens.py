@@ -10,6 +10,7 @@ Notes:
 - The fallback heuristic intentionally overestimates in some cases to
   keep chunk sizes well under model limits.
 """
+
 from __future__ import annotations
 
 from typing import Iterable, List, Optional, Tuple

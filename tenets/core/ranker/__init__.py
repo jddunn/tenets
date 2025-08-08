@@ -2,8 +2,10 @@
 
 Use `tenets.core.ranking` moving forward.
 """
+
 from __future__ import annotations
 import warnings
+
 warnings.warn(
     "tenets.core.ranker is deprecated; use tenets.core.ranking",
     DeprecationWarning,

@@ -3,6 +3,7 @@
 Provides a single entrypoint `get_logger` that configures Rich logging once
 and returns child loggers for modules.
 """
+
 from __future__ import annotations
 
 import logging
@@ -27,9 +28,7 @@ def _configure_root(level: int) -> None:
 
     handlers = []
     if _RICH_INSTALLED:
-        handlers.append(
-            RichHandler(rich_tracebacks=True, show_time=True, show_path=False)
-        )
+        handlers.append(RichHandler(rich_tracebacks=True, show_time=True, show_path=False))
         fmt = "%(message)s"
     else:
         handlers.append(logging.StreamHandler())

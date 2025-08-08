@@ -15,6 +15,7 @@ import hashlib
 
 class TaskType(Enum):
     """Types of tasks detected in prompts."""
+
     FEATURE = "feature"
     DEBUG = "debug"
     TEST = "test"
@@ -27,9 +28,9 @@ class TaskType(Enum):
     ARCHITECTURE = "architecture"
     MIGRATION = "migration"
     GENERAL = "general"
-    
+
     @classmethod
-    def from_string(cls, value: str) -> 'TaskType':
+    def from_string(cls, value: str) -> "TaskType":
         """Create TaskType from string value."""
         try:
             return cls(value.lower())
@@ -40,11 +41,11 @@ class TaskType(Enum):
 @dataclass
 class PromptContext:
     """Context extracted from user prompt.
-    
+
     Contains all information parsed from the prompt to guide
     file selection and ranking. This is the primary data structure
     that flows through the system after prompt parsing.
-    
+
     Attributes:
         text: The processed prompt text (cleaned and normalized)
         original: Original input (may be URL or raw text)
@@ -62,7 +63,7 @@ class PromptContext:
         session_id: Associated session if any
         timestamp: When context was created
     """
-    
+
     text: str
     original: str
     keywords: List[str] = field(default_factory=list)
@@ -78,13 +79,13 @@ class PromptContext:
     confidence_scores: Dict[str, float] = field(default_factory=dict)
     session_id: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.now)
-    
+
     def __post_init__(self):
         """Post-initialization processing."""
         # Normalize task type
         if isinstance(self.task_type, str):
             self.task_type = self.task_type.lower()
-        
+
         # Remove duplicate keywords while preserving order
         seen = set()
         unique_keywords = []
@@ -94,85 +95,83 @@ class PromptContext:
                 seen.add(kw_lower)
                 unique_keywords.append(kw)
         self.keywords = unique_keywords
-        
+
         # Initialize default scope if empty
         if not self.scope:
             self.scope = {
-                'modules': [],
-                'directories': [],
-                'specific_files': [],
-                'exclusions': [],
-                'is_global': False,
-                'is_specific': False
+                "modules": [],
+                "directories": [],
+                "specific_files": [],
+                "exclusions": [],
+                "is_global": False,
+                "is_specific": False,
             }
-    
+
     def add_keyword(self, keyword: str, confidence: float = 1.0) -> None:
         """Add a keyword with confidence score."""
         if keyword and keyword.lower() not in [k.lower() for k in self.keywords]:
             self.keywords.append(keyword)
-            self.confidence_scores[f'keyword_{keyword}'] = confidence
-    
+            self.confidence_scores[f"keyword_{keyword}"] = confidence
+
     def add_entity(self, name: str, entity_type: str, confidence: float = 1.0) -> None:
         """Add an entity with type and confidence."""
-        self.entities.append({
-            'name': name,
-            'type': entity_type,
-            'confidence': confidence
-        })
-    
+        self.entities.append({"name": name, "type": entity_type, "confidence": confidence})
+
     def add_focus_area(self, area: str) -> None:
         """Add a focus area if not already present."""
         if area and area not in self.focus_areas:
             self.focus_areas.append(area)
-    
-    def merge_with(self, other: 'PromptContext') -> 'PromptContext':
+
+    def merge_with(self, other: "PromptContext") -> "PromptContext":
         """Merge this context with another."""
         # Merge keywords
         for kw in other.keywords:
             self.add_keyword(kw)
-        
+
         # Merge entities
         self.entities.extend(other.entities)
-        
+
         # Merge file patterns
-        self.file_patterns.extend([fp for fp in other.file_patterns if fp not in self.file_patterns])
-        
+        self.file_patterns.extend(
+            [fp for fp in other.file_patterns if fp not in self.file_patterns]
+        )
+
         # Merge focus areas
         for area in other.focus_areas:
             self.add_focus_area(area)
-        
+
         # Merge metadata
         self.metadata.update(other.metadata)
-        
+
         return self
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
-            'text': self.text,
-            'original': self.original,
-            'keywords': self.keywords,
-            'task_type': self.task_type,
-            'intent': self.intent,
-            'entities': self.entities,
-            'file_patterns': self.file_patterns,
-            'focus_areas': self.focus_areas,
-            'temporal_context': self.temporal_context,
-            'scope': self.scope,
-            'external_context': self.external_context,
-            'metadata': self.metadata,
-            'confidence_scores': self.confidence_scores,
-            'session_id': self.session_id,
-            'timestamp': self.timestamp.isoformat()
+            "text": self.text,
+            "original": self.original,
+            "keywords": self.keywords,
+            "task_type": self.task_type,
+            "intent": self.intent,
+            "entities": self.entities,
+            "file_patterns": self.file_patterns,
+            "focus_areas": self.focus_areas,
+            "temporal_context": self.temporal_context,
+            "scope": self.scope,
+            "external_context": self.external_context,
+            "metadata": self.metadata,
+            "confidence_scores": self.confidence_scores,
+            "session_id": self.session_id,
+            "timestamp": self.timestamp.isoformat(),
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PromptContext':
+    def from_dict(cls, data: Dict[str, Any]) -> "PromptContext":
         """Create PromptContext from dictionary."""
-        if 'timestamp' in data and isinstance(data['timestamp'], str):
-            data['timestamp'] = datetime.fromisoformat(data['timestamp'])
+        if "timestamp" in data and isinstance(data["timestamp"], str):
+            data["timestamp"] = datetime.fromisoformat(data["timestamp"])
         return cls(**data)
-    
+
     def get_hash(self) -> str:
         """Get a hash of this context for caching."""
         key_data = f"{self.text}_{self.task_type}_{sorted(self.keywords)}"
@@ -182,10 +181,10 @@ class PromptContext:
 @dataclass
 class ContextResult:
     """Result of context generation.
-    
+
     Contains the generated context ready for consumption by LLMs
     or other tools. This is the final output of the distillation process.
-    
+
     Attributes:
         context: The generated context content (formatted text)
         format: Output format (markdown, xml, json)
@@ -201,7 +200,7 @@ class ContextResult:
         warnings: Any warnings during generation
         errors: Any errors during generation
     """
-    
+
     context: str
     format: str = "markdown"
     token_count: int = 0
@@ -215,78 +214,78 @@ class ContextResult:
     cost_estimate: Optional[Dict[str, float]] = None
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
-    
+
     def __post_init__(self):
         """Post-initialization processing."""
         # Calculate default statistics if not provided
         if not self.statistics:
             self.statistics = {
-                'total_files_included': len(self.files_included),
-                'total_files_summarized': len(self.files_summarized),
-                'token_count': self.token_count,
-                'format': self.format,
-                'has_warnings': len(self.warnings) > 0,
-                'has_errors': len(self.errors) > 0
+                "total_files_included": len(self.files_included),
+                "total_files_summarized": len(self.files_summarized),
+                "token_count": self.token_count,
+                "format": self.format,
+                "has_warnings": len(self.warnings) > 0,
+                "has_errors": len(self.errors) > 0,
             }
-    
+
     def add_warning(self, warning: str) -> None:
         """Add a warning message."""
         self.warnings.append(warning)
-        self.statistics['has_warnings'] = True
-    
+        self.statistics["has_warnings"] = True
+
     def add_error(self, error: str) -> None:
         """Add an error message."""
         self.errors.append(error)
-        self.statistics['has_errors'] = True
-    
+        self.statistics["has_errors"] = True
+
     def update_statistics(self, key: str, value: Any) -> None:
         """Update a statistic value."""
         self.statistics[key] = value
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         data = {
-            'context': self.context,
-            'format': self.format,
-            'token_count': self.token_count,
-            'files_included': self.files_included,
-            'files_summarized': self.files_summarized,
-            'metadata': self.metadata,
-            'session_id': self.session_id,
-            'timestamp': self.timestamp.isoformat(),
-            'statistics': self.statistics,
-            'cost_estimate': self.cost_estimate,
-            'warnings': self.warnings,
-            'errors': self.errors
+            "context": self.context,
+            "format": self.format,
+            "token_count": self.token_count,
+            "files_included": self.files_included,
+            "files_summarized": self.files_summarized,
+            "metadata": self.metadata,
+            "session_id": self.session_id,
+            "timestamp": self.timestamp.isoformat(),
+            "statistics": self.statistics,
+            "cost_estimate": self.cost_estimate,
+            "warnings": self.warnings,
+            "errors": self.errors,
         }
-        
+
         if self.prompt_context:
-            data['prompt_context'] = self.prompt_context.to_dict()
-        
+            data["prompt_context"] = self.prompt_context.to_dict()
+
         return data
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ContextResult':
+    def from_dict(cls, data: Dict[str, Any]) -> "ContextResult":
         """Create from dictionary."""
-        if 'timestamp' in data and isinstance(data['timestamp'], str):
-            data['timestamp'] = datetime.fromisoformat(data['timestamp'])
-        
-        if 'prompt_context' in data and isinstance(data['prompt_context'], dict):
-            data['prompt_context'] = PromptContext.from_dict(data['prompt_context'])
-        
+        if "timestamp" in data and isinstance(data["timestamp"], str):
+            data["timestamp"] = datetime.fromisoformat(data["timestamp"])
+
+        if "prompt_context" in data and isinstance(data["prompt_context"], dict):
+            data["prompt_context"] = PromptContext.from_dict(data["prompt_context"])
+
         return cls(**data)
-    
+
     def save_to_file(self, path: Union[str, Path]) -> None:
         """Save context result to file."""
         path = Path(path)
-        
-        if self.format == 'json':
-            with open(path, 'w') as f:
+
+        if self.format == "json":
+            with open(path, "w") as f:
                 json.dump(self.to_dict(), f, indent=2, default=str)
         else:
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 f.write(self.context)
-    
+
     def get_summary(self) -> str:
         """Get a summary of the context result."""
         lines = [
@@ -296,26 +295,26 @@ class ContextResult:
             f"  Files Included: {len(self.files_included)}",
             f"  Files Summarized: {len(self.files_summarized)}",
         ]
-        
+
         if self.cost_estimate:
             lines.append(f"  Estimated Cost: ${self.cost_estimate.get('total_cost', 0):.4f}")
-        
+
         if self.warnings:
             lines.append(f"  Warnings: {len(self.warnings)}")
-        
+
         if self.errors:
             lines.append(f"  Errors: {len(self.errors)}")
-        
+
         return "\n".join(lines)
 
 
 @dataclass
 class SessionContext:
     """Context for a session.
-    
+
     Maintains state across multiple prompts in a session for
     incremental context building and state management.
-    
+
     Attributes:
         session_id: Unique session identifier
         name: Human-readable session name
@@ -331,7 +330,7 @@ class SessionContext:
         ai_requests: History of AI requests
         branch: Git branch if applicable
     """
-    
+
     session_id: str
     name: str = ""
     project_root: Optional[Path] = None
@@ -345,40 +344,38 @@ class SessionContext:
     metadata: Dict[str, Any] = field(default_factory=dict)
     ai_requests: List[Dict[str, Any]] = field(default_factory=list)
     branch: Optional[str] = None
-    
+
     def add_shown_file(self, file_path: str) -> None:
         """Mark file as shown."""
         self.shown_files.add(file_path)
         if file_path in self.ignored_files:
             self.ignored_files.remove(file_path)
         self.updated_at = datetime.now()
-    
+
     def add_ignored_file(self, file_path: str) -> None:
         """Mark file as ignored."""
         self.ignored_files.add(file_path)
         if file_path in self.shown_files:
             self.shown_files.remove(file_path)
         self.updated_at = datetime.now()
-    
+
     def add_context(self, context: ContextResult) -> None:
         """Add context to history."""
         self.context_history.append(context)
         context.session_id = self.session_id
         self.updated_at = datetime.now()
-    
+
     def add_ai_request(self, request_type: str, request_data: Dict[str, Any]) -> None:
         """Record an AI request."""
-        self.ai_requests.append({
-            'type': request_type,
-            'data': request_data,
-            'timestamp': datetime.now().isoformat()
-        })
+        self.ai_requests.append(
+            {"type": request_type, "data": request_data, "timestamp": datetime.now().isoformat()}
+        )
         self.updated_at = datetime.now()
-    
+
     def get_latest_context(self) -> Optional[ContextResult]:
         """Get the most recent context."""
         return self.context_history[-1] if self.context_history else None
-    
+
     def should_show_file(self, file_path: str) -> bool:
         """Check if file should be shown based on session state."""
         if file_path in self.ignored_files:
@@ -386,45 +383,45 @@ class SessionContext:
         if file_path in self.shown_files:
             return True
         return None  # No preference
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
-            'session_id': self.session_id,
-            'name': self.name,
-            'project_root': str(self.project_root) if self.project_root else None,
-            'shown_files': list(self.shown_files),
-            'ignored_files': list(self.ignored_files),
-            'context_history': [c.to_dict() for c in self.context_history],
-            'current_focus': self.current_focus,
-            'tenets_applied': self.tenets_applied,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'metadata': self.metadata,
-            'ai_requests': self.ai_requests,
-            'branch': self.branch
+            "session_id": self.session_id,
+            "name": self.name,
+            "project_root": str(self.project_root) if self.project_root else None,
+            "shown_files": list(self.shown_files),
+            "ignored_files": list(self.ignored_files),
+            "context_history": [c.to_dict() for c in self.context_history],
+            "current_focus": self.current_focus,
+            "tenets_applied": self.tenets_applied,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "metadata": self.metadata,
+            "ai_requests": self.ai_requests,
+            "branch": self.branch,
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'SessionContext':
+    def from_dict(cls, data: Dict[str, Any]) -> "SessionContext":
         """Create from dictionary."""
-        if 'created_at' in data and isinstance(data['created_at'], str):
-            data['created_at'] = datetime.fromisoformat(data['created_at'])
-        if 'updated_at' in data and isinstance(data['updated_at'], str):
-            data['updated_at'] = datetime.fromisoformat(data['updated_at'])
-        
-        if 'shown_files' in data:
-            data['shown_files'] = set(data['shown_files'])
-        if 'ignored_files' in data:
-            data['ignored_files'] = set(data['ignored_files'])
-        
-        if 'context_history' in data:
-            data['context_history'] = [
+        if "created_at" in data and isinstance(data["created_at"], str):
+            data["created_at"] = datetime.fromisoformat(data["created_at"])
+        if "updated_at" in data and isinstance(data["updated_at"], str):
+            data["updated_at"] = datetime.fromisoformat(data["updated_at"])
+
+        if "shown_files" in data:
+            data["shown_files"] = set(data["shown_files"])
+        if "ignored_files" in data:
+            data["ignored_files"] = set(data["ignored_files"])
+
+        if "context_history" in data:
+            data["context_history"] = [
                 ContextResult.from_dict(c) if isinstance(c, dict) else c
-                for c in data['context_history']
+                for c in data["context_history"]
             ]
-        
-        if 'project_root' in data and data['project_root']:
-            data['project_root'] = Path(data['project_root'])
-        
+
+        if "project_root" in data and data["project_root"]:
+            data["project_root"] = Path(data["project_root"])
+
         return cls(**data)

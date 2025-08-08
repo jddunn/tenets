@@ -11,7 +11,7 @@ from tenets.cli.commands import (
 
 __all__ = [
     "distill_command",
-    "instill_command", 
+    "instill_command",
     "examine_command",
     "chronicle_command",
     "momentum_command",

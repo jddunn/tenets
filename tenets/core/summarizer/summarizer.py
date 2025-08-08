@@ -3,6 +3,7 @@
 Heuristic summarization suitable when ML deps are not installed. Extracts
 module docstrings, top comments, or the first N lines.
 """
+
 from __future__ import annotations
 
 import ast

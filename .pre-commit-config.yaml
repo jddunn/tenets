@@ -2,7 +2,7 @@
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-added-large-files
         args: ['--maxkb=1000']
@@ -26,7 +26,7 @@ repos:
 
   # Python code formatting
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.4.2
     hooks:
       - id: black
         language_version: python3.11
@@ -41,14 +41,14 @@ repos:
 
   # Python linting with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+    rev: v0.5.6
     hooks:
       - id: ruff
         args: ['--fix', '--exit-non-zero-on-fix']
 
   # Security linting
   - repo: https://github.com/pycqa/bandit
-    rev: 1.7.6
+    rev: 1.7.9
     hooks:
       - id: bandit
         args: ['-c', 'pyproject.toml']
@@ -56,7 +56,7 @@ repos:
 
   # Type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.11.1
     hooks:
       - id: mypy
         additional_dependencies: [
@@ -75,9 +75,9 @@ repos:
         args: ['--convention=google']
         exclude: '^tests/'
 
-  # YAML formatting
+  # YAML/Markdown formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+    rev: v3.3.3
     hooks:
       - id: prettier
         types_or: [yaml, markdown]
@@ -85,14 +85,14 @@ repos:
 
   # Markdown linting
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
+    rev: v0.39.0
     hooks:
       - id: markdownlint
         args: ['--fix']
 
   # Commit message linting
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.13.0
+    rev: v3.24.0
     hooks:
       - id: commitizen
         stages: [commit-msg]
@@ -102,10 +102,10 @@ repos:
 
   # License header checking
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.4
+    rev: v1.5.5
     hooks:
       - id: insert-license
-        files: '\.py$'
+        files: '\\.py$'
         args: [
           '--license-filepath=.license-header.txt',
           '--comment-style=#',
@@ -114,7 +114,7 @@ repos:
 
   # Secret scanning
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
@@ -125,7 +125,7 @@ repos:
       # Check for print statements
       - id: no-print-statements
         name: Check for print statements
-        entry: '\bprint\('
+        entry: '\\bprint\('
         language: pygrep
         types: [python]
         exclude: '^(tests/|examples/)'
@@ -135,7 +135,7 @@ repos:
         name: Check version consistency
         entry: python scripts/check_version.py
         language: system
-        files: '(pyproject\.toml|tenets/__init__\.py)'
+        files: '(pyproject\\.toml|tenets/__init__\\.py)'
         
       # Run quick tests
       - id: quick-tests

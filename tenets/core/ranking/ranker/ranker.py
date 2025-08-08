@@ -36,6 +36,7 @@ from tenets.utils.logger import get_logger
 
 class RankingAlgorithm(Enum):
     """Available ranking algorithms."""
+
     FAST = "fast"
     BALANCED = "balanced"
     THOROUGH = "thorough"
@@ -46,10 +47,10 @@ class RankingAlgorithm(Enum):
 @dataclass
 class RankingFactors:
     """Individual ranking factors for a file.
-    
+
     Each factor contributes to the final relevance score based on
     configured weights.
-    
+
     Attributes:
         keyword_match: Score based on keyword presence and frequency
         tfidf_similarity: TF-IDF similarity score
@@ -63,6 +64,7 @@ class RankingFactors:
         type_relevance: Relevance based on file type
         custom_scores: Dictionary of custom scoring factors
     """
+
     keyword_match: float = 0.0
     tfidf_similarity: float = 0.0
     bm25_score: float = 0.0
@@ -74,59 +76,60 @@ class RankingFactors:
     semantic_similarity: float = 0.0
     type_relevance: float = 0.0
     custom_scores: Dict[str, float] = field(default_factory=dict)
-    
+
     def get_weighted_score(self, weights: Dict[str, float]) -> float:
         """Calculate weighted score from factors.
-        
+
         Args:
             weights: Dictionary of factor weights
-            
+
         Returns:
             Weighted relevance score
         """
         score = 0.0
-        
+
         # Standard factors
         factor_values = {
-            'keyword_match': self.keyword_match,
-            'tfidf_similarity': self.tfidf_similarity,
-            'bm25_score': self.bm25_score,
-            'path_relevance': self.path_relevance,
-            'import_centrality': self.import_centrality,
-            'git_recency': self.git_recency,
-            'git_frequency': self.git_frequency,
-            'complexity_relevance': self.complexity_relevance,
-            'semantic_similarity': self.semantic_similarity,
-            'type_relevance': self.type_relevance,
+            "keyword_match": self.keyword_match,
+            "tfidf_similarity": self.tfidf_similarity,
+            "bm25_score": self.bm25_score,
+            "path_relevance": self.path_relevance,
+            "import_centrality": self.import_centrality,
+            "git_recency": self.git_recency,
+            "git_frequency": self.git_frequency,
+            "complexity_relevance": self.complexity_relevance,
+            "semantic_similarity": self.semantic_similarity,
+            "type_relevance": self.type_relevance,
         }
-        
+
         for factor, value in factor_values.items():
             if factor in weights:
                 score += value * weights[factor]
-        
+
         # Custom factors
         for custom_factor, value in self.custom_scores.items():
             if custom_factor in weights:
                 score += value * weights[custom_factor]
-        
+
         return min(1.0, max(0.0, score))  # Clamp to [0, 1]
 
 
 @dataclass
 class RankedFile:
     """A file with its relevance ranking.
-    
+
     Attributes:
         analysis: FileAnalysis object
         score: Overall relevance score (0-1)
         factors: Breakdown of ranking factors
         explanation: Human-readable explanation of ranking
     """
+
     analysis: FileAnalysis
     score: float
     factors: RankingFactors
     explanation: str = ""
-    
+
     def __lt__(self, other):
         """Compare by score for sorting."""
         return self.score < other.score
@@ -134,34 +137,31 @@ class RankedFile:
 
 class RankingStrategy(ABC):
     """Abstract base class for ranking strategies.
-    
+
     Each strategy implements a different approach to calculating
     relevance scores for files.
     """
-    
+
     @abstractmethod
     def rank_file(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext,
-        corpus_stats: Dict[str, Any]
+        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
     ) -> RankingFactors:
         """Calculate ranking factors for a file.
-        
+
         Args:
             file: File to rank
             prompt_context: Parsed prompt information
             corpus_stats: Statistics about the entire codebase
-            
+
         Returns:
             RankingFactors with calculated scores
         """
         pass
-    
+
     @abstractmethod
     def get_weights(self) -> Dict[str, float]:
         """Get factor weights for this strategy.
-        
+
         Returns:
             Dictionary of factor weights
         """
@@ -170,113 +170,99 @@ class RankingStrategy(ABC):
 
 class FastRankingStrategy(RankingStrategy):
     """Fast keyword-based ranking.
-    
+
     This strategy uses simple keyword matching and path analysis
     for quick relevance scoring. Suitable for large codebases where
     speed is critical.
     """
-    
+
     def rank_file(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext,
-        corpus_stats: Dict[str, Any]
+        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
     ) -> RankingFactors:
         """Fast ranking based on keywords and paths.
-        
+
         Args:
             file: File to rank
             prompt_context: Parsed prompt information
             corpus_stats: Statistics about the entire codebase
-            
+
         Returns:
             RankingFactors with keyword and path scores
         """
         factors = RankingFactors()
-        
+
         # Keyword matching
         if file.content and prompt_context.keywords:
             content_lower = file.content.lower()
             keyword_hits = 0
             keyword_density = 0
-            
+
             for keyword in prompt_context.keywords:
                 keyword_lower = keyword.lower()
                 count = content_lower.count(keyword_lower)
                 if count > 0:
                     keyword_hits += 1
                     keyword_density += count / len(file.content.split())
-            
+
             factors.keyword_match = min(1.0, keyword_hits / len(prompt_context.keywords))
-            factors.keyword_match *= (1 + min(0.5, keyword_density))  # Boost for density
-        
+            factors.keyword_match *= 1 + min(0.5, keyword_density)  # Boost for density
+
         # Path relevance
         path_lower = file.path.lower()
         path_score = 0.0
-        
+
         for keyword in prompt_context.keywords:
             if keyword.lower() in path_lower:
                 path_score += 0.3
-        
+
         # Bonus for important paths
-        important_paths = ['main', 'index', 'app', 'core', 'api', 'handler', 'service']
+        important_paths = ["main", "index", "app", "core", "api", "handler", "service"]
         for important in important_paths:
             if important in path_lower:
                 path_score += 0.2
                 break
-        
+
         factors.path_relevance = min(1.0, path_score)
-        
+
         # File type relevance
-        factors.type_relevance = self._calculate_type_relevance(
-            file,
-            prompt_context
-        )
-        
+        factors.type_relevance = self._calculate_type_relevance(file, prompt_context)
+
         return factors
-    
+
     def get_weights(self) -> Dict[str, float]:
         """Get weights for fast ranking.
-        
+
         Returns:
             Factor weights emphasizing keywords and paths
         """
-        return {
-            'keyword_match': 0.6,
-            'path_relevance': 0.3,
-            'type_relevance': 0.1
-        }
-    
-    def _calculate_type_relevance(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext
-    ) -> float:
+        return {"keyword_match": 0.6, "path_relevance": 0.3, "type_relevance": 0.1}
+
+    def _calculate_type_relevance(self, file: FileAnalysis, prompt_context: PromptContext) -> float:
         """Calculate relevance based on file type.
-        
+
         Args:
             file: File to analyze
             prompt_context: Prompt context
-            
+
         Returns:
             Type relevance score
         """
         path_lower = file.path.lower()
         task_type = prompt_context.task_type
-        
-        if task_type == 'test':
-            if 'test' in path_lower or 'spec' in path_lower:
+
+        if task_type == "test":
+            if "test" in path_lower or "spec" in path_lower:
                 return 1.0
             return 0.3
-        elif task_type == 'debug':
-            if 'error' in path_lower or 'exception' in path_lower or 'log' in path_lower:
+        elif task_type == "debug":
+            if "error" in path_lower or "exception" in path_lower or "log" in path_lower:
                 return 0.8
             return 0.5
-        elif task_type == 'feature':
-            if 'test' in path_lower:
+        elif task_type == "feature":
+            if "test" in path_lower:
                 return 0.2  # Tests less relevant for new features
             return 0.6
-        elif task_type == 'refactor':
+        elif task_type == "refactor":
             if file.complexity and file.complexity.cyclomatic > 10:
                 return 0.8  # Complex files more relevant for refactoring
             return 0.5
@@ -286,181 +272,158 @@ class FastRankingStrategy(RankingStrategy):
 
 class BalancedRankingStrategy(RankingStrategy):
     """Balanced multi-factor ranking.
-    
+
     This strategy combines multiple ranking factors including keywords,
     structure, git history, and code relationships for comprehensive
     relevance scoring.
     """
-    
+
     def __init__(self):
         """Initialize balanced ranking strategy."""
         self.logger = get_logger(__name__)
         self._tfidf_calculator = None
         self._import_graph = None
-    
+
     def rank_file(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext,
-        corpus_stats: Dict[str, Any]
+        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
     ) -> RankingFactors:
         """Balanced ranking using multiple factors.
-        
+
         Args:
             file: File to rank
             prompt_context: Parsed prompt information
             corpus_stats: Statistics about the entire codebase
-            
+
         Returns:
             RankingFactors with multiple scores calculated
         """
         factors = RankingFactors()
-        
+
         # Enhanced keyword matching with position weighting
-        factors.keyword_match = self._calculate_keyword_score(
-            file,
-            prompt_context.keywords
-        )
-        
+        factors.keyword_match = self._calculate_keyword_score(file, prompt_context.keywords)
+
         # TF-IDF similarity (if available)
-        if self._tfidf_calculator and corpus_stats.get('tfidf_vectors'):
+        if self._tfidf_calculator and corpus_stats.get("tfidf_vectors"):
             factors.tfidf_similarity = self._calculate_tfidf_similarity(
-                file,
-                prompt_context,
-                corpus_stats['tfidf_vectors']
+                file, prompt_context, corpus_stats["tfidf_vectors"]
             )
-        
+
         # Path structure analysis
-        factors.path_relevance = self._analyze_path_structure(
-            file.path,
-            prompt_context
-        )
-        
+        factors.path_relevance = self._analyze_path_structure(file.path, prompt_context)
+
         # Import centrality (how many files depend on this)
-        if corpus_stats.get('import_graph'):
+        if corpus_stats.get("import_graph"):
             factors.import_centrality = self._calculate_import_centrality(
-                file,
-                corpus_stats['import_graph']
+                file, corpus_stats["import_graph"]
             )
-        
+
         # Git activity scores
-        if hasattr(file, 'git_info') and file.git_info:
+        if hasattr(file, "git_info") and file.git_info:
             factors.git_recency = self._calculate_git_recency(file.git_info)
             factors.git_frequency = self._calculate_git_frequency(file.git_info)
-        
+
         # Complexity relevance
         if file.complexity:
             factors.complexity_relevance = self._calculate_complexity_relevance(
-                file.complexity,
-                prompt_context
+                file.complexity, prompt_context
             )
-        
+
         # File type relevance
-        factors.type_relevance = self._calculate_type_relevance(
-            file,
-            prompt_context
-        )
-        
+        factors.type_relevance = self._calculate_type_relevance(file, prompt_context)
+
         return factors
-    
+
     def get_weights(self) -> Dict[str, float]:
         """Get weights for balanced ranking.
-        
+
         Returns:
             Balanced factor weights
         """
         return {
-            'keyword_match': 0.25,
-            'tfidf_similarity': 0.20,
-            'path_relevance': 0.15,
-            'import_centrality': 0.15,
-            'git_recency': 0.10,
-            'git_frequency': 0.05,
-            'complexity_relevance': 0.05,
-            'type_relevance': 0.05
+            "keyword_match": 0.25,
+            "tfidf_similarity": 0.20,
+            "path_relevance": 0.15,
+            "import_centrality": 0.15,
+            "git_recency": 0.10,
+            "git_frequency": 0.05,
+            "complexity_relevance": 0.05,
+            "type_relevance": 0.05,
         }
-    
-    def _calculate_keyword_score(
-        self,
-        file: FileAnalysis,
-        keywords: List[str]
-    ) -> float:
+
+    def _calculate_keyword_score(self, file: FileAnalysis, keywords: List[str]) -> float:
         """Calculate sophisticated keyword relevance score.
-        
+
         Args:
             file: File to analyze
             keywords: List of keywords from prompt
-            
+
         Returns:
             Keyword relevance score
         """
         if not keywords or not file.content:
             return 0.0
-        
+
         score = 0.0
         content_lower = file.content.lower()
-        content_lines = content_lower.split('\n')
-        
+        content_lines = content_lower.split("\n")
+
         for keyword in keywords:
             keyword_lower = keyword.lower()
             keyword_score = 0.0
-            
+
             # Check filename (highest weight)
             if keyword_lower in Path(file.path).name.lower():
                 keyword_score += 0.4
-            
+
             # Check imports (high weight)
             for imp in file.imports:
-                if hasattr(imp, 'module') and keyword_lower in imp.module.lower():
+                if hasattr(imp, "module") and keyword_lower in imp.module.lower():
                     keyword_score += 0.3
                     break
-            
+
             # Check class/function names (medium weight)
             if file.classes:
                 for cls in file.classes:
-                    if hasattr(cls, 'name') and keyword_lower in cls.name.lower():
+                    if hasattr(cls, "name") and keyword_lower in cls.name.lower():
                         keyword_score += 0.25
                         break
-            
+
             if file.functions:
                 for func in file.functions:
-                    if hasattr(func, 'name') and keyword_lower in func.name.lower():
+                    if hasattr(func, "name") and keyword_lower in func.name.lower():
                         keyword_score += 0.2
                         break
-            
+
             # Check content with position weighting
             occurrences = 0
             position_weight_sum = 0.0
-            
+
             for i, line in enumerate(content_lines):
                 if keyword_lower in line:
                     occurrences += 1
                     # Earlier lines have higher weight
                     position_weight = 1.0 - (i / len(content_lines)) * 0.5
                     position_weight_sum += position_weight
-            
+
             if occurrences > 0:
                 # Logarithmic scaling for frequency
                 freq_score = math.log(1 + occurrences) / math.log(10)
                 keyword_score += min(0.3, freq_score * (position_weight_sum / occurrences))
-            
+
             score += keyword_score
-        
+
         return min(1.0, score / len(keywords))
-    
+
     def _calculate_tfidf_similarity(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext,
-        tfidf_vectors: Dict[str, Any]
+        self, file: FileAnalysis, prompt_context: PromptContext, tfidf_vectors: Dict[str, Any]
     ) -> float:
         """Calculate TF-IDF similarity score.
-        
+
         Args:
             file: File to analyze
             prompt_context: Prompt context
             tfidf_vectors: Pre-computed TF-IDF vectors
-            
+
         Returns:
             TF-IDF similarity score
         """
@@ -468,36 +431,32 @@ class BalancedRankingStrategy(RankingStrategy):
         # Simplified version here
         if not file.content or not prompt_context.text:
             return 0.0
-        
+
         # Simple cosine similarity approximation
         file_words = set(file.content.lower().split())
         prompt_words = set(prompt_context.text.lower().split())
-        
+
         intersection = len(file_words & prompt_words)
         if intersection == 0:
             return 0.0
-        
+
         similarity = intersection / math.sqrt(len(file_words) * len(prompt_words))
         return min(1.0, similarity * 2)  # Scale up
-    
-    def _analyze_path_structure(
-        self,
-        file_path: str,
-        prompt_context: PromptContext
-    ) -> float:
+
+    def _analyze_path_structure(self, file_path: str, prompt_context: PromptContext) -> float:
         """Analyze file path for structural relevance.
-        
+
         Args:
             file_path: Path to the file
             prompt_context: Prompt context
-            
+
         Returns:
             Path relevance score
         """
         path = Path(file_path)
         path_parts = [p.lower() for p in path.parts]
         score = 0.0
-        
+
         # Check for keyword matches in path
         for keyword in prompt_context.keywords:
             keyword_lower = keyword.lower()
@@ -505,90 +464,88 @@ class BalancedRankingStrategy(RankingStrategy):
                 if keyword_lower in part:
                     score += 0.3
                     break
-        
+
         # Architecture-relevant paths
         architecture_indicators = {
-            'api': 0.2,
-            'controller': 0.2,
-            'service': 0.2,
-            'model': 0.2,
-            'view': 0.15,
-            'handler': 0.2,
-            'manager': 0.15,
-            'repository': 0.15,
-            'dao': 0.15,
-            'util': 0.1,
-            'helper': 0.1,
-            'config': 0.15,
-            'core': 0.25,
-            'main': 0.25,
-            'index': 0.25,
-            'app': 0.25
+            "api": 0.2,
+            "controller": 0.2,
+            "service": 0.2,
+            "model": 0.2,
+            "view": 0.15,
+            "handler": 0.2,
+            "manager": 0.15,
+            "repository": 0.15,
+            "dao": 0.15,
+            "util": 0.1,
+            "helper": 0.1,
+            "config": 0.15,
+            "core": 0.25,
+            "main": 0.25,
+            "index": 0.25,
+            "app": 0.25,
         }
-        
+
         for indicator, weight in architecture_indicators.items():
             if any(indicator in part for part in path_parts):
                 score += weight
                 break
-        
+
         # Penalize test files unless looking for tests
-        if prompt_context.task_type != 'test':
-            if any('test' in part or 'spec' in part for part in path_parts):
+        if prompt_context.task_type != "test":
+            if any("test" in part or "spec" in part for part in path_parts):
                 score *= 0.5
-        
+
         # Penalize deeply nested files
         depth_penalty = max(0, len(path_parts) - 3) * 0.05
         score -= depth_penalty
-        
+
         return max(0.0, min(1.0, score))
-    
+
     def _calculate_import_centrality(
-        self,
-        file: FileAnalysis,
-        import_graph: Dict[str, Set[str]]
+        self, file: FileAnalysis, import_graph: Dict[str, Set[str]]
     ) -> float:
         """Calculate how central a file is in the import graph.
-        
+
         Args:
             file: File to analyze
             import_graph: Dictionary mapping files to their importers
-            
+
         Returns:
             Import centrality score
         """
         # Count how many files import this file
         file_path = file.path
         importers = import_graph.get(file_path, set())
-        
+
         if not importers:
             return 0.0
-        
+
         # Normalize by total files
         total_files = len(import_graph)
         centrality = len(importers) / max(1, total_files)
-        
+
         # Apply logarithmic scaling for very central files
         if centrality > 0.1:
             centrality = 0.1 + math.log(centrality / 0.1) / 10
-        
+
         return min(1.0, centrality * 2)  # Scale up
-    
+
     def _calculate_git_recency(self, git_info: Dict[str, Any]) -> float:
         """Calculate score based on how recently file was modified.
-        
+
         Args:
             git_info: Git information for the file
-            
+
         Returns:
             Git recency score
         """
-        if not git_info or 'last_modified' not in git_info:
+        if not git_info or "last_modified" not in git_info:
             return 0.5  # Neutral if no git info
-        
+
         try:
-            last_modified = datetime.fromisoformat(git_info['last_modified'])
+            last_modified = datetime.fromisoformat(git_info["last_modified"])
             days_ago = (datetime.now() - last_modified).days
-            
+
             if days_ago <= 1:
                 return 1.0
             elif days_ago <= 7:
@@ -601,24 +558,24 @@ class BalancedRankingStrategy(RankingStrategy):
                 return 0.2
             else:
                 return 0.1
-                
+
         except Exception:
             return 0.5
-    
+
     def _calculate_git_frequency(self, git_info: Dict[str, Any]) -> float:
         """Calculate score based on how frequently file changes.
-        
+
         Args:
             git_info: Git information for the file
-            
+
         Returns:
             Git frequency score
         """
-        if not git_info or 'commit_count' not in git_info:
+        if not git_info or "commit_count" not in git_info:
             return 0.5
-        
-        commit_count = git_info.get('commit_count', 0)
-        
+
+        commit_count = git_info.get("commit_count", 0)
+
         # Logarithmic scaling
         if commit_count == 0:
             return 0.0
@@ -630,28 +587,26 @@ class BalancedRankingStrategy(RankingStrategy):
             return 0.7
         else:
             return min(1.0, 0.7 + math.log(commit_count / 50) / 10)
-    
+
     def _calculate_complexity_relevance(
-        self,
-        complexity: Any,
-        prompt_context: PromptContext
+        self, complexity: Any, prompt_context: PromptContext
     ) -> float:
         """Calculate relevance based on code complexity.
-        
+
         Args:
             complexity: Complexity metrics
             prompt_context: Prompt context
-            
+
         Returns:
             Complexity relevance score
         """
-        if not complexity or not hasattr(complexity, 'cyclomatic'):
+        if not complexity or not hasattr(complexity, "cyclomatic"):
             return 0.5
-        
+
         cyclomatic = complexity.cyclomatic
         task_type = prompt_context.task_type
-        
-        if task_type == 'refactor':
+
+        if task_type == "refactor":
             # High complexity files are very relevant for refactoring
             if cyclomatic > 20:
                 return 1.0
@@ -661,8 +616,8 @@ class BalancedRankingStrategy(RankingStrategy):
                 return 0.6
             else:
                 return 0.3
-                
-        elif task_type == 'debug':
+
+        elif task_type == "debug":
             # Complex files more likely to have bugs
             if cyclomatic > 15:
                 return 0.8
@@ -670,292 +625,277 @@ class BalancedRankingStrategy(RankingStrategy):
                 return 0.6
             else:
                 return 0.4
-                
+
         else:
             # Neutral relevance for other tasks
             return 0.5
-    
-    def _calculate_type_relevance(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext
-    ) -> float:
+
+    def _calculate_type_relevance(self, file: FileAnalysis, prompt_context: PromptContext) -> float:
         """Calculate relevance based on file type and task.
-        
+
         Args:
             file: File to analyze
             prompt_context: Prompt context
-            
+
         Returns:
             Type relevance score
         """
         path_lower = file.path.lower()
         task_type = prompt_context.task_type
-        
+
         # Task-specific relevance
-        if task_type == 'test':
-            if 'test' in path_lower or 'spec' in path_lower:
+        if task_type == "test":
+            if "test" in path_lower or "spec" in path_lower:
                 return 1.0
-            elif any(test_kw in prompt_context.keywords for test_kw in ['test', 'testing', 'spec']):
+            elif any(test_kw in prompt_context.keywords for test_kw in ["test", "testing", "spec"]):
                 return 0.7
             return 0.3
-            
-        elif task_type == 'debug':
-            if any(debug_kw in path_lower for debug_kw in ['error', 'exception', 'log', 'debug']):
+
+        elif task_type == "debug":
+            if any(debug_kw in path_lower for debug_kw in ["error", "exception", "log", "debug"]):
                 return 0.9
             return 0.5
-            
-        elif task_type == 'feature':
-            if 'test' in path_lower:
+
+        elif task_type == "feature":
+            if "test" in path_lower:
                 return 0.3  # Tests less relevant for new features
-            elif any(impl_kw in path_lower for impl_kw in ['impl', 'service', 'handler', 'controller']):
+            elif any(
+                impl_kw in path_lower for impl_kw in ["impl", "service", "handler", "controller"]
+            ):
                 return 0.8
             return 0.6
-            
-        elif task_type == 'refactor':
+
+        elif task_type == "refactor":
             # All non-test files potentially relevant
-            if 'test' not in path_lower:
+            if "test" not in path_lower:
                 return 0.7
             return 0.4
-            
+
         else:
             return 0.5
 
 
 class ThoroughRankingStrategy(RankingStrategy):
     """Thorough deep analysis ranking.
-    
+
     This strategy performs comprehensive analysis including AST parsing,
     semantic similarity (if ML features available), and detailed code
     pattern matching for the most accurate relevance scoring.
     """
-    
+
     def __init__(self):
         """Initialize thorough ranking strategy."""
         self.logger = get_logger(__name__)
         self._ml_model = None
         self._load_ml_model()
-    
+
     def _load_ml_model(self):
         """Load ML model for semantic similarity if available."""
         try:
             from sentence_transformers import SentenceTransformer
-            self._ml_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+            self._ml_model = SentenceTransformer("all-MiniLM-L6-v2")
             self.logger.info("ML model loaded for semantic ranking")
         except ImportError:
             self.logger.debug("ML features not available - install with: pip install tenets[ml]")
-    
+
     def rank_file(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext,
-        corpus_stats: Dict[str, Any]
+        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
     ) -> RankingFactors:
         """Thorough ranking with deep analysis.
-        
+
         Args:
             file: File to rank
             prompt_context: Parsed prompt information
             corpus_stats: Statistics about the entire codebase
-            
+
         Returns:
             RankingFactors with comprehensive scores
         """
         # Start with balanced ranking
         balanced = BalancedRankingStrategy()
         factors = balanced.rank_file(file, prompt_context, corpus_stats)
-        
+
         # Add semantic similarity if ML available
         if self._ml_model and file.content:
             factors.semantic_similarity = self._calculate_semantic_similarity(
-                file.content,
-                prompt_context.text
+                file.content, prompt_context.text
             )
-        
+
         # Deep code pattern analysis
         pattern_scores = self._analyze_code_patterns(file, prompt_context)
         factors.custom_scores.update(pattern_scores)
-        
+
         # AST-based analysis for supported languages
         if file.structure:
             ast_scores = self._analyze_ast_relevance(file, prompt_context)
             factors.custom_scores.update(ast_scores)
-        
+
         # Dependency depth analysis
-        if corpus_stats.get('dependency_tree'):
-            factors.custom_scores['dependency_depth'] = self._calculate_dependency_depth(
-                file,
-                corpus_stats['dependency_tree']
+        if corpus_stats.get("dependency_tree"):
+            factors.custom_scores["dependency_depth"] = self._calculate_dependency_depth(
+                file, corpus_stats["dependency_tree"]
             )
-        
+
         return factors
-    
+
     def get_weights(self) -> Dict[str, float]:
         """Get weights for thorough ranking.
-        
+
         Returns:
             Comprehensive factor weights
         """
         weights = {
-            'keyword_match': 0.15,
-            'tfidf_similarity': 0.10,
-            'semantic_similarity': 0.25,  # High weight if available
-            'path_relevance': 0.10,
-            'import_centrality': 0.10,
-            'git_recency': 0.05,
-            'git_frequency': 0.05,
-            'complexity_relevance': 0.05,
-            'type_relevance': 0.05,
-            'code_patterns': 0.05,
-            'ast_relevance': 0.05,
+            "keyword_match": 0.15,
+            "tfidf_similarity": 0.10,
+            "semantic_similarity": 0.25,  # High weight if available
+            "path_relevance": 0.10,
+            "import_centrality": 0.10,
+            "git_recency": 0.05,
+            "git_frequency": 0.05,
+            "complexity_relevance": 0.05,
+            "type_relevance": 0.05,
+            "code_patterns": 0.05,
+            "ast_relevance": 0.05,
         }
-        
+
         # Adjust weights if ML not available
         if not self._ml_model:
-            weights['semantic_similarity'] = 0.0
-            weights['keyword_match'] = 0.25
-            weights['tfidf_similarity'] = 0.20
-        
+            weights["semantic_similarity"] = 0.0
+            weights["keyword_match"] = 0.25
+            weights["tfidf_similarity"] = 0.20
+
         return weights
-    
-    def _calculate_semantic_similarity(
-        self,
-        file_content: str,
-        prompt_text: str
-    ) -> float:
+
+    def _calculate_semantic_similarity(self, file_content: str, prompt_text: str) -> float:
         """Calculate semantic similarity using ML model.
-        
+
         Args:
             file_content: Content of the file
             prompt_text: Prompt text
-            
+
         Returns:
             Semantic similarity score
         """
         if not self._ml_model:
             return 0.0
-        
+
         try:
             # Truncate content if too long
             max_length = 512  # Model's max sequence length
             if len(file_content) > max_length * 4:
                 # Take beginning and end
-                file_content = file_content[:max_length * 2] + " ... " + file_content[-max_length * 2:]
-            
+                file_content = (
+                    file_content[: max_length * 2] + " ... " + file_content[-max_length * 2 :]
+                )
+
             # Encode texts
             file_embedding = self._ml_model.encode(file_content, convert_to_tensor=True)
             prompt_embedding = self._ml_model.encode(prompt_text, convert_to_tensor=True)
-            
+
             # Calculate cosine similarity
             from torch.nn.functional import cosine_similarity
+
             similarity = cosine_similarity(
-                file_embedding.unsqueeze(0),
-                prompt_embedding.unsqueeze(0)
+                file_embedding.unsqueeze(0), prompt_embedding.unsqueeze(0)
             ).item()
-            
+
             # Scale to 0-1 range (similarity is already -1 to 1, but usually positive)
             return max(0.0, similarity)
-            
+
         except Exception as e:
             self.logger.warning(f"Semantic similarity calculation failed: {e}")
             return 0.0
-    
+
     def _analyze_code_patterns(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext
+        self, file: FileAnalysis, prompt_context: PromptContext
     ) -> Dict[str, float]:
         """Analyze code patterns for relevance.
-        
+
         Args:
             file: File to analyze
             prompt_context: Prompt context
-            
+
         Returns:
             Dictionary of pattern scores
         """
         scores = {}
         content = file.content or ""
-        
+
         # Authentication patterns
-        if any(kw in prompt_context.keywords for kw in ['auth', 'login', 'oauth', 'jwt', 'token']):
+        if any(kw in prompt_context.keywords for kw in ["auth", "login", "oauth", "jwt", "token"]):
             auth_patterns = [
-                r'\bauth[a-z]*\b',
-                r'\blogin\b',
-                r'\blogout\b',
-                r'\btoken\b',
-                r'\bjwt\b',
-                r'\boauth\b',
-                r'\bsession\b',
-                r'\bcredential',
-                r'\bpassword\b',
+                r"\bauth[a-z]*\b",
+                r"\blogin\b",
+                r"\blogout\b",
+                r"\btoken\b",
+                r"\bjwt\b",
+                r"\boauth\b",
+                r"\bsession\b",
+                r"\bcredential",
+                r"\bpassword\b",
             ]
-            
+
             pattern_count = sum(
-                len(re.findall(pattern, content, re.IGNORECASE))
-                for pattern in auth_patterns
+                len(re.findall(pattern, content, re.IGNORECASE)) for pattern in auth_patterns
             )
-            
-            scores['auth_patterns'] = min(1.0, pattern_count / 20)
-        
+
+            scores["auth_patterns"] = min(1.0, pattern_count / 20)
+
         # API patterns
-        if any(kw in prompt_context.keywords for kw in ['api', 'rest', 'endpoint', 'route']):
+        if any(kw in prompt_context.keywords for kw in ["api", "rest", "endpoint", "route"]):
             api_patterns = [
-                r'@(app|router)\.(get|post|put|delete|patch)',
-                r'\bapi[/_]',
-                r'\bendpoint\b',
-                r'\broute[rs]?\b',
+                r"@(app|router)\.(get|post|put|delete|patch)",
+                r"\bapi[/_]",
+                r"\bendpoint\b",
+                r"\broute[rs]?\b",
                 r'(GET|POST|PUT|DELETE|PATCH)\s*[\'"]/',
             ]
-            
+
             pattern_count = sum(
-                len(re.findall(pattern, content, re.IGNORECASE))
-                for pattern in api_patterns
+                len(re.findall(pattern, content, re.IGNORECASE)) for pattern in api_patterns
             )
-            
-            scores['api_patterns'] = min(1.0, pattern_count / 15)
-        
+
+            scores["api_patterns"] = min(1.0, pattern_count / 15)
+
         # Database patterns
-        if any(kw in prompt_context.keywords for kw in ['database', 'db', 'sql', 'query', 'model']):
+        if any(kw in prompt_context.keywords for kw in ["database", "db", "sql", "query", "model"]):
             db_patterns = [
-                r'\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\b',
-                r'\.query\(',
-                r'\.find\(',
-                r'\.save\(',
-                r'\.create\(',
-                r'\bmodel[s]?\b',
-                r'\bschema\b',
-                r'\btable[s]?\b',
+                r"\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)\b",
+                r"\.query\(",
+                r"\.find\(",
+                r"\.save\(",
+                r"\.create\(",
+                r"\bmodel[s]?\b",
+                r"\bschema\b",
+                r"\btable[s]?\b",
             ]
-            
+
             pattern_count = sum(
-                len(re.findall(pattern, content, re.IGNORECASE))
-                for pattern in db_patterns
+                len(re.findall(pattern, content, re.IGNORECASE)) for pattern in db_patterns
             )
-            
-            scores['db_patterns'] = min(1.0, pattern_count / 20)
-        
+
+            scores["db_patterns"] = min(1.0, pattern_count / 20)
+
         return scores
-    
+
     def _analyze_ast_relevance(
-        self,
-        file: FileAnalysis,
-        prompt_context: PromptContext
+        self, file: FileAnalysis, prompt_context: PromptContext
     ) -> Dict[str, float]:
         """Analyze AST structure for relevance.
-        
+
         Args:
             file: File with structure information
             prompt_context: Prompt context
-            
+
         Returns:
             Dictionary of AST-based scores
         """
         scores = {}
-        
+
         if not file.structure:
             return scores
-        
+
         # Analyze class relevance
         if file.structure.classes:
             class_relevance = 0.0
@@ -964,9 +904,9 @@ class ThoroughRankingStrategy(RankingStrategy):
                     if keyword.lower() in cls.name.lower():
                         class_relevance += 0.5
                         break
-            
-            scores['class_relevance'] = min(1.0, class_relevance)
-        
+
+            scores["class_relevance"] = min(1.0, class_relevance)
+
         # Analyze function relevance
         if file.structure.functions:
             function_relevance = 0.0
@@ -975,38 +915,37 @@ class ThoroughRankingStrategy(RankingStrategy):
                     if keyword.lower() in func.name.lower():
                         function_relevance += 0.3
                         break
-            
-            scores['function_relevance'] = min(1.0, function_relevance)
-        
+
+            scores["function_relevance"] = min(1.0, function_relevance)
+
         # Analyze complexity distribution
         if file.structure.functions:
             complex_functions = sum(
-                1 for func in file.structure.functions
-                if hasattr(func, 'complexity') and func.complexity > 10
+                1
+                for func in file.structure.functions
+                if hasattr(func, "complexity") and func.complexity > 10
             )
-            
-            if prompt_context.task_type == 'refactor':
-                scores['complexity_distribution'] = min(1.0, complex_functions / 5)
-        
+
+            if prompt_context.task_type == "refactor":
+                scores["complexity_distribution"] = min(1.0, complex_functions / 5)
+
         return scores
-    
+
     def _calculate_dependency_depth(
-        self,
-        file: FileAnalysis,
-        dependency_tree: Dict[str, Any]
+        self, file: FileAnalysis, dependency_tree: Dict[str, Any]
     ) -> float:
         """Calculate file's depth in dependency tree.
-        
+
         Args:
             file: File to analyze
             dependency_tree: Project dependency tree
-            
+
         Returns:
             Dependency depth score
         """
         # Files at the root of dependency tree are often more important
-        depth = dependency_tree.get(file.path, {}).get('depth', -1)
-        
+        depth = dependency_tree.get(file.path, {}).get("depth", -1)
+
         if depth == -1:
             return 0.5  # Unknown
         elif depth == 0:
@@ -1023,10 +962,10 @@ class ThoroughRankingStrategy(RankingStrategy):
 
 class RelevanceRanker:
     """Main relevance ranking system.
-    
+
     Orchestrates the ranking process, managing different strategies and
     coordinating the analysis of files to produce ranked results.
-    
+
     Attributes:
         config: TenetsConfig instance
         logger: Logger instance
@@ -1034,88 +973,82 @@ class RelevanceRanker:
         _corpus_analyzer: Analyzer for corpus-wide statistics
         _custom_rankers: List of custom ranking functions
     """
-    
+
     def __init__(self, config: TenetsConfig):
         """Initialize the relevance ranker.
-        
+
         Args:
             config: Tenets configuration
         """
         self.config = config
         self.logger = get_logger(__name__)
-        
+
         # Initialize ranking strategies
         self.strategies = {
             RankingAlgorithm.FAST: FastRankingStrategy(),
             RankingAlgorithm.BALANCED: BalancedRankingStrategy(),
             RankingAlgorithm.THOROUGH: ThoroughRankingStrategy(),
         }
-        
+
         # Custom rankers
         self._custom_rankers = []
-        
+
         # Thread pool for parallel ranking
-        self._executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=config.ranking.workers
-        )
-        
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=config.ranking.workers)
+
         self.logger.info(f"RelevanceRanker initialized with {len(self.strategies)} strategies")
-    
+
     def rank_files(
         self,
         files: List[FileAnalysis],
         prompt_context: PromptContext,
         algorithm: str = "balanced",
-        parallel: bool = True
+        parallel: bool = True,
     ) -> List[FileAnalysis]:
         """Rank files by relevance to prompt.
-        
+
         This is the main entry point for ranking files. It analyzes the corpus,
         applies the selected ranking strategy, and returns files sorted by
         relevance.
-        
+
         Args:
             files: List of files to rank
             prompt_context: Parsed prompt information
             algorithm: Ranking algorithm to use
             parallel: Whether to rank files in parallel
-            
+
         Returns:
             List of FileAnalysis objects sorted by relevance (highest first)
-            
+
         Raises:
             ValueError: If algorithm is not recognized
         """
         if not files:
             return []
-        
+
         self.logger.info(f"Ranking {len(files)} files using {algorithm} algorithm")
-        
+
         # Get strategy
         strategy = self._get_strategy(algorithm)
         if not strategy:
             raise ValueError(f"Unknown ranking algorithm: {algorithm}")
-        
+
         # Analyze corpus for statistics
         corpus_stats = self._analyze_corpus(files)
-        
+
         # Rank files
         ranked_files = []
-        
+
         if parallel and len(files) > 10:
             # Parallel ranking for large sets
             futures = []
-            
+
             for file in files:
                 future = self._executor.submit(
-                    self._rank_single_file,
-                    file,
-                    prompt_context,
-                    corpus_stats,
-                    strategy
+                    self._rank_single_file, file, prompt_context, corpus_stats, strategy
                 )
                 futures.append((file, future))
-            
+
             # Collect results
             for file, future in futures:
                 try:
@@ -1124,56 +1057,50 @@ class RelevanceRanker:
                 except Exception as e:
                     self.logger.warning(f"Failed to rank {file.path}: {e}")
                     # Add with zero score
-                    ranked_files.append(RankedFile(
-                        analysis=file,
-                        score=0.0,
-                        factors=RankingFactors(),
-                        explanation=f"Ranking failed: {str(e)}"
-                    ))
+                    ranked_files.append(
+                        RankedFile(
+                            analysis=file,
+                            score=0.0,
+                            factors=RankingFactors(),
+                            explanation=f"Ranking failed: {str(e)}",
+                        )
+                    )
         else:
             # Sequential ranking
             for file in files:
-                ranked_file = self._rank_single_file(
-                    file,
-                    prompt_context,
-                    corpus_stats,
-                    strategy
-                )
+                ranked_file = self._rank_single_file(file, prompt_context, corpus_stats, strategy)
                 ranked_files.append(ranked_file)
-        
+
         # Apply custom rankers
         for custom_ranker in self._custom_rankers:
             ranked_files = custom_ranker(ranked_files, prompt_context)
-        
+
         # Sort by score
         ranked_files.sort(reverse=True)
-        
+
         # Filter by threshold
         threshold = self.config.ranking.threshold
-        filtered_files = [
-            rf.analysis for rf in ranked_files
-            if rf.score >= threshold
-        ]
-        
+        filtered_files = [rf.analysis for rf in ranked_files if rf.score >= threshold]
+
         # Update relevance scores in FileAnalysis objects
         for i, rf in enumerate(ranked_files):
             if rf.score >= threshold:
                 rf.analysis.relevance_score = rf.score
                 rf.analysis.relevance_rank = i + 1
-        
+
         self.logger.info(
             f"Ranking complete: {len(filtered_files)}/{len(files)} files "
             f"above threshold ({threshold})"
         )
-        
+
         return filtered_files
-    
+
     def _get_strategy(self, algorithm: str) -> Optional[RankingStrategy]:
         """Get ranking strategy by name.
-        
+
         Args:
             algorithm: Algorithm name
-            
+
         Returns:
             RankingStrategy instance or None
         """
@@ -1183,182 +1110,171 @@ class RelevanceRanker:
             return self.strategies.get(algo_enum)
         except ValueError:
             pass
-        
+
         # Try direct lookup
         for key, strategy in self.strategies.items():
             if key.value == algorithm:
                 return strategy
-        
+
         return None
-    
+
     def _rank_single_file(
         self,
         file: FileAnalysis,
         prompt_context: PromptContext,
         corpus_stats: Dict[str, Any],
-        strategy: RankingStrategy
+        strategy: RankingStrategy,
     ) -> RankedFile:
         """Rank a single file.
-        
+
         Args:
             file: File to rank
             prompt_context: Prompt context
             corpus_stats: Corpus statistics
             strategy: Ranking strategy to use
-            
+
         Returns:
             RankedFile with score and factors
         """
         # Calculate ranking factors
         factors = strategy.rank_file(file, prompt_context, corpus_stats)
-        
+
         # Get weights
         weights = strategy.get_weights()
-        
+
         # Calculate final score
         score = factors.get_weighted_score(weights)
-        
+
         # Generate explanation
         explanation = self._generate_explanation(factors, weights)
-        
-        return RankedFile(
-            analysis=file,
-            score=score,
-            factors=factors,
-            explanation=explanation
-        )
-    
+
+        return RankedFile(analysis=file, score=score, factors=factors, explanation=explanation)
+
     def _analyze_corpus(self, files: List[FileAnalysis]) -> Dict[str, Any]:
         """Analyze the corpus of files for statistics.
-        
+
         Args:
             files: All files in the corpus
-            
+
         Returns:
             Dictionary of corpus-wide statistics
         """
         stats = {
-            'total_files': len(files),
-            'languages': Counter(),
-            'file_sizes': [],
-            'import_graph': defaultdict(set),
-            'dependency_tree': {},
+            "total_files": len(files),
+            "languages": Counter(),
+            "file_sizes": [],
+            "import_graph": defaultdict(set),
+            "dependency_tree": {},
         }
-        
+
         # Analyze each file
         for file in files:
             # Language distribution
-            stats['languages'][file.language] += 1
-            
+            stats["languages"][file.language] += 1
+
             # File sizes
-            stats['file_sizes'].append(file.size)
-            
+            stats["file_sizes"].append(file.size)
+
             # Build import graph
             for imp in file.imports:
-                if hasattr(imp, 'module'):
+                if hasattr(imp, "module"):
                     # Try to resolve import to file
                     imported_file = self._resolve_import(imp.module, file.path, files)
                     if imported_file:
-                        stats['import_graph'][imported_file].add(file.path)
-        
+                        stats["import_graph"][imported_file].add(file.path)
+
         # Calculate additional statistics
-        stats['avg_file_size'] = sum(stats['file_sizes']) / len(stats['file_sizes']) if stats['file_sizes'] else 0
-        stats['total_imports'] = sum(len(importers) for importers in stats['import_graph'].values())
-        
+        stats["avg_file_size"] = (
+            sum(stats["file_sizes"]) / len(stats["file_sizes"]) if stats["file_sizes"] else 0
+        )
+        stats["total_imports"] = sum(len(importers) for importers in stats["import_graph"].values())
+
         return stats
-    
+
     def _resolve_import(
-        self,
-        module_name: str,
-        from_file: str,
-        all_files: List[FileAnalysis]
+        self, module_name: str, from_file: str, all_files: List[FileAnalysis]
     ) -> Optional[str]:
         """Resolve an import to a file path.
-        
+
         Args:
             module_name: Name of imported module
             from_file: File doing the importing
             all_files: All files in the project
-            
+
         Returns:
             Resolved file path or None
         """
         # Simple resolution - would be enhanced for real use
         # Look for file with matching name
-        module_parts = module_name.split('.')
-        
+        module_parts = module_name.split(".")
+
         for file in all_files:
             file_path = Path(file.path)
             file_stem = file_path.stem
-            
+
             # Check if file name matches module
             if file_stem == module_parts[-1]:
                 return file.path
-            
+
             # Check if path contains module structure
             if all(part in str(file_path) for part in module_parts):
                 return file.path
-        
+
         return None
-    
-    def _generate_explanation(
-        self,
-        factors: RankingFactors,
-        weights: Dict[str, float]
-    ) -> str:
+
+    def _generate_explanation(self, factors: RankingFactors, weights: Dict[str, float]) -> str:
         """Generate human-readable explanation of ranking.
-        
+
         Args:
             factors: Ranking factors
             weights: Factor weights
-            
+
         Returns:
             Explanation string
         """
         explanations = []
-        
+
         # Sort factors by contribution to score
         factor_contributions = []
-        
+
         for factor_name, weight in weights.items():
             if hasattr(factors, factor_name):
                 value = getattr(factors, factor_name)
                 contribution = value * weight
                 if contribution > 0.01:  # Only include significant factors
                     factor_contributions.append((factor_name, value, contribution))
-        
+
         factor_contributions.sort(key=lambda x: x[2], reverse=True)
-        
+
         # Generate explanations for top factors
         for factor_name, value, contribution in factor_contributions[:3]:
-            if factor_name == 'keyword_match':
+            if factor_name == "keyword_match":
                 explanations.append(f"Strong keyword match ({value:.2f})")
-            elif factor_name == 'semantic_similarity':
+            elif factor_name == "semantic_similarity":
                 explanations.append(f"High semantic similarity ({value:.2f})")
-            elif factor_name == 'import_centrality':
+            elif factor_name == "import_centrality":
                 explanations.append(f"Central to import graph ({value:.2f})")
-            elif factor_name == 'git_recency':
+            elif factor_name == "git_recency":
                 explanations.append(f"Recently modified ({value:.2f})")
-            elif factor_name == 'path_relevance':
+            elif factor_name == "path_relevance":
                 explanations.append(f"Relevant path structure ({value:.2f})")
-        
+
         return "; ".join(explanations) if explanations else "Low relevance"
-    
+
     def register_custom_ranker(
-        self,
-        ranker_func: Callable[[List[RankedFile], PromptContext], List[RankedFile]]
+        self, ranker_func: Callable[[List[RankedFile], PromptContext], List[RankedFile]]
     ):
         """Register a custom ranking function.
-        
+
         Custom rankers are applied after the main ranking strategy and can
         adjust scores based on project-specific logic.
-        
+
         Args:
             ranker_func: Function that takes ranked files and returns modified list
         """
         self._custom_rankers.append(ranker_func)
         self.logger.info(f"Registered custom ranker: {ranker_func.__name__}")
-    
+
     def shutdown(self):
         """Shutdown the ranker and clean up resources."""
         self._executor.shutdown(wait=True)

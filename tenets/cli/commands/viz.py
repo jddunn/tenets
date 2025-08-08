@@ -12,17 +12,16 @@ from tenets import Tenets
 console = Console()
 
 # Create viz subcommand app
-viz_app = typer.Typer(
-    help="Visualize codebase insights",
-    no_args_is_help=True
-)
+viz_app = typer.Typer(help="Visualize codebase insights", no_args_is_help=True)
 
 
 @viz_app.command("deps")
 def viz_deps(
     path: Path = typer.Argument(Path("."), help="Path to analyze"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file"),
-    format: str = typer.Option("auto", "--format", "-f", help="Output format: svg, png, ascii, html"),
+    format: str = typer.Option(
+        "auto", "--format", "-f", help="Output format: svg, png, ascii, html"
+    ),
     cluster_by: Optional[str] = typer.Option(None, "--cluster-by", help="Cluster by: directory"),
     max_nodes: int = typer.Option(100, "--max-nodes", help="Maximum nodes to display"),
 ):

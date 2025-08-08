@@ -3,6 +3,7 @@
 Centralized reference for model pricing and token limits. Values are
 best-effort and can be overridden at runtime.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -123,13 +124,15 @@ def list_supported_models() -> List[DictType[str, object]]:
     out: List[DictType[str, object]] = []
     for name, pricing in _PRICING.items():
         limits = _LIMITS.get(name, get_model_limits(None))
-        out.append({
-            "name": name,
-            "provider": _infer_provider(name),
-            "context_tokens": limits.max_context,
-            "input_price": pricing.input_per_1k,
-            "output_price": pricing.output_per_1k,
-        })
+        out.append(
+            {
+                "name": name,
+                "provider": _infer_provider(name),
+                "context_tokens": limits.max_context,
+                "input_price": pricing.input_per_1k,
+                "output_price": pricing.output_per_1k,
+            }
+        )
     # Sort by provider then name
     out.sort(key=lambda m: (m["provider"], m["name"]))
     return out

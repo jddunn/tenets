@@ -19,22 +19,26 @@ console = Console()
 def chronicle(
     path: Path = typer.Option(
         Path("."),
-        "--path", "-p",
+        "--path",
+        "-p",
         help="Repository path",
     ),
     since: Optional[str] = typer.Option(
         None,
-        "--since", "-s",
+        "--since",
+        "-s",
         help="Time period (e.g., '2 weeks', '30 days') [not strictly enforced]",
     ),
     author: Optional[str] = typer.Option(
         None,
-        "--author", "-a",
+        "--author",
+        "-a",
         help="Filter by author name/email",
     ),
     limit: int = typer.Option(
         50,
-        "--limit", "-n",
+        "--limit",
+        "-n",
         help="Maximum commits to display",
     ),
     ctx: typer.Context = typer.Context,
@@ -54,25 +58,36 @@ def chronicle(
             raise typer.Exit(1)
 
         # Fetch recent commits
-        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console, transient=True) as progress:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+            transient=True,
+        ) as progress:
             progress.add_task("Reading git history...", total=None)
             commits = ga.recent_commits(limit=limit)
 
         # Filter by author if requested
         if author:
             needle = author.lower()
-            commits = [c for c in commits if needle in (c.author or "").lower() or needle in (c.email or "").lower()]
+            commits = [
+                c
+                for c in commits
+                if needle in (c.author or "").lower() or needle in (c.email or "").lower()
+            ]
 
         if not commits:
             console.print("[yellow]No commits found.[/yellow]")
             return
 
         if not quiet:
-            console.print(Panel(
-                f"[bold]Recent Commits[/bold]\nRepo: {Path(path).resolve()}",
-                title="🕘 Chronicle",
-                border_style="blue",
-            ))
+            console.print(
+                Panel(
+                    f"[bold]Recent Commits[/bold]\nRepo: {Path(path).resolve()}",
+                    title="🕘 Chronicle",
+                    border_style="blue",
+                )
+            )
 
         table = Table()
         table.add_column("SHA", style="cyan")
@@ -83,7 +98,11 @@ def chronicle(
         from datetime import datetime
 
         for c in commits:
-            date_str = datetime.fromtimestamp(c.committed_date).strftime("%Y-%m-%d") if c.committed_date else ""
+            date_str = (
+                datetime.fromtimestamp(c.committed_date).strftime("%Y-%m-%d")
+                if c.committed_date
+                else ""
+            )
             table.add_row(c.hexsha[:7], f"{c.author}", c.message.splitlines()[0][:80], date_str)
 
         console.print(table)

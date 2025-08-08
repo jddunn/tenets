@@ -2,6 +2,7 @@
 
 Provides helpers to extract recent context, changed files, and authorship.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -63,12 +64,16 @@ class GitAnalyzer:
         except Exception:
             return []
 
-    def recent_commits(self, limit: int = 50, paths: Optional[List[Path]] = None) -> List[CommitInfo]:
+    def recent_commits(
+        self, limit: int = 50, paths: Optional[List[Path]] = None
+    ) -> List[CommitInfo]:
         if not self.repo:
             return []
         commits = []
         try:
-            iter_commits = self.repo.iter_commits(paths=[str(p) for p in paths] if paths else None, max_count=limit)
+            iter_commits = self.repo.iter_commits(
+                paths=[str(p) for p in paths] if paths else None, max_count=limit
+            )
             for c in iter_commits:
                 commits.append(
                     CommitInfo(

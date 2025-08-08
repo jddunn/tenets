@@ -17,9 +17,9 @@ def test_config():
         config.cache.directory = tmpdir
         config.max_tenets_per_context = 5
         config.tenet_injection_config = {
-            'min_distance_between': 500,
-            'prefer_natural_breaks': True,
-            'reinforce_at_end': True
+            "min_distance_between": 500,
+            "prefer_natural_breaks": True,
+            "reinforce_at_end": True,
         }
         yield config
 
@@ -31,27 +31,27 @@ def basic_tenets():
         Tenet(
             content="Always validate user input",
             priority=Priority.CRITICAL,
-            category=TenetCategory.SECURITY
+            category=TenetCategory.SECURITY,
         ),
         Tenet(
             content="Use descriptive variable names",
             priority=Priority.HIGH,
-            category=TenetCategory.STYLE
+            category=TenetCategory.STYLE,
         ),
         Tenet(
             content="Add unit tests for new functions",
             priority=Priority.HIGH,
-            category=TenetCategory.TESTING
+            category=TenetCategory.TESTING,
         ),
         Tenet(
             content="Document complex logic",
             priority=Priority.MEDIUM,
-            category=TenetCategory.DOCUMENTATION
+            category=TenetCategory.DOCUMENTATION,
         ),
         Tenet(
             content="Optimize only when necessary",
             priority=Priority.LOW,
-            category=TenetCategory.PERFORMANCE
+            category=TenetCategory.PERFORMANCE,
         ),
     ]
 
@@ -129,14 +129,14 @@ class UserService:
 def mock_context_result():
     """Create a mock ContextResult for testing."""
     from tenets.models.context import ContextResult
-    
+
     return ContextResult(
         files=["api.py", "models.py", "tests/test_api.py"],
         context="# API Implementation\n\nMain API code here.",
         format="markdown",
         metadata={
-            'total_tokens': 500,
-            'session': 'test-session',
-            'timestamp': '2024-01-01T00:00:00'
-        }
+            "total_tokens": 500,
+            "session": "test-session",
+            "timestamp": "2024-01-01T00:00:00",
+        },
     )

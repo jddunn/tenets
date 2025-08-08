@@ -11,7 +11,7 @@ from tenets.core.instiller.instiller import Instiller, InstillationResult
 
 __all__ = [
     "TenetManager",
-    "TenetInjector", 
+    "TenetInjector",
     "InjectionPosition",
     "Instiller",
     "InstillationResult",

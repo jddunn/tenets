@@ -7,6 +7,7 @@ an in-memory mirror for fast access.
 This layer is intentionally thin: persistent semantics live in
 ``tenets.storage.session_db.SessionDB``.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -21,6 +22,7 @@ from tenets.utils.logger import get_logger
 @dataclass
 class SessionManager:
     """High-level session manager used by the CLI and core flows."""
+
     sessions: Dict[str, SessionContext] = field(default_factory=dict)
     _db: Optional[SessionDB] = field(default=None, init=False, repr=False)
     _logger: any = field(default=None, init=False, repr=False)
@@ -88,6 +90,9 @@ class SessionManager:
             try:
                 # Persist a JSON snapshot of the ContextResult
                 import json
-                self._db.add_context(name, kind="context_result", content=json.dumps(context.to_dict()))
+
+                self._db.add_context(
+                    name, kind="context_result", content=json.dumps(context.to_dict())
+                )
             except Exception as e:
                 self._logger.debug(f"SessionDB add_context failed for {name}: {e}")

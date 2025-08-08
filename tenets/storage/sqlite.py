@@ -10,6 +10,7 @@ write inside the installed package directory. When Tenets is installed
 via pip, the package location may be read-only; the cache directory will
 be user- or project-local and writable.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ class SQLitePaths:
         root: The cache directory root where DB files live.
         main_db: Path to the main Tenets database file.
     """
+
     root: Path
     main_db: Path
 

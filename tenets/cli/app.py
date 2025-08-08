@@ -73,7 +73,7 @@ def main_callback(
 ):
     """
     Tenets - Context that feeds your prompts.
-    
+
     Distill relevant context from your codebase and instill guiding principles
     to maintain consistency across AI interactions.
     """
@@ -81,13 +81,15 @@ def main_callback(
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
     ctx.obj["quiet"] = quiet
-    
+
     # Set up logging based on verbosity
     if verbose:
         import logging
+
         logging.basicConfig(level=logging.DEBUG)
     elif quiet:
         import logging
+
         logging.basicConfig(level=logging.ERROR)
 
 
