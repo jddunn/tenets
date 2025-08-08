@@ -9,9 +9,11 @@ import typer
 from rich import print
 from rich.console import Console
 from rich.syntax import Syntax
+from rich.panel import Panel
 
 from tenets.config import TenetsConfig
 from tenets.models.llm import SUPPORTED_MODELS
+from tenets.storage.cache import CacheManager
 
 console = Console()
 
@@ -180,6 +182,64 @@ def config_set(
     """
     console.print(f"[yellow]Config set command - coming soon![/yellow]")
     console.print(f"Would set: {key} = {value}")
+
+
+@config_app.command("clear-cache")
+def config_clear_cache(confirm: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation")):
+    """Wipe all Tenets caches (analysis + general)."""
+    if not confirm:
+        typer.confirm("This will delete all cached analysis. Continue?", abort=True)
+    cfg = TenetsConfig()
+    mgr = CacheManager(cfg)
+    mgr.clear_all()
+    console.print("[red]Cache cleared.[/red]")
+
+
+@config_app.command("cleanup-cache")
+def config_cleanup_cache():
+    """Cleanup old / oversized cache entries respecting TTL and size policies."""
+    cfg = TenetsConfig()
+    mgr = CacheManager(cfg)
+    stats = mgr.analysis.disk.cleanup(
+        max_age_days=cfg.cache.ttl_days, max_size_mb=cfg.cache.max_size_mb // 2
+    )
+    stats_general = mgr.general.cleanup(
+        max_age_days=cfg.cache.ttl_days, max_size_mb=cfg.cache.max_size_mb // 2
+    )
+    console.print(
+        Panel(
+            f"Analysis deletions: {stats}\nGeneral deletions: {stats_general}",
+            title="Cache Cleanup",
+            border_style="yellow",
+        )
+    )
+
+
+@config_app.command("cache-stats")
+def config_cache_stats():
+    """Show basic cache directory info."""
+    cfg = TenetsConfig()
+    cache_dir = Path(cfg.cache.directory or (Path.home() / ".tenets" / "cache"))
+    if not cache_dir.exists():
+        console.print("[dim]Cache directory does not exist.[/dim]")
+        return
+    total_size = 0
+    file_count = 0
+    for p in cache_dir.rglob("*"):
+        if p.is_file():
+            file_count += 1
+            try:
+                total_size += p.stat().st_size
+            except Exception:
+                pass
+    mb = total_size / (1024 * 1024)
+    console.print(
+        Panel(
+            f"Path: {cache_dir}\nFiles: {file_count}\nSize: {mb:.2f} MB\nTTL days: {cfg.cache.ttl_days}\nMax size MB: {cfg.cache.max_size_mb}",
+            title="Cache Stats",
+            border_style="cyan",
+        )
+    )
 
 
 def _show_model_info():

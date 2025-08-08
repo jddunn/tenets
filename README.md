@@ -1,4 +1,6 @@
-# ![tenets](./docs/logos/tenets_dark_icon.png) **tenets**
+# **tenets**
+
+<a href="https://tenets.dev"><img src="./docs/logos/tenets_dark_icon.png" alt="tenets logo" width="140" /></a>
 
 **context that feeds your prompts.**
 
@@ -31,8 +33,9 @@ Plus powerful development intelligence:
 # Instead of manually finding and copying files...
 tenets distill "implement OAuth2" ./src
 
-# It automatically finds auth.py, user.py, config.yaml, recent commits, 
-# related tests, dependency files - everything you actually need
+# It automatically finds auth.py, user.py, config.yaml,
+# related tests, dependency files — everything you actually need.
+# (Git activity is used for relevance only; not shown in the output.)
 ```
 
 ## Why tenets?
@@ -59,8 +62,8 @@ $ cat payment.py api.py models.py  # Did I miss anything?
 
 # With tenets: Automatic context building
 $ tenets distill "fix payment processing bug"
-# Finds: payment.py, api endpoints, models, recent payment commits,
-# config files, tests, error handlers - ranked by relevance
+# Finds: payment.py, API endpoints, models, config files, tests, error handlers
+# (recent changes inform ranking) — all ranked by relevance
 ```
 
 ## Key Features
@@ -70,16 +73,19 @@ $ tenets distill "fix payment processing bug"
 Like repomix on steroids - smart filters, automatic relevance ranking, and configurable aggregation:
 
 ```bash
-# Distill by file types
-tenets distill "review API" --include "*.py,*.js" --exclude "test_*"
+# Distill by file types (include only Python & JS; exclude tests)
+tenets distill "review API" --include "*.py,*.js" --exclude "test_*" --stats
 
-# Smart aggregation with summaries
-tenets distill "understand auth flow" --max-tokens 50000
+# Smart aggregation with larger budget
+tenets distill "understand auth flow" --max-tokens 50000 --mode balanced --stats
 
 # Session-based for iterative work
+# 1) Start a named session
 tenets session start "new-feature"
-tenets distill "design database schema"  # Full context
-tenets distill "add user model"          # Incremental updates
+# 2) Build broad context
+tenets distill "design database schema" --session new-feature --stats
+# 3) Narrow follow-up
+tenets distill "add user model" --session new-feature --stats
 ```
 
 ### 🧭 Guiding Principles (Tenets)
@@ -87,15 +93,16 @@ tenets distill "add user model"          # Incremental updates
 Add persistent instructions that guide AI interactions:
 
 ```bash
-# Add guiding principles
+# Add guiding principles (tenets)
 tenets tenet add "Always use type hints in Python"
 tenets tenet add "Follow RESTful conventions"
 tenets tenet add "Include error handling"
 
-# Instill them into your context
-tenets instill  # Applies all pending tenets
+# Apply all pending tenets to future contexts
+tenets instill
 
-# They'll be strategically injected to maintain context
+# Generate context with your tenets active
+tenets distill "implement OAuth2" --stats
 ```
 
 ### 📊 Code Intelligence & Visualization
@@ -109,7 +116,7 @@ tenets viz deps . --output architecture.svg
 # Complexity analysis
 tenets viz complexity . --hotspots
 
-# Git integration - automatic, no setup
+# Git integration - automatic, no setup (used for relevance, not shown in output)
 tenets chronicle --since "last week"
 tenets viz contributors --active
 ```
@@ -137,7 +144,7 @@ Works instantly with smart defaults, fully configurable when needed:
 # .tenets.yml (optional)
 context:
   ranking: balanced  # fast, balanced, thorough
-  include_git: true  # Add git context automatically
+  include_git: true  # Use git signals for relevance (not shown in output)
   max_tokens: 100000
 
 ignore:
@@ -226,14 +233,14 @@ poetry install -E light
 ### Basic Context Building
 
 ```bash
-# For debugging - finds error handling, logs, recent changes
-tenets distill "users getting 401 errors"
+# For debugging - finds error handling, logs, and recent changes (used for ranking)
+tenets distill "users getting 401 errors" --stats
 
 # For new features - finds related code, patterns, examples
-tenets distill "add caching layer"
+tenets distill "add caching layer" --stats
 
-# For code review - includes recent changes, tests, dependencies
-tenets distill "review payment refactor" --since yesterday
+# For code review - includes recent changes in ranking, tests, dependencies
+tenets distill "review payment refactor" --since yesterday --stats
 ```
 
 ### Working with AI Assistants
@@ -246,7 +253,8 @@ tenets distill "explain authentication flow" > context.md
 # Add guiding principles
 tenets tenet add "Always validate user input"
 tenets tenet add "Use async/await for I/O operations"
-tenets instill  # Apply to future contexts
+# Apply to future contexts
+tenets instill
 
 # Interactive session for back-and-forth
 tenets session start "debug-memory-leak"
@@ -279,7 +287,7 @@ tenets examine . --complexity --threshold 10
 3. **Ranks** files using multi-factor scoring:
    - Keyword matching (TF-IDF with `light` extra)
    - Import relationships
-   - Git activity and recency
+   - Git activity and recency (used for relevance; not shown in output)
    - Code complexity
    - Path relevance
    - Semantic similarity (with `ml` extra)
@@ -351,7 +359,8 @@ tenets tenet list
 # Apply them to your context
 tenets instill
 
-# They'll be strategically repeated to combat context drift
+# Use them in a distillation
+tenets distill "implement OAuth2 with Google" --stats
 ```
 
 ## What Makes tenets Different
@@ -372,8 +381,8 @@ tenets instill
 
 ```bash
 tenets distill "users can't login after deploy" --since "last-deploy"
-# Automatically includes: auth code, recent auth changes, config changes,
-# deployment files, related error handlers, and who changed what
+# Automatically includes: auth code, config changes, deployment files,
+# related error handlers (recent changes inform ranking)
 ```
 
 ### 🏗️ Building New Features
@@ -388,7 +397,7 @@ tenets distill "add PDF export" --examples
 
 ```bash
 tenets distill "how does the payment system work?" --visualize
-# Includes: payment files, dependencies graph, database models,
+# Includes: payment files, dependency graph, database models,
 # API endpoints, configuration, with visual architecture diagram
 ```
 
@@ -401,6 +410,7 @@ tenets session start "implement-oauth"
 # Add coding principles
 tenets tenet add "Use existing auth patterns"
 tenets tenet add "Include comprehensive error handling"
+# Apply them
 tenets instill
 
 # Initial context
@@ -408,7 +418,7 @@ tenets distill "implement OAuth2 with Google" > context.md
 
 # As you work, update context
 tenets session add "auth.py" "oauth_config.py"
-tenets distill "add refresh token handling" > context_update.md
+tenets distill "add refresh token handling" --session implement-oauth > context_update.md
 ```
 
 ## Command Reference
@@ -477,15 +487,16 @@ tenets viz contributors [path] [options]
 
 ## 📚 Documentation
 
-- **[Getting Started](docs/getting-started.md)** - Installation and basic usage
-- **[CLI Reference](docs/cli-reference.md)** - Complete command documentation
-- **[Configuration](docs/configuration.md)** - Configuration options
-- **[API Documentation](docs/api.md)** - Python API reference
-- **[Architecture Overview](docs/architecture.md)** - System design and components
-- **[Deep Dive](docs/deep-dive.md)** - Advanced topics and internals
-- **[Contributing](CONTRIBUTING.md)** - How to contribute to tenets
-- **[Development Guide](docs/development.md)** - Setting up for development
-- **[Deployment Guide](docs/deployment.md)** - Release and deployment procedures
+Core docs in `docs/`:
+
+- [CLI Reference](docs/CLI.md)
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [Deep Dive](docs/DEEP-DIVE.md)
+- [Development Guide](docs/DEVELOPMENT.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Testing Guide](docs/TESTING.md)
+
+(Additional guides like configuration or API references will be added as they are published.)
 
 ## Contributing
 

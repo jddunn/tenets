@@ -459,6 +459,43 @@ tenets session find <session-name> <pattern> [options]
 - `--context, -c`: Lines of context around matches
 - `--lang, -l`: Filter by language
 
+## Session Management
+
+```
+# Create or ensure session exists
+tenets session create feature-x
+
+# List sessions
+tenets session list
+
+# Show details
+tenets session show feature-x
+
+# Attach a generated context artifact
+tenets session add feature-x context_result context.json
+
+# Reset (delete & recreate) a session with all context
+tenets session reset feature-x
+
+# Delete session but keep context artifacts
+tenets session delete feature-x --keep-context
+```
+
+## Cache Management
+
+```
+# Show cache stats (path, file count, size)
+tenets config cache-stats
+
+# Cleanup old/oversized entries respecting TTL
+tenets config cleanup-cache
+
+# Clear ALL caches (analysis + general) – destructive
+tenets config clear-cache --yes
+```
+
+Git data is used strictly for ranking relevance unless explicitly requested via commands like `chronicle` or `viz contributors`; it is not embedded in `distill` output.
+
 ## Configuration
 
 ### config set
