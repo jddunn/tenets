@@ -12,3 +12,9 @@ warnings.warn(
     stacklevel=2,
 )
 from tenets.core.ranking.ranker import *  # noqa: F401,F403
+from tenets.core.ranking.ranker.ranker import (
+    RankingAlgorithm,  # noqa: F401
+    RankingFactors,  # noqa: F401
+    RankedFile,  # noqa: F401
+    RelevanceRanker,  # noqa: F401
+)

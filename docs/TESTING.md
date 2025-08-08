@@ -3,25 +3,41 @@
 ## Quick Start
 
 ```bash
-# Install test dependencies
-pip install -e ".[test]"
+# One-liner (editable install + test deps + coverage helpers)
+pip install -e '.[test]' pytest pytest-cov
 
-# Run all tests
-pytest
+# Run all tests (quiet)
+pytest -q
 
-# Run with coverage
-pytest --cov=tenets --cov-report=term-missing
+# Run with coverage + fail if below threshold (adjust as policy evolves)
+pytest --cov=tenets --cov-report=term-missing --cov-fail-under=80
 
-# Run specific test file
-pytest tests/core/analysis/test_analyzer.py -v
+# Generate XML (CI) + HTML
+pytest --cov=tenets --cov-report=xml --cov-report=html
 
-# Run tests in parallel
+# Open HTML (macOS/Linux)
+open htmlcov/index.html || xdg-open htmlcov/index.html || true
+
+# Specific test file / test
+pytest tests/core/analysis/test_analyzer.py::test_basic_python_analysis -q
+
+# Pattern match
+pytest -k analyzer -q
+
+# Parallel (if pytest-xdist installed)
 pytest -n auto
+```
+
+Optional feature extras (install before running related tests):
+```bash
+pip install -e '.[light]'   # TF-IDF / YAKE ranking tests
+pip install -e '.[viz]'     # Visualization tests
+pip install -e '.[ml]'      # Embedding / semantic tests (heavy)
 ```
 
 ## Test Structure
 
-```
+```text
 tests/
 ├── conftest.py              # Shared fixtures
 ├── test_config.py           # Config tests
@@ -71,11 +87,13 @@ pytest -m requires_ml
 # Terminal report
 pytest --cov=tenets --cov-report=term-missing
 
+# Enforce minimum (CI/local gate)
+pytest --cov=tenets --cov-report=term-missing --cov-fail-under=80
+
 # HTML report
 pytest --cov=tenets --cov-report=html
-open htmlcov/index.html
 
-# XML for CI
+# XML for CI services (Codecov)
 pytest --cov=tenets --cov-report=xml
 ```
 
@@ -164,8 +182,6 @@ def test_token_counting():
 
 ## CI Integration
 
-### GitHub Actions
-
 ```yaml
 # .github/workflows/test.yml
 - name: Run tests
@@ -191,6 +207,41 @@ def test_token_counting():
       pass_filenames: false
       always_run: true
 ```
+
+## Release Test Checklist
+
+Before tagging a release:
+
+```bash
+# 1. Clean environment
+rm -rf .venv dist build *.egg-info && python -m venv .venv && source .venv/bin/activate
+
+# 2. Install with all needed extras for full test surface
+pip install -e '.[all,test]' pytest pytest-cov
+
+# 3. Lint / type (if tools configured)
+# ruff check .
+# mypy tenets
+
+# 4. Run tests with coverage gate
+pytest --cov=tenets --cov-report=term-missing --cov-fail-under=80
+
+# 5. Spot-check critical CLI commands
+for cmd in \
+  "distill 'smoke test' --stats" \
+  "instill 'example tenet'" \
+  "session create release-smoke" \
+  "config cache-stats"; do
+  echo "tenets $cmd"; tenets $cmd || exit 1; done
+
+# 6. Build sdist/wheel
+python -m build
+
+# 7. Install built artifact in fresh venv & re-smoke
+python -m venv verify && source verify/bin/activate && pip install dist/*.whl && tenets version
+```
+
+Minimal CHANGELOG update + version bump in `tenets/__init__.py` must precede tagging.
 
 ## Performance Testing
 
