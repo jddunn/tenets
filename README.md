@@ -1,4 +1,4 @@
-# ![tenets](./docs/logos/tenets_dark_icon_transparent.png) **tenets**
+# ![tenets](./docs/logos/tenets_dark_icon.png) **tenets**
 
 **context that feeds your prompts.**
 
