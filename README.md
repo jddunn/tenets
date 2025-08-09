@@ -80,8 +80,8 @@ tenets distill "review API" --include "*.py,*.js" --exclude "test_*" --stats
 tenets distill "understand auth flow" --max-tokens 50000 --mode balanced --stats
 
 # Session-based for iterative work
-# 1) Start a named session
-tenets session start "new-feature"
+# 1) Create a named session
+tenets session create "new-feature"
 # 2) Build broad context
 tenets distill "design database schema" --session new-feature --stats
 # 3) Narrow follow-up
@@ -97,12 +97,6 @@ Add persistent instructions that guide AI interactions:
 tenets tenet add "Always use type hints in Python"
 tenets tenet add "Follow RESTful conventions"
 tenets tenet add "Include error handling"
-
-# Apply all pending tenets to future contexts
-tenets instill
-
-# Generate context with your tenets active
-tenets distill "implement OAuth2" --stats
 ```
 
 ### 📊 Code Intelligence & Visualization
@@ -257,11 +251,11 @@ tenets tenet add "Use async/await for I/O operations"
 tenets instill
 
 # Interactive session for back-and-forth
-tenets session start "debug-memory-leak"
+tenets session create "debug-memory-leak"
 # AI: "Show me the memory allocation code"
-tenets session find "malloc|alloc" --lang c
+tenets distill "malloc|alloc" --include "*.c" --session debug-memory-leak
 # AI: "I need to see the cleanup functions"
-tenets session find "free|cleanup" --near "alloc"
+tenets distill "free|cleanup" --include "*.c" --session debug-memory-leak
 ```
 
 ### Exploration & Analysis
@@ -404,8 +398,8 @@ tenets distill "how does the payment system work?" --visualize
 ### 🤖 AI Pair Programming
 
 ```bash
-# Start a session
-tenets session start "implement-oauth"
+# Create a session
+tenets session create "implement-oauth"
 
 # Add coding principles
 tenets tenet add "Use existing auth patterns"
@@ -417,7 +411,9 @@ tenets instill
 tenets distill "implement OAuth2 with Google" > context.md
 
 # As you work, update context
-tenets session add "auth.py" "oauth_config.py"
+# (Optionally attach artifacts to the session)
+# tenets session add implement-oauth context_result context.md
+
 tenets distill "add refresh token handling" --session implement-oauth > context_update.md
 ```
 
@@ -462,14 +458,37 @@ tenets tenet import my-tenets.yml
 ### Session Commands
 
 ```bash
-# Start a new session
+# Create a new session
+tenets session create <name>
+
+# Start a session (alias of create)
 tenets session start <name>
 
-# Resume a session
-tenets session resume <name>
+# Resume the current active session (or specify a name)
+tenets session resume [<name>]
 
-# List sessions
+# Exit the current active session (or specify a name)
+tenets session exit [<name>]
+
+# Show session details
+tenets session show <name>
+
+# List sessions (shows an Active column)
 tenets session list
+
+# Attach an artifact to a session (stored as text)
+# kind examples: note, context_result, summary
+tenets session add <name> <kind> <file>
+
+# Reset (delete & recreate) a session and purge its context
+tenets session reset <name>
+
+# Delete a session (optionally keep context)
+# Add --keep-context to retain stored artifacts
+tenets session delete <name> [--keep-context]
+
+# Clear ALL sessions (optionally keep context)
+tenets session clear [--keep-context]
 ```
 
 ### Visualization

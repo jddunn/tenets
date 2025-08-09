@@ -125,6 +125,16 @@ class SessionDB:
         finally:
             conn.close()
 
+    def get_active_session(self) -> Optional[SessionRecord]:
+        """Return the currently active session, if any.
+
+        Chooses the most recently created active session if multiple are marked active.
+        """
+        for s in self.list_sessions():  # list_sessions is newest-first
+            if s.metadata.get("active"):
+                return s
+        return None
+
     def add_context(self, session_name: str, kind: str, content: str) -> None:
         """Append a context artifact to a session.
 
@@ -179,3 +189,68 @@ class SessionDB:
             return cur.rowcount > 0
         finally:
             conn.close()
+
+    def delete_all_sessions(self, purge_context: bool = True) -> int:
+        """Delete all sessions. Returns the number of sessions removed.
+
+        If purge_context is True, also clears all session_context rows.
+        """
+        conn = self.db.connect()
+        try:
+            cur = conn.cursor()
+            if purge_context:
+                cur.execute("DELETE FROM session_context")
+            cur.execute("SELECT COUNT(*) FROM sessions")
+            (count_before,) = cur.fetchone() or (0,)
+            cur.execute("DELETE FROM sessions")
+            conn.commit()
+            return count_before
+        finally:
+            conn.close()
+
+    def update_session_metadata(self, name: str, updates: Dict[str, Any]) -> bool:
+        """Merge ``updates`` into the session's metadata JSON.
+
+        Returns True if the session exists and was updated.
+        """
+        conn = self.db.connect()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT id, metadata FROM sessions WHERE name=?", (name,))
+            row = cur.fetchone()
+            if not row:
+                return False
+            session_id, metadata_text = row
+            meta = json.loads(metadata_text) if metadata_text else {}
+            meta.update(updates or {})
+            cur.execute(
+                "UPDATE sessions SET metadata=? WHERE id=?",
+                (json.dumps(meta), session_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+    def set_active(self, name: str, active: bool) -> bool:
+        """Mark a session as active/inactive via metadata.
+
+        When activating a session, all other sessions are marked inactive to
+        guarantee there is at most one active session at a time.
+        """
+        timestamp = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+        updates: Dict[str, Any] = {"active": active, "updated_at": timestamp}
+        if active:
+            updates["resumed_at"] = timestamp
+        else:
+            updates["ended_at"] = timestamp
+        ok = self.update_session_metadata(name, updates)
+        if active and ok:
+            # Deactivate any other active sessions
+            for other in self.list_sessions():
+                if other.name != name and other.metadata.get("active"):
+                    self.update_session_metadata(
+                        other.name,
+                        {"active": False, "updated_at": timestamp, "ended_at": timestamp},
+                    )
+        return ok

@@ -164,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, github-release]
     environment:
-      name: pypi
+      name: github
       url: https://pypi.org/project/tenets/
     steps:
       - name: Download artifacts

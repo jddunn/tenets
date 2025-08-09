@@ -7,10 +7,10 @@
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Core Commands](#core-commands)
-  - [make-context](#make-context)
-  - [analyze](#analyze)
-  - [track-changes](#track-changes)
-  - [velocity](#velocity)
+  - [distill](#distill)
+  - [examine](#examine)
+  - [chronicle](#chronicle)
+  - [momentum](#momentum)
 - [Visualization Commands](#visualization-commands)
   - [viz deps](#viz-deps)
   - [viz complexity](#viz-complexity)
@@ -41,13 +41,13 @@ pip install tenets[all]
 
 ```bash
 # Generate context for AI pair programming
-tenets make-context "implement OAuth2" ./src
+tenets distill "implement OAuth2" ./src
 
 # Analyze your codebase
-tenets analyze
+tenets examine
 
 # Track recent changes
-tenets track-changes --since yesterday
+tenets chronicle --since yesterday
 
 # Visualize dependencies (ASCII)
 tenets viz deps --format ascii
@@ -55,12 +55,12 @@ tenets viz deps --format ascii
 
 ## Core Commands
 
-### make-context
+### distill
 
 Generate optimized context for LLMs from your codebase.
 
 ```bash
-tenets make-context <prompt> [path] [options]
+tenets distill <prompt> [path] [options]
 ```
 
 **Arguments:**
@@ -74,9 +74,9 @@ tenets make-context <prompt> [path] [options]
 - `--max-tokens`: Maximum tokens for context
 - `--mode`: Analysis mode: `fast`, `balanced` (default), `thorough`
 - `--no-git`: Disable git context inclusion
-- `--include, -i`: Include file patterns (e.g., `"*.py,*.js"`)
-- `--exclude, -e`: Exclude file patterns (e.g., `"test_*,*.backup"`)
-- `--session, -s`: Use session for stateful context
+- `--include, -i`: Include file patterns (e.g., "*.py,*.js")
+- `--exclude, -e`: Exclude file patterns (e.g., "test_*,*.backup")
+- `--session, -s`: Use a named session for stateful context
 - `--estimate-cost`: Show token usage and cost estimate
 - `--verbose, -v`: Show detailed analysis info
 
@@ -84,33 +84,33 @@ tenets make-context <prompt> [path] [options]
 
 ```bash
 # Basic usage - finds all relevant files for implementing OAuth2
-tenets make-context "implement OAuth2 authentication"
+tenets distill "implement OAuth2 authentication"
 
 # From a GitHub issue
-tenets make-context https://github.com/org/repo/issues/123
+tenets distill https://github.com/org/repo/issues/123
 
 # Target specific model with cost estimation
-tenets make-context "add caching layer" --model gpt-4o --estimate-cost
+tenets distill "add caching layer" --model gpt-4o --estimate-cost
 
 # Filter by file types
-tenets make-context "review API endpoints" --include "*.py,*.yaml" --exclude "test_*"
+tenets distill "review API endpoints" --include "*.py,*.yaml" --exclude "test_*"
 
 # Save context to file
-tenets make-context "debug login issue" --output context.md
+tenets distill "debug login issue" --output context.md
 
 # Use thorough analysis for complex tasks
-tenets make-context "refactor authentication system" --mode thorough
+tenets distill "refactor authentication system" --mode thorough
 
 # Session-based context (maintains state)
-tenets make-context "build payment system" --session payment-feature
+tenets distill "build payment system" --session payment-feature
 ```
 
-### analyze
+### examine
 
 Analyze codebase structure, complexity, and patterns.
 
 ```bash
-tenets analyze [path] [options]
+tenets examine [path] [options]
 ```
 
 **Options:**
@@ -127,19 +127,19 @@ tenets analyze [path] [options]
 
 ```bash
 # Basic analysis with summary table
-tenets analyze
+tenets examine
 
 # Deep analysis with metrics
-tenets analyze --deep --metrics
+tenets examine --deep --metrics
 
 # Show complexity hotspots
-tenets analyze --complexity --hotspots
+tenets examine --complexity --hotspots
 
 # Export full analysis as JSON
-tenets analyze --output analysis.json --format json
+tenets examine --output analysis.json --format json
 
 # Analyze specific directory
-tenets analyze ./src --ownership
+tenets examine ./src --ownership
 ```
 
 **Output Example (Table Format):**
@@ -158,65 +158,44 @@ Codebase Analysis
 └─────────────────┴──────────┘
 ```
 
-### track-changes
+### chronicle
 
 Track code changes over time using git history.
 
 ```bash
-tenets track-changes [options]
+tenets chronicle [options]
 ```
 
 **Options:**
-- `--since, -s`: Time period (default: `"last-week"`)
-  - Examples: `"yesterday"`, `"last-month"`, `"2024-01-01"`, `"3 weeks"`
+- `--since, -s`: Time period (e.g., "yesterday", "last-month", "2024-01-01")
 - `--path, -p`: Repository path (default: current directory)
-- `--pattern`: Filter files by pattern
-- `--summary`: Show summary statistics
+- `--author, -a`: Filter by author
+- `--limit, -n`: Maximum commits to display
 
 **Examples:**
 
 ```bash
 # Changes in the last week
-tenets track-changes
+tenets chronicle --since "last-week"
 
 # Changes since yesterday
-tenets track-changes --since yesterday
+tenets chronicle --since yesterday
 
-# Changes to Python files in the last month
-tenets track-changes --since "last-month" --pattern "*.py"
-
-# Changes with author summary
-tenets track-changes --since "2 weeks" --summary
+# Filter by author
+tenets chronicle --author "alice@example.com"
 ```
 
-**Output Example:**
-```
-📊 Change Summary
-════════════════
-Total commits: 47
-Active authors: 5
-
-Changed Files
-┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
-┃ File                   ┃ Commits ┃ Lines Changed ┃ Last Modified  ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
-│ src/auth/oauth.py      │ 12      │ 324          │ 2024-03-15     │
-│ src/models/user.py     │ 8       │ 156          │ 2024-03-14     │
-│ tests/test_auth.py     │ 6       │ 89           │ 2024-03-15     │
-└────────────────────────┴─────────┴──────────────┴────────────────┘
-```
-
-### velocity
+### momentum
 
 Track development velocity and team productivity metrics.
 
 ```bash
-tenets velocity [options]
+tenets momentum [options]
 ```
 
 **Options:**
 - `--path, -p`: Repository path (default: current directory)
-- `--since, -s`: Time period (default: `"last-month"`)
+- `--since, -s`: Time period (default: "last-month")
 - `--team`: Show team-wide statistics
 - `--author, -a`: Show stats for specific author
 
@@ -224,30 +203,13 @@ tenets velocity [options]
 
 ```bash
 # Personal velocity for last month
-tenets velocity
+tenets momentum
 
 # Team velocity for the quarter
-tenets velocity --team --since "3 months"
+tenets momentum --team --since "3 months"
 
 # Individual contributor stats
-tenets velocity --author "alice@example.com"
-```
-
-**Output Example:**
-```
-Weekly Velocity
-══════════════
-W10 ████████████████████ 45 commits
-W11 ██████████████ 32 commits
-W12 ████████████████████████ 52 commits
-W13 ███████████ 28 commits
-
-Team Statistics
-Total contributors: 8
-
-Top Contributors:
-  Alice Smith: 127 commits, 3,421 lines added
-  Bob Johnson: 89 commits, 2,156 lines added
+tenets momentum --author "alice@example.com"
 ```
 
 ## Visualization Commands
@@ -408,22 +370,52 @@ tenets viz contributors --active
 
 Tenets can persist session state across distill runs. When a configuration is loaded, sessions are stored in a local SQLite database under the cache directory (see Storage below). Use `--session <name>` with commands like `distill` to build iterative context.
 
-- `--session` behavior: When provided, Tenets maintains a named session that accumulates context history and preferences. With configuration present, this state is stored in `${CACHE_DIR}/tenets.db` and restored in subsequent runs.
+- Only one session is considered active at a time. Resuming a session will mark all others inactive.
+- If a session NAME is omitted for `resume` or `exit`, Tenets operates on the currently active session.
 
-### session start
+### session create
 
 Create a new analysis session.
 
 ```bash
-tenets session start <name> [options]
+tenets session create <name>
 ```
-
-**Options:**
-- `--path, -p`: Project path (default: current directory)
 
 **Example:**
 ```bash
-tenets session start payment-integration
+tenets session create payment-integration
+```
+
+### session start
+
+Alias of `session create`.
+
+```bash
+tenets session start <name>
+```
+
+### session resume
+
+Mark an existing session as active.
+
+```bash
+# Resume the active session (if one exists)
+tenets session resume
+
+# Or specify by name
+tenets session resume <name>
+```
+
+### session exit
+
+Mark a session as inactive.
+
+```bash
+# Exit the current active session
+tenets session exit
+
+# Or exit a specific session by name
+tenets session exit <name>
 ```
 
 ### session list
@@ -434,51 +426,52 @@ List all sessions.
 tenets session list
 ```
 
+The output includes an Active column ("yes" indicates the current session).
+
+### session clear
+
+Delete ALL sessions. Optionally keep stored artifacts.
+
+```bash
+tenets session clear [--keep-context]
+```
+
+Notes:
+- Creating or resetting a session marks it active.
+- Only one session is active at a time (resuming one deactivates others).
+
 ### session show
 
-Show specific files in session context.
+Show session details.
 
 ```bash
-tenets session show <session-name> <files...>
+tenets session show <name>
 ```
 
-**Example:**
-```bash
-tenets session show payment-integration src/payment.py src/stripe.py
-```
+### session add
 
-### session find
-
-Search for patterns in session files.
+Attach an artifact (stored as text) to a session.
 
 ```bash
-tenets session find <session-name> <pattern> [options]
+tenets session add <name> <kind> <file>
 ```
 
-**Options:**
-- `--context, -c`: Lines of context around matches
-- `--lang, -l`: Filter by language
+Examples of `kind`: `note`, `context_result`, `summary`
 
-## Session Management
+### session reset
 
+Reset (delete and recreate) a session and purge its context.
+
+```bash
+tenets session reset <name>
 ```
-# Create or ensure session exists
-tenets session create feature-x
 
-# List sessions
-tenets session list
+### session delete
 
-# Show details
-tenets session show feature-x
+Delete a session. Optionally keep stored artifacts.
 
-# Attach a generated context artifact
-tenets session add feature-x context_result context.json
-
-# Reset (delete & recreate) a session with all context
-tenets session reset feature-x
-
-# Delete session but keep context artifacts
-tenets session delete feature-x --keep-context
+```bash
+tenets session delete <name> [--keep-context]
 ```
 
 ## Cache Management
@@ -562,7 +555,7 @@ Or environment:
 TENETS_CACHE_DIRECTORY=/path/to/custom/cache
 ```
 
-Note on cost estimation: When `--estimate-cost` is used with `make-context`, Tenets estimates costs using model limits and the built-in pricing table from `SUPPORTED_MODELS`.
+Note on cost estimation: When `--estimate-cost` is used with `distill`, Tenets estimates costs using model limits and the built-in pricing table from `SUPPORTED_MODELS`.
 
 ## Common Use Cases
 
@@ -572,13 +565,13 @@ Generate context for ChatGPT/Claude when working on features:
 
 ```bash
 # Initial context for new feature
-tenets make-context "implement user authentication with JWT" > auth_context.md
+tenets distill "implement user authentication with JWT" > auth_context.md
 
 # Paste auth_context.md into ChatGPT, then iterate:
-tenets make-context "add password reset functionality" --session auth-feature
+tenets distill "add password reset functionality" --session auth-feature
 
-# AI needs to see specific files?
-tenets session show auth-feature src/auth/password_reset.py
+# AI needs to see session info?
+tenets session show auth-feature
 ```
 
 ### 2. Code Review Preparation
@@ -587,13 +580,13 @@ Understand what changed and why:
 
 ```bash
 # See what changed in the sprint
-tenets track-changes --since "2 weeks" --summary
+tenets chronicle --since "2 weeks" --summary
 
 # Get context for reviewing a PR
-tenets make-context "review payment processing changes" --since "feature-branch"
+tenets distill "review payment processing changes"
 
 # Check complexity of changed files
-tenets analyze --complexity --hotspots
+tenets examine --complexity --hotspots
 ```
 
 ### 3. Onboarding to New Codebase
@@ -602,7 +595,7 @@ Quickly understand project structure:
 
 ```bash
 # Get project overview
-tenets analyze --metrics
+tenets examine --metrics
 
 # Visualize architecture
 tenets viz deps --format ascii
@@ -620,13 +613,13 @@ Find relevant code for debugging:
 
 ```bash
 # Get all context related to the error
-tenets make-context "users getting 500 error on checkout" --mode thorough
+tenets distill "users getting 500 error on checkout" --mode thorough
 
-# Include recent changes
-tenets make-context "debug payment timeout" --since "last-deploy"
+# Include recent changes summary
+tenets chronicle --since "last-deploy"
 
-# Find all error handlers
-tenets session find debug-session "error|exception" --context 10
+# Search for patterns within a session by iterating with prompts
+tenets distill "find error handlers" --session debug-session
 ```
 
 ### 5. Technical Debt Assessment
@@ -635,13 +628,13 @@ Identify areas needing refactoring:
 
 ```bash
 # Find complex files
-tenets analyze --complexity --threshold 15
+tenets examine --complexity --threshold 15
 
 # Find tightly coupled code
 tenets viz coupling --min-coupling 5
 
 # Track velocity trends
-tenets velocity --team --since "6 months"
+tenets momentum --team --since "6 months"
 ```
 
 ### 6. Architecture Documentation
@@ -653,10 +646,10 @@ Generate architecture insights:
 tenets viz deps --output architecture.svg --cluster-by directory
 
 # Generate comprehensive analysis
-tenets analyze --deep --output analysis.json --format json
+tenets examine --deep --output analysis.json --format json
 
 # Create context for documentation
-tenets make-context "document API architecture" ./src/api
+tenets distill "document API architecture" ./src/api
 ```
 
 ## Examples
@@ -665,10 +658,10 @@ tenets make-context "document API architecture" ./src/api
 
 ```bash
 # 1. Start a new feature
-tenets session start oauth-integration
+tenets session create oauth-integration
 
 # 2. Get initial context
-tenets make-context "implement OAuth2 with Google and GitHub" \
+tenets distill "implement OAuth2 with Google and GitHub" \
   --session oauth-integration \
   --include "*.py,*.yaml" \
   --exclude "test_*" \
@@ -678,21 +671,21 @@ tenets make-context "implement OAuth2 with Google and GitHub" \
 # 3. Paste into ChatGPT, start coding...
 
 # 4. AI needs more specific context
-tenets session show oauth-integration src/auth/providers.py
+# (Show session details)
+tenets session show oauth-integration
 
 # 5. Check your progress
-tenets track-changes --since "today"
+tenets chronicle --since "today"
 
 # 6. Visualize what you built
 tenets viz deps src/auth --format ascii
 
 # 7. Check complexity
-tenets analyze src/auth --complexity
+tenets examine src/auth --complexity
 
 # 8. Prepare for review
-tenets make-context "OAuth implementation ready for review" \
-  --session oauth-integration \
-  --since "feature/oauth"
+tenets distill "OAuth implementation ready for review" \
+  --session oauth-integration
 ```
 
 ### Configuration File Example
@@ -725,7 +718,7 @@ output:
 1. **Start with fast mode** for quick exploration, use thorough for complex tasks
 2. **Use sessions** for multi-step features to maintain context
 3. **ASCII visualizations** are great for README files and documentation
-4. **Combine commands** - analyze first, then make-context with insights
+4. **Combine commands** - examine first, then distill with insights
 5. **Git integration** works automatically - no setup needed
 6. **Include/exclude patterns** support standard glob syntax
 7. **Cost estimation** helps budget API usage before sending to LLMs
