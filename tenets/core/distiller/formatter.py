@@ -95,7 +95,11 @@ class ContextFormatter:
         )
         lines.append("")
 
-        # Note: Git context is intentionally not included in output
+        # Git context (include if provided)
+        git_ctx = aggregated.get("git_context")
+        if git_ctx:
+            lines.extend(self._format_git_context_markdown(git_ctx))
+            lines.append("")
 
         # Files
         lines.append("## Relevant Files")

@@ -152,10 +152,16 @@ class FileSummary:
     instructions: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
     file_path: Optional[str] = None
+    # Backward-compat: support `path=` constructor arg used by tests
+    path: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.now)
 
     def __post_init__(self):
         """Post-initialization processing."""
+        # Map legacy `path` to `file_path` if provided
+        if not self.file_path and self.path:
+            self.file_path = self.path
+
         # Calculate compression ratio if not set
         if self.original_tokens > 0 and self.compression_ratio == 0:
             self.compression_ratio = self.summary_tokens / self.original_tokens

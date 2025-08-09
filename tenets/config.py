@@ -571,6 +571,14 @@ class TenetsConfig:
         """
         return self._resolved_paths.get("cache", self.cache.directory)
 
+    @cache_dir.setter
+    def cache_dir(self, value: Union[str, Path]) -> None:
+        # Update underlying cache config and resolved path
+        path = Path(value).resolve()
+        self.cache.directory = path
+        path.mkdir(parents=True, exist_ok=True)
+        self._resolved_paths["cache"] = path
+
     @property
     def scanner_workers(self) -> int:
         """Get number of scanner workers.
@@ -607,6 +615,10 @@ class TenetsConfig:
         """
         return self.scanner.respect_gitignore
 
+    @respect_gitignore.setter
+    def respect_gitignore(self, value: bool) -> None:
+        self.scanner.respect_gitignore = bool(value)
+
     @property
     def follow_symlinks(self) -> bool:
         """Whether to follow symbolic links.
@@ -615,6 +627,10 @@ class TenetsConfig:
             True if symlinks should be followed
         """
         return self.scanner.follow_symlinks
+
+    @follow_symlinks.setter
+    def follow_symlinks(self, value: bool) -> None:
+        self.scanner.follow_symlinks = bool(value)
 
     @property
     def additional_ignore_patterns(self) -> List[str]:

@@ -65,7 +65,7 @@ class PromptContext:
     """
 
     text: str
-    original: str
+    original: Optional[str] = None
     keywords: List[str] = field(default_factory=list)
     task_type: str = "general"
     intent: str = "understand"
@@ -82,6 +82,10 @@ class PromptContext:
 
     def __post_init__(self):
         """Post-initialization processing."""
+        # Ensure original is populated for backward compatibility with tests
+        if self.original is None:
+            self.original = self.text
+
         # Normalize task type
         if isinstance(self.task_type, str):
             self.task_type = self.task_type.lower()

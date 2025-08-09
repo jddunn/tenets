@@ -180,7 +180,7 @@ def mock_ml_model():
 
 
 @pytest.fixture(autouse=True)
-def mock_external_dependencies(monkeypatch):
+def mock_external_dependencies(monkeypatch, request):
     """
     Automatically mock external dependencies that shouldn't be called in tests.
 
@@ -197,14 +197,34 @@ def mock_external_dependencies(monkeypatch):
     monkeypatch.setattr("requests.get", mock_requests.get)
     monkeypatch.setattr("requests.post", mock_requests.get)
 
-    # Mock git operations
-    mock_git = Mock()
-    mock_git.Repo.return_value = Mock()
-    monkeypatch.setattr("git.Repo", mock_git.Repo)
+    # Decide whether to mock git based on test path (allow real git in git tests)
+    test_path = str(getattr(request.node, "fspath", "")).replace("\\", "/")
+    if "tests/core/git" not in test_path:
+        mock_git = Mock()
+        mock_git.Repo.return_value = Mock()
+        monkeypatch.setattr("git.Repo", mock_git.Repo)
 
-    # Mock expensive ML operations
-    mock_transformers = Mock()
-    monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
+    # Mock expensive ML operations (graceful if dependency not installed)
+    import sys, types, importlib
+    try:
+        monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
+    except ModuleNotFoundError:
+        # Create a minimal stub so code importing sentence_transformers works
+        if importlib.util.find_spec("sentence_transformers") is None:
+            stub = types.ModuleType("sentence_transformers")
+
+            class SentenceTransformer:  # noqa: N801 (match real class name)
+                def __init__(self, *_, **__):
+                    pass
+
+                def encode(self, texts, **kwargs):  # pragma: no cover - simple stub
+                    if isinstance(texts, str):
+                        texts = [texts]
+                    # Return deterministic small vectors based on text length
+                    return [[float(len(t) % 7)] * 16 for t in texts]
+
+            stub.SentenceTransformer = SentenceTransformer
+            sys.modules["sentence_transformers"] = stub
 
 
 # ============================================================================
