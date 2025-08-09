@@ -38,70 +38,41 @@ def config_init(
         console.print("Use --force to overwrite.")
         raise typer.Exit(1)
 
-    # Starter config template
+    # Starter config template (aligned with TenetsConfig schema)
     starter_config = """# .tenets.yml - Tenets configuration
 # https://github.com/jddunn/tenets
 
-# Context generation settings
-context:
-  max_tokens: 100000        # Maximum tokens for generated context
-  ranking: balanced         # Ranking algorithm: fast, balanced, thorough
-  include_git: true         # Include git context by default
-  summarize_long_files: true
+max_tokens: 100000
 
-# Tenet system settings
-tenets:
-  auto_instill: true        # Automatically apply tenets to context
-  max_per_context: 5        # Maximum tenets to inject per context
-  reinforcement: true       # Reinforce critical principles
+ranking:
+  algorithm: balanced        # fast, balanced, thorough, ml, custom
+  threshold: 0.10            # 0.0–1.0 (lower includes more files)
 
-# File scanning settings
 scanner:
-  respect_gitignore: true   # Respect .gitignore files
-  follow_symlinks: false    # Follow symbolic links
-  max_file_size: 5000000    # Max file size in bytes (5MB)
+  respect_gitignore: true
+  follow_symlinks: false
+  max_file_size: 5000000
+  additional_ignore_patterns:
+    - "*.generated.*"
+    - vendor/
 
-# Patterns to ignore
-ignore:
-  # Version control
-  - .git/
-  - .svn/
-  
-  # Dependencies
-  - node_modules/
-  - vendor/
-  - venv/
-  - .venv/
-  
-  # Build outputs
-  - build/
-  - dist/
-  - "*.egg-info"
-  
-  # IDE
-  - .idea/
-  - .vscode/
-  
-  # Generated files
-  - "*.generated.*"
-  - "*.min.js"
-  - "*.min.css"
-
-# Include patterns (if specified, only these are included)
-# include:
-#   - "*.py"
-#   - "*.js"
-#   - "*.ts"
-
-# Output preferences
 output:
-  format: markdown          # Default format: markdown, xml, json
-  
-# Cache settings
+  default_format: markdown   # markdown, xml, json
+
 cache:
   enabled: true
-  ttl_days: 7              # Cache time-to-live in days
-  max_size_mb: 500         # Maximum cache size
+  ttl_days: 7
+  max_size_mb: 500
+  # directory: ~/.tenets/cache
+
+git:
+  enabled: true
+
+# Tenet system
+tenet:
+  auto_instill: true
+  max_per_context: 5
+  reinforcement: true
 """
 
     config_file.write_text(starter_config)
@@ -109,8 +80,8 @@ cache:
 
     console.print("\nNext steps:")
     console.print("1. Edit .tenets.yml to customize for your project")
-    console.print("2. Run 'tenets examine' to test your configuration")
-    console.print("3. Add project-specific ignore patterns as needed")
+    console.print("2. Run 'tenets config show' to verify settings")
+    console.print("3. Lower ranking.threshold to include more files if needed")
 
 
 @config_app.command("show")

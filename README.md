@@ -509,13 +509,33 @@ tenets viz contributors [path] [options]
 Core docs in `docs/`:
 
 - [CLI Reference](docs/CLI.md)
+- [Configuration Guide](docs/CONFIG.md)
 - [Architecture Overview](docs/ARCHITECTURE.md)
 - [Deep Dive](docs/DEEP-DIVE.md)
 - [Development Guide](docs/DEVELOPMENT.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 - [Testing Guide](docs/TESTING.md)
 
-(Additional guides like configuration or API references will be added as they are published.)
+See `docs/CONFIG.md` for configuration details.
+
+## Configuration (quick start)
+
+- Create a starter file: `tenets config init` (writes `.tenets.yml` at project root)
+- Lower threshold to include more files:
+
+```yaml
+ranking:
+  algorithm: fast
+  threshold: 0.05
+```
+
+- Or set environment variables for one run:
+
+```bash
+TENETS_RANKING_THRESHOLD=0.05 tenets distill "implement OAuth2" .
+```
+
+See the full guide: `docs/CONFIG.md`.
 
 ## Contributing
 
