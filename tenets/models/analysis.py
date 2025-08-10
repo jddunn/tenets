@@ -24,6 +24,7 @@ class ImportInfo:
         type: Type of import (import, from, require, include)
         is_relative: Whether this is a relative import
         level: Relative import level (Python), 0 for absolute
+        from_module: Module specified in a 'from X import ...' statement
     """
 
     module: str
@@ -33,6 +34,8 @@ class ImportInfo:
     is_relative: bool = False
     # Compatibility: some analyzers provide 'level' for Python relative imports
     level: int = 0
+    # Additional metadata for 'from' imports
+    from_module: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation.
@@ -116,6 +119,11 @@ class FunctionInfo:
         line: Compatibility alias for line_start
         end_line: Compatibility alias for line_end
         is_toplevel: Whether function is top-level (for some analyzers)
+        args: Argument strings with type hints (analyzer compatibility)
+        decorators: Decorators applied to the function
+        is_async: Whether the function is async
+        docstring: Function docstring
+        return_type: Return type annotation
     """
 
     name: str
@@ -127,6 +135,18 @@ class FunctionInfo:
     line: int = 0
     end_line: int = 0
     is_toplevel: bool = False
+    # Extended optional fields
+    args: List[str] = field(default_factory=list)
+    decorators: List[str] = field(default_factory=list)
+    is_async: bool = False
+    docstring: Optional[str] = None
+    return_type: Optional[str] = None
+    is_constructor: bool = False
+    is_abstract: bool = False
+    is_static: bool = False
+    is_class: bool = False
+    is_property: bool = False
+    is_private: bool = False
 
     def __post_init__(self):
         # Map compatibility fields to canonical ones when provided
@@ -157,6 +177,13 @@ class ClassInfo:
         methods: List of methods in the class
         base_classes: List of base/parent class names
         line: Compatibility alias for line_start
+        decorators: Decorator names applied to the class
+        docstring: Class docstring
+        is_abstract: Whether class is abstract
+        metaclass: Metaclass name
+        attributes: Collected class attributes
+        end_line: Compatibility alias for line_end
+        bases: Compatibility alias accepted by some analyzers/tests
     """
 
     name: str
@@ -166,10 +193,27 @@ class ClassInfo:
     base_classes: List[str] = field(default_factory=list)
     # Compatibility alias used in some tests/analyzers
     line: int = 0
+    # Extended optional fields used by analyzers
+    decorators: List[str] = field(default_factory=list)
+    docstring: Optional[str] = None
+    is_abstract: bool = False
+    metaclass: Optional[str] = None
+    attributes: List[Dict[str, Any]] = field(default_factory=list)
+    # Additional compatibility to accept `end_line` in constructor
+    end_line: int = 0
+    # Accept legacy/alternate parameter name for base classes
+    bases: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if not self.line_start and self.line:
             self.line_start = self.line
+        if not self.line_end and self.end_line:
+            self.line_end = self.end_line
+        # Map compatibility alias `bases` -> `base_classes` and vice versa
+        if not self.base_classes and self.bases:
+            self.base_classes = list(self.bases)
+        elif self.base_classes and not self.bases:
+            self.bases = list(self.base_classes)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation.
@@ -179,7 +223,7 @@ class ClassInfo:
         """
         data = asdict(self)
         # Keep methods serialized
-        data["methods"] = [m.to_dict() for m in self.methods]
+        data["methods"] = [m.to_dict() if hasattr(m, "to_dict") else m for m in self.methods]
         return data
 
 
@@ -200,6 +244,7 @@ class CodeStructure:
         todos: List of TODO comments or annotations
         block_count: Total number of code blocks
         indent_levels: Indentation levels used in the code
+        type_aliases: List of type alias definitions (Python 3.10+)
     """
 
     classes: List[ClassInfo] = field(default_factory=list)
@@ -212,6 +257,7 @@ class CodeStructure:
     todos: List[Dict[str, Any]] = field(default_factory=list)
     block_count: int = 0
     indent_levels: Dict[str, Any] = field(default_factory=dict)
+    type_aliases: List[Dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation.
@@ -234,6 +280,7 @@ class CodeStructure:
                 "todos": self.todos,
                 "block_count": self.block_count,
                 "indent_levels": self.indent_levels,
+                "type_aliases": self.type_aliases,
             }
         )
         return base
@@ -286,6 +333,9 @@ class FileAnalysis:
     classes: List[ClassInfo] = field(default_factory=list)
     functions: List[FunctionInfo] = field(default_factory=list)
     keywords: List[str] = field(default_factory=list)
+
+    # Git information
+    git_info: Optional[Dict[str, Any]] = None
 
     # Ranking/scoring
     relevance_score: float = 0.0

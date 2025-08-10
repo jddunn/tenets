@@ -22,6 +22,17 @@ from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timedelta
 from collections import Counter
 from enum import Enum
+import os
+
+try:
+    import requests
+except ImportError:
+    requests = None
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
 
 from tenets.config import TenetsConfig
 from tenets.models.context import PromptContext, TaskType
@@ -177,16 +188,18 @@ class PromptParser:
 
         # Entity extraction patterns
         self._entity_patterns = {
-            "class": r"\b(?:class|model|entity|object)\s+([A-Z][a-zA-Z0-9_]*)",
-            "function": r"\b(?:function|method|func|def)\s+([a-z_][a-zA-Z0-9_]*)",
+            # Support both "class Name" and "Name class" forms
+            "class": r"\b(?:class|model|entity|object)\s+([A-Z][a-zA-Z0-9_]*)|\b([A-Z][a-zA-Z0-9_]*)\s+class\b",
+            "function": r"\b(?:function|method|func|def)\s+([a-z_][a-zA-Z0-9_]*)|(?:add|create|implement|update|modify)?\s*(?:a|the)?\s*([a-z_][a-zA-Z0-9_]+)\s+(?:function|method)",
+            # Improve file detection to match bare filenames reliably
+            "file": r"\b([a-zA-Z0-9_\-/]*[a-zA-Z0-9_\-]+\.(?:py|js|ts|tsx|jsx|java|cpp|c|h|hpp|go|rs|rb|php|cs|json|yaml|yml|toml|ini))\b",
             "module": r"\b(?:module|package|library)\s+([a-z][a-z0-9_]*)",
             "variable": r"\b(?:variable|var|const|let)\s+([a-z_][a-zA-Z0-9_]*)",
-            "file": r"(?:file|\.py|\.js|\.java|\.cpp|\.go|\.rs)\s*[:\s]?\s*([a-zA-Z0-9_/\-\.]+)",
             "api_endpoint": r"(?:GET|POST|PUT|DELETE|PATCH)\s+([/a-zA-Z0-9_\-{}]+)",
             "url": r"https?://[^\s]+",
             "config_key": r"(?:config|setting|env|environment)\s+([A-Z_][A-Z0-9_]*)",
         }
-
+        
         # Temporal expression patterns
         self._temporal_patterns = {
             "relative": {
@@ -217,6 +230,7 @@ class PromptParser:
                 "past",
                 "previous",
                 "ago",
+                "since",  # allow absolute forms like 'since 2024-01-15'
             ],
         }
 
@@ -276,7 +290,18 @@ class PromptParser:
         external_ref = self._detect_external_reference(prompt)
         if external_ref:
             # Fetch and parse external content
-            prompt_text = self._fetch_external_content(external_ref)
+            fetched = self._fetch_external_content(external_ref)
+            # Prefer fetched content only if it looks valid (not placeholder/failure)
+            prompt_text = prompt  # default to original prompt text
+            if fetched:
+                f_low = fetched.strip().lower()
+                if (
+                    f_low
+                    and not f_low.startswith("content from ")
+                    and "failed to fetch" not in f_low
+                    and "error fetching content" not in f_low
+                ):
+                    prompt_text = fetched
             external_context = {
                 "source": external_ref.type,
                 "url": external_ref.url,
@@ -287,27 +312,33 @@ class PromptParser:
             prompt_text = prompt
             external_context = None
 
-        # Detect intent and task type
-        intent = self._detect_intent(prompt_text)
+        # Build analysis texts
+        original_text = prompt
+        combined_text = (
+            f"{prompt_text}\n\n{original_text}" if prompt_text != original_text else prompt_text
+        )
+
+        # Detect intent and task type using original prompt to preserve user intent
+        intent = self._detect_intent(original_text)
         task_type = self._intent_to_task_type(intent)
 
-        # Extract keywords
-        keywords = self._extract_keywords(prompt_text)
+        # Extract keywords from combined text (fetched + original) for richer context
+        keywords = self._extract_keywords(combined_text)
 
-        # Extract entities
-        entities = self._extract_entities(prompt_text)
+        # Extract entities from original prompt to capture explicit references
+        entities = self._extract_entities(original_text)
 
-        # Extract file patterns
-        file_patterns = self._extract_file_patterns(prompt_text)
+        # Extract file patterns from original prompt
+        file_patterns = self._extract_file_patterns(original_text)
 
-        # Extract focus areas
-        focus_areas = self._extract_focus_areas(prompt_text, entities)
+        # Extract focus areas from original prompt and detected entities
+        focus_areas = self._extract_focus_areas(original_text, entities)
 
-        # Detect temporal context
-        temporal = self._extract_temporal_context(prompt_text)
+        # Detect temporal context from original prompt
+        temporal = self._extract_temporal_context(original_text)
 
-        # Extract scope indicators
-        scope = self._extract_scope(prompt_text)
+        # Extract scope indicators from original prompt
+        scope = self._extract_scope(original_text)
 
         # Build prompt context
         context = PromptContext(
@@ -406,8 +437,9 @@ class PromptParser:
         Returns:
             Fetched content text
         """
-        import requests
-        import base64
+        if not requests:
+            self.logger.warning("requests library not available for external content fetching")
+            return f"Content from {ref.url}"
 
         content_parts = []
 
@@ -439,10 +471,11 @@ class PromptParser:
                     comments_response = requests.get(comments_url, headers=headers, timeout=10)
                     if comments_response.status_code == 200:
                         comments = comments_response.json()
-                        for comment in comments[:5]:  # First 5 comments
-                            content_parts.append(
-                                f"Comment by {comment.get('user', {}).get('login', 'unknown')}: {comment.get('body', '')}"
-                            )
+                        if isinstance(comments, list):
+                            for comment in comments[:5]:  # First 5 comments
+                                content_parts.append(
+                                    f"Comment by {comment.get('user', {}).get('login', 'unknown')}: {comment.get('body', '')}"
+                                )
 
             elif ref.type == "jira":
                 # JIRA API
@@ -465,10 +498,11 @@ class PromptParser:
 
                         # Get comments
                         comments = fields.get("comment", {}).get("comments", [])
-                        for comment in comments[:5]:
-                            body = comment.get("body", "")
-                            author = comment.get("author", {}).get("displayName", "unknown")
-                            content_parts.append(f"Comment by {author}: {body}")
+                        if isinstance(comments, list):
+                            for comment in comments[:5]:
+                                body = comment.get("body", "")
+                                author = comment.get("author", {}).get("displayName", "unknown")
+                                content_parts.append(f"Comment by {author}: {body}")
 
             elif ref.type == "gitlab":
                 # GitLab API
@@ -498,32 +532,35 @@ class PromptParser:
                     notes_response = requests.get(notes_url, headers=headers, timeout=10)
                     if notes_response.status_code == 200:
                         notes = notes_response.json()
-                        for note in notes[:5]:
-                            if not note.get("system"):  # Skip system notes
-                                content_parts.append(
-                                    f"Comment by {note.get('author', {}).get('name', 'unknown')}: {note.get('body', '')}"
-                                )
+                        if isinstance(notes, list):
+                            for note in notes[:5]:
+                                if not note.get("system"):  # Skip system notes
+                                    content_parts.append(
+                                        f"Comment by {note.get('author', {}).get('name', 'unknown')}: {note.get('body', '')}"
+                                    )
 
             else:
                 # Generic URL - try to fetch content
                 response = requests.get(ref.url, timeout=10)
                 if response.status_code == 200:
                     # Try to extract text content
-                    from bs4 import BeautifulSoup
+                    if BeautifulSoup:
+                        soup = BeautifulSoup(response.text, "html.parser")
 
-                    soup = BeautifulSoup(response.text, "html.parser")
+                        # Remove script and style elements
+                        for script in soup(["script", "style"]):
+                            script.decompose()
 
-                    # Remove script and style elements
-                    for script in soup(["script", "style"]):
-                        script.decompose()
+                        # Get text
+                        text = soup.get_text()
+                        lines = (line.strip() for line in text.splitlines())
+                        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+                        text = " ".join(chunk for chunk in chunks if chunk)
 
-                    # Get text
-                    text = soup.get_text()
-                    lines = (line.strip() for line in text.splitlines())
-                    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-                    text = " ".join(chunk for chunk in chunks if chunk)
-
-                    content_parts.append(text[:5000])  # First 5000 chars
+                        content_parts.append(text[:5000])  # First 5000 chars
+                    else:
+                        # Fallback without BeautifulSoup
+                        content_parts.append(response.text[:5000])
 
         except requests.RequestException as e:
             self.logger.warning(f"Failed to fetch content from {ref.url}: {e}")
@@ -556,27 +593,39 @@ class PromptParser:
         # Score each intent type
         for intent_type, patterns in self._intent_patterns.items():
             score = 0
+            matched_words = []
             for pattern in patterns:
-                matches = len(re.findall(pattern, text_lower))
-                score += matches
+                matches = re.findall(pattern, text_lower)
+                score += len(matches)
+                matched_words.extend(matches)
             intent_scores[intent_type] = score
+            if score > 0:
+                self.logger.debug(f"{intent_type}: score={score}, matches={matched_words}")
 
         # Get highest scoring intent
         if intent_scores:
             best_intent = max(intent_scores.items(), key=lambda x: x[1])
+            self.logger.debug(f"Intent scores: {intent_scores}")
+            self.logger.debug(f"Best intent: {best_intent}")
             if best_intent[1] > 0:
                 return best_intent[0]
 
         # Default based on common keywords
+        self.logger.debug("Using fallback intent detection")
         if any(word in text_lower for word in ["add", "implement", "create", "build"]):
+            self.logger.debug("Detected IMPLEMENT intent")
             return IntentType.IMPLEMENT
         elif any(word in text_lower for word in ["fix", "bug", "error", "broken"]):
+            self.logger.debug("Detected DEBUG intent")
             return IntentType.DEBUG
         elif any(word in text_lower for word in ["how", "what", "explain", "understand"]):
+            self.logger.debug("Detected UNDERSTAND intent")
             return IntentType.UNDERSTAND
         elif any(word in text_lower for word in ["test", "spec", "coverage"]):
+            self.logger.debug("Detected TEST intent")
             return IntentType.TEST
         else:
+            self.logger.debug("Defaulting to UNDERSTAND intent")
             return IntentType.UNDERSTAND  # Default
 
     def _intent_to_task_type(self, intent: IntentType) -> str:
@@ -830,11 +879,26 @@ class PromptParser:
             List of ParsedEntity objects
         """
         entities = []
+        self.logger.debug(f"Extracting entities from text: {text[:200]}...")
 
         for entity_type, pattern in self._entity_patterns.items():
+            self.logger.debug(f"Checking {entity_type} pattern: {pattern}")
             matches = re.finditer(pattern, text, re.IGNORECASE)
+            match_count = 0
             for match in matches:
-                entity_name = match.group(1) if match.groups() else match.group(0)
+                match_count += 1
+                # Prefer the first non-empty capturing group
+                entity_name = None
+                if match.groups():
+                    for gi in range(1, len(match.groups()) + 1):
+                        val = match.group(gi)
+                        if val:
+                            entity_name = val
+                            break
+                if not entity_name:
+                    entity_name = match.group(0)
+
+                self.logger.debug(f"Found {entity_type} entity: {entity_name} from match: {match.group(0)}")
 
                 # Get surrounding context
                 start = max(0, match.start() - 20)
@@ -849,7 +913,9 @@ class PromptParser:
                         context=context,
                     )
                 )
+            self.logger.debug(f"{entity_type}: found {match_count} matches")
 
+        self.logger.debug(f"Total entities extracted: {len(entities)}")
         return entities
 
     def _extract_file_patterns(self, text: str) -> List[str]:
@@ -878,7 +944,7 @@ class PromptParser:
         patterns.extend(file_mentions)
 
         # Look for directory patterns
-        dir_patterns = re.findall(r"(?:in|from|under)\s+([a-zA-Z0-9_\-/]+/)(?:\s|$)", text)
+        dir_patterns = re.findall(r"(?:in|from|under)\s+(?:the\s+)?([a-zA-Z0-9_\-/]+)/?(?:\s+directory)?", text)
         patterns.extend(dir_patterns)
 
         return list(set(patterns))  # Deduplicate
@@ -897,13 +963,14 @@ class PromptParser:
 
         # Common focus area indicators
         area_patterns = {
-            "authentication": r"\b(?:auth|login|logout|session|token|oauth|jwt)\b",
+            # Match auth/authentication/authorization variants
+            "authentication": r"\b(?:auth(?:entication|orization)?|login|logout|session|token|oauth|jwt)\b",
             "api": r"\b(?:api|endpoint|route|rest|graphql|webhook)\b",
             "database": r"\b(?:database|db|sql|query|model|schema|migration)\b",
             "frontend": r"\b(?:ui|ux|frontend|react|vue|angular|component|view)\b",
             "backend": r"\b(?:backend|server|service|controller|handler)\b",
             "testing": r"\b(?:test|spec|coverage|unit|integration|e2e)\b",
-            "security": r"\b(?:security|vulnerability|encryption|csrf|xss|sql.injection)\b",
+            "security": r"\b(?:security|vulnerability|encryption|csrf|xss|sql\.injection)\b",
             "performance": r"\b(?:performance|optimization|speed|cache|slow|fast)\b",
             "deployment": r"\b(?:deploy|deployment|ci|cd|docker|kubernetes|aws|azure)\b",
             "configuration": r"\b(?:config|configuration|settings|environment|env)\b",
@@ -934,23 +1001,22 @@ class PromptParser:
         """
         text_lower = text.lower()
 
-        # Check for temporal indicators
-        has_temporal = any(
-            indicator in text_lower for indicator in self._temporal_patterns["indicators"]
-        )
-
-        if not has_temporal:
-            return None
-
-        # Check for relative timeframes
-        for timeframe, delta in self._temporal_patterns["relative"].items():
-            if timeframe in text_lower:
-                now = datetime.now()
+        # First, check for absolute dates with "since" indicator
+        since_pattern = r"(?:since|from)\s+(\d{4}-\d{2}-\d{2})"
+        since_match = re.search(since_pattern, text)
+        if since_match:
+            try:
+                date = datetime.strptime(since_match.group(1), "%Y-%m-%d")
                 return TemporalContext(
-                    timeframe=timeframe, since=now - delta, until=now, is_relative=True
+                    timeframe=since_match.group(1),
+                    since=date,
+                    until=datetime.now(),
+                    is_relative=False,
                 )
+            except ValueError:
+                pass
 
-        # Check for absolute dates
+        # Then, check for absolute dates regardless of indicators
         date_match = re.search(self._temporal_patterns["absolute"], text)
         if date_match:
             try:
@@ -964,7 +1030,20 @@ class PromptParser:
             except ValueError:
                 pass
 
-        # Generic recent context
+        # Check for temporal indicators
+        has_temporal = any(
+            indicator in text_lower for indicator in self._temporal_patterns["indicators"]
+        )
+
+        # Check for relative timeframes
+        for timeframe, delta in self._temporal_patterns["relative"].items():
+            if timeframe in text_lower:
+                now = datetime.now()
+                return TemporalContext(
+                    timeframe=timeframe, since=now - delta, until=now, is_relative=True
+                )
+
+        # Generic recent context if indicators present
         if has_temporal:
             return TemporalContext(
                 timeframe="recent",
@@ -993,27 +1072,48 @@ class PromptParser:
             "is_specific": False,
         }
 
-        # Module/package references
-        module_pattern = (
-            r"\b(?:in|for|of)\s+(?:the\s+)?([a-z][a-z0-9_]*)\s+(?:module|package|component)"
-        )
-        modules = re.findall(module_pattern, text, re.IGNORECASE)
-        scope["modules"] = list(set(modules))
+        # Module/package references (allow forms like 'the auth module' and 'in the X module')
+        module_patterns = [
+            r"\b(?:in|for|of)\s+(?:the\s+)?([a-z][a-z0-9_]*)\s+(?:module|package|component)\b",
+            r"\b(?:the\s+)?([a-z][a-z0-9_]*)\s+(?:module|package|component)\b",
+            # Capture full words like "authentication" when followed by "module"
+            r"\b(?:the\s+)?([a-z][a-z0-9_]*(?:ication|ization)?)\s+(?:module|package|component)\b",
+        ]
+        modules: Set[str] = set()
+        for pat in module_patterns:
+            for m in re.findall(pat, text, re.IGNORECASE):
+                modules.add(m)
+        scope["modules"] = list(modules)
 
-        # Directory references
-        dir_pattern = r"(?:in|under|within)\s+([a-zA-Z0-9_\-/]+/)"
-        directories = re.findall(dir_pattern, text)
-        scope["directories"] = list(set(directories))
+        # Directory references (capture paths with or without trailing slash and optional 'directory')
+        dir_patterns = [
+            r"(?:in|under|within)\s+(?:the\s+)?([a-zA-Z0-9_\-./]+)(?:\s+directory)?",
+            r"\b([a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]*)\b",  # Capture path-like structures
+        ]
+        directories = set()
+        for pattern in dir_patterns:
+            for match in re.findall(pattern, text):
+                directories.add(match)
+        scope["directories"] = list(directories)
 
         # Specific file references
-        file_pattern = r"\b([a-zA-Z0-9_\-/]+\.\w{2,4})\b"
+        file_pattern = r"\b([a-zA-Z0-9_\-/]+\.(?:py|js|ts|tsx|jsx|java|cpp|c|h|hpp|go|rs|rb|php))\b"
         files = re.findall(file_pattern, text)
         scope["specific_files"] = list(set(files))
 
         # Exclusion patterns
-        exclude_pattern = r"(?:except|exclude|not|ignore)\s+([a-zA-Z0-9_\-/*]+)"
-        exclusions = re.findall(exclude_pattern, text, re.IGNORECASE)
-        scope["exclusions"] = list(set(exclusions))
+        exclude_pattern = r"(?:except|exclude|not|ignore)\s+(?:anything\s+in\s+)?([a-zA-Z0-9_\-/*]+/?)"
+        exclusions = set(re.findall(exclude_pattern, text, re.IGNORECASE))
+
+        # Additionally, capture '... anything in the X directory/folder' tied to exclusion phrases
+        dir_excl_pattern = r"(?:anything\s+in\s+|in\s+)(?:the\s+)?([a-zA-Z0-9_\-./*]+)\s+(?:directory|folder)"
+        for m in re.finditer(dir_excl_pattern, text, re.IGNORECASE):
+            # Check for an exclusion keyword shortly before this phrase to reduce false positives
+            preceding = text[: m.start()]
+            if re.search(r"(?:except|exclude|ignore|not(?:\s+include|\s+including)?)\b", preceding[-150:], re.IGNORECASE):
+                exclusions.add(m.group(1))
+
+        scope["exclusions"] = list(exclusions)
 
         # Determine scope type
         if any(

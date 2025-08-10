@@ -283,7 +283,7 @@ class PythonAnalyzer(LanguageAnalyzer):
                         name=node.name,
                         line=node.lineno,
                         end_line=getattr(node, "end_lineno", node.lineno),
-                        bases=[self._get_name(base) for base in node.bases],
+                        base_classes=[self._get_name(base) for base in node.bases],
                         decorators=[self._get_name(d) for d in node.decorator_list],
                         methods=[],
                         docstring=ast.get_docstring(node),
@@ -293,15 +293,26 @@ class PythonAnalyzer(LanguageAnalyzer):
 
                     # Extract methods and attributes
                     for item in node.body:
-                        if isinstance(item, ast.FunctionDef):
-                            method_info = {
-                                "name": item.name,
-                                "line": item.lineno,
-                                "is_static": self._is_static_method(item),
-                                "is_class": self._is_class_method(item),
-                                "is_property": self._is_property(item),
-                                "is_abstract": self._is_abstract_method(item),
-                            }
+                        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                            method_info = FunctionInfo(
+                                name=item.name,
+                                line=item.lineno,
+                                end_line=getattr(item, "end_lineno", item.lineno),
+                                decorators=[self._get_name(d) for d in item.decorator_list],
+                                is_async=isinstance(item, ast.AsyncFunctionDef),
+                                docstring=ast.get_docstring(item),
+                                complexity=self._calculate_function_complexity(item),
+                                return_type=self._get_name(item.returns) if item.returns else None,
+                                is_constructor=item.name == "__init__",
+                                is_abstract=any(
+                                    self._get_name(d) == "abstractmethod" 
+                                    for d in item.decorator_list
+                                ),
+                                is_static=self._is_static_method(item),
+                                is_class=self._is_class_method(item),
+                                is_property=self._is_property(item),
+                                is_private=item.name.startswith("_") and not item.name.startswith("__"),
+                            )
                             class_info.methods.append(method_info)
                         elif isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
                             # Class attributes with type hints
@@ -319,7 +330,7 @@ class PythonAnalyzer(LanguageAnalyzer):
 
             # Extract top-level functions
             for node in tree.body:
-                if isinstance(node, ast.FunctionDef):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     func_info = FunctionInfo(
                         name=node.name,
                         line=node.lineno,
@@ -330,6 +341,15 @@ class PythonAnalyzer(LanguageAnalyzer):
                         docstring=ast.get_docstring(node),
                         complexity=self._calculate_function_complexity(node),
                         return_type=self._get_name(node.returns) if node.returns else None,
+                        is_constructor=False,  # Top-level functions are never constructors
+                        is_abstract=any(
+                            self._get_name(d) == "abstractmethod" 
+                            for d in node.decorator_list
+                        ),
+                        is_static=False,  # Top-level functions are not static methods
+                        is_class=False,   # Top-level functions are not class methods
+                        is_property=self._is_property(node),  # Top-level properties possible with decorators
+                        is_private=node.name.startswith("_") and not node.name.startswith("__"),
                     )
                     structure.functions.append(func_info)
 

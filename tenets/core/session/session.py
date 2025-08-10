@@ -77,11 +77,12 @@ class SessionManager:
         db_deleted = False
         if self._db:
             try:
-                db_deleted = self._db.delete_session(name, purge_context=True)
+                # Rely on default purge_context=True in SessionDB.delete_session
+                db_deleted = bool(self._db.delete_session(name))
             except Exception as e:
                 self._logger.debug(f"SessionDB delete failed for {name}: {e}")
         mem_deleted = self.sessions.pop(name, None) is not None
-        return db_deleted or mem_deleted
+        return bool(db_deleted or mem_deleted)
 
     def add_context(self, name: str, context: ContextResult) -> None:
         sc = self.create(name)

@@ -9,6 +9,7 @@ Test Coverage:
     - RelevanceRanker initialization
     - Different ranking strategies (fast, balanced, thorough)
     - Ranking factor calculations
+    - TF-IDF calculator functionality
     - Custom ranker registration
     - Corpus analysis
     - Parallel vs sequential ranking
@@ -16,9 +17,11 @@ Test Coverage:
 """
 
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import Mock, MagicMock, patch, call, mock_open
 from concurrent.futures import TimeoutError as FutureTimeoutError
 import math
+import tempfile
+import os
 
 import pytest
 
@@ -30,10 +33,234 @@ from tenets.core.ranking.ranker import (
     FastRankingStrategy,
     BalancedRankingStrategy,
     ThoroughRankingStrategy,
+    TFIDFCalculator,
 )
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis, ComplexityMetrics
 from tenets.models.context import PromptContext
+
+
+class TestTFIDFCalculator:
+    """Test suite for TF-IDF calculator."""
+
+    def test_init_without_stopwords(self):
+        """Test TF-IDF calculator initialization without stopwords."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        assert calc.use_stopwords is False
+        assert calc.stopwords == set()
+        assert calc.document_count == 0
+        assert calc.vocabulary == set()
+
+    def test_init_with_stopwords(self):
+        """Test TF-IDF calculator initialization with stopwords."""
+        # Mock the stopwords file
+        stopwords_content = "the\na\nan\nand\nis\n"
+        
+        with patch("builtins.open", mock_open(read_data=stopwords_content)):
+            with patch("pathlib.Path.exists", return_value=True):
+                calc = TFIDFCalculator(use_stopwords=True)
+                
+                assert calc.use_stopwords is True
+                assert "the" in calc.stopwords
+                assert "a" in calc.stopwords
+                assert "and" in calc.stopwords
+
+    def test_tokenize_without_stopwords(self):
+        """Test tokenization without stopword filtering."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        text = "The AuthenticationManager handles user login and logout"
+        tokens = calc.tokenize(text)
+        
+        # Should include all tokens including "the", "and"
+        assert "the" in tokens
+        assert "and" in tokens
+        assert "authenticationmanager" in tokens
+        assert "authentication" in tokens  # Split from camelCase
+        assert "manager" in tokens
+        assert "handles" in tokens
+        assert "user" in tokens
+        assert "login" in tokens
+        assert "logout" in tokens
+
+    def test_tokenize_with_stopwords(self):
+        """Test tokenization with stopword filtering."""
+        calc = TFIDFCalculator(use_stopwords=True)
+        calc.stopwords = {"the", "and", "a", "an"}
+        
+        text = "The AuthenticationManager handles user login and logout"
+        tokens = calc.tokenize(text)
+        
+        # Should exclude stopwords
+        assert "the" not in tokens
+        assert "and" not in tokens
+        # Should include other tokens
+        assert "authenticationmanager" in tokens
+        assert "handles" in tokens
+        assert "user" in tokens
+
+    def test_tokenize_camel_case(self):
+        """Test tokenization of camelCase and PascalCase."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        text = "getUserById handleAuthRequest XMLParser"
+        tokens = calc.tokenize(text)
+        
+        # Should split camelCase but also keep original
+        assert "getuserbyid" in tokens
+        assert "get" in tokens
+        assert "user" in tokens
+        assert "by" in tokens
+        assert "id" in tokens
+        
+        assert "handleauthrequest" in tokens
+        assert "handle" in tokens
+        assert "auth" in tokens
+        assert "request" in tokens
+        
+        assert "xmlparser" in tokens
+        assert "xml" in tokens
+        assert "parser" in tokens
+
+    def test_tokenize_snake_case(self):
+        """Test tokenization of snake_case."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        text = "get_user_by_id handle_auth_request"
+        tokens = calc.tokenize(text)
+        
+        # Should split snake_case but also keep original
+        assert "get_user_by_id" in tokens
+        assert "get" in tokens
+        assert "user" in tokens
+        assert "by" in tokens
+        assert "id" in tokens
+
+    def test_compute_tf_sublinear(self):
+        """Test term frequency calculation with sublinear scaling."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        tokens = ["auth", "auth", "auth", "user", "user", "login"]
+        tf = calc.compute_tf(tokens, use_sublinear=True)
+        
+        # auth appears 3 times: 1 + log(3)
+        assert abs(tf["auth"] - (1 + math.log(3))) < 0.001
+        # user appears 2 times: 1 + log(2)
+        assert abs(tf["user"] - (1 + math.log(2))) < 0.001
+        # login appears 1 time: 1 + log(1) = 1
+        assert tf["login"] == 1.0
+
+    def test_compute_tf_raw(self):
+        """Test term frequency calculation without sublinear scaling."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        tokens = ["auth", "auth", "user", "login"]
+        tf = calc.compute_tf(tokens, use_sublinear=False)
+        
+        # Raw frequency normalized by document length
+        assert tf["auth"] == 0.5  # 2/4
+        assert tf["user"] == 0.25  # 1/4
+        assert tf["login"] == 0.25  # 1/4
+
+    def test_compute_idf(self):
+        """Test inverse document frequency calculation."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        calc.document_count = 10
+        calc.document_frequency = {
+            "common": 8,  # Appears in 8 docs
+            "rare": 1,    # Appears in 1 doc
+            "medium": 4   # Appears in 4 docs
+        }
+        
+        # IDF = log((N + 1) / (df + 1))
+        # Common term: log(11/9) = low IDF
+        idf_common = calc.compute_idf("common")
+        assert abs(idf_common - math.log(11/9)) < 0.001
+        
+        # Rare term: log(11/2) = high IDF
+        idf_rare = calc.compute_idf("rare")
+        assert abs(idf_rare - math.log(11/2)) < 0.001
+        
+        # New term (not in corpus): log(11/1) = highest IDF
+        idf_new = calc.compute_idf("newterm")
+        assert abs(idf_new - math.log(11/1)) < 0.001
+
+    def test_add_document(self):
+        """Test adding a document to the corpus."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        # Add first document
+        doc1_vector = calc.add_document("doc1", "authentication and authorization")
+        
+        assert calc.document_count == 1
+        assert "authentication" in calc.vocabulary
+        assert "authorization" in calc.vocabulary
+        assert "doc1" in calc.document_vectors
+        
+        # Vector should be normalized (L2 norm = 1)
+        norm = math.sqrt(sum(score ** 2 for score in doc1_vector.values()))
+        assert abs(norm - 1.0) < 0.001
+
+    def test_compute_similarity(self):
+        """Test cosine similarity computation."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        # Build a small corpus
+        calc.add_document("doc1", "authentication system for users")
+        calc.add_document("doc2", "database connection and queries")
+        calc.add_document("doc3", "user authentication and authorization")
+        
+        # Query similar to doc1 and doc3
+        similarity1 = calc.compute_similarity("user authentication", "doc1")
+        similarity2 = calc.compute_similarity("user authentication", "doc2")
+        similarity3 = calc.compute_similarity("user authentication", "doc3")
+        
+        # doc3 should have highest similarity (contains both terms)
+        assert similarity3 > similarity1
+        # doc1 should have higher similarity than doc2
+        assert similarity1 > similarity2
+        # All similarities should be in [0, 1]
+        assert 0 <= similarity1 <= 1
+        assert 0 <= similarity2 <= 1
+        assert 0 <= similarity3 <= 1
+
+    def test_get_top_terms(self):
+        """Test getting top TF-IDF terms for a document."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        # Build corpus
+        calc.add_document("doc1", "authentication authentication security")
+        calc.add_document("doc2", "database database database")
+        calc.add_document("doc3", "api endpoint handler")
+        
+        # Get top terms for doc1
+        top_terms = calc.get_top_terms("doc1", n=2)
+        
+        assert len(top_terms) <= 2
+        # Should return tuples of (term, score)
+        assert all(isinstance(t, tuple) and len(t) == 2 for t in top_terms)
+        # Should be sorted by score
+        if len(top_terms) == 2:
+            assert top_terms[0][1] >= top_terms[1][1]
+
+    def test_build_corpus(self):
+        """Test batch corpus building."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        documents = [
+            ("doc1", "authentication system"),
+            ("doc2", "database queries"),
+            ("doc3", "api endpoints"),
+        ]
+        
+        calc.build_corpus(documents)
+        
+        assert calc.document_count == 3
+        assert len(calc.document_vectors) == 3
+        assert "authentication" in calc.vocabulary
+        assert "database" in calc.vocabulary
+        assert "api" in calc.vocabulary
 
 
 class TestRelevanceRankerInitialization:
@@ -229,6 +456,33 @@ def helper():
 
         # Should have high keyword match due to multiple occurrences
         assert factors.keyword_match > 0.6
+
+    def test_tfidf_similarity_calculation(self, strategy):
+        """Test TF-IDF similarity calculation with the new calculator."""
+        file = FileAnalysis(
+            path="auth.py",
+            content="authentication system with user login and password verification",
+            language="python"
+        )
+
+        prompt_context = PromptContext(
+            text="user authentication system",
+            keywords=["authentication", "user", "system"],
+            task_type="general"
+        )
+
+        # Create a mock TF-IDF calculator
+        mock_tfidf = Mock(spec=TFIDFCalculator)
+        mock_tfidf.document_vectors = {"auth.py": {"authentication": 0.5, "user": 0.3}}
+        mock_tfidf.compute_similarity.return_value = 0.75
+        
+        corpus_stats = {"tfidf_calculator": mock_tfidf}
+
+        factors = strategy.rank_file(file, prompt_context, corpus_stats)
+
+        # Should have TF-IDF similarity score
+        assert factors.tfidf_similarity == 0.75
+        mock_tfidf.compute_similarity.assert_called_once_with("user authentication system", "auth.py")
 
     def test_path_structure_analysis(self, strategy):
         """Test sophisticated path structure analysis."""
@@ -599,28 +853,30 @@ class TestCorpusAnalysis:
         files = [
             FileAnalysis(
                 path="file1.py",
-                content="",
+                content="def authenticate(): pass",
                 language="python",
                 size=1000,
                 imports=[Mock(module="os")],
             ),
             FileAnalysis(
                 path="file2.js",
-                content="",
+                content="function login() {}",
                 language="javascript",
                 size=2000,
                 imports=[Mock(module="react")],
             ),
             FileAnalysis(
                 path="file3.py",
-                content="",
+                content="import file1",
                 language="python",
                 size=1500,
                 imports=[Mock(module="file1")],
             ),
         ]
 
-        stats = ranker._analyze_corpus(files)
+        prompt_context = PromptContext(text="test", keywords=[], task_type="general")
+
+        stats = ranker._analyze_corpus(files, prompt_context)
 
         assert stats["total_files"] == 3
         assert stats["languages"]["python"] == 2
@@ -628,6 +884,34 @@ class TestCorpusAnalysis:
         assert len(stats["file_sizes"]) == 3
         assert stats["avg_file_size"] == 1500
         assert "import_graph" in stats
+        
+        # Should have TF-IDF calculator
+        assert "tfidf_calculator" in stats
+        assert isinstance(stats["tfidf_calculator"], TFIDFCalculator)
+        # Calculator should have processed all files
+        assert stats["tfidf_calculator"].document_count == 3
+
+    def test_analyze_corpus_with_tfidf_stopwords(self, ranker, test_config):
+        """Test corpus analysis with TF-IDF stopwords enabled."""
+        # Enable stopwords in config
+        test_config.use_tfidf_stopwords = True
+        
+        files = [
+            FileAnalysis(path="file1.py", content="the authentication system", language="python"),
+            FileAnalysis(path="file2.py", content="database and queries", language="python"),
+        ]
+
+        prompt_context = PromptContext(text="test", keywords=[], task_type="general")
+
+        # Mock stopwords file
+        with patch("builtins.open", mock_open(read_data="the\nand\n")):
+            with patch("pathlib.Path.exists", return_value=True):
+                stats = ranker._analyze_corpus(files, prompt_context)
+
+        tfidf_calc = stats["tfidf_calculator"]
+        assert tfidf_calc.use_stopwords is True
+        # Should have loaded stopwords
+        assert "the" in tfidf_calc.stopwords or len(tfidf_calc.stopwords) > 0
 
     def test_resolve_import(self, ranker):
         """Test import resolution to file paths."""
@@ -662,13 +946,18 @@ class TestRankingExplanation:
     def test_generate_explanation(self, ranker):
         """Test explanation generation for rankings."""
         factors = RankingFactors(
-            keyword_match=0.8, semantic_similarity=0.7, path_relevance=0.3, import_centrality=0.6
+            keyword_match=0.8,
+            tfidf_similarity=0.75,
+            semantic_similarity=0.7,
+            path_relevance=0.3,
+            import_centrality=0.6
         )
 
         weights = {
             "keyword_match": 0.4,
-            "semantic_similarity": 0.3,
-            "path_relevance": 0.2,
+            "tfidf_similarity": 0.2,
+            "semantic_similarity": 0.2,
+            "path_relevance": 0.1,
             "import_centrality": 0.1,
         }
 
@@ -676,7 +965,8 @@ class TestRankingExplanation:
 
         # Should mention top contributing factors
         assert "keyword match" in explanation.lower()
-        assert "semantic similarity" in explanation.lower()
+        # Should also mention TF-IDF now
+        assert "tf-idf" in explanation.lower() or "tfidf" in explanation.lower()
 
     def test_generate_explanation_low_relevance(self, ranker):
         """Test explanation for low relevance files."""
@@ -726,6 +1016,36 @@ class TestEdgeCases:
             # Should handle timeout gracefully
             # Files that timeout get score 0
             assert all(hasattr(f, "relevance_score") for f in files)
+
+    def test_tfidf_with_empty_content(self):
+        """Test TF-IDF calculator handles empty content gracefully."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        # Add document with empty content
+        vector = calc.add_document("empty", "")
+        assert vector == {}
+        assert calc.document_norms["empty"] == 0.0
+        
+        # Compute similarity with empty document
+        similarity = calc.compute_similarity("test query", "empty")
+        assert similarity == 0.0
+
+    def test_tfidf_cache_invalidation(self):
+        """Test TF-IDF IDF cache is cleared when documents are added."""
+        calc = TFIDFCalculator(use_stopwords=False)
+        
+        # Add first document and compute IDF
+        calc.add_document("doc1", "test content")
+        idf1 = calc.compute_idf("test")
+        assert "test" in calc.idf_cache
+        
+        # Add another document - should clear cache
+        calc.add_document("doc2", "test content again")
+        assert len(calc.idf_cache) == 0
+        
+        # IDF should be different now
+        idf2 = calc.compute_idf("test")
+        assert idf1 != idf2
 
     def test_shutdown(self, ranker):
         """Test ranker shutdown."""

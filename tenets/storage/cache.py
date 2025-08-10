@@ -38,7 +38,8 @@ class MemoryCache:
         """Get item from cache."""
         if key in self._cache:
             # Move to end (most recently used)
-            self._access_order.remove(key)
+            if key in self._access_order:
+                self._access_order.remove(key)
             self._access_order.append(key)
             return self._cache[key]
         return None
@@ -46,14 +47,23 @@ class MemoryCache:
     def put(self, key: str, value: Any) -> None:
         """Put item in cache."""
         if key in self._cache:
-            self._access_order.remove(key)
+            if key in self._access_order:
+                self._access_order.remove(key)
         elif len(self._cache) >= self.max_size:
             # Evict least recently used
-            lru_key = self._access_order.pop(0)
-            del self._cache[lru_key]
-
+            if self._access_order:
+                lru_key = self._access_order.pop(0)
+                if lru_key in self._cache:
+                    del self._cache[lru_key]
         self._cache[key] = value
         self._access_order.append(key)
+
+    def delete(self, key: str) -> None:
+        """Delete a key from the memory cache if present."""
+        if key in self._cache:
+            del self._cache[key]
+        if key in self._access_order:
+            self._access_order.remove(key)
 
     def clear(self) -> None:
         """Clear the cache."""
@@ -205,7 +215,6 @@ class DiskCache:
 
             if size_mb > max_size_mb:
                 # Delete least recently used until under limit
-                target_bytes = max_size_mb * 1024 * 1024
                 cursor = conn.execute(
                     """
                     DELETE FROM cache 
@@ -237,6 +246,9 @@ class AnalysisCache:
         Args:
             cache_dir: Directory for cache storage
         """
+        # Allow str inputs by converting to Path
+        if not isinstance(cache_dir, Path):
+            cache_dir = Path(cache_dir)
         self.cache_dir = cache_dir
         self.memory = MemoryCache(max_size=500)
         self.disk = DiskCache(cache_dir, name="analysis")
@@ -257,7 +269,14 @@ class AnalysisCache:
         # Check memory cache first
         analysis = self.memory.get(key)
         if analysis:
-            return analysis
+            # Validate memory cache against file mtime too
+            try:
+                current_mtime = file_path.stat().st_mtime
+                cached = self.disk.get(key)
+                if cached and self._is_cache_valid(file_path, cached.get("mtime")):
+                    return analysis
+            except Exception:
+                return analysis
 
         # Check disk cache
         cached = self.disk.get(key)
@@ -271,6 +290,7 @@ class AnalysisCache:
             else:
                 # Invalidate stale cache
                 self.disk.delete(key)
+                self.memory.delete(key)
 
         return None
 
@@ -311,7 +331,7 @@ class AnalysisCache:
 
         try:
             current_mtime = file_path.stat().st_mtime
-            return current_mtime == cached_mtime
+            return float(current_mtime) == float(cached_mtime)
         except Exception:
             return False
 
@@ -387,7 +407,9 @@ class CacheManager:
 
     def invalidate(self, key: str) -> None:
         """Invalidate cache entry."""
-        self.memory.get(key)  # This will remove it if present
+        # Remove from memory cache
+        self.memory.delete(key)
+        # Remove from disk cache
         self.general.delete(key)
 
     def clear_all(self) -> None:

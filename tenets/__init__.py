@@ -47,6 +47,7 @@ from tenets.core.instiller.manager import TenetManager
 from tenets.models.context import ContextResult
 from tenets.models.tenet import Tenet, Priority, TenetCategory
 from tenets.utils.logger import get_logger
+from tenets.core.analysis.analyzer import CodeAnalyzer
 
 
 class Tenets:
@@ -109,7 +110,43 @@ class Tenets:
         elif isinstance(config, TenetsConfig):
             self.config = config
         elif isinstance(config, dict):
-            self.config = TenetsConfig(**config)
+            # Map common top-level aliases into nested config structure
+            cfg = TenetsConfig()
+            # Known top-level shortcuts used in docs/tests
+            if "max_tokens" in config:
+                cfg.max_tokens = int(config["max_tokens"])  # type: ignore[arg-type]
+            if "debug" in config:
+                cfg.debug = bool(config["debug"])  # type: ignore[arg-type]
+            if "ranking_algorithm" in config:
+                cfg.ranking.algorithm = str(config["ranking_algorithm"])  # type: ignore[arg-type]
+            # Apply any nested sections if provided
+            if "scanner" in config and isinstance(config["scanner"], dict):
+                cfg.scanner = type(cfg.scanner)(**config["scanner"])  # type: ignore[call-arg]
+            if "ranking" in config and isinstance(config["ranking"], dict):
+                cfg.ranking = type(cfg.ranking)(**config["ranking"])  # type: ignore[call-arg]
+            if "tenet" in config and isinstance(config["tenet"], dict):
+                cfg.tenet = type(cfg.tenet)(**config["tenet"])  # type: ignore[call-arg]
+            if "cache" in config and isinstance(config["cache"], dict):
+                cfg.cache = type(cfg.cache)(**config["cache"])  # type: ignore[call-arg]
+            if "output" in config and isinstance(config["output"], dict):
+                cfg.output = type(cfg.output)(**config["output"])  # type: ignore[call-arg]
+            if "git" in config and isinstance(config["git"], dict):
+                cfg.git = type(cfg.git)(**config["git"])  # type: ignore[call-arg]
+            # Any other keys go to custom
+            for k, v in config.items():
+                if k not in {
+                    "max_tokens",
+                    "debug",
+                    "ranking_algorithm",
+                    "scanner",
+                    "ranking",
+                    "tenet",
+                    "cache",
+                    "output",
+                    "git",
+                }:
+                    cfg.custom[k] = v
+            self.config = cfg
         elif isinstance(config, (str, Path)):
             config_path = Path(config)
             if not config_path.exists():
@@ -225,7 +262,20 @@ class Tenets:
             apply_tenets if apply_tenets is not None else self.config.auto_instill_tenets
         )
 
-        if should_apply_tenets and self.tenet_manager.get_pending_tenets(session):
+        pending = None
+        if should_apply_tenets:
+            try:
+                pending = self.tenet_manager.get_pending_tenets(session)
+            except Exception:
+                pending = []
+
+        def _has_real_pending(items) -> bool:
+            try:
+                return isinstance(items, list) and len(items) > 0
+            except Exception:
+                return False
+
+        if should_apply_tenets and _has_real_pending(pending):
             self.logger.info("Applying tenets to context")
             result = self.instiller.instill(
                 context=result, session=session, max_tenets=self.config.max_tenets_per_context
@@ -521,5 +571,6 @@ __all__ = [
     "Tenet",
     "Priority",
     "TenetCategory",
+    "CodeAnalyzer",
     "__version__",
 ]

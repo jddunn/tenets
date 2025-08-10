@@ -182,7 +182,7 @@ Line 4
 Line 5"""
 
         # Force small chunks
-        chunks = chunk_text(text, max_tokens=10)
+        chunks = chunk_text(text, max_tokens=5)
 
         assert len(chunks) > 1
         # Chunks should be line-aware

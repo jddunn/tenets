@@ -143,13 +143,15 @@ test = [
 # Documentation dependencies
 docs = [
     "mkdocs>=1.5.0",
-    "mkdocs-material>=9.4.0",
+    "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.23.0",
+    "mkdocs-minify-plugin>=0.7.0",
+    "pymdown-extensions>=10.0",
     "mkdocs-gen-files>=0.5.0",
     "mkdocs-literate-nav>=0.6.0",
     "mkdocs-section-index>=0.3.0",
-    "mkdocs-jupyter>=0.24.0",
     "mike>=2.0.0",
+    # Remove mkdocs-jupyter if not using notebooks
 ]
 
 # All features

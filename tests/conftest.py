@@ -25,6 +25,9 @@ from dataclasses import dataclass
 import pytest
 import yaml
 
+# Set environment variables for testing
+os.environ['GIT_PYTHON_REFRESH'] = 'quiet'
+
 # Import the modules we're testing
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis, ComplexityMetrics, ImportInfo

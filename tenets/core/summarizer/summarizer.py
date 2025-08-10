@@ -23,11 +23,12 @@ class FileSummarizer:
 
     def summarize_file(self, path: Path, max_lines: int = 150) -> FileSummary:
         text = self._read_text(path)
-        summary = self._extract_summary(text, max_lines=max_lines)
+        summary_text = self._extract_summary(text, max_lines=max_lines)
         return FileSummary(
-            path=str(path),
-            summary=summary,
-            token_count=count_tokens(summary, self.model),
+            path=str(path),  # legacy alias supported by model
+            file_path=str(path),
+            summary=summary_text,  # legacy alias mapped to content
+            token_count=count_tokens(summary_text, self.model),  # mapped to summary_tokens
             metadata={"strategy": "heuristic", "max_lines": max_lines},
         )
 
@@ -49,7 +50,9 @@ class FileSummarizer:
             tree = ast.parse(text)
             doc = ast.get_docstring(tree)
             if doc:
-                return doc.strip()
+                # Respect max_lines for docstring output
+                doc_lines = doc.strip().splitlines()
+                return "\n".join(doc_lines[:max_lines]).strip()
         except Exception:
             pass
         # Fallback: leading comments or head of file
@@ -61,8 +64,9 @@ class FileSummarizer:
         while i < len(lines) and (lines[i].strip().startswith("#") or not lines[i].strip()):
             i += 1
         if i > 0:
-            comment_block = "\n".join(line.lstrip("# ") for line in lines[:i]).strip()
+            # Limit to max_lines
+            comment_block = "\n".join(line.lstrip("# ") for line in lines[: min(i, max_lines)]).strip()
             if comment_block:
                 return comment_block
-        # Head snippet
+        # Head snippet, limited to max_lines
         return "\n".join(lines[:max_lines]).strip()

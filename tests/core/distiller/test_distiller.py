@@ -42,8 +42,8 @@ def mock_components(distiller):
     distiller.scanner.scan.return_value = [Path("file1.py"), Path("file2.py"), Path("file3.py")]
 
     # Mock analyzer
-    distiller.analyzer.analyze_file.side_effect = lambda path, **kwargs: FileAnalysis(
-        path=str(path), content=f"Content of {path.name}", language="python", lines=100
+    distiller.analyzer.analyze_file.side_effect = lambda file_path, **kwargs: FileAnalysis(
+        path=str(file_path), content=f"Content of {file_path.name}", language="python", lines=100
     )
 
     # Mock parser

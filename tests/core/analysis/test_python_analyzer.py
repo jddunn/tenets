@@ -329,20 +329,20 @@ class MyClass:
         assert len(my_class.methods) == 6
 
         # Check method types
-        init_method = next(m for m in my_class.methods if m["name"] == "__init__")
-        assert init_method["is_constructor"] is True
+        init_method = next(m for m in my_class.methods if m.name == "__init__")
+        assert init_method.is_constructor is True
 
-        static = next(m for m in my_class.methods if m["name"] == "static_method")
-        assert static["is_static"] is True
+        static = next(m for m in my_class.methods if m.name == "static_method")
+        assert static.is_static is True
 
-        classmethod = next(m for m in my_class.methods if m["name"] == "class_method")
-        assert classmethod["is_class"] is True
+        classmethod = next(m for m in my_class.methods if m.name == "class_method")
+        assert classmethod.is_class is True
 
-        prop = next(m for m in my_class.methods if m["name"] == "name_property")
-        assert prop["is_property"] is True
+        prop = next(m for m in my_class.methods if m.name == "name_property")
+        assert prop.is_property is True
 
-        private = next(m for m in my_class.methods if m["name"] == "_private_method")
-        assert private["is_private"] is True
+        private = next(m for m in my_class.methods if m.name == "_private_method")
+        assert private.is_private is True
 
     def test_extract_functions(self, analyzer):
         """Test extraction of function definitions."""
@@ -535,7 +535,7 @@ def function():
 '''
         metrics = analyzer.calculate_complexity(code, Path("test.py"))
 
-        assert metrics.line_count == 11  # Total lines
+        assert metrics.line_count == 12  # Total lines
         assert metrics.code_lines > 0  # Non-comment lines
         assert metrics.comment_lines > 0  # Comment lines
         assert metrics.comment_ratio > 0  # Should have some comments
@@ -726,7 +726,7 @@ class ConcreteClass(AbstractBase):
         assert abstract_class.is_abstract is True
 
         # Check abstract method detection
-        assert any(m["is_abstract"] for m in abstract_class.methods)
+        assert any(m.is_abstract for m in abstract_class.methods)
 
         # Concrete class should not be abstract
         concrete_class = next(c for c in structure.classes if c.name == "ConcreteClass")

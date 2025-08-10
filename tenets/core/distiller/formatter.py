@@ -295,7 +295,9 @@ class ContextFormatter:
 
             data["files"].append(file_data)
 
-        # Note: Git context is intentionally not included in JSON output
+        # Add git context if available
+        if "git_context" in aggregated:
+            data["git_context"] = aggregated["git_context"]
 
         return json.dumps(data, indent=2)
 

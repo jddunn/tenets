@@ -136,9 +136,14 @@ class FileSummary:
         metadata: Additional metadata
         file_path: Original file path
         timestamp: When summary was created
+
+        Compatibility fields:
+        - path: legacy alias for file_path
+        - summary: legacy alias for content
+        - token_count: legacy alias for summary_tokens
     """
 
-    content: str
+    content: str = ""
     was_summarized: bool = True
     original_tokens: int = 0
     summary_tokens: int = 0
@@ -154,6 +159,9 @@ class FileSummary:
     file_path: Optional[str] = None
     # Backward-compat: support `path=` constructor arg used by tests
     path: Optional[str] = None
+    # Backward-compat: support `summary=` and `token_count=` args used by tests
+    summary: Optional[str] = None
+    token_count: int = 0
     timestamp: datetime = field(default_factory=datetime.now)
 
     def __post_init__(self):
@@ -162,13 +170,24 @@ class FileSummary:
         if not self.file_path and self.path:
             self.file_path = self.path
 
+        # Map legacy `summary` to `content` if provided
+        if self.summary and not self.content:
+            self.content = self.summary
+
+        # Map legacy `token_count` to `summary_tokens` if provided
+        if self.token_count and not self.summary_tokens:
+            self.summary_tokens = self.token_count
+        # Keep token_count mirrored for external reads
+        if not self.token_count and self.summary_tokens:
+            self.token_count = self.summary_tokens
+
         # Calculate compression ratio if not set
         if self.original_tokens > 0 and self.compression_ratio == 0:
             self.compression_ratio = self.summary_tokens / self.original_tokens
 
         # Calculate line counts if not set
         if self.summary_lines == 0:
-            self.summary_lines = self.content.count("\n") + 1
+            self.summary_lines = self.content.count("\n") + 1 if self.content else 0
 
         # Add default instructions if none provided
         if self.was_summarized and not self.instructions:
@@ -187,7 +206,7 @@ class FileSummary:
                 f"({self.original_lines} lines → {self.summary_lines} lines)"
             )
 
-        if self.compression_ratio < 0.5:
+        if self.compression_ratio < 0.5 and self.original_tokens > 0:
             self.add_instruction(
                 f"Significant compression applied ({self.compression_ratio:.1%} of original). "
                 f"Request full file if more detail needed."
@@ -207,6 +226,7 @@ class FileSummary:
         """Add a section to the summary."""
         self.sections.append(section)
         self.summary_tokens += section.tokens
+        self.token_count = self.summary_tokens
 
         if section.preserved_fully:
             self.preserved_sections.append(section.name)

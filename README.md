@@ -518,6 +518,30 @@ Core docs in `docs/`:
 
 See `docs/CONFIG.md` for configuration details.
 
+Full documentation is available at https://docs.tenets.dev.
+
+### Building Documentation Locally
+
+```bash
+# Install docs dependencies
+pip install mkdocs mkdocs-material pymdown-extensions
+
+# Serve locally with live reload
+make docs
+# Or directly:
+mkdocs serve
+
+# Build static site
+make docs-build
+# Or directly:
+mkdocs build
+
+# Deploy to GitHub Pages (requires permissions)
+make docs-deploy
+# Or directly:
+mkdocs gh-deploy
+```
+
 ## Configuration (quick start)
 
 - Create a starter file: `tenets config init` (writes `.tenets.yml` at project root)

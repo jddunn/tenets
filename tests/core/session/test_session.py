@@ -218,11 +218,30 @@ class TestSessionManager:
             session_manager_db.add_context("test_session", context_result)
 
             mock_add.assert_called_once()
-            call_args = mock_add.call_args[0]
+            # Check both args and kwargs
+            call_args = mock_add.call_args[0]  # This is the args tuple
+            call_kwargs = mock_add.call_args[1]  # This is the kwargs dict
+            
+            # Debug what we actually got
+            print(f"Args: {call_args}")
+            print(f"Kwargs: {call_kwargs}")
+            
+            # The first argument should be session name (positional)
+            assert len(call_args) >= 1, f"Expected at least 1 positional arg, got {len(call_args)}: {call_args}"
             assert call_args[0] == "test_session"
-            assert call_args[1] == "context_result"
-            # Content should be JSON serialized
-            content_data = json.loads(call_args[2])
+            
+            # Check if kind and content are passed as keyword arguments
+            if len(call_args) >= 3:
+                # All arguments passed positionally
+                assert call_args[1] == "context_result"
+                content_data = json.loads(call_args[2])
+            else:
+                # Some arguments passed as keywords
+                assert "kind" in call_kwargs, f"Expected 'kind' in kwargs: {call_kwargs}"
+                assert "content" in call_kwargs, f"Expected 'content' in kwargs: {call_kwargs}"
+                assert call_kwargs["kind"] == "context_result"
+                content_data = json.loads(call_kwargs["content"])
+                
             assert content_data["files"] == ["file1.py", "file2.py"]
             assert content_data["token_count"] == 100
 

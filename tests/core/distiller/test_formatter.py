@@ -261,7 +261,7 @@ class TestContextFormatter:
         lines = formatter._format_git_context_xml(git_context)
 
         assert "<git_context>" in lines[0]
-        assert "<branch>main</branch>" in lines
+        assert "<branch>main</branch>" in " ".join(lines)
         assert "<recent_commits>" in " ".join(lines)
         assert 'sha="abc123"' in " ".join(lines)
         assert "&lt;dev@test.com&gt;" in " ".join(lines)  # Escaped

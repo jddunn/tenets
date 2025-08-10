@@ -190,10 +190,12 @@ class ContextResult:
     or other tools. This is the final output of the distillation process.
 
     Attributes:
-        context: The generated context content (formatted text)
+        content: The generated context content (preferred alias)
+        context: Backward-compatible alias for content
         format: Output format (markdown, xml, json)
         token_count: Number of tokens in context
-        files_included: List of included file paths
+        files: List of included file paths (preferred alias)
+        files_included: Backward-compatible alias for files
         files_summarized: List of summarized file paths
         metadata: Additional metadata about generation
         session_id: Session this belongs to
@@ -205,9 +207,13 @@ class ContextResult:
         errors: Any errors during generation
     """
 
-    context: str
+    # Support both names for content
+    content: Optional[str] = None
+    context: Optional[str] = None
     format: str = "markdown"
     token_count: int = 0
+    # Support both names for files
+    files: List[str] = field(default_factory=list)
     files_included: List[str] = field(default_factory=list)
     files_summarized: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -220,7 +226,19 @@ class ContextResult:
     errors: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        """Post-initialization processing."""
+        """Post-initialization processing and alias synchronization."""
+        # Synchronize content/context aliases
+        if self.content is None and self.context is not None:
+            self.content = self.context
+        if self.context is None and self.content is not None:
+            self.context = self.content
+
+        # Synchronize files/files_included aliases
+        if not self.files and self.files_included:
+            self.files = list(self.files_included)
+        if not self.files_included and self.files:
+            self.files_included = list(self.files)
+
         # Calculate default statistics if not provided
         if not self.statistics:
             self.statistics = {
@@ -249,11 +267,15 @@ class ContextResult:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         data = {
-            "context": self.context,
+            # Prefer normalized keys expected by tests
+            "content": self.content,
             "format": self.format,
             "token_count": self.token_count,
-            "files_included": self.files_included,
-            "files_summarized": self.files_summarized,
+            "files": list(self.files),
+            # Include legacy keys for backward compatibility
+            "context": self.context,
+            "files_included": list(self.files_included),
+            "files_summarized": list(self.files_summarized),
             "metadata": self.metadata,
             "session_id": self.session_id,
             "timestamp": self.timestamp.isoformat(),
@@ -277,6 +299,12 @@ class ContextResult:
         if "prompt_context" in data and isinstance(data["prompt_context"], dict):
             data["prompt_context"] = PromptContext.from_dict(data["prompt_context"])
 
+        # Normalize alias keys on load
+        if "context" in data and "content" not in data:
+            data["content"] = data["context"]
+        if "files_included" in data and "files" not in data:
+            data["files"] = data["files_included"]
+
         return cls(**data)
 
     def save_to_file(self, path: Union[str, Path]) -> None:
@@ -288,7 +316,7 @@ class ContextResult:
                 json.dump(self.to_dict(), f, indent=2, default=str)
         else:
             with open(path, "w") as f:
-                f.write(self.context)
+                f.write(self.content or "")
 
     def get_summary(self) -> str:
         """Get a summary of the context result."""

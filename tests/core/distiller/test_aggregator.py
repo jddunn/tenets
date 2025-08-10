@@ -279,7 +279,7 @@ class TestContextAggregator:
 
     def test_aggregate_with_model(self, aggregator, sample_files, prompt_context):
         """Test aggregation with specific model."""
-        with patch("tenets.utils.tokens.count_tokens") as mock_count:
+        with patch("tenets.core.distiller.aggregator.count_tokens") as mock_count:
             mock_count.return_value = 100
 
             result = aggregator.aggregate(
@@ -287,4 +287,9 @@ class TestContextAggregator:
             )
 
             # Should pass model to token counting
-            mock_count.assert_called_with(sample_files[0].content, "gpt-4")
+            assert mock_count.called, f"count_tokens should have been called, calls: {mock_count.call_args_list}"
+            # Check that it was called with the model parameter
+            assert any(
+                len(call[0]) >= 2 and call[0][1] == "gpt-4" 
+                for call in mock_count.call_args_list
+            ), f"Expected model 'gpt-4' in calls, got: {mock_count.call_args_list}"

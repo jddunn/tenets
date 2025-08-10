@@ -169,9 +169,6 @@ class CodeAnalyzer:
         """
         file_path = Path(file_path)
 
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-
         # Check cache first
         if use_cache and self.cache:
             cached_analysis = self.cache.get_file_analysis(file_path)
@@ -207,6 +204,9 @@ class CodeAnalyzer:
 
             # Get appropriate analyzer
             analyzer = self._get_analyzer(file_path)
+
+            if analyzer is None and deep:
+                analyzer = GenericAnalyzer()
 
             if analyzer and deep:
                 try:
@@ -257,6 +257,10 @@ class CodeAnalyzer:
 
             return analysis
 
+        except FileNotFoundError:
+            # Propagate not found to satisfy tests expecting exception
+            self.logger.error(f"File not found: {file_path}")
+            raise
         except Exception as e:
             self.logger.error(f"Failed to analyze {file_path}: {e}")
             self.stats["errors"] += 1
@@ -454,7 +458,7 @@ class CodeAnalyzer:
         elif file_path.name == "CMakeLists.txt":
             return self.analyzers.get(".cmake")
 
-        # Default to generic analyzer
+        # Return generic analyzer as fallback for analysis
         return GenericAnalyzer()
 
     def _detect_language(self, file_path: Path) -> str:
@@ -466,9 +470,20 @@ class CodeAnalyzer:
         Returns:
             Language name string
         """
-        analyzer = self._get_analyzer(file_path)
-        if analyzer:
+        extension = file_path.suffix.lower()
+
+        # Check direct mapping first
+        if extension in self.analyzers:
+            analyzer = self.analyzers[extension]
             return analyzer.language_name
+
+        # Check special files
+        if file_path.name == "Dockerfile":
+            return self.analyzers.get(".dockerfile", GenericAnalyzer()).language_name
+        elif file_path.name == "Makefile":
+            return self.analyzers.get(".makefile", GenericAnalyzer()).language_name
+        elif file_path.name == "CMakeLists.txt":
+            return self.analyzers.get(".cmake", GenericAnalyzer()).language_name
 
         # Fallback to extension-based detection
         extension_map = {

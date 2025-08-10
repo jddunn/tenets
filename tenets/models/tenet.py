@@ -50,6 +50,7 @@ class TenetCategory(Enum):
     DOCUMENTATION = "documentation"
     API_DESIGN = "api_design"
     ERROR_HANDLING = "error_handling"
+    QUALITY = "quality"
     CUSTOM = "custom"
 
 

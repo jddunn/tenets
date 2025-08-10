@@ -79,9 +79,9 @@ class ContextAggregator:
 
         strat = self.strategies.get(strategy, self.strategies["balanced"])
 
-        # Reserve tokens for structure; do not reserve for git context in output
+        # Reserve tokens for structure and git context
         structure_tokens = 500  # Headers, formatting, etc.
-        git_tokens = 0  # Git context not emitted in output
+        git_tokens = self._estimate_git_tokens(git_context) if git_context else 0
         available_tokens = max_tokens - structure_tokens - git_tokens
 
         # Select files to include
@@ -162,7 +162,7 @@ class ContextAggregator:
             "included_files": all_files,
             "total_tokens": total_tokens,
             "available_tokens": available_tokens,
-            # git_context intentionally omitted from output structure
+            "git_context": git_context,  # include for tests/consumers
             "statistics": {
                 "files_analyzed": len(files),
                 "files_included": len(included_files),

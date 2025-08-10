@@ -10,10 +10,22 @@ import os
 from tenets.core.git.analyzer import GitAnalyzer, CommitInfo
 from tenets.config import TenetsConfig
 
+# Check Git availability
+try:
+    from git import Repo
+    import subprocess
+    result = subprocess.run(["git", "--version"], capture_output=True, check=True)
+    _HAS_GIT = True
+except (ImportError, subprocess.CalledProcessError, FileNotFoundError):
+    _HAS_GIT = False
+
 
 @pytest.fixture
 def temp_git_repo(tmp_path):
     """Create a temporary git repository."""
+    if not _HAS_GIT:
+        pytest.skip("Git not available")
+    
     from git import Repo
 
     # Initialize repo
@@ -62,6 +74,7 @@ def non_git_dir(tmp_path):
     return tmp_path
 
 
+@pytest.mark.skipif(not _HAS_GIT, reason="Git not available")
 class TestGitAnalyzer:
     """Test suite for GitAnalyzer."""
 
