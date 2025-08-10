@@ -1,0 +1,261 @@
+site_name: tenets
+site_description: Context that feeds your prompts - Intelligent code exploration and AI pair programming tool
+site_url: https://tenets.dev
+site_author: manic.agency
+docs_dir: docs
+site_dir: site
+
+# Repository
+repo_name: jddunn/tenets
+repo_url: https://github.com/jddunn/tenets
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: >
+  Copyright &copy; 2024 <a href="https://manic.agency" target="_blank">manic.agency</a>
+
+# Theme configuration
+theme:
+  name: material
+  custom_dir: docs/overrides
+  
+  # Logo and favicon
+  logo: logos/tenets_dark_icon_transparent_cropped.png
+  favicon: favicon/favicon.ico
+  
+  # Fonts
+  font:
+    text: Inter
+    code: JetBrains Mono
+    
+  # Icons
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/file-edit-outline
+    
+  # Color schemes
+  palette:
+    # Light mode
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      primary: custom
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    
+    # Dark mode  
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      primary: custom
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  
+  # Features
+  features:
+    # Navigation
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.prune
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - header.autohide
+    
+    # Search
+    - search.suggest
+    - search.highlight
+    - search.share
+    
+    # Content
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    
+    # Table of contents
+    - toc.follow
+    - toc.integrate
+
+# Plugins
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+      prebuild_index: true
+      min_search_length: 2
+  
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+        remove_empty_space: true
+        reduce_boolean_attributes: true
+
+# Markdown extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - meta
+  - toc:
+      permalink: true
+      permalink_title: Link to this section
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra configuration
+extra:
+  generator: false
+  
+  # Social links
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jddunn/tenets
+      name: tenets on GitHub
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/DzNgXdYm
+      name: Join our Discord
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/manic-agency-llc/
+      name: manic.agency on LinkedIn
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/manicagency
+      name: Follow @manicagency
+    - icon: fontawesome/brands/instagram
+      link: https://instagram.com/manic.agency
+      name: manic.agency on Instagram
+    - icon: fontawesome/solid/envelope
+      link: mailto:team@manic.agency
+      name: Contact us
+      
+  # SEO meta tags
+  meta:
+    - name: keywords
+      content: tenets, code context, AI pair programming, LLM context, prompt engineering, prompt building, prompt templating, code analysis, developer tools, CLI tools, Python, LLM libraries, code aggregation
+    - name: description
+      content: Intelligent code aggregation and prompt building for AI pair programming. Build optimal context from your codebase for ChatGPT, Claude, and other LLMs.
+    - name: author
+      content: manic.agency
+    - property: og:type
+      content: website
+    - property: og:site_name
+      content: tenets - Context that feeds your prompts
+    - property: og:url
+      content: https://tenets.dev
+    - property: og:image
+      content: https://tenets.dev/logos/tenets_dark_icon_transparent_cropped.png
+    - property: og:image:width
+      content: 1200
+    - property: og:image:height
+      content: 630
+    - property: twitter:card
+      content: summary_large_image
+    - property: twitter:site
+      content: "@manicagency"
+    - property: twitter:creator
+      content: "@manicagency"
+    - property: twitter:title
+      content: tenets - Intelligent Code Context for AI
+    - property: twitter:description
+      content: Build optimal context from your codebase for LLMs. Smart aggregation, prompt engineering, and code analysis.
+      
+# CSS and JS files - properly organized
+extra_css:
+  # Base styles
+  - styles/variables.css
+  - styles/main.css
+  
+  # Component styles
+  - styles/header.css
+  - styles/footer.css
+  - styles/buttons.css
+  - styles/cards.css
+  - styles/hero.css
+  - styles/terminal.css
+  - styles/search.css
+  
+  # Theme styles
+  - styles/victorian.css
+  - styles/neumorphic.css
+  
+  # Responsive
+  - styles/mobile.css
+  
+  # Animations
+  - styles/animations.css
+
+extra_javascript:
+  # Core functionality
+  - js/nav-injection.js
+  - js/main.js
+  - js/utils.js
+  
+  # Components
+  - js/theme-toggle.js
+  - js/terminal.js
+  - js/mobile-menu.js
+  - js/search-enhancements.js
+  - js/copy-buttons.js
+  
+  # Homepage specific
+  - js/home-animations.js
+  - js/architecture-diagram.js
+  
+  # External libraries (if needed)
+  - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
+
+# Navigation structure
+nav:
+  - Home: index.md
+  - Features: features.md
+  - Quick Start: quickstart.md
+  - Installation: installation.md
+  - Documentation:
+    - CLI Reference: CLI.md
+    - Configuration: CONFIG.md
+    - Architecture: DEEP-DIVE.md
+  - Blog: https://manic.agency/blog
+  - Contact: https://manic.agency/contact
+
+# Additional theme customization
+extra_templates:
+  - overrides/home.html
+  - overrides/main.html

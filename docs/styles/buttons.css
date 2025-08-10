@@ -1,0 +1,661 @@
+/* Button Styles - Enhanced Version
+   Path: docs/styles/buttons.css
+   Material Design inspired with Victorian flair
+   ============================================ */
+
+/* =====================================================
+   BASE BUTTON STYLES
+   ===================================================== */
+
+.btn,
+.md-button,
+button[type="button"],
+button[type="submit"],
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid transparent;
+  border-radius: 50px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.md-button:focus,
+button:focus,
+a.button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+}
+
+.btn:focus-visible,
+.md-button:focus-visible,
+button:focus-visible,
+a.button:focus-visible {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+.btn:disabled,
+.btn.disabled,
+.md-button:disabled,
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* =====================================================
+   PRIMARY BUTTON - Gradient Gold
+   ===================================================== */
+.btn-primary,
+.md-button--primary {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  border: 2px solid transparent;
+  box-shadow: 
+    6px 6px 12px rgba(26, 35, 50, 0.15),
+    -6px -6px 12px rgba(255, 255, 255, 0.9),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth shimmer effect */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover::before {
+  transform: rotate(45deg) translateX(100%);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    8px 8px 20px rgba(245, 158, 11, 0.25),
+    -8px -8px 20px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.4);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* =====================================================
+   SECONDARY BUTTON - Outlined
+   ===================================================== */
+
+.btn-secondary,
+.md-button--secondary {
+  background: transparent;
+  color: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+  position: relative;
+}
+
+/* Fill animation on hover */
+.btn-secondary::before,
+.md-button--secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: inherit;
+  transition: width 0.3s ease;
+  z-index: -1;
+}
+
+.btn-secondary:hover::before,
+.md-button--secondary:hover::before {
+  width: 100%;
+}
+
+.btn-secondary:hover,
+.md-button--secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  border-color: var(--md-accent-fg-color--light);
+  color: var(--md-accent-fg-color--light);
+}
+
+.btn-secondary:active,
+.md-button--secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+}
+
+/* =====================================================
+   GHOST BUTTON - Minimal Style
+   ===================================================== */
+
+.btn-ghost,
+.md-button--ghost {
+  background: transparent;
+  color: var(--md-default-fg-color);
+  border-color: transparent;
+  padding: 0.5rem 1rem;
+}
+
+.btn-ghost:hover,
+.md-button--ghost:hover {
+  background: var(--md-default-bg-color--light);
+  transform: translateY(-1px);
+}
+
+.btn-ghost:active,
+.md-button--ghost:active {
+  background: var(--md-default-bg-color--lighter);
+  transform: translateY(0);
+}
+
+/* =====================================================
+   ICON BUTTONS
+   ===================================================== */
+
+.btn-icon,
+.md-button--icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg,
+.md-button--icon svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.btn-icon:hover,
+.md-button--icon:hover {
+  transform: rotate(15deg) scale(1.1);
+}
+
+/* =====================================================
+   FLOATING ACTION BUTTON (FAB)
+   ===================================================== */
+
+.btn-fab,
+.md-button--fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3),
+              0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-fab:hover,
+.md-button--fab:hover {
+  transform: translateY(-4px) rotate(90deg);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4),
+              0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.btn-fab svg,
+.md-button--fab svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  transition: transform 0.3s ease;
+}
+
+/* =====================================================
+   BUTTON SIZES
+   ===================================================== */
+
+.btn-sm,
+.md-button--small {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  border-radius: 40px;
+}
+
+.btn-lg,
+.md-button--large {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  border-radius: 60px;
+}
+
+.btn-xl,
+.md-button--xlarge {
+  padding: 1.25rem 2.5rem;
+  font-size: 1.125rem;
+  border-radius: 70px;
+}
+
+/* =====================================================
+   BUTTON GROUPS
+   ===================================================== */
+
+.btn-group,
+.md-button-group {
+  display: inline-flex;
+  border-radius: 50px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-group > .btn,
+.md-button-group > .md-button {
+  border-radius: 0;
+  margin: 0;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.btn-group > .btn:first-child,
+.md-button-group > .md-button:first-child {
+  border-top-left-radius: 50px;
+  border-bottom-left-radius: 50px;
+}
+
+.btn-group > .btn:last-child,
+.md-button-group > .md-button:last-child {
+  border-top-right-radius: 50px;
+  border-bottom-right-radius: 50px;
+  border-right: none;
+}
+
+/* =====================================================
+   LOADING BUTTON STATE
+   ===================================================== */
+
+.btn-loading,
+.md-button--loading {
+  color: transparent;
+  pointer-events: none;
+  position: relative;
+}
+
+.btn-loading::after,
+.md-button--loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: btnSpin 0.6s linear infinite;
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* =====================================================
+   RIPPLE EFFECT
+   ===================================================== */
+
+.btn-ripple,
+.md-button--ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after,
+.md-button--ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-ripple:active::after,
+.md-button--ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* =====================================================
+   COPY BUTTON - Special Style
+   ===================================================== */
+
+.copy-btn,
+.btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.copy-btn:hover,
+.btn-copy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.copy-btn.copied,
+.btn-copy.copied {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+}
+
+.copy-btn svg,
+.btn-copy svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* Success checkmark animation */
+.copy-btn.copied::before,
+.btn-copy.copied::before {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-size: 1.5rem;
+  color: white;
+  animation: checkPop 0.5s ease forwards;
+}
+
+@keyframes checkPop {
+  0% { transform: translate(-50%, -50%) scale(0); }
+  50% { transform: translate(-50%, -50%) scale(1.2); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* =====================================================
+   SPECIAL EFFECTS BUTTONS
+   ===================================================== */
+
+/* Glow button */
+.btn-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5),
+                0 0 40px rgba(245, 158, 11, 0.3),
+                0 0 60px rgba(245, 158, 11, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.7),
+                0 0 50px rgba(245, 158, 11, 0.5),
+                0 0 70px rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* Pulse button */
+.btn-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Gradient shift button */
+.btn-gradient-shift {
+  background-size: 200% 200%;
+  background-image: linear-gradient(45deg,
+    #f59e0b 0%,
+    #fbbf24 25%,
+    #fcd34d 50%,
+    #fbbf24 75%,
+    #f59e0b 100%);
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* =====================================================
+   SOCIAL BUTTONS
+   ===================================================== */
+
+.btn-github {
+  background: #24292e;
+  color: white;
+  border-color: #24292e;
+}
+
+.btn-github:hover {
+  background: #1a1e22;
+  border-color: #1a1e22;
+}
+
+.btn-discord {
+  background: #5865F2;
+  color: white;
+  border-color: #5865F2;
+}
+
+.btn-discord:hover {
+  background: #4752C4;
+  border-color: #4752C4;
+}
+
+.btn-twitter {
+  background: #1DA1F2;
+  color: white;
+  border-color: #1DA1F2;
+}
+
+.btn-twitter:hover {
+  background: #1a91da;
+  border-color: #1a91da;
+}
+
+/* =====================================================
+   TOGGLE BUTTONS
+   ===================================================== */
+
+.btn-toggle {
+  background: var(--md-default-bg-color--light);
+  color: var(--md-default-fg-color);
+  border: 1px solid var(--md-default-bg-color--lighter);
+}
+
+.btn-toggle.active {
+  background: var(--md-accent-fg-color);
+  color: #1a2332;
+  border-color: var(--md-accent-fg-color);
+}
+
+.btn-toggle:hover {
+  background: var(--md-default-bg-color--lighter);
+}
+
+.btn-toggle.active:hover {
+  background: var(--md-accent-fg-color--light);
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .btn,
+  .md-button {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-lg,
+  .md-button--large {
+    padding: 0.875rem 1.75rem;
+    font-size: 1rem;
+  }
+  
+  .btn-fab,
+  .md-button--fab {
+    width: 48px;
+    height: 48px;
+    bottom: 1rem;
+    right: 1rem;
+  }
+  
+  .btn-fab svg,
+  .md-button--fab svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-group {
+    flex-direction: column;
+    border-radius: 12px;
+  }
+  
+  .btn-group > .btn {
+    border-radius: 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn-group > .btn:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .btn-group > .btn:last-child {
+    border-radius: 0 0 12px 12px;
+    border-bottom: none;
+  }
+}
+
+/* =====================================================
+   DARK MODE ADJUSTMENTS
+   ===================================================== */
+
+[data-md-color-scheme="slate"] .btn-secondary {
+  color: #fbbf24;
+  border-color: #fbbf24;
+}
+
+[data-md-color-scheme="slate"] .btn-secondary:hover {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: #fcd34d;
+  color: #fcd34d;
+}
+
+[data-md-color-scheme="slate"] .btn-ghost {
+  color: var(--md-default-fg-color);
+}
+
+[data-md-color-scheme="slate"] .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-md-color-scheme="slate"] .btn-toggle {
+  background: var(--md-default-bg-color--light);
+  border-color: var(--md-default-bg-color--lighter);
+}
+
+[data-md-color-scheme="slate"] .btn-toggle.active {
+  background: #fbbf24;
+  color: #1a2332;
+  border-color: #fbbf24;
+}
+
+
+/* Copy button smooth transition */
+.copy-btn {
+  background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
+  color: #f59e0b;
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 
+    4px 4px 8px rgba(26, 35, 50, 0.1),
+    -4px -4px 8px rgba(255, 255, 255, 0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.copy-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  box-shadow: 
+    6px 6px 12px rgba(245, 158, 11, 0.2),
+    -6px -6px 12px rgba(255, 255, 255, 0.9);
+}
+
+.copy-btn.copied {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  border-color: #059669;
+  animation: successPulse 0.5s ease;
+}
+
+@keyframes successPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}

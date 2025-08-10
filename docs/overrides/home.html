@@ -1,0 +1,627 @@
+{% extends "main.html" %}
+
+{% block content %}
+<style>
+  /* Hide sidebars on homepage */
+  .md-sidebar { display: none; }
+  
+  /* Remove extra top margin */
+  .md-content {
+    margin-top: 0 !important;
+  }
+  
+  /* Hero positioning right after nav */
+  .victorian-hero {
+    min-height: calc(100vh - 118px);
+    margin-top: 0 !important;
+    padding-top: 3rem;
+  }
+</style>
+
+<!-- Main Hero Section -->
+<section class="victorian-hero">
+  <!-- Victorian pattern background -->
+  <div class="hero-background">
+    <svg class="pattern-overlay" width="100%" height="100%" style="position: absolute; top: 0; left: 0; opacity: 0.03;">
+      <defs>
+        <pattern id="victorian-pattern" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+          <circle cx="60" cy="60" r="2" fill="#f59e0b" opacity="0.4"/>
+          <path d="M30,30 L90,90 M90,30 L30,90" stroke="#f59e0b" stroke-width="0.5" opacity="0.2"/>
+          <rect x="45" y="45" width="30" height="30" fill="none" stroke="#f59e0b" stroke-width="0.5" opacity="0.15"/>
+          <circle cx="60" cy="60" r="25" fill="none" stroke="#f59e0b" stroke-width="0.3" opacity="0.1"/>
+          <path d="M60,35 L75,60 L60,85 L45,60 Z" fill="none" stroke="#f59e0b" stroke-width="0.3" opacity="0.1"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#victorian-pattern)"/>
+    </svg>
+  </div>
+  
+  <div class="hero-content">
+    <!-- Static cropped logo with multi-color flame effect -->
+    <div class="torch-container">
+      <!-- Theme-aware logo switching -->
+      <img src="{{ 'logos/tenets_dark_icon_transparent_cropped.png' | url }}" 
+           alt="tenets" 
+           class="torch-logo-static dark-logo">
+      <img src="{{ 'logos/tenets_light_icon_transparent_cropped.png' | url }}" 
+           alt="tenets" 
+           class="torch-logo-static light-logo">
+      
+      <!-- Iridescent flame effect with multiple colors -->
+      <div class="flame-effect">
+        <div class="flame-particle flame-1" data-color="orange"></div>
+        <div class="flame-particle flame-2" data-color="yellow"></div>
+        <div class="flame-particle flame-3" data-color="blue"></div>
+        <div class="flame-particle flame-4" data-color="purple"></div>
+        <div class="flame-particle flame-5" data-color="green"></div>
+        <div class="flame-particle flame-6" data-color="red"></div>
+        <div class="flame-glow-iridescent"></div>
+      </div>
+    </div>
+    
+    <!-- Title right underneath logo -->
+    <h1 class="hero-title">tenets</h1>
+    
+    <p class="hero-tagline">Context that feeds your prompts</p>
+    
+    <p class="hero-description">
+      Intelligent code aggregation and analysis for modern development.<br>
+      Surface relevant files. Build optimal context. Track velocity.<br>
+      Examine code quality metrics. Evaluate and improve your codebase.<br>
+      All processing stays local - your code never leaves your machine.
+    </p>
+    
+    <!-- Quick Start and Examples buttons -->
+    <div class="hero-actions">
+      <a href="#quick-start" class="btn-primary scroll-to-start">
+        <span>Quick Start</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+      <a href="#examples" class="btn-secondary scroll-to-examples">
+        <span>See Examples</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M7 12l5 5 5-5M7 7l5 5 5-5"/>
+        </svg>
+      </a>
+    </div>
+    
+    <!-- Install commands right below buttons -->
+    <div class="quick-install">
+      <div class="install-command">
+        <code>pip install tenets</code>
+        <button class="copy-btn" data-text="pip install tenets">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Start Section -->
+<section class="quickstart-section" id="quick-start">
+  <div class="section-container">
+    <h2 class="section-title">Get Started in 30 Seconds</h2>
+    
+    <div class="quickstart-steps">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Install</h3>
+        <div class="code-block">
+          <code>pip install tenets</code>
+          <button class="copy-btn" data-text="pip install tenets">Copy</button>
+        </div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>Generate Context</h3>
+        <div class="code-block">
+          <code>tenets distill "add authentication"</code>
+          <button class="copy-btn" data-text='tenets distill "add authentication"'>Copy</button>
+        </div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>Paste to AI</h3>
+        <p>Copy the generated context into ChatGPT, Claude, or any LLM</p>
+      </div>
+    </div>
+    
+    <div class="quickstart-cta">
+      <a href="{{ 'quickstart/' | url }}" class="btn-primary">
+        View Full Guide
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Examples Section -->
+<section class="examples-section" id="examples">
+  <div class="section-container">
+    <h2 class="section-title">See It In Action</h2>
+    
+    <div class="example-tabs">
+      <input type="radio" name="example-tab" id="tab-context" checked>
+      <label for="tab-context" class="tab-label">Context Building</label>
+      
+      <input type="radio" name="example-tab" id="tab-analysis">
+      <label for="tab-analysis" class="tab-label">Code Analysis</label>
+      
+      <input type="radio" name="example-tab" id="tab-quality">
+      <label for="tab-quality" class="tab-label">Quality Metrics</label>
+      
+      <input type="radio" name="example-tab" id="tab-sessions">
+      <label for="tab-sessions" class="tab-label">Sessions</label>
+      
+      <input type="radio" name="example-tab" id="tab-velocity">
+      <label for="tab-velocity" class="tab-label">Velocity</label>
+      
+      <input type="radio" name="example-tab" id="tab-viz">
+      <label for="tab-viz" class="tab-label">Visualization</label>
+      
+      <!-- Context Building Example -->
+      <div class="tab-content" id="content-context">
+        <div class="terminal">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Context Generation</span>
+            <button class="run-example" data-example="context">Run</button>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-input visible">
+              <span class="prompt">$</span> tenets distill "implement OAuth2 authentication with refresh tokens"
+            </div>
+            <div class="terminal-output">
+              <!-- Output will animate when Run is clicked -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Code Analysis Example -->
+      <div class="tab-content" id="content-analysis">
+        <div class="terminal">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Codebase Examination</span>
+            <button class="run-example" data-example="analysis">Run</button>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-input visible">
+              <span class="prompt">$</span> tenets examine . --complexity --hotspots --ownership
+            </div>
+            <div class="terminal-output">
+              <!-- Output will animate when Run is clicked -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quality Metrics Example -->
+      <div class="tab-content" id="content-quality">
+        <div class="terminal">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Quality Assessment</span>
+            <button class="run-example" data-example="quality">Run</button>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-input visible">
+              <span class="prompt">$</span> tenets examine . --quality --metrics --suggestions
+            </div>
+            <div class="terminal-output">
+              <!-- Output will animate when Run is clicked -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Session Management Example -->
+      <div class="tab-content" id="content-sessions">
+        <div class="terminal">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Iterative Development</span>
+            <button class="run-example" data-example="sessions">Run</button>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-input visible">
+              <span class="prompt">$</span> tenets session create payment-integration
+            </div>
+            <div class="terminal-output">
+              <!-- Output will animate when Run is clicked -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Velocity Tracking Example -->
+      <div class="tab-content" id="content-velocity">
+        <div class="terminal">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Development Velocity</span>
+            <button class="run-example" data-example="velocity">Run</button>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-input visible">
+              <span class="prompt">$</span> tenets momentum --team --since "last month" --detailed
+            </div>
+            <div class="terminal-output">
+              <!-- Output will animate when Run is clicked -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Visualization Example -->
+      <div class="tab-content" id="content-viz">
+        <div class="terminal">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">Architecture Visualization</span>
+            <button class="run-example" data-example="viz">Run</button>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-input visible">
+              <span class="prompt">$</span> tenets viz deps --format ascii --show-imports
+            </div>
+            <div class="terminal-output">
+              <!-- Output will animate when Run is clicked -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Core Features Section -->
+<section class="features-section">
+  <div class="section-container">
+    <h2 class="section-title">Core Features</h2>
+    
+    <div class="features-grid">
+      <!-- Context Building -->
+      <div class="feature-card-large">
+        <div class="feature-icon">
+          <svg viewBox="0 0 64 64" width="64" height="64">
+            <defs>
+              <linearGradient id="brain-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+                <stop offset="50%" style="stop-color:#fbbf24;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#fcd34d;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <circle cx="32" cy="32" r="20" fill="none" stroke="url(#brain-grad)" stroke-width="2" opacity="0.8"/>
+            <circle cx="32" cy="12" r="4" fill="url(#brain-grad)" class="pulse-node"/>
+            <circle cx="52" cy="32" r="4" fill="url(#brain-grad)" class="pulse-node" style="animation-delay: 0.2s"/>
+            <circle cx="32" cy="52" r="4" fill="url(#brain-grad)" class="pulse-node" style="animation-delay: 0.4s"/>
+            <circle cx="12" cy="32" r="4" fill="url(#brain-grad)" class="pulse-node" style="animation-delay: 0.6s"/>
+            <circle cx="32" cy="32" r="6" fill="url(#brain-grad)"/>
+            <line x1="32" y1="12" x2="32" y2="32" stroke="url(#brain-grad)" stroke-width="1.5" opacity="0.7" class="connection-line"/>
+            <line x1="52" y1="32" x2="32" y2="32" stroke="url(#brain-grad)" stroke-width="1.5" opacity="0.7" class="connection-line" style="animation-delay: 0.3s"/>
+            <line x1="32" y1="52" x2="32" y2="32" stroke="url(#brain-grad)" stroke-width="1.5" opacity="0.7" class="connection-line" style="animation-delay: 0.6s"/>
+            <line x1="12" y1="32" x2="32" y2="32" stroke="url(#brain-grad)" stroke-width="1.5" opacity="0.7" class="connection-line" style="animation-delay: 0.9s"/>
+          </svg>
+        </div>
+        <h3>Intelligent Context Building</h3>
+        <p class="feature-description">
+          Multi-factor ranking algorithm that goes beyond keyword matching.
+          Analyzes code structure, import relationships, Git history, and semantic meaning
+          to surface exactly the files you need for any development task.
+        </p>
+        <ul class="feature-list">
+          <li><strong>TF-IDF Analysis:</strong> Statistical relevance scoring that understands term importance</li>
+          <li><strong>Import Graph:</strong> Dependency-aware file selection based on code relationships</li>
+          <li><strong>Git Signals:</strong> Recent changes and contributor patterns inform relevance</li>
+          <li><strong>Token Optimization:</strong> Smart budgeting for any LLM (GPT-4, Claude, etc.)</li>
+          <li><strong>Semantic Search:</strong> Optional ML-powered understanding of code intent</li>
+        </ul>
+      </div>
+      
+      <!-- Code Quality & Evaluation -->
+      <div class="feature-card-large">
+        <div class="feature-icon">
+          <svg viewBox="0 0 64 64" width="64" height="64">
+            <defs>
+              <linearGradient id="chart-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <rect x="12" y="40" width="8" height="12" fill="url(#chart-grad)" opacity="0.8" class="bar-grow" style="animation-delay: 0s"/>
+            <rect x="22" y="32" width="8" height="20" fill="url(#chart-grad)" opacity="0.9" class="bar-grow" style="animation-delay: 0.1s"/>
+            <rect x="32" y="24" width="8" height="28" fill="url(#chart-grad)" class="bar-grow" style="animation-delay: 0.2s"/>
+            <rect x="42" y="28" width="8" height="24" fill="url(#chart-grad)" opacity="0.9" class="bar-grow" style="animation-delay: 0.3s"/>
+            <path d="M10 20 L20 25 L30 15 L40 22 L50 18" fill="none" stroke="url(#chart-grad)" stroke-width="2" class="line-draw"/>
+            <circle cx="10" cy="20" r="2" fill="url(#chart-grad)" class="dot-appear" style="animation-delay: 0.5s"/>
+            <circle cx="20" cy="25" r="2" fill="url(#chart-grad)" class="dot-appear" style="animation-delay: 0.6s"/>
+            <circle cx="30" cy="15" r="2" fill="url(#chart-grad)" class="dot-appear" style="animation-delay: 0.7s"/>
+            <circle cx="40" cy="22" r="2" fill="url(#chart-grad)" class="dot-appear" style="animation-delay: 0.8s"/>
+            <circle cx="50" cy="18" r="2" fill="url(#chart-grad)" class="dot-appear" style="animation-delay: 0.9s"/>
+          </svg>
+        </div>
+        <h3>Code Quality Metrics & Evaluation</h3>
+        <p class="feature-description">
+          Comprehensive evaluation system that assesses code quality, identifies hotspots,
+          tracks technical debt, and provides actionable insights. Use tenets not just for
+          prompting but for continuous code quality monitoring and improvement.
+        </p>
+        <ul class="feature-list">
+          <li><strong>Complexity Analysis:</strong> Cyclomatic, cognitive, and Halstead metrics</li>
+          <li><strong>Quality Evaluation:</strong> Maintainability index and code health scoring</li>
+          <li><strong>Technical Debt Tracking:</strong> Identify and prioritize refactoring needs</li>
+          <li><strong>Test Coverage Analysis:</strong> Find untested code paths and improve reliability</li>
+          <li><strong>Code Pattern Detection:</strong> Identify anti-patterns and best practices</li>
+        </ul>
+      </div>
+      
+      <!-- Session Management & Prompting -->
+      <div class="feature-card-large">
+        <div class="feature-icon">
+          <svg viewBox="0 0 64 64" width="64" height="64">
+            <defs>
+              <linearGradient id="session-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <line x1="32" y1="8" x2="32" y2="56" stroke="url(#session-grad)" stroke-width="2"/>
+            <circle cx="32" cy="16" r="5" fill="url(#session-grad)" class="session-dot"/>
+            <circle cx="32" cy="32" r="5" fill="url(#session-grad)" class="session-dot" style="animation-delay: 0.3s"/>
+            <circle cx="32" cy="48" r="5" fill="url(#session-grad)" class="session-dot" style="animation-delay: 0.6s"/>
+            <path d="M37 16 L45 16 L45 24" fill="none" stroke="url(#session-grad)" stroke-width="1.5" opacity="0.7" class="branch-line"/>
+            <path d="M27 32 L19 32 L19 40" fill="none" stroke="url(#session-grad)" stroke-width="1.5" opacity="0.7" class="branch-line" style="animation-delay: 0.5s"/>
+            <path d="M37 48 L45 48 L45 56" fill="none" stroke="url(#session-grad)" stroke-width="1.5" opacity="0.7" class="branch-line" style="animation-delay: 1s"/>
+          </svg>
+        </div>
+        <h3>Stateful Prompting & Tenets</h3>
+        <p class="feature-description">
+          Build complex features iteratively with persistent sessions. Define guiding principles
+          (tenets) that shape how AI understands your codebase. Perfect for ongoing conversations
+          with AI assistants and maintaining context across multiple prompts.
+        </p>
+        <ul class="feature-list">
+          <li><strong>Persistent Context:</strong> Maintain state across multiple CLI invocations</li>
+          <li><strong>Guiding Tenets:</strong> Define principles that guide AI interactions</li>
+          <li><strong>Incremental Building:</strong> Add context without starting over each time</li>
+          <li><strong>Session Branching:</strong> Explore alternatives without losing work</li>
+          <li><strong>SQLite Storage:</strong> Reliable local session persistence and history</li>
+        </ul>
+      </div>
+      
+      <!-- Development Intelligence -->
+      <div class="feature-card-large">
+        <div class="feature-icon">
+          <svg viewBox="0 0 64 64" width="64" height="64">
+            <defs>
+              <linearGradient id="velocity-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+                <stop offset="50%" style="stop-color:#f97316;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <path d="M32 12 L40 28 L32 44 L24 28 Z" fill="url(#velocity-grad)" class="rocket-body"/>
+            <path d="M32 44 L28 52 L32 56 L36 52 Z" fill="url(#velocity-grad)" opacity="0.8" class="rocket-flame"/>
+            <path d="M20 48 L24 52 L24 56" fill="none" stroke="url(#velocity-grad)" stroke-width="2" class="exhaust-left"/>
+            <path d="M44 48 L40 52 L40 56" fill="none" stroke="url(#velocity-grad)" stroke-width="2" class="exhaust-right"/>
+            <circle cx="32" cy="20" r="3" fill="white" opacity="0.9"/>
+          </svg>
+        </div>
+        <h3>Development Intelligence & Insights</h3>
+        <p class="feature-description">
+          Track velocity, identify bottlenecks, and understand team patterns.
+          Visualize your architecture, monitor code evolution, and make data-driven
+          decisions about refactoring, technical debt, and resource allocation.
+        </p>
+        <ul class="feature-list">
+          <li><strong>Velocity Tracking:</strong> Monitor team and individual productivity metrics</li>
+          <li><strong>Hotspot Analysis:</strong> Find frequently changing and problematic areas</li>
+          <li><strong>Dependency Visualization:</strong> Understand architecture and coupling</li>
+          <li><strong>Contributor Analytics:</strong> Track code ownership and expertise</li>
+          <li><strong>Trend Analysis:</strong> Monitor quality and velocity changes over time</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Architecture -->
+<section class="architecture-section">
+  <div class="section-container">
+    <h2 class="section-title">How Tenets Works</h2>
+    
+    <div class="architecture-flow">
+      <div class="arch-stage" data-stage="1">
+        <div class="stage-icon">
+          <span class="stage-number">1</span>
+        </div>
+        <h3>Input</h3>
+        <p>Natural language prompt<br>or specific query</p>
+      </div>
+      
+      <div class="arch-arrow">→</div>
+      
+      <div class="arch-stage" data-stage="2">
+        <div class="stage-icon">
+          <span class="stage-number">2</span>
+        </div>
+        <h3>Scan</h3>
+        <p>Parallel file discovery<br>respecting .gitignore</p>
+      </div>
+      
+      <div class="arch-arrow">→</div>
+      
+      <div class="arch-stage" data-stage="3">
+        <div class="stage-icon">
+          <span class="stage-number">3</span>
+        </div>
+        <h3>Analyze</h3>
+        <p>AST parsing &<br>structure extraction</p>
+      </div>
+      
+      <div class="arch-arrow">→</div>
+      
+      <div class="arch-stage" data-stage="4">
+        <div class="stage-icon">
+          <span class="stage-number">4</span>
+        </div>
+        <h3>Rank</h3>
+        <p>Multi-factor<br>relevance scoring</p>
+      </div>
+      
+      <div class="arch-arrow">→</div>
+      
+      <div class="arch-stage" data-stage="5">
+        <div class="stage-icon">
+          <span class="stage-number">5</span>
+        </div>
+        <h3>Output</h3>
+        <p>Optimized context<br>for any LLM</p>
+      </div>
+    </div>
+    
+    <div class="arch-details">
+      <div class="detail-card">
+        <h4>🔍 Smart Scanning</h4>
+        <ul>
+          <li>Parallel filesystem traversal for speed</li>
+          <li>Respects .gitignore and custom patterns</li>
+          <li>Binary file detection and filtering</li>
+          <li>Language-specific file identification</li>
+        </ul>
+      </div>
+      
+      <div class="detail-card">
+        <h4>📊 Deep Analysis</h4>
+        <ul>
+          <li>Language-specific AST parsing</li>
+          <li>Import and dependency extraction</li>
+          <li>Complexity metrics calculation</li>
+          <li>Git history integration</li>
+        </ul>
+      </div>
+      
+      <div class="detail-card">
+        <h4>🎯 Intelligent Ranking</h4>
+        <ul>
+          <li>TF-IDF keyword relevance</li>
+          <li>Import graph centrality</li>
+          <li>Path structure similarity</li>
+          <li>Recent change weighting</li>
+        </ul>
+      </div>
+      
+      <div class="detail-card">
+        <h4>📦 Token Optimization</h4>
+        <ul>
+          <li>Model-specific token counting</li>
+          <li>Smart file summarization</li>
+          <li>Budget-aware selection</li>
+          <li>Context metadata inclusion</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Installation Section -->
+<section class="install-section">
+  <div class="section-container">
+    <h2 class="section-title">Installation Options</h2>
+    
+    <div class="install-grid">
+      <div class="install-card">
+        <h3>Quick Install</h3>
+        <div class="code-block">
+          <code>pip install tenets</code>
+          <button class="copy-btn" data-text="pip install tenets">Copy</button>
+        </div>
+        <p class="install-note">Core features - lightweight, no ML dependencies</p>
+      </div>
+      
+      <div class="install-card">
+        <h3>Full Features</h3>
+        <div class="code-block">
+          <code>pip install tenets[all]</code>
+          <button class="copy-btn" data-text="pip install tenets[all]">Copy</button>
+        </div>
+        <p class="install-note">Everything including ML models and visualization</p>
+      </div>
+      
+      <div class="install-card">
+        <h3>Install & Build from Source</h3>
+        <div class="code-block code-block-multi">
+          <code>git clone https://github.com/jddunn/tenets.git
+cd tenets && pip install -e .</code>
+          <button class="copy-btn" data-text="git clone https://github.com/jddunn/tenets.git && cd tenets && pip install -e .">Copy</button>
+        </div>
+        <p class="install-note">Latest development version with all updates</p>
+      </div>
+    </div>
+    
+    <div class="install-cta">
+      <a href="{{ 'installation/' | url }}" class="btn-primary large">
+        View Installation Guide
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </a>
+      <a href="https://github.com/jddunn/tenets" class="btn-secondary large" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        <span>View on GitHub</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Back to top button -->
+<button class="back-to-top" id="back-to-top">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</button>
+
+{% endblock %}
+
+{% block footer %}
+  <!-- Newsletter CTA Section -->
+  <section class="newsletter-section">
+    <div class="newsletter-content">
+      <h3>Stay Updated</h3>
+      <p>Get the latest Tenets updates and AI development insights</p>
+      <a href="https://manic.agency/newsletter" class="newsletter-cta-button" target="_blank" rel="noopener">
+        Subscribe to Newsletter
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+  
+  {{ super() }}
+{% endblock %}

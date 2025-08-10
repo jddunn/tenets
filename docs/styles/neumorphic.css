@@ -1,0 +1,502 @@
+/* docs/styles/neumorphic.css - Victorian Neumorphic Design System
+   ============================================================== */
+
+/* =====================================================
+   NEUMORPHIC VARIABLES
+   ===================================================== */
+
+:root {
+  /* Light mode neumorphic shadows */
+  --nm-shadow-small: 
+    3px 3px 8px rgba(26, 35, 50, 0.08),
+    -3px -3px 8px rgba(255, 255, 255, 0.9),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.6);
+    
+  --nm-shadow-medium: 
+    5px 5px 15px rgba(26, 35, 50, 0.1),
+    -5px -5px 15px rgba(255, 255, 255, 0.95),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.6);
+    
+  --nm-shadow-large: 
+    8px 8px 24px rgba(26, 35, 50, 0.12),
+    -8px -8px 24px rgba(255, 255, 255, 1),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.7);
+    
+  --nm-shadow-inset: 
+    inset 4px 4px 8px rgba(26, 35, 50, 0.1),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+    
+  --nm-shadow-hover: 
+    10px 10px 30px rgba(245, 158, 11, 0.15),
+    -10px -10px 30px rgba(255, 255, 255, 1),
+    inset 2px 2px 5px rgba(245, 158, 11, 0.05);
+}
+
+[data-md-color-scheme="slate"] {
+  /* Dark mode neumorphic shadows */
+  --nm-shadow-small: 
+    3px 3px 8px rgba(0, 0, 0, 0.3),
+    -3px -3px 8px rgba(255, 255, 255, 0.03),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.03);
+    
+  --nm-shadow-medium: 
+    5px 5px 15px rgba(0, 0, 0, 0.35),
+    -5px -5px 15px rgba(255, 255, 255, 0.04),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.04);
+    
+  --nm-shadow-large: 
+    8px 8px 24px rgba(0, 0, 0, 0.4),
+    -8px -8px 24px rgba(255, 255, 255, 0.05),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.05);
+    
+  --nm-shadow-inset: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.35),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.04);
+    
+  --nm-shadow-hover: 
+    10px 10px 30px rgba(251, 191, 36, 0.1),
+    -10px -10px 30px rgba(255, 255, 255, 0.05),
+    inset 2px 2px 5px rgba(251, 191, 36, 0.03);
+}
+
+/* =====================================================
+   NEUMORPHIC CARDS
+   ===================================================== */
+
+.neumorphic,
+.nm-card,
+.feature-card {
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  border-radius: 20px;
+  box-shadow: var(--nm-shadow-medium);
+  padding: 2rem;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-md-color-scheme="slate"] .neumorphic,
+[data-md-color-scheme="slate"] .nm-card,
+[data-md-color-scheme="slate"] .feature-card {
+  background: linear-gradient(145deg, #2a3542, #222c3a);
+}
+
+.neumorphic:hover,
+.nm-card:hover,
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--nm-shadow-hover);
+}
+
+/* Pressed/Active state */
+.neumorphic:active,
+.nm-card:active {
+  transform: translateY(0);
+  box-shadow: var(--nm-shadow-inset);
+}
+
+/* =====================================================
+   NEUMORPHIC BUTTONS
+   ===================================================== */
+
+.nm-button {
+  padding: 0.875rem 1.75rem;
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  border: none;
+  border-radius: 25px;
+  box-shadow: var(--nm-shadow-small);
+  color: #3e342a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-md-color-scheme="slate"] .nm-button {
+  background: linear-gradient(145deg, #2a3542, #222c3a);
+  color: #d4ccb8;
+}
+
+.nm-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--nm-shadow-medium);
+}
+
+.nm-button:active {
+  transform: translateY(0);
+  box-shadow: var(--nm-shadow-inset);
+}
+
+/* Primary neumorphic button */
+.nm-button-primary {
+  background: linear-gradient(145deg, #fbbf24, #f59e0b);
+  color: #1a2332;
+  box-shadow: 
+    6px 6px 16px rgba(209, 134, 6, 0.25),
+    -6px -6px 16px rgba(255, 203, 71, 0.25),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.nm-button-primary:hover {
+  box-shadow: 
+    8px 8px 20px rgba(209, 134, 6, 0.3),
+    -8px -8px 20px rgba(255, 203, 71, 0.3),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.5);
+}
+
+/* =====================================================
+   NEUMORPHIC INPUTS
+   ===================================================== */
+
+.nm-input,
+.nm-search {
+  background: #fdfdf9;
+  border: none;
+  border-radius: 20px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: var(--nm-shadow-inset);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+[data-md-color-scheme="slate"] .nm-input,
+[data-md-color-scheme="slate"] .nm-search {
+  background: #1a2332;
+  color: #fdfdf9;
+}
+
+.nm-input:focus,
+.nm-search:focus {
+  outline: none;
+  box-shadow: 
+    inset 5px 5px 10px rgba(245, 158, 11, 0.08),
+    inset -5px -5px 10px rgba(255, 255, 255, 0.95);
+}
+
+/* =====================================================
+   NEUMORPHIC BADGES
+   ===================================================== */
+
+.nm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  border-radius: 20px;
+  box-shadow: var(--nm-shadow-small);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+[data-md-color-scheme="slate"] .nm-badge {
+  background: linear-gradient(145deg, #2a3542, #222c3a);
+}
+
+.nm-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--nm-shadow-medium);
+}
+
+/* Status badges */
+.nm-badge-success {
+  background: linear-gradient(145deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+}
+
+.nm-badge-warning {
+  background: linear-gradient(145deg, #fed7aa, #fbbf24);
+  color: #92400e;
+}
+
+.nm-badge-error {
+  background: linear-gradient(145deg, #fecaca, #fca5a5);
+  color: #991b1b;
+}
+
+/* =====================================================
+   NEUMORPHIC TOGGLES
+   ===================================================== */
+
+.nm-toggle {
+  position: relative;
+  width: 60px;
+  height: 32px;
+  background: linear-gradient(145deg, #e0ddd8, #f7f5f0);
+  border-radius: 20px;
+  box-shadow: var(--nm-shadow-inset);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nm-toggle-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  border-radius: 50%;
+  box-shadow: var(--nm-shadow-small);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nm-toggle.active .nm-toggle-slider {
+  transform: translateX(28px);
+  background: linear-gradient(145deg, #fbbf24, #f59e0b);
+}
+
+/* =====================================================
+   NEUMORPHIC PROGRESS BARS
+   ===================================================== */
+
+.nm-progress {
+  width: 100%;
+  height: 20px;
+  background: #f7f5f0;
+  border-radius: 20px;
+  box-shadow: var(--nm-shadow-inset);
+  overflow: hidden;
+  position: relative;
+}
+
+.nm-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+  border-radius: 20px;
+  box-shadow: 
+    2px 2px 4px rgba(209, 134, 6, 0.2),
+    -2px -2px 4px rgba(255, 203, 71, 0.2);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.nm-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* =====================================================
+   NEUMORPHIC TABS
+   ===================================================== */
+
+.nm-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: linear-gradient(145deg, #e0ddd8, #f7f5f0);
+  border-radius: 25px;
+  box-shadow: var(--nm-shadow-inset);
+}
+
+.nm-tab {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  color: #6b5d4f;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.nm-tab:hover {
+  color: #f59e0b;
+}
+
+.nm-tab.active {
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  color: #f59e0b;
+  box-shadow: var(--nm-shadow-small);
+}
+
+/* =====================================================
+   NEUMORPHIC TOOLTIPS
+   ===================================================== */
+
+.nm-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.nm-tooltip-content {
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  border-radius: 12px;
+  box-shadow: var(--nm-shadow-medium);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.nm-tooltip:hover .nm-tooltip-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
+}
+
+/* Arrow */
+.nm-tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #f7f5f0;
+}
+
+/* =====================================================
+   NEUMORPHIC ICONS
+   ===================================================== */
+
+.nm-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  border-radius: 50%;
+  box-shadow: var(--nm-shadow-small);
+  transition: all 0.3s ease;
+}
+
+.nm-icon:hover {
+  transform: scale(1.1);
+  box-shadow: var(--nm-shadow-medium);
+}
+
+.nm-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: #f59e0b;
+}
+
+/* =====================================================
+   NEUMORPHIC DIVIDERS
+   ===================================================== */
+
+.nm-divider {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(245, 158, 11, 0.2) 50%, 
+    transparent 100%);
+  margin: 2rem 0;
+  position: relative;
+}
+
+.nm-divider::before {
+  content: '◆';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--md-default-bg-color);
+  color: #f59e0b;
+  padding: 0 1rem;
+  font-size: 1.25rem;
+}
+
+/* =====================================================
+   NEUMORPHIC NOTIFICATIONS
+   ===================================================== */
+
+.nm-notification {
+  padding: 1rem 1.5rem;
+  background: linear-gradient(145deg, #ffffff, #f7f5f0);
+  border-radius: 16px;
+  box-shadow: var(--nm-shadow-medium);
+  margin: 1rem 0;
+  position: relative;
+  padding-left: 3.5rem;
+}
+
+.nm-notification::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.nm-notification-success::before {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.nm-notification-error::before {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* =====================================================
+   NEUMORPHIC CODE BLOCKS
+   ===================================================== */
+
+.nm-code {
+  background: #fdfdf9;
+  border-radius: 16px;
+  box-shadow: var(--nm-shadow-inset);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-md-color-scheme="slate"] .nm-code {
+  background: #1a2332;
+}
+
+.nm-code::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #fcd34d 100%);
+}
+
+.nm-code code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #3e342a;
+}
+
+[data-md-color-scheme="slate"] .nm-code code {
+  color: #fbbf24;
+}

@@ -1,0 +1,442 @@
+/* Mobile Responsive Styles - FIXED VERSION
+   Path: docs/styles/mobile.css
+   Fixed hamburger menu with proper nav drawer
+   ============================================= */
+
+/* =====================================================
+   DESKTOP - Keep nav visible above 1100px
+   ===================================================== */
+
+@media screen and (min-width: 1100px) {
+  .md-header-nav {
+    display: flex !important;
+  }
+  
+  .md-header__button[for="__drawer"] {
+    display: none !important;
+  }
+  
+  .md-nav--primary,
+  .md-nav__toggle,
+  .md-sidebar--primary {
+    display: none !important;
+  }
+  
+  .md-overlay {
+    display: none !important;
+  }
+}
+
+/* =====================================================
+   MOBILE NAVIGATION - Under 1100px
+   ===================================================== */
+
+@media screen and (max-width: 1099px) {
+  
+  /* Mobile header adjustments */
+  .md-header {
+    height: 3.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .md-header__inner {
+    padding: 0 0.5rem;
+  }
+  
+  /* Hide desktop nav */
+  .md-header-nav {
+    display: none !important;
+  }
+  
+  /* Hamburger menu button - Neumorphic */
+  .md-header__button[for="__drawer"] {
+    display: flex !important;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10001;
+    background: linear-gradient(145deg, #ffffff, #f0ede8);
+    border-radius: 8px;
+    box-shadow: 
+      3px 3px 8px rgba(26, 35, 50, 0.08),
+      -3px -3px 8px rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+  }
+  
+  [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
+    background: linear-gradient(145deg, #2a3542, #222c3a);
+    box-shadow: 
+      3px 3px 8px rgba(0, 0, 0, 0.3),
+      -3px -3px 8px rgba(255, 255, 255, 0.03);
+  }
+  
+  /* Hamburger icon */
+  .md-header__button[for="__drawer"] svg {
+    fill: #f59e0b;
+  }
+  
+  /* Mobile navigation drawer - FIXED */
+  .md-nav--primary,
+  .md-sidebar--primary {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 85% !important;
+    max-width: 320px !important;
+    height: 100vh !important;
+    background: linear-gradient(180deg, #fdfdf9 0%, #f7f5f0 100%) !important;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.2) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 10000 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  [data-md-color-scheme="slate"] .md-nav--primary,
+  [data-md-color-scheme="slate"] .md-sidebar--primary {
+    background: linear-gradient(180deg, #1a2332 0%, #263244 100%) !important;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.4) !important;
+  }
+  
+  /* When drawer checkbox is checked - SHOW DRAWER */
+  input[type="checkbox"]#__drawer:checked ~ .md-container .md-nav--primary,
+  input[type="checkbox"]#__drawer:checked ~ .md-container .md-sidebar--primary,
+  .md-toggle--drawer:checked ~ .md-container .md-nav--primary,
+  .md-toggle--drawer:checked ~ .md-container .md-sidebar--primary {
+    transform: translateX(0) !important;
+  }
+  
+  /* Mobile nav header with logo */
+  .md-nav--primary .md-nav__title,
+  .md-sidebar--primary .md-nav__title {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #1a2332;
+    padding: 1.25rem 1rem;
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 2px solid rgba(26, 35, 50, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    text-transform: lowercase;
+  }
+  
+  /* Logo in drawer header - non-cropped version */
+  .md-nav--primary .md-nav__title::before,
+  .md-sidebar--primary .md-nav__title::before {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    background: url('../logos/tenets_dark_icon_transparent.png') no-repeat center;
+    background-size: contain;
+  }
+  
+  /* Navigation list container */
+  .md-nav--primary .md-nav__list,
+  .md-sidebar--primary .md-nav__list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  
+  /* Navigation items */
+  .md-nav--primary .md-nav__item,
+  .md-sidebar--primary .md-nav__item {
+    border-bottom: 1px solid rgba(245, 158, 11, 0.06);
+  }
+  
+  .md-nav--primary .md-nav__link,
+  .md-sidebar--primary .md-nav__link {
+    padding: 1rem 1.25rem !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #3e342a;
+    display: block;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    position: relative;
+  }
+  
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link {
+    color: #d4ccb8;
+  }
+  
+  .md-nav--primary .md-nav__link:hover,
+  .md-nav--primary .md-nav__link:active,
+  .md-sidebar--primary .md-nav__link:hover,
+  .md-sidebar--primary .md-nav__link:active {
+    background: rgba(245, 158, 11, 0.08);
+    color: #f59e0b;
+    padding-left: 1.75rem !important;
+  }
+  
+  .md-nav--primary .md-nav__link--active,
+  .md-sidebar--primary .md-nav__link--active {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    font-weight: 700;
+    border-left: 3px solid #f59e0b;
+  }
+  
+  /* Ornate decoration on hover */
+  .md-nav--primary .md-nav__link::after,
+  .md-sidebar--primary .md-nav__link::after {
+    content: '◆';
+    position: absolute;
+    right: 1rem;
+    opacity: 0;
+    color: #f59e0b;
+    transition: all 0.3s ease;
+  }
+  
+  .md-nav--primary .md-nav__link:hover::after,
+  .md-sidebar--primary .md-nav__link:hover::after {
+    opacity: 0.5;
+    transform: rotate(45deg);
+  }
+  
+  /* Blog/Contact special styling */
+  .md-nav--primary .md-nav__link[href*="blog"],
+  .md-nav--primary .md-nav__link[href*="contact"],
+  .md-sidebar--primary .md-nav__link[href*="blog"],
+  .md-sidebar--primary .md-nav__link[href*="contact"] {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%);
+    color: #f59e0b;
+    font-weight: 700;
+    margin: 0.5rem 1rem;
+    padding: 0.875rem 1.25rem !important;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+  }
+  
+  /* Mobile overlay */
+  .md-overlay {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(26, 35, 50, 0.7);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+    pointer-events: none;
+  }
+  
+  [data-md-color-scheme="slate"] .md-overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Show overlay when drawer is open */
+  input[type="checkbox"]#__drawer:checked ~ .md-overlay,
+  .md-toggle--drawer:checked ~ .md-overlay {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  
+  /* Hide tabs and secondary sidebar */
+  .md-tabs {
+    display: none !important;
+  }
+  
+  .md-sidebar--secondary {
+    display: none !important;
+  }
+  
+  /* Show title on mobile */
+  .md-header__title {
+    display: block !important;
+    flex: 1;
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #1a2332;
+    text-transform: lowercase;
+  }
+  
+  [data-md-color-scheme="slate"] .md-header__title {
+    color: #fbbf24;
+  }
+}
+
+/* =====================================================
+   CHECKBOX TOGGLE STRUCTURE
+   ===================================================== */
+
+/* Ensure drawer checkbox exists and is hidden */
+.md-toggle--drawer,
+#__drawer {
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* =====================================================
+   MOBILE CONTENT ADJUSTMENTS
+   ===================================================== */
+
+@media screen and (max-width: 1099px) {
+  
+  /* Content spacing */
+  .md-container {
+    padding-top: 3.5rem;
+  }
+  
+  .md-content {
+    padding: 1rem;
+    max-width: 100%;
+  }
+  
+  .md-content__inner {
+    margin: 0;
+    padding: 0 0 2rem;
+  }
+  
+  /* Typography adjustments */
+  .md-typeset h1 {
+    font-size: 1.75rem;
+    margin: 1.5rem 0 1rem;
+  }
+  
+  .md-typeset h2 {
+    font-size: 1.375rem;
+    margin: 1.25rem 0 0.75rem;
+  }
+  
+  .md-typeset h3 {
+    font-size: 1.125rem;
+    margin: 1rem 0 0.5rem;
+  }
+  
+  /* Terminal showcase on mobile */
+  .terminal-showcase {
+    margin: 1.5rem -1rem;
+  }
+  
+  .terminal {
+    border-radius: 0;
+  }
+  
+  .terminal-body {
+    padding: 1rem;
+    font-size: 0.75rem;
+    min-height: 200px;
+    max-height: 350px;
+  }
+  
+  /* Hero adjustments */
+  .victorian-hero,
+  .hero-section {
+    min-height: calc(100vh - 7rem);
+    padding: 1.5rem 1rem;
+    margin-top: 56px;
+  }
+  
+  .lantern-container {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .hero-title {
+    font-size: 2.25rem;
+  }
+  
+  .hero-tagline {
+    font-size: 1.1rem;
+  }
+  
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+  
+  /* Features grid on mobile */
+  .features-grid,
+  .why-tenets-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  /* Workflow on mobile */
+  .workflow-diagram {
+    flex-direction: column;
+  }
+  
+  .workflow-arrow {
+    transform: rotate(90deg);
+    margin: 0.5rem 0;
+  }
+  
+  /* Hide search and source on mobile */
+  .md-search,
+  .md-source {
+    display: none !important;
+  }
+}
+
+/* =====================================================
+   SMALL PHONE - 480px and below
+   ===================================================== */
+
+@media screen and (max-width: 480px) {
+  
+  .md-header {
+    height: 3rem;
+  }
+  
+  .md-header__title {
+    font-size: 1.1rem;
+  }
+  
+  .md-header__button[for="__drawer"] {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  .md-nav--primary,
+  .md-sidebar--primary {
+    width: 75% !important;
+    max-width: 280px !important;
+  }
+  
+  .hero-title {
+    font-size: 1.875rem;
+  }
+  
+  .lantern-container {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* Prevent body scroll when drawer is open */
+body:has(#__drawer:checked),
+body:has(.md-toggle--drawer:checked) {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}

@@ -1,0 +1,377 @@
+/* Footer Styles for MkDocs Material Theme
+   Path: docs/styles/footer.css
+   ======================================= */
+
+/* Main Footer */
+.md-footer {
+  background: linear-gradient(180deg, #263244 0%, #1a2332 50%, #0f1721 100%);
+  color: #ffffff;
+  border-top: 2px solid #f59e0b;
+  margin-top: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-md-color-scheme="slate"] .md-footer {
+  background: linear-gradient(180deg, #0f1721 0%, #000000 100%);
+  border-top: 2px solid #fbbf24;
+}
+
+/* Victorian pattern overlay */
+.md-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 35px,
+    rgba(245, 158, 11, 0.02) 35px,
+    rgba(245, 158, 11, 0.02) 70px
+  );
+  pointer-events: none;
+}
+
+/* Footer Content Container */
+.footer-content {
+  position: relative;
+  z-index: 1;
+  padding: 3rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Footer Grid Layout */
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+  gap: 3rem;
+  margin-bottom: 2rem;
+}
+
+/* Brand Column */
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.footer-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.3));
+  transition: all 0.3s ease;
+}
+
+.footer-logo:hover {
+  transform: scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 6px 20px rgba(245, 158, 11, 0.5));
+}
+
+.footer-brand-text h4 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 0;
+  text-transform: lowercase;
+  letter-spacing: -0.02em;
+}
+
+.footer-tagline {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+  margin: 0.5rem 0;
+}
+
+.footer-description {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin-top: 1rem;
+}
+
+/* Footer Columns */
+.footer-column h5 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 1rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.footer-column h5::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: linear-gradient(90deg, #f59e0b 0%, transparent 100%);
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-column li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-column a {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+}
+
+.footer-column a:hover {
+  color: #fbbf24;
+  padding-left: 0.5rem;
+}
+
+.footer-column a::before {
+  content: '◆';
+  position: absolute;
+  left: -0.75rem;
+  color: #f59e0b;
+  font-size: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.footer-column a:hover::before {
+  opacity: 1;
+}
+
+/* Social Links */
+.social-links {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.social-link:hover {
+  transform: translateY(-3px) rotate(5deg);
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+}
+
+.social-link svg {
+  width: 18px;
+  height: 18px;
+  fill: #fbbf24;
+}
+
+/* manic.agency Branding */
+.manic-branding {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.manic-branding:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(251, 191, 36, 0.1) 100%);
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+}
+
+.manic-branding-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.manic-built-by {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.manic-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: -0.02em;
+}
+
+/* Badge Showcase */
+.badge-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.badge-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  width: fit-content;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.badge-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
+  transform: translateX(2px);
+}
+
+.badge-item img {
+  height: 20px;
+}
+
+/* Footer Bottom Bar */
+.footer-bottom {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem 2rem;
+  border-top: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.footer-bottom-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-copyright {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.footer-copyright a {
+  color: #fbbf24;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.footer-copyright a:hover {
+  text-decoration: underline;
+  color: #fcd34d;
+}
+
+.footer-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: #fbbf24;
+}
+
+/* Hide duplicate MkDocs footer */
+.md-footer-meta {
+  display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .footer-grid {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+  
+  .footer-column:nth-child(4),
+  .footer-column:nth-child(5) {
+    grid-column: span 1;
+    margin-top: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 2rem;
+  }
+  
+  .footer-column h5::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .social-links {
+    justify-content: center;
+  }
+  
+  .footer-bottom-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .badge-showcase {
+    align-items: center;
+  }
+  
+  .footer-logo-container {
+    justify-content: center;
+  }
+  
+  .manic-branding {
+    margin: 1rem auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-logo {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .footer-brand-text h4 {
+    font-size: 1.25rem;
+  }
+}

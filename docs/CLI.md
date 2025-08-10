@@ -105,6 +105,42 @@ tenets distill "refactor authentication system" --mode thorough
 tenets distill "build payment system" --session payment-feature
 ```
 
+#### Ranking presets and thresholds
+
+- Presets (selected via `--mode` or config `ranking.algorithm`):
+  - `fast` – keyword + path signals (broad, quick)
+  - `balanced` (default) – multi-factor (keywords, path, imports, git, complexity)
+  - `thorough` – deeper analysis (heavier)
+
+- Threshold (config `ranking.threshold`) controls inclusion. Lower = include more files.
+  - Typical ranges:
+    - fast: 0.05–0.10
+    - balanced: 0.10–0.20
+    - thorough: 0.10–0.20
+
+Configure in `.tenets.yml` (repo root):
+
+```yaml
+ranking:
+  algorithm: fast      # fast | balanced | thorough
+  threshold: 0.05      # 0.0–1.0
+```
+
+One-off overrides (environment, Git Bash):
+
+```bash
+TENETS_RANKING_THRESHOLD=0.05 TENETS_RANKING_ALGORITHM=fast \
+  tenets distill "implement OAuth2" . --include "*.py,*.md" --max-tokens 50000
+```
+
+Inspect current config:
+
+```bash
+tenets config show --key ranking
+```
+
+See also: docs/CONFIG.md for full configuration details.
+
 ### examine
 
 Analyze codebase structure, complexity, and patterns.

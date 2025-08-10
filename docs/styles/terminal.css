@@ -1,0 +1,547 @@
+/* Terminal and Code Display Styles - FIXED VERSION
+   Path: docs/styles/terminal.css
+   Fixed command width and copy button positioning
+   ================================================== */
+
+/* =====================================================
+   TERMINAL CONTAINER
+   ===================================================== */
+
+.terminal,
+.terminal-container,
+.terminal-showcase .terminal {
+  background: linear-gradient(135deg, #1a1d24 0%, #0f1117 100%);
+  border-radius: 12px;
+  overflow: visible; /* Allow copy button to extend */
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  margin: 2rem 0 3rem; /* Extra bottom margin for copy button */
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.terminal:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 25px 70px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(245, 158, 11, 0.2),
+    inset 0 0 0 1px rgba(245, 158, 11, 0.1);
+}
+
+/* =====================================================
+   TERMINAL HEADER
+   ===================================================== */
+
+.terminal-header {
+  background: linear-gradient(135deg, #2d3139 0%, #1f2229 100%);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 2;
+  gap: 1rem;
+}
+
+/* Window controls */
+.terminal-buttons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.terminal-button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.terminal-button.red { background: linear-gradient(135deg, #ff5f57 0%, #d43f3a 100%); }
+.terminal-button.yellow { background: linear-gradient(135deg, #ffbd2e 0%, #f09000 100%); }
+.terminal-button.green { background: linear-gradient(135deg, #28ca42 0%, #1a9f2e 100%); }
+
+.terminal-button:hover { transform: scale(1.1); }
+
+/* Terminal title */
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Run button */
+.run-btn,
+.terminal-action-btn {
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+
+.run-btn:hover:not(:disabled),
+.terminal-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.run-btn:disabled,
+.terminal-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   TERMINAL BODY
+   ===================================================== */
+
+.terminal-body {
+  padding: 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #e8e6e3;
+  min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: auto; /* Allow horizontal scroll for long commands */
+  position: relative;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Custom scrollbar */
+.terminal-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.terminal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.terminal-body::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.3);
+  border-radius: 4px;
+}
+
+.terminal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.5);
+}
+
+/* =====================================================
+   TERMINAL COMMANDS - FIXED WIDTH
+   ===================================================== */
+
+.terminal-line {
+  margin: 0.25rem 0;
+  font-family: inherit;
+  position: relative;
+  animation: terminalFadeIn 0.3s ease forwards;
+  white-space: nowrap; /* Prevent wrapping */
+  display: flex;
+  align-items: baseline;
+}
+
+@keyframes terminalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Command input line */
+.command-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Prompt styles */
+.terminal-prompt,
+.prompt {
+  color: #10b981;
+  font-weight: 600;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Command text - allow full width */
+.terminal-command,
+.command {
+  color: #60a5fa;
+  font-weight: 500;
+  white-space: pre;
+  word-break: normal;
+  overflow-x: visible;
+}
+
+/* Output styles */
+.terminal-output {
+  margin: 1rem 0;
+}
+
+.output-line {
+  margin: 0.125rem 0;
+  padding: 0.125rem 0;
+  color: #e8e6e3;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  position: relative;
+}
+
+/* Output colors */
+.output-success, .output-line.success { color: #10b981; }
+.output-error, .output-line.error { color: #ef4444; }
+.output-warning, .output-line.warning { color: #f59e0b; }
+.output-info, .output-line.info { color: #60a5fa; }
+.output-dim, .output-line.dim { color: rgba(255, 255, 255, 0.5); font-size: 0.8125rem; }
+.output-header, .output-line.header { color: #fbbf24; font-weight: 600; }
+.output-progress { color: #fbbf24; }
+.output-tenet { color: #fcd34d; padding-left: 1rem; }
+.output-quote { color: #fbbf24; font-style: italic; padding-left: 1rem; }
+.output-highlight { color: #10b981; font-weight: 600; background: rgba(16, 185, 129, 0.1); padding: 0.125rem 0.25rem; border-radius: 4px; }
+.output-tip { color: #60a5fa; font-style: italic; }
+
+/* File entries with relevance */
+.file-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.file-name {
+  color: #fbbf24;
+}
+
+.relevance {
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.relevance.high {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.relevance.medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.relevance.low {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* =====================================================
+   COPY CODE BUTTON - POSITIONED BELOW
+   ===================================================== */
+
+.terminal-copy,
+.copy-btn {
+  position: absolute;
+  bottom: -35px; /* Position below terminal */
+  right: 1rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  border: none;
+  border-radius: 6px;
+  color: #1a2332;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.terminal-copy:hover,
+.copy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.terminal-copy.copied,
+.copy-btn.copied {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+}
+
+.terminal-copy.copied::after,
+.copy-btn.copied::after {
+  content: ' ✓';
+}
+
+/* =====================================================
+   QUICK START COMMANDS - FIXED WIDTH
+   ===================================================== */
+
+.quickstart-terminal,
+.installation-terminal {
+  background: #1a1d24;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0 2.5rem; /* Extra bottom margin for copy button */
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.quickstart-commands,
+.installation-commands {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.command-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.command-number {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #1a2332;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.command-text {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  color: #60a5fa;
+  white-space: nowrap;
+  overflow-x: auto;
+  padding-right: 1rem;
+}
+
+.command-text::-webkit-scrollbar {
+  height: 4px;
+}
+
+.command-text::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+}
+
+.command-text::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.3);
+  border-radius: 2px;
+}
+
+/* Copy buttons for each command */
+.command-copy {
+  position: absolute;
+  right: -45px;
+  padding: 0.25rem 0.5rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 4px;
+  color: #fbbf24;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+
+.command-wrapper:hover .command-copy {
+  opacity: 1;
+  right: 8px;
+}
+
+.command-copy:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+/* =====================================================
+   INSTALLATION BUILD FROM SOURCE - FULL WIDTH
+   ===================================================== */
+
+.installation-option {
+  margin: 2rem 0;
+}
+
+.installation-option h4 {
+  font-size: 1.125rem;
+  color: #fbbf24;
+  margin-bottom: 1rem;
+}
+
+.source-install-wrapper {
+  background: rgba(26, 35, 50, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: visible;
+}
+
+.source-commands {
+  background: #1a1d24;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.source-commands pre {
+  margin: 0;
+  white-space: pre;
+  color: #60a5fa;
+}
+
+.source-description {
+  color: #d4ccb8;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-top: 1rem;
+}
+
+/* =====================================================
+   INTERACTIVE TERMINAL EXAMPLES
+   ===================================================== */
+
+.terminal-example {
+  position: relative;
+}
+
+.terminal-example.running .terminal-body {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.terminal-example.running .run-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  pointer-events: none;
+}
+
+.terminal-example.running .run-btn::after {
+  content: ' (Running...)';
+  font-size: 0.7rem;
+}
+
+/* Loading spinner */
+.terminal-loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fbbf24;
+  border-radius: 50%;
+  animation: terminalSpin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+
+@keyframes terminalSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+   ===================================================== */
+
+@media screen and (max-width: 768px) {
+  .terminal {
+    border-radius: 8px;
+    margin: 1rem 0 2.5rem;
+  }
+  
+  .terminal-header {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .terminal-button {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .terminal-body {
+    padding: 1rem;
+    font-size: 0.75rem;
+    min-height: 200px;
+    max-height: 400px;
+  }
+  
+  .terminal-copy,
+  .copy-btn {
+    bottom: -30px;
+    right: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+  
+  .quickstart-terminal,
+  .installation-terminal {
+    padding: 1rem;
+    margin: 1rem -0.5rem 2rem;
+    border-radius: 0;
+  }
+  
+  .command-wrapper {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .command-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .terminal-body {
+    padding: 0.75rem;
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+  
+  .terminal-title {
+    font-size: 0.75rem;
+  }
+  
+  .run-btn,
+  .terminal-action-btn {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.65rem;
+  }
+}

@@ -1,0 +1,315 @@
+/* CSS Variables - Global Design System
+   Path: docs/styles/variables.css
+   Consistent theming for Victorian Neumorphic design
+   ================================================== */
+
+/* =====================================================
+   ROOT VARIABLES - Light Mode
+   ===================================================== */
+
+:root {
+  /* Brand Colors */
+  --tenets-navy-900: #1a2332;
+  --tenets-navy-800: #263244;
+  --tenets-navy-700: #364152;
+  --tenets-navy-600: #475569;
+  
+  --tenets-amber-500: #f59e0b;
+  --tenets-amber-400: #fbbf24;
+  --tenets-amber-300: #fcd34d;
+  --tenets-amber-200: #fde68a;
+  
+  --tenets-cream-50: #fdfdf9;
+  --tenets-cream-100: #f7f5f0;
+  --tenets-sepia-200: #e8e2d5;
+  --tenets-sepia-300: #d4ccb8;
+  --tenets-sepia-600: #6b5d4f;
+  --tenets-sepia-800: #3e342a;
+  
+  /* Semantic Colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #60a5fa;
+  
+  /* Background Colors */
+  --bg-primary: var(--tenets-cream-50);
+  --bg-secondary: var(--tenets-cream-100);
+  --bg-tertiary: #f0ede8;
+  --bg-card: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
+  --bg-hover: rgba(245, 158, 11, 0.08);
+  
+  /* Text Colors */
+  --text-primary: var(--tenets-sepia-800);
+  --text-secondary: var(--tenets-sepia-600);
+  --text-muted: rgba(62, 52, 42, 0.7);
+  --text-accent: var(--tenets-amber-500);
+  --text-inverse: var(--tenets-cream-50);
+  
+  /* Border Colors */
+  --border-default: rgba(245, 158, 11, 0.08);
+  --border-hover: rgba(245, 158, 11, 0.2);
+  --border-active: var(--tenets-amber-500);
+  
+  /* Shadows - Neumorphic */
+  --shadow-sm: 
+    2px 2px 6px rgba(26, 35, 50, 0.04),
+    -2px -2px 6px rgba(255, 255, 255, 0.7),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.4);
+    
+  --shadow-md: 
+    4px 4px 12px rgba(26, 35, 50, 0.06),
+    -4px -4px 12px rgba(255, 255, 255, 0.8),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.5);
+    
+  --shadow-lg: 
+    6px 6px 20px rgba(26, 35, 50, 0.08),
+    -6px -6px 20px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.6);
+    
+  --shadow-inset: 
+    inset 3px 3px 8px rgba(26, 35, 50, 0.06),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.8);
+    
+  --shadow-hover: 
+    8px 8px 24px rgba(245, 158, 11, 0.1),
+    -8px -8px 24px rgba(255, 255, 255, 0.95),
+    inset 2px 2px 5px rgba(245, 158, 11, 0.04);
+  
+  /* Gradients */
+  --gradient-amber: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-navy: linear-gradient(135deg, #1a2332 0%, #263244 100%);
+  --gradient-cream: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
+  --gradient-ornament: linear-gradient(45deg, #f59e0b, #fbbf24, #fcd34d, #fbbf24, #f59e0b);
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 50%;
+  
+  /* Typography */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 2.5rem;
+  --font-size-5xl: 3rem;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+  
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.8;
+  
+  /* Z-index */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-header: 1000;
+  --z-drawer: 10000;
+  --z-notification: 10001;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-base: 0.25s ease-in-out;
+  --transition-slow: 0.4s ease-in-out;
+  --transition-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Breakpoints (for reference in JS) */
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* Header Heights */
+  --header-height-desktop: 76px;
+  --header-height-mobile: 64px;
+  
+  /* Container Widths */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+}
+
+/* =====================================================
+   DARK MODE VARIABLES
+   ===================================================== */
+
+[data-md-color-scheme="slate"] {
+  /* Background Colors */
+  --bg-primary: var(--tenets-navy-900);
+  --bg-secondary: var(--tenets-navy-800);
+  --bg-tertiary: var(--tenets-navy-700);
+  --bg-card: linear-gradient(135deg, #263244 0%, #1a2332 100%);
+  --bg-hover: rgba(251, 191, 36, 0.08);
+  
+  /* Text Colors */
+  --text-primary: var(--tenets-cream-50);
+  --text-secondary: var(--tenets-sepia-200);
+  --text-muted: rgba(212, 204, 184, 0.7);
+  --text-accent: var(--tenets-amber-400);
+  --text-inverse: var(--tenets-navy-900);
+  
+  /* Border Colors */
+  --border-default: rgba(251, 191, 36, 0.08);
+  --border-hover: rgba(251, 191, 36, 0.2);
+  --border-active: var(--tenets-amber-400);
+  
+  /* Shadows - Dark Neumorphic */
+  --shadow-sm: 
+    2px 2px 6px rgba(0, 0, 0, 0.15),
+    -2px -2px 6px rgba(255, 255, 255, 0.02),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.03);
+    
+  --shadow-md: 
+    4px 4px 12px rgba(0, 0, 0, 0.2),
+    -4px -4px 12px rgba(255, 255, 255, 0.03),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.04);
+    
+  --shadow-lg: 
+    6px 6px 20px rgba(0, 0, 0, 0.3),
+    -6px -6px 20px rgba(255, 255, 255, 0.04),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.05);
+    
+  --shadow-inset: 
+    inset 3px 3px 8px rgba(0, 0, 0, 0.3),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.02);
+    
+  --shadow-hover: 
+    8px 8px 24px rgba(251, 191, 36, 0.08),
+    -8px -8px 24px rgba(255, 255, 255, 0.04),
+    inset 2px 2px 5px rgba(251, 191, 36, 0.03);
+}
+
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
+
+/* Colors */
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-accent { color: var(--text-accent) !important; }
+.text-success { color: var(--color-success) !important; }
+.text-warning { color: var(--color-warning) !important; }
+.text-error { color: var(--color-error) !important; }
+.text-info { color: var(--color-info) !important; }
+
+.bg-primary { background: var(--bg-primary) !important; }
+.bg-secondary { background: var(--bg-secondary) !important; }
+.bg-tertiary { background: var(--bg-tertiary) !important; }
+.bg-card { background: var(--bg-card) !important; }
+
+/* Shadows */
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow-md { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.shadow-inset { box-shadow: var(--shadow-inset) !important; }
+.shadow-hover { box-shadow: var(--shadow-hover) !important; }
+.shadow-none { box-shadow: none !important; }
+
+/* Spacing */
+.p-xs { padding: var(--spacing-xs) !important; }
+.p-sm { padding: var(--spacing-sm) !important; }
+.p-md { padding: var(--spacing-md) !important; }
+.p-lg { padding: var(--spacing-lg) !important; }
+.p-xl { padding: var(--spacing-xl) !important; }
+
+.m-xs { margin: var(--spacing-xs) !important; }
+.m-sm { margin: var(--spacing-sm) !important; }
+.m-md { margin: var(--spacing-md) !important; }
+.m-lg { margin: var(--spacing-lg) !important; }
+.m-xl { margin: var(--spacing-xl) !important; }
+
+/* Border Radius */
+.radius-sm { border-radius: var(--radius-sm) !important; }
+.radius-md { border-radius: var(--radius-md) !important; }
+.radius-lg { border-radius: var(--radius-lg) !important; }
+.radius-xl { border-radius: var(--radius-xl) !important; }
+.radius-2xl { border-radius: var(--radius-2xl) !important; }
+.radius-full { border-radius: var(--radius-full) !important; }
+
+/* Typography */
+.font-primary { font-family: var(--font-primary) !important; }
+.font-heading { font-family: var(--font-heading) !important; }
+.font-mono { font-family: var(--font-mono) !important; }
+
+.text-xs { font-size: var(--font-size-xs) !important; }
+.text-sm { font-size: var(--font-size-sm) !important; }
+.text-base { font-size: var(--font-size-base) !important; }
+.text-lg { font-size: var(--font-size-lg) !important; }
+.text-xl { font-size: var(--font-size-xl) !important; }
+.text-2xl { font-size: var(--font-size-2xl) !important; }
+.text-3xl { font-size: var(--font-size-3xl) !important; }
+
+.font-normal { font-weight: var(--font-weight-normal) !important; }
+.font-medium { font-weight: var(--font-weight-medium) !important; }
+.font-semibold { font-weight: var(--font-weight-semibold) !important; }
+.font-bold { font-weight: var(--font-weight-bold) !important; }
+.font-black { font-weight: var(--font-weight-black) !important; }
+
+/* Transitions */
+.transition-fast { transition: all var(--transition-fast) !important; }
+.transition-base { transition: all var(--transition-base) !important; }
+.transition-slow { transition: all var(--transition-slow) !important; }
+
+/* Victorian Ornaments */
+.ornament-diamond::before { content: '◆'; }
+.ornament-star::before { content: '✦'; }
+.ornament-flower::before { content: '❦'; }
+.ornament-leaf::before { content: '❧'; }
+.ornament-cross::before { content: '✚'; }
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
