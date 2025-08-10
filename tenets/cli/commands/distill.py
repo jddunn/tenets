@@ -51,6 +51,9 @@ def distill(
     ),
     # Features
     no_git: bool = typer.Option(False, "--no-git", help="Disable git context inclusion"),
+    use_stopwords: bool = typer.Option(
+        False, "--use-stopwords", help="Enable stopword filtering for keyword analysis"
+    ),
     session: Optional[str] = typer.Option(
         None, "--session", "-s", help="Use session for stateful context building"
     ),
@@ -118,6 +121,7 @@ def distill(
                     max_tokens=max_tokens,
                     mode=mode,
                     include_git=not no_git,
+                    use_stopwords=use_stopwords,
                     session_name=session,
                     include_patterns=include_patterns,
                     exclude_patterns=exclude_patterns,
@@ -132,6 +136,7 @@ def distill(
                 max_tokens=max_tokens,
                 mode=mode,
                 include_git=not no_git,
+                use_stopwords=use_stopwords,
                 session_name=session,
                 include_patterns=include_patterns,
                 exclude_patterns=exclude_patterns,

@@ -87,6 +87,7 @@ class RankingConfig:
         algorithm: Default ranking algorithm (fast, balanced, thorough, ml)
         threshold: Minimum relevance score to include file
         use_tfidf: Whether to use TF-IDF for keyword matching
+        use_stopwords: Whether to use stopwords filtering
         use_embeddings: Whether to use semantic embeddings (requires ML)
         embedding_model: Which embedding model to use
         custom_weights: Custom weights for ranking factors
@@ -97,6 +98,7 @@ class RankingConfig:
     algorithm: str = "balanced"
     threshold: float = 0.1
     use_tfidf: bool = True
+    use_stopwords: bool = False
     use_embeddings: bool = False
     embedding_model: str = "all-MiniLM-L6-v2"
     custom_weights: Dict[str, float] = field(

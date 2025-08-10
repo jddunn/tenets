@@ -39,6 +39,7 @@ max_tokens: 100000
 ranking:
   algorithm: balanced   # fast | balanced | thorough | ml | custom
   threshold: 0.10       # 0.0–1.0 (lower includes more files)
+  use_stopwords: false  # Enable stopword filtering for keyword analysis
 
 scanner:
   respect_gitignore: true

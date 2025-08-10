@@ -74,6 +74,7 @@ tenets distill <prompt> [path] [options]
 - `--max-tokens`: Maximum tokens for context
 - `--mode`: Analysis mode: `fast`, `balanced` (default), `thorough`
 - `--no-git`: Disable git context inclusion
+- `--use-stopwords`: Enable stopword filtering for keyword analysis
 - `--include, -i`: Include file patterns (e.g., "*.py,*.js")
 - `--exclude, -e`: Exclude file patterns (e.g., "test_*,*.backup")
 - `--session, -s`: Use a named session for stateful context
