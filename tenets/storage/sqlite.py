@@ -17,9 +17,56 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional
 import sqlite3
+from datetime import datetime
 
 from tenets.config import TenetsConfig
 from tenets.utils.logger import get_logger
+
+
+# Register explicit adapters/converters for datetime to avoid Python 3.12+
+# deprecation warnings about default adapters/converters.
+# This ensures consistent behavior across all connections in this process.
+def _register_datetime_adapters_and_converters() -> None:
+    # Adapt datetime -> ISO-8601 string with space separator for readability.
+    sqlite3.register_adapter(
+        datetime, lambda v: v.isoformat(sep=" ", timespec="microseconds")
+    )
+
+    def _convert_timestamp(val: bytes) -> datetime:
+        s = val.decode("utf-8")
+        # Try fromisoformat first (supports both 'T' and space separators, with or without TZ)
+        try:
+            return datetime.fromisoformat(s)
+        except Exception:
+            # Fallback common formats
+            for fmt in (
+                "%Y-%m-%d %H:%M:%S.%f%z",
+                "%Y-%m-%d %H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%S.%f%z",
+                "%Y-%m-%dT%H:%M:%S%z",
+                "%Y-%m-%d %H:%M:%S.%f",
+                "%Y-%m-%d %H:%M:%S",
+            ):
+                try:
+                    return datetime.strptime(s, fmt)
+                except Exception:
+                    continue
+            # As a last resort, return naive datetime without parsing microseconds/tz
+            try:
+                date_part, time_part = s.split(" ", 1)
+                return datetime.fromisoformat(f"{date_part}T{time_part}")
+            except Exception:
+                # Give up and return original string converted via fromtimestamp if possible
+                raise
+
+    # Bind to common declared types (case-insensitive)
+    sqlite3.register_converter("TIMESTAMP", _convert_timestamp)
+    sqlite3.register_converter("DATETIME", _convert_timestamp)
+
+
+# Ensure registration happens on import so even raw sqlite3.connect in tests
+# benefits from the custom adapters/converters.
+_register_datetime_adapters_and_converters()
 
 
 @dataclass
@@ -66,7 +113,13 @@ class Database:
             sqlite3.Connection ready for use.
         """
         path = Path(db_path) if db_path else self.paths.main_db
-        conn = sqlite3.connect(path, detect_types=sqlite3.PARSE_DECLTYPES)
+        # Enable declared-type and column-name based conversions and allow
+        # cross-thread usage for tests that access the same connection across threads.
+        conn = sqlite3.connect(
+            path,
+            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+            check_same_thread=False,
+        )
         self._apply_pragmas(conn, self.config.cache.sqlite_pragmas)
         return conn
 

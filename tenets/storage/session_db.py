@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
@@ -83,14 +83,16 @@ class SessionDB:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             cur.execute(
                 "INSERT INTO sessions (name, created_at, metadata) VALUES (?, ?, ?)",
-                (name, now, json.dumps(metadata or {})),
+                (name, now.isoformat(), json.dumps(metadata or {})),
             )
             conn.commit()
             session_id = cur.lastrowid
-            return SessionRecord(id=session_id, name=name, created_at=now, metadata=metadata or {})
+            return SessionRecord(
+                id=session_id, name=name, created_at=now, metadata=metadata or {}
+            )
         finally:
             conn.close()
 
@@ -98,12 +100,20 @@ class SessionDB:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
-            cur.execute("SELECT id, name, created_at, metadata FROM sessions WHERE name=?", (name,))
+            cur.execute("SELECT id, name, created_at, metadata FROM sessions WHERE name= ?", (name,))
             row = cur.fetchone()
             if not row:
                 return None
             meta = json.loads(row[3]) if row[3] else {}
-            return SessionRecord(id=row[0], name=row[1], created_at=row[2], metadata=meta)
+            created = row[2]
+            if isinstance(created, str):
+                try:
+                    created_dt = datetime.fromisoformat(created)
+                except Exception:
+                    created_dt = datetime.strptime(created.replace("T", " "), "%Y-%m-%d %H:%M:%S.%f%z") if created else datetime.now(UTC)
+            else:
+                created_dt = created
+            return SessionRecord(id=row[0], name=row[1], created_at=created_dt, metadata=meta)
         finally:
             conn.close()
 
@@ -118,8 +128,16 @@ class SessionDB:
             records: List[SessionRecord] = []
             for row in rows:
                 meta = json.loads(row[3]) if row[3] else {}
+                created = row[2]
+                if isinstance(created, str):
+                    try:
+                        created_dt = datetime.fromisoformat(created)
+                    except Exception:
+                        created_dt = datetime.strptime(created.replace("T", " "), "%Y-%m-%d %H:%M:%S.%f%z") if created else datetime.now(UTC)
+                else:
+                    created_dt = created
                 records.append(
-                    SessionRecord(id=row[0], name=row[1], created_at=row[2], metadata=meta)
+                    SessionRecord(id=row[0], name=row[1], created_at=created_dt, metadata=meta)
                 )
             return records
         finally:
@@ -151,7 +169,7 @@ class SessionDB:
             cur = conn.cursor()
             cur.execute(
                 "INSERT INTO session_context (session_id, kind, content, created_at) VALUES (?, ?, ?, ?)",
-                (sess.id, kind, content, datetime.utcnow()),
+                (sess.id, kind, content, datetime.now(UTC).isoformat()),
             )
             conn.commit()
         finally:
@@ -175,16 +193,16 @@ class SessionDB:
         try:
             cur = conn.cursor()
             # Lookup session id
-            cur.execute("SELECT id FROM sessions WHERE name=?", (name,))
+            cur.execute("SELECT id FROM sessions WHERE name= ?", (name,))
             row = cur.fetchone()
             if not row:
                 return False
             session_id = row[0]
             # Optionally delete related context first (no ON DELETE CASCADE in schema)
             if purge_context:
-                cur.execute("DELETE FROM session_context WHERE session_id=?", (session_id,))
+                cur.execute("DELETE FROM session_context WHERE session_id= ?", (session_id,))
             # Delete the session
-            cur.execute("DELETE FROM sessions WHERE id=?", (session_id,))
+            cur.execute("DELETE FROM sessions WHERE id= ?", (session_id,))
             conn.commit()
             return cur.rowcount > 0
         finally:
@@ -216,7 +234,7 @@ class SessionDB:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
-            cur.execute("SELECT id, metadata FROM sessions WHERE name=?", (name,))
+            cur.execute("SELECT id, metadata FROM sessions WHERE name= ?", (name,))
             row = cur.fetchone()
             if not row:
                 return False
@@ -224,7 +242,7 @@ class SessionDB:
             meta = json.loads(metadata_text) if metadata_text else {}
             meta.update(updates or {})
             cur.execute(
-                "UPDATE sessions SET metadata=? WHERE id=?",
+                "UPDATE sessions SET metadata=? WHERE id= ?",
                 (json.dumps(meta), session_id),
             )
             conn.commit()
@@ -238,7 +256,7 @@ class SessionDB:
         When activating a session, all other sessions are marked inactive to
         guarantee there is at most one active session at a time.
         """
-        timestamp = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+        timestamp = datetime.now(UTC).isoformat(timespec="seconds")
         updates: Dict[str, Any] = {"active": active, "updated_at": timestamp}
         if active:
             updates["resumed_at"] = timestamp
