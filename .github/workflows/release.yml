@@ -1,520 +1,292 @@
-# Release Workflow
-# Triggered by version tags (v*) to build and publish releases
-# Location: .github/workflows/release.yml
-
 name: Release
 
 on:
-  # Trigger on version tags
   push:
     tags:
-      - 'v*'  # e.g., v1.0.0, v2.1.0-beta.1
-  
-  # Manual trigger with tag input
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag (e.g., v1.2.3)'
-        required: true
-        type: string
-      dry_run:
-        description: 'Dry run (build but do not publish)'
-        required: false
-        default: false
-        type: boolean
+      - 'v*' # Trigger on version tags
 
 permissions:
-  contents: write    # Create releases
-  id-token: write   # PyPI trusted publishing
-  pages: write      # GitHub Pages deployment
-  packages: write   # GitHub Packages
-
-env:
-  PYTHON_VERSION: '3.11'
-  NODE_VERSION: '20'  # If you need Node.js for any tools
+  contents: write # For creating releases
+  id-token: write # For trusted PyPI publishing
+  pages: write # For GitHub Pages deployment
 
 jobs:
-  # Validate the release tag and environment
+  # Validate release
   validate:
     name: Validate release
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history for changelog
-      
-      - name: Get tag
-        id: get_tag
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
-      
+          fetch-depth: 0 # Need full history for changelog
+
       - name: Validate tag format
-        id: version
         run: |
-          TAG="${{ steps.get_tag.outputs.tag }}"
-          
-          # Validate semantic version format
-          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?(\+[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
-            echo "❌ Invalid tag format: $TAG"
-            echo "Expected: v1.2.3 or v1.2.3-beta.1"
+          if ! [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid tag format. Expected: v1.2.3 or v1.2.3-beta1"
             exit 1
           fi
-          
-          # Extract version without 'v' prefix
-          VERSION="${TAG#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
-          # Check if prerelease
-          if [[ "$TAG" =~ -[a-zA-Z0-9]+ ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-            echo "📦 Pre-release version: $VERSION"
-          else
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
-            echo "📦 Stable version: $VERSION"
-          fi
-      
-      - name: Check CHANGELOG
+
+      - name: Check CHANGELOG.md updated
         run: |
-          if grep -q "${{ steps.get_tag.outputs.tag }}" CHANGELOG.md; then
-            echo "✅ CHANGELOG.md contains entries for ${{ steps.get_tag.outputs.tag }}"
-          else
-            echo "⚠️ Warning: CHANGELOG.md not updated for ${{ steps.get_tag.outputs.tag }}"
-          fi
-      
-      - name: Verify version in pyproject.toml
-        run: |
-          PROJECT_VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
-          EXPECTED_VERSION="${{ steps.version.outputs.version }}"
-          
-          if [[ "$PROJECT_VERSION" != "$EXPECTED_VERSION" ]]; then
-            echo "⚠️ Version mismatch!"
-            echo "  pyproject.toml: $PROJECT_VERSION"
-            echo "  Git tag: $EXPECTED_VERSION"
-            echo "Consider updating pyproject.toml before tagging"
+          if ! grep -q "${{ github.ref_name }}" CHANGELOG.md; then
+            echo "Warning: CHANGELOG.md not updated for ${{ github.ref_name }}"
+            # Don't fail, just warn
           fi
 
-  # Run tests before release
-  test:
-    name: Test before release
+  # Build release artifacts
+  build:
+    name: Build release
     runs-on: ubuntu-latest
     needs: validate
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e '.[dev,test]'
-      
-      - name: Run tests
-        run: |
-          pytest -v --tb=short
-          echo "✅ All tests passed"
 
-  # Build Python distribution packages
-  build-python:
-    name: Build Python packages
-    runs-on: ubuntu-latest
-    needs: [validate, test]
-    steps:
-      - uses: actions/checkout@v4
-      
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      
-      - name: Install build dependencies
+          python-version: '3.11'
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install build twine
-      
+
       - name: Build distribution
-        run: |
-          python -m build
-          echo "📦 Built packages:"
-          ls -la dist/
-      
+        run: python -m build
+
       - name: Check distribution
         run: |
           twine check --strict dist/*
-          echo "✅ Package validation passed"
-      
-      - name: Generate checksums
-        working-directory: dist
-        run: |
-          sha256sum * > SHA256SUMS
-          echo "📝 Checksums:"
-          cat SHA256SUMS
-      
-      - name: Upload Python packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-packages
-          path: dist/
-          retention-days: 30
+          ls -la dist/
 
-  # Build standalone binaries with PyInstaller
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+  # Build standalone executables
   build-binaries:
     name: Build ${{ matrix.os }} binary
     runs-on: ${{ matrix.os }}
-    needs: [validate, test]
-    if: github.event.inputs.dry_run != 'true'
+    needs: validate
     strategy:
-      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            name: linux-x64
-            artifact_name: tenets-linux-x64
+            name: linux
           - os: windows-latest
-            name: windows-x64
-            artifact_name: tenets-windows-x64.exe
+            name: windows
           - os: macos-latest
-            name: macos-universal
-            artifact_name: tenets-macos-universal
-    
+            name: macos
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      
+          python-version: '3.11'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e '.[all]'
+          pip install -e ".[all]"
           pip install pyinstaller
-      
+
       - name: Build with PyInstaller
+        shell: bash
         run: |
           pyinstaller --onefile \
-            --name "${{ matrix.artifact_name }}" \
+            --name tenets-${{ matrix.name }} \
             --add-data "tenets:tenets" \
             --hidden-import tenets \
-            --hidden-import pkg_resources.extern \
-            --clean \
-            --noconfirm \
             tenets/__main__.py
-      
-      - name: Test binary (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          chmod +x dist/${{ matrix.artifact_name }}
-          ./dist/${{ matrix.artifact_name }} --version
-          ./dist/${{ matrix.artifact_name }} --help
-      
-      - name: Test binary (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          ./dist/${{ matrix.artifact_name }} --version
-          ./dist/${{ matrix.artifact_name }} --help
-      
-      - name: Generate checksum
-        shell: bash
-        working-directory: dist
-        run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            sha256sum "${{ matrix.artifact_name }}" > "${{ matrix.artifact_name }}.sha256"
-          else
-            shasum -a 256 "${{ matrix.artifact_name }}" > "${{ matrix.artifact_name }}.sha256"
-          fi
-          cat "${{ matrix.artifact_name }}.sha256"
-      
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: binary-${{ matrix.name }}
-          path: |
-            dist/${{ matrix.artifact_name }}
-            dist/${{ matrix.artifact_name }}.sha256
-          retention-days: 30
 
-  # Create GitHub Release
+      - name: Test binary
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            ./dist/tenets-${{ matrix.name }}.exe --version
+            ./dist/tenets-${{ matrix.name }}.exe --help
+          else
+            ./dist/tenets-${{ matrix.name }} --version
+            ./dist/tenets-${{ matrix.name }} --help
+          fi
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: tenets-${{ matrix.name }}
+          path: dist/tenets-${{ matrix.name }}*
+
+  # Create GitHub release
   github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [validate, build-python, build-binaries]
-    if: github.event.inputs.dry_run != 'true'
-    outputs:
-      release_url: ${{ steps.release.outputs.html_url }}
-      upload_url: ${{ steps.release.outputs.upload_url }}
+    needs: [build, build-binaries]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
         with:
           path: artifacts/
-      
-      - name: Organize release assets
-        run: |
-          mkdir -p release-assets
-          
-          # Copy Python packages
-          cp artifacts/python-packages/* release-assets/ 2>/dev/null || true
-          
-          # Copy binaries
-          for binary_dir in artifacts/binary-*; do
-            if [ -d "$binary_dir" ]; then
-              cp $binary_dir/* release-assets/
-            fi
-          done
-          
-          echo "📦 Release assets:"
-          ls -la release-assets/
-      
+
       - name: Generate release notes
+        id: release_notes
         run: |
-          VERSION="${{ needs.validate.outputs.version }}"
-          TAG="v${VERSION}"
-          
-          cat > notes.md << 'EOF'
+          # Extract version changelog
+          VERSION="${{ github.ref_name }}"
+
+          # Create release notes
+          cat > notes.md << EOF
           ## 🚀 Installation
-          
+
           ### PyPI
-          ```bash
-          pip install tenets==$VERSION
-          ```
-          
+          \`\`\`bash
+          pip install tenets==${VERSION#v}
+          \`\`\`
+
           ### Standalone Binaries
-          Download the appropriate binary for your platform from the assets below:
-          - **Linux**: `tenets-linux-x64`
-          - **macOS**: `tenets-macos-universal`
-          - **Windows**: `tenets-windows-x64.exe`
-          
-          ### Docker
-          ```bash
-          docker pull jddunn/tenets:$VERSION
-          docker pull ghcr.io/${{ github.repository }}:$VERSION
-          ```
-          
+          Download the appropriate binary for your platform from the assets below.
+
           ## 📖 Documentation
-          
-          - [Documentation](https://docs.tenets.dev)
-          - [Getting Started](https://docs.tenets.dev/getting-started)
-          - [API Reference](https://docs.tenets.dev/api)
-          
-          ## 🔐 Verification
-          
-          All release assets include SHA256 checksums for verification:
-          ```bash
-          sha256sum -c <filename>.sha256
-          ```
-          
+
+          Full documentation available at [docs.tenets.dev](https://docs.tenets.dev)
+
+          ## 🏢 About
+
+          Tenets is developed by [manic.agency](https://manic.agency)
+
+          ### Stay Updated
+          Subscribe to our [AI newsletter](https://manic.agency/blog) for the latest updates and insights.
+
           EOF
-          
-          # Add changelog section if available
-          if grep -q "$TAG" CHANGELOG.md; then
-            echo "## 📝 What's Changed" >> notes.md
-            echo "" >> notes.md
-            # Extract changelog for this version
-            awk "/## \[$TAG\]/{flag=1; next} /## \[v/{flag=0} flag" CHANGELOG.md >> notes.md
-          else
-            echo "## 📝 What's Changed" >> notes.md
-            echo "" >> notes.md
-            echo "See [commit history](https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...$TAG) for changes." >> notes.md
+
+          # Add changelog if it exists
+          if grep -q "${VERSION}" CHANGELOG.md; then
+            echo "## 📝 Changelog" >> notes.md
+            awk "/## \[${VERSION}\]/{flag=1; next} /## \[/{flag=0} flag" CHANGELOG.md >> notes.md
           fi
-          
-          # Replace version placeholder
-          sed -i "s/\$VERSION/$VERSION/g" notes.md
-      
-      - name: Create GitHub Release
-        id: release
-        uses: softprops/action-gh-release@v2
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.validate.outputs.version }}
-          name: v${{ needs.validate.outputs.version }}
           body_path: notes.md
-          files: release-assets/*
+          files: |
+            artifacts/dist/*
+            artifacts/tenets-*/*
           draft: false
-          prerelease: ${{ needs.validate.outputs.is_prerelease == 'true' }}
-          generate_release_notes: false
-          fail_on_unmatched_files: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
 
   # Publish to PyPI
   publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: [validate, build-python, github-release]
-    if: github.event.inputs.dry_run != 'true'
+    needs: [build, github-release]
     environment:
       name: pypi
       url: https://pypi.org/project/tenets/
     steps:
-      - name: Download Python packages
-        uses: actions/download-artifact@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
         with:
-          name: python-packages
+          name: dist
           path: dist/
-      
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
           print-hash: true
-          skip-existing: ${{ needs.validate.outputs.is_prerelease == 'true' }}
-          # Uses OIDC for authentication (no token needed)
 
-  # Build and push Docker images
+  # Build and push Docker image
   docker:
-    name: Build and push Docker images
+    name: Build Docker image
     runs-on: ubuntu-latest
-    needs: [validate, test, github-release]
-    if: github.event.inputs.dry_run != 'true'
+    needs: [build, github-release]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      # Docker Hub login (optional)
+
       - name: Log in to Docker Hub
-        if: secrets.DOCKER_USERNAME != '' && secrets.DOCKER_TOKEN != ''
+        if: env.DOCKER_USERNAME != ''
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      
-      # GitHub Container Registry login (uses GITHUB_TOKEN)
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            name=jddunn/tenets,enable=${{ secrets.DOCKER_USERNAME != '' }}
-            name=ghcr.io/${{ github.repository }}
+            jddunn/tenets
+            ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}},value=${{ needs.validate.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate.outputs.version }}
-            type=semver,pattern={{major}},value=${{ needs.validate.outputs.version }},enable=${{ needs.validate.outputs.is_prerelease == 'false' }}
-            type=raw,value=latest,enable=${{ needs.validate.outputs.is_prerelease == 'false' }}
-            type=raw,value=beta,enable=${{ needs.validate.outputs.is_prerelease == 'true' }}
-      
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ env.DOCKER_USERNAME != '' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            VERSION=${{ needs.validate.outputs.version }}
-            BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-            REVISION=${{ github.sha }}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
-  # Deploy versioned documentation
-  docs-deploy:
+  # Update documentation with versioned docs
+  docs-release:
     name: Deploy versioned documentation
     runs-on: ubuntu-latest
-    needs: [validate, publish-pypi]
-    if: github.event.inputs.dry_run != 'true'
+    needs: publish-pypi
     permissions:
       contents: write
       pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Configure git
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-      
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      
+          python-version: '3.11'
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install mkdocs mkdocs-material mkdocs-material-extensions
           pip install pymdown-extensions mkdocs-minify-plugin
           pip install mike
           pip install -e .
-      
+
       - name: Deploy versioned docs
         run: |
-          VERSION='${{ needs.validate.outputs.version }}'
-          IS_PRERELEASE='${{ needs.validate.outputs.is_prerelease }}'
-          
-          if [[ "$IS_PRERELEASE" == "false" ]]; then
-            # For stable releases, update latest and version aliases
-            mike deploy --push --update-aliases $VERSION latest
-            
-            # Also create major and major.minor aliases
-            MAJOR=$(echo $VERSION | cut -d. -f1)
-            MINOR=$(echo $VERSION | cut -d. -f1,2)
-            mike alias --push $VERSION $MAJOR
-            mike alias --push $VERSION $MINOR
-            mike set-default --push latest
-          else
-            # For pre-releases, deploy without updating latest
-            mike deploy --push $VERSION
-          fi
-          
-          echo "📚 Documentation deployed to https://docs.tenets.dev/$VERSION"
-
-  # Final verification
-  verify-release:
-    name: Verify release
-    runs-on: ubuntu-latest
-    needs: [validate, publish-pypi, docker]
-    if: github.event.inputs.dry_run != 'true'
-    steps:
-      - name: Verify PyPI package
-        run: |
-          sleep 30  # Give PyPI time to update
-          pip install tenets==${{ needs.validate.outputs.version }}
-          tenets --version | grep ${{ needs.validate.outputs.version }}
-          echo "✅ PyPI package verified"
-      
-      - name: Verify Docker image
-        run: |
-          docker pull ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }}
-          docker run --rm ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }} --version
-          echo "✅ Docker image verified"
-      
-      - name: Release summary
-        run: |
-          echo "# 🎉 Release v${{ needs.validate.outputs.version }} Complete!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📦 Published Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ PyPI package: [tenets ${{ needs.validate.outputs.version }}](https://pypi.org/project/tenets/${{ needs.validate.outputs.version }}/)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Docker image: ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Standalone binaries (Linux, macOS, Windows)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Documentation: [v${{ needs.validate.outputs.version }}](https://docs.tenets.dev/${{ needs.validate.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          VERSION="${{ github.ref_name }}"
+          # Deploy the tagged version
+          mike deploy --push --update-aliases ${VERSION#v} latest
+          mike set-default --push latest
