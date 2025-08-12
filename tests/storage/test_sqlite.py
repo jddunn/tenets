@@ -1,13 +1,14 @@
 """Tests for SQLite utilities."""
 
-import pytest
-import tempfile
 import sqlite3
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from tenets.storage.sqlite import Database, SQLitePaths
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.storage.sqlite import Database, SQLitePaths
 
 
 @pytest.fixture

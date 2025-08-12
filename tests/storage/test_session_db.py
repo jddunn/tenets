@@ -1,15 +1,16 @@
 """Tests for SessionDB SQLite storage."""
 
-import pytest
-import tempfile
-import sqlite3
 import json
-from pathlib import Path
+import sqlite3
+import tempfile
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from tenets.storage.session_db import SessionDB, SessionRecord
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.storage.session_db import SessionDB, SessionRecord
 
 
 @pytest.fixture

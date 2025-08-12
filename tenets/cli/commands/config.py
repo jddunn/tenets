@@ -1,15 +1,15 @@
 """Configuration management commands."""
 
-from pathlib import Path
 import json
-import yaml
+from pathlib import Path
 from typing import Optional
 
 import typer
+import yaml
 from rich import print
 from rich.console import Console
-from rich.syntax import Syntax
 from rich.panel import Panel
+from rich.syntax import Syntax
 
 from tenets.config import TenetsConfig
 from tenets.models.llm import SUPPORTED_MODELS

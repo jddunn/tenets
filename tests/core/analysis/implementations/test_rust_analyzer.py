@@ -16,19 +16,19 @@ Test Coverage:
     - Edge cases and Rust idioms
 """
 
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-from datetime import datetime
 
 import pytest
 
 from tenets.core.analysis.implementations.rust_analyzer import RustAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 
 

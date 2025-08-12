@@ -95,4 +95,4 @@ See: [Supported Languages](supported-languages.md)
 
 * Explore configuration: [CONFIG.md](CONFIG.md)
 * API surface: [api/](api/index.md)
-* Architecture deep dive: [DEEP-DIVE.md](DEEP-DIVE.md)
+* Architecture deep dive: [ARCHITECTURE.md](ARCHITECTURE.md)

@@ -1,19 +1,21 @@
 """Tests for Git analyzer."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
-import tempfile
 import os
+import tempfile
+from datetime import datetime
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
-from tenets.core.git.analyzer import GitAnalyzer, CommitInfo
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.core.git.analyzer import CommitInfo, GitAnalyzer
 
 # Check Git availability
 try:
-    from git import Repo
     import subprocess
+
+    from git import Repo
 
     result = subprocess.run(["git", "--version"], capture_output=True, check=True)
     _HAS_GIT = True

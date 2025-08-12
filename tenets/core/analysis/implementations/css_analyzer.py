@@ -5,20 +5,21 @@ including support for CSS3, SCSS/Sass, Less, PostCSS,
 Tailwind CSS, UnoCSS, and other modern CSS frameworks.
 """
 
+import json
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set, Tuple
-import json
+from typing import Any, Dict, List, Optional, Set, Tuple
 
-from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 from tenets.utils.logger import get_logger
+
+from ..base import LanguageAnalyzer
 
 
 class CSSParser:

@@ -6,16 +6,16 @@ principles to generated context.
 """
 
 import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple, Union
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from tenets.config import TenetsConfig
+from tenets.core.instiller.injector import InjectionPosition, TenetInjector
 from tenets.core.instiller.manager import TenetManager
-from tenets.core.instiller.injector import TenetInjector, InjectionPosition
-from tenets.models.tenet import Tenet, Priority, TenetStatus
 from tenets.models.context import ContextResult
+from tenets.models.tenet import Priority, Tenet, TenetStatus
 from tenets.utils.logger import get_logger
 from tenets.utils.tokens import count_tokens
 

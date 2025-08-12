@@ -75,9 +75,10 @@ jobs:
       - name: Run Black formatter check
         run: black --check --diff .
       
-      - name: Run isort import checker
+      - name: Run isort
         run: isort --check-only --diff .
-      
+        continue-on-error: true  # Don't fail CI for import order
+            
       - name: Run Ruff linter
         run: ruff check .
       

@@ -15,8 +15,8 @@ content is returned to avoid accidental destruction of meaning.
 
 from __future__ import annotations
 
-from typing import Tuple
 import re
+from typing import Tuple
 
 COMMENT_SYNTAX = {
     # language: (line_comment_markers, block_comment_patterns)

@@ -1,3 +1,7 @@
+# MkDocs Configuration for Tenets Documentation
+# https://www.mkdocs.org/user-guide/configuration/
+
+# Site Information
 site_name: tenets
 site_description: Context that feeds your prompts - Intelligent code exploration and AI pair programming tool
 site_url: https://tenets.dev
@@ -89,12 +93,13 @@ theme:
 
 # Plugins
 plugins:
+  # Search plugin with ONLY supported options
   - search:
       lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-      prebuild_index: true
-      min_search_length: 2
+      # REMOVED: prebuild_index and min_search_length (not supported)
   
+  # Minify plugin for optimization
   - minify:
       minify_html: true
       minify_js: true
@@ -106,6 +111,7 @@ plugins:
 
 # Markdown extensions
 markdown_extensions:
+  # Python Markdown Extensions
   - abbr
   - admonition
   - attr_list
@@ -116,6 +122,8 @@ markdown_extensions:
   - toc:
       permalink: true
       permalink_title: Link to this section
+  
+  # PyMdown Extensions
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.betterem:
@@ -143,6 +151,7 @@ markdown_extensions:
 
 # Extra configuration
 extra:
+  # Disable generator meta tag
   generator: false
   
   # Social links
@@ -196,8 +205,8 @@ extra:
       content: tenets - Intelligent Code Context for AI
     - property: twitter:description
       content: Build optimal context from your codebase for LLMs. Smart aggregation, prompt engineering, and code analysis.
-      
-# CSS and JS files - properly organized
+
+# CSS and JS files
 extra_css:
   # Base styles
   - styles/variables.css
@@ -251,11 +260,11 @@ nav:
   - Documentation:
     - CLI Reference: CLI.md
     - Configuration: CONFIG.md
-    - Architecture: DEEP-DIVE.md
+    - Architecture: ARCHITECTURE.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
 
-# Additional theme customization
-extra_templates:
-  - overrides/home.html
-  - overrides/main.html
+# Additional theme customization (if these templates exist)
+# extra_templates:
+#   - overrides/home.html
+#   - overrides/main.html

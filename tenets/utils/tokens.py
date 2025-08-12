@@ -13,10 +13,10 @@ Notes:
 
 from __future__ import annotations
 
-from typing import Iterable, List, Optional, Tuple
+import math
 import sys
 import types
-import math
+from typing import Iterable, List, Optional, Tuple
 
 from .logger import get_logger
 

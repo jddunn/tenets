@@ -7,17 +7,18 @@ matching to extract basic information.
 
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 from tenets.utils.logger import get_logger
+
+from ..base import LanguageAnalyzer
 
 
 class GenericAnalyzer(LanguageAnalyzer):

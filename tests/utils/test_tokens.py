@@ -1,14 +1,15 @@
 """Tests for token utilities."""
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from tenets.utils.tokens import (
+    _HAS_TIKTOKEN,
+    _get_encoding_for_model,
+    chunk_text,
     count_tokens,
     get_model_max_tokens,
-    chunk_text,
-    _get_encoding_for_model,
-    _HAS_TIKTOKEN,
 )
 
 

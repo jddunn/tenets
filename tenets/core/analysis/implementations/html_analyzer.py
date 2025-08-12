@@ -6,19 +6,20 @@ web components, and modern framework patterns.
 """
 
 import re
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Set
 from html.parser import HTMLParser
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
 
-from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 from tenets.utils.logger import get_logger
+
+from ..base import LanguageAnalyzer
 
 
 class HTMLStructureParser(HTMLParser):

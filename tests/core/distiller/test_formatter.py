@@ -1,15 +1,16 @@
 """Tests for ContextFormatter."""
 
-import pytest
 import json
 from datetime import datetime
 from unittest.mock import patch
 
-from tenets.core.distiller.formatter import ContextFormatter
-from tenets.models.context import PromptContext
-from tenets.models.analysis import FileAnalysis
-from tenets.models.summary import FileSummary
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.core.distiller.formatter import ContextFormatter
+from tenets.models.analysis import FileAnalysis
+from tenets.models.context import PromptContext
+from tenets.models.summary import FileSummary
 
 
 @pytest.fixture

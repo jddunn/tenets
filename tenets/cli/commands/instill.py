@@ -6,8 +6,8 @@ import typer
 from rich import print
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
 
 from tenets import Tenets
 

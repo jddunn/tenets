@@ -17,19 +17,19 @@ Test Coverage:
     - Edge cases and PHP-specific features
 """
 
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-from datetime import datetime
 
 import pytest
 
 from tenets.core.analysis.implementations.php_analyzer import PhpAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 
 

@@ -1,13 +1,14 @@
 """Tests for main Distiller orchestrator."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
-from tenets.core.distiller.distiller import Distiller
-from tenets.models.context import ContextResult, PromptContext
-from tenets.models.analysis import FileAnalysis
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.core.distiller.distiller import Distiller
+from tenets.models.analysis import FileAnalysis
+from tenets.models.context import ContextResult, PromptContext
 
 
 @pytest.fixture

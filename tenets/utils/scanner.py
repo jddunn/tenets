@@ -4,10 +4,10 @@ This module provides functionality for discovering files in a codebase,
 respecting ignore patterns and filtering rules.
 """
 
+import fnmatch
 import os
 from pathlib import Path
-from typing import List, Optional, Set, Generator, Union
-import fnmatch
+from typing import Generator, List, Optional, Set, Union
 
 from tenets.config import TenetsConfig
 from tenets.utils.logger import get_logger

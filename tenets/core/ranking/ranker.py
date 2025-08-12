@@ -8,16 +8,16 @@ parallel execution. Uses Google style docstrings.
 
 from __future__ import annotations
 
-import re
-import math
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple, Set, Callable
-from dataclasses import dataclass, field
-from collections import defaultdict, Counter
-from datetime import datetime
 import concurrent.futures
+import math
+import re
 from abc import ABC, abstractmethod
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis

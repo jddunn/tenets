@@ -7,13 +7,13 @@ Internal helpers (still importable if needed):
 """
 
 from .ranker import (
-    RelevanceRanker,
+    BalancedRankingStrategy,
+    FastRankingStrategy,
+    RankedFile,
     RankingAlgorithm,
     RankingFactors,
-    RankedFile,
+    RelevanceRanker,
     TFIDFCalculator,
-    FastRankingStrategy,
-    BalancedRankingStrategy,
     ThoroughRankingStrategy,
 )
 

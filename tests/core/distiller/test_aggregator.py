@@ -1,14 +1,15 @@
 """Tests for ContextAggregator."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
-from tenets.core.distiller.aggregator import ContextAggregator, AggregationStrategy
+import pytest
+
+from tenets.config import TenetsConfig
+from tenets.core.distiller.aggregator import AggregationStrategy, ContextAggregator
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
 from tenets.models.summary import FileSummary
-from tenets.config import TenetsConfig
 
 
 @pytest.fixture

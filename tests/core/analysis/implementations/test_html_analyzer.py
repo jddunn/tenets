@@ -16,19 +16,19 @@ Test Coverage:
     - Error handling for malformed HTML
 """
 
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-from datetime import datetime
 
 import pytest
 
 from tenets.core.analysis.implementations.html_analyzer import HTMLAnalyzer, HTMLStructureParser
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 
 

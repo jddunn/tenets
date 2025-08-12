@@ -1,19 +1,20 @@
 """Tests for the PromptParser module."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from tenets.config import TenetsConfig
 from tenets.core.prompt.parser import (
-    PromptParser,
+    ExternalReference,
     IntentType,
     ParsedEntity,
+    PromptParser,
     TemporalContext,
-    ExternalReference,
 )
 from tenets.models.context import PromptContext
-from tenets.config import TenetsConfig
 
 
 @pytest.fixture

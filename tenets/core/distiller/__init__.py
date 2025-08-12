@@ -8,10 +8,10 @@ The distiller is responsible for the main 'distill' command functionality:
 5. Formatting for output (presentation)
 """
 
-from tenets.core.distiller.distiller import Distiller
 from tenets.core.distiller.aggregator import ContextAggregator
-from tenets.core.distiller.optimizer import TokenOptimizer
+from tenets.core.distiller.distiller import Distiller
 from tenets.core.distiller.formatter import ContextFormatter
+from tenets.core.distiller.optimizer import TokenOptimizer
 
 __all__ = [
     "Distiller",

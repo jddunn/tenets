@@ -5,9 +5,9 @@ and their strategic injection into generated context to maintain consistency
 across AI interactions.
 """
 
+from tenets.core.instiller.injector import InjectionPosition, TenetInjector
+from tenets.core.instiller.instiller import InstillationResult, Instiller
 from tenets.core.instiller.manager import TenetManager
-from tenets.core.instiller.injector import TenetInjector, InjectionPosition
-from tenets.core.instiller.instiller import Instiller, InstillationResult
 
 __all__ = [
     "TenetManager",

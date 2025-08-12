@@ -5,12 +5,12 @@ to maintain consistency across AI interactions.
 """
 
 import re
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
-from tenets.models.tenet import Tenet, Priority
 from tenets.models.context import ContextResult
+from tenets.models.tenet import Priority, Tenet
 from tenets.utils.logger import get_logger
 from tenets.utils.tokens import count_tokens
 

@@ -5,14 +5,15 @@ their storage, retrieval, and application to contexts.
 """
 
 import json
-import yaml
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Union
-from datetime import datetime
 import sqlite3
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import yaml
 
 from tenets.config import TenetsConfig
-from tenets.models.tenet import Tenet, Priority, TenetStatus, TenetCategory, TenetCollection
+from tenets.models.tenet import Priority, Tenet, TenetCategory, TenetCollection, TenetStatus
 from tenets.utils.logger import get_logger
 
 

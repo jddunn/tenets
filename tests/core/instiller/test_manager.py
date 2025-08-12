@@ -1,17 +1,18 @@
 """Tests for TenetManager."""
 
-import pytest
-import tempfile
-import sqlite3
 import json
-import yaml
-from pathlib import Path
+import sqlite3
+import tempfile
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from tenets.core.instiller.manager import TenetManager
-from tenets.models.tenet import Tenet, Priority, TenetStatus, TenetCategory, TenetCollection
+import pytest
+import yaml
+
 from tenets.config import TenetsConfig
+from tenets.core.instiller.manager import TenetManager
+from tenets.models.tenet import Priority, Tenet, TenetCategory, TenetCollection, TenetStatus
 
 
 @pytest.fixture

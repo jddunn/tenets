@@ -12,15 +12,15 @@ Fixtures provided:
     - Utility fixtures (loggers, temporary paths)
 """
 
-import os
 import json
-import tempfile
+import os
 import shutil
-from pathlib import Path
-from datetime import datetime, timedelta
-from typing import Generator, Dict, Any, List
-from unittest.mock import Mock, MagicMock, patch
+import tempfile
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, Generator, List
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import yaml
@@ -30,10 +30,9 @@ os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 # Import the modules we're testing
 from tenets.config import TenetsConfig
-from tenets.models.analysis import FileAnalysis, ComplexityMetrics, ImportInfo
-from tenets.models.context import PromptContext, ContextResult
-from tenets.models.tenet import Tenet, Priority, TenetStatus
-
+from tenets.models.analysis import ComplexityMetrics, FileAnalysis, ImportInfo
+from tenets.models.context import ContextResult, PromptContext
+from tenets.models.tenet import Priority, Tenet, TenetStatus
 
 # ============================================================================
 # Configuration Fixtures
@@ -208,7 +207,9 @@ def mock_external_dependencies(monkeypatch, request):
         monkeypatch.setattr("git.Repo", mock_git.Repo)
 
     # Mock expensive ML operations (graceful if dependency not installed)
-    import sys, types, importlib
+    import importlib
+    import sys
+    import types
 
     try:
         monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
