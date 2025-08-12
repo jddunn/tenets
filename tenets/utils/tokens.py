@@ -16,7 +16,7 @@ from __future__ import annotations
 import math
 import sys
 import types
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, Optional, Tuple
 
 from .logger import get_logger
 

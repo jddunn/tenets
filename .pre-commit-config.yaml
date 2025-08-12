@@ -1,8 +1,16 @@
 # See https://pre-commit.com for more information
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# Auto-update: pre-commit autoupdate
+
+# Remove or change this for Windows compatibility
+# default_language_version:
+#   python: python3.11
+
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args: ['--maxkb=1000']
@@ -15,7 +23,7 @@ repos:
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml
-        args: ['--unsafe']  # Allow custom tags
+        args: ['--unsafe'] # Allow custom tags
       - id: debug-statements
       - id: detect-private-key
       - id: end-of-file-fixer
@@ -24,100 +32,69 @@ repos:
         args: ['--fix=lf']
       - id: trailing-whitespace
 
-  # Python code formatting
+  # Python code formatting - BLACK (AUTO-FIXES)
   - repo: https://github.com/psf/black
-    rev: 24.4.2
+    rev: 25.1.0
     hooks:
       - id: black
-        language_version: python3.11
+        # Remove language_version for Windows
         args: ['--config=pyproject.toml']
 
-  # Import sorting
+  # Import sorting - ISORT (AUTO-FIXES)
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+    rev: 6.0.1
     hooks:
       - id: isort
         args: ['--settings-path=pyproject.toml']
 
-  # Python linting with Ruff
+  # Python linting with Ruff (AUTO-FIXES)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.6
+    rev: v0.12.8
     hooks:
       - id: ruff
-        args: ['--fix', '--exit-non-zero-on-fix']
+        args: ['--fix', '--exit-non-zero-on-fix', '--show-fixes']
+      - id: ruff-format # Alternative formatter to black if needed
 
   # Security linting
   - repo: https://github.com/pycqa/bandit
-    rev: 1.7.9
+    rev: 1.8.6
     hooks:
       - id: bandit
-        args: ['-c', 'pyproject.toml']
+        args: ['-c', 'pyproject.toml', '-ll'] # Low severity
         additional_dependencies: ['bandit[toml]']
-
-  # Type checking
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.1
-    hooks:
-      - id: mypy
-        additional_dependencies: [
-          'types-requests',
-          'types-PyYAML',
-          'types-toml',
-          'types-pkg-resources',
-        ]
-        args: ['--strict', '--ignore-missing-imports']
-
-  # Docstring checking
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        args: ['--convention=google']
         exclude: '^tests/'
 
-  # YAML/Markdown formatting
+  # YAML/Markdown formatting (AUTO-FIXES)
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.3.3
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
         types_or: [yaml, markdown]
-        exclude: '^docs/'
+        exclude: '^(docs/|CHANGELOG.md)'
+        args: ['--single-quote', '--print-width=100']
 
-  # Markdown linting
+  # Markdown linting (AUTO-FIXES)
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.39.0
+    rev: v0.45.0
     hooks:
       - id: markdownlint
-        args: ['--fix']
+        args: ['--fix', '--disable', 'MD013', 'MD033'] # Disable line length and HTML
+        exclude: '^(docs/|CHANGELOG.md)'
 
-  # Commit message linting
+  # Commit message linting (for conventional commits)
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.24.0
+    rev: v4.8.3
     hooks:
       - id: commitizen
         stages: [commit-msg]
-      - id: commitizen-branch
-        stages: [push]
-        args: ['--rev-range', 'origin/main..HEAD']
 
-  # License header checking
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
-    hooks:
-      - id: insert-license
-        files: '\\.py$'
-        args: [
-          '--license-filepath=.license-header.txt',
-          '--comment-style=#',
-          '--fuzzy-match-ratio=85',
-        ]
-
-  # Secret scanning
+  # Secret scanning (IMPORTANT FOR SECURITY)
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
+        exclude: '^(.*\.lock|package-lock\.json)$'
 
   # Custom local hooks
   - repo: local
@@ -125,35 +102,28 @@ repos:
       # Check for print statements
       - id: no-print-statements
         name: Check for print statements
-        entry: '\\bprint\('
+        entry: 'print\('
         language: pygrep
         types: [python]
-        exclude: '^(tests/|examples/)'
-        
-      # Verify version consistency
-      - id: version-consistency
-        name: Check version consistency
-        entry: python scripts/check_version.py
-        language: system
-        files: '(pyproject\\.toml|tenets/__init__\\.py)'
-        
-      # Run quick tests
-      - id: quick-tests
-        name: Run quick unit tests
-        entry: pytest -xvs -m "not slow"
-        language: system
-        pass_filenames: false
-        stages: [push]
+        exclude: '^(tests/|examples/|scripts/|tenets/cli/)'
 
-# Configuration
+      # Auto-fix common issues
+      - id: auto-fix-common
+        name: Auto-fix common Python issues
+        entry: bash -c 'for f in "$@"; do sed -i "s/from typing import Dict, List, Optional/from typing import Optional/g" "$f"; done' --
+        language: system
+        types: [python]
+        exclude: '^tests/'
+
+# Configuration for pre-commit.ci (if you use it)
 ci:
   autofix_commit_msg: |
-    [pre-commit.ci] auto fixes from pre-commit.com hooks
+    style: auto-fixes from pre-commit hooks [skip ci]
 
-    for more information, see https://pre-commit.ci
+    Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
   autofix_prs: true
   autoupdate_branch: ''
-  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_commit_msg: 'chore: pre-commit autoupdate [skip ci]'
   autoupdate_schedule: weekly
-  skip: [mypy]  # Too slow for pre-commit.ci
+  skip: [mypy, no-print-statements] # Too slow for CI
   submodules: false

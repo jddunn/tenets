@@ -7,9 +7,7 @@ best-effort and can be overridden at runtime.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
-from typing import Dict as DictType
-from typing import List, Optional
+from typing import Optional
 
 from tenets.utils.logger import get_logger
 
@@ -29,7 +27,7 @@ class ModelLimits:
 
 
 # Best-effort defaults; adjust as needed without strict guarantees.
-_PRICING: Dict[str, ModelPricing] = {
+_PRICING: dict[str, ModelPricing] = {
     # OpenAI
     "gpt-4o": ModelPricing(input_per_1k=0.005, output_per_1k=0.015),
     "gpt-4o-mini": ModelPricing(input_per_1k=0.00015, output_per_1k=0.0006),
@@ -42,7 +40,7 @@ _PRICING: Dict[str, ModelPricing] = {
     "claude-3-haiku": ModelPricing(input_per_1k=0.00025, output_per_1k=0.00125),
 }
 
-_LIMITS: Dict[str, ModelLimits] = {
+_LIMITS: dict[str, ModelLimits] = {
     "gpt-4o": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4o-mini": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4.1": ModelLimits(max_context=128_000, max_output=4_096),
@@ -83,7 +81,7 @@ def get_model_limits(model: Optional[str]) -> ModelLimits:
     return _LIMITS.get(model, ModelLimits(max_context=100_000, max_output=4_096))
 
 
-def estimate_cost(input_tokens: int, output_tokens: int, model: Optional[str]) -> Dict[str, float]:
+def estimate_cost(input_tokens: int, output_tokens: int, model: Optional[str]) -> dict[str, float]:
     """Estimate API cost for a given token usage and model.
 
     Args:
@@ -117,13 +115,13 @@ def _infer_provider(model_name: str) -> str:
     return "Unknown"
 
 
-def list_supported_models() -> List[DictType[str, object]]:
+def list_supported_models() -> list[dict[str, object]]:
     """List known models with provider, limits, and pricing.
 
     Returns:
         A list of dicts: name, provider, context_tokens, input_price, output_price
     """
-    out: List[DictType[str, object]] = []
+    out: list[dict[str, object]] = []
     for name, pricing in _PRICING.items():
         limits = _LIMITS.get(name, get_model_limits(None))
         out.append(
@@ -141,4 +139,4 @@ def list_supported_models() -> List[DictType[str, object]]:
 
 
 # Back-compat for CLI display
-SUPPORTED_MODELS: List[DictType[str, object]] = list_supported_models()
+SUPPORTED_MODELS: list[dict[str, object]] = list_supported_models()
