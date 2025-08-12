@@ -8,7 +8,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 
 class Priority(Enum):
@@ -141,11 +141,11 @@ class Tenet:
     created_at: datetime = field(default_factory=datetime.now)
     instilled_at: Optional[datetime] = None
     updated_at: datetime = field(default_factory=datetime.now)
-    session_bindings: List[str] = field(default_factory=list)
+    session_bindings: list[str] = field(default_factory=list)
     author: Optional[str] = None
     metrics: TenetMetrics = field(default_factory=TenetMetrics)
     injection_strategy: InjectionStrategy = field(default_factory=InjectionStrategy)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Validate and process after initialization."""
@@ -218,7 +218,7 @@ class Tenet:
         prefix = f"[{self.category.value.upper()}]" if self.category else "[PRINCIPLE]"
         return f"{prefix} {self.content}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "id": self.id,
@@ -249,7 +249,7 @@ class Tenet:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Tenet":
+    def from_dict(cls, data: dict[str, Any]) -> "Tenet":
         """Create Tenet from dictionary."""
         # Parse dates
         created_at = (
@@ -304,9 +304,9 @@ class TenetCollection:
 
     name: str
     description: str = ""
-    tenets: List[Tenet] = field(default_factory=list)
+    tenets: list[Tenet] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     def add_tenet(self, tenet: Tenet) -> None:
         """Add a tenet to the collection."""
@@ -321,15 +321,15 @@ class TenetCollection:
                 return True
         return False
 
-    def get_by_category(self, category: TenetCategory) -> List[Tenet]:
+    def get_by_category(self, category: TenetCategory) -> list[Tenet]:
         """Get all tenets of a specific category."""
         return [t for t in self.tenets if t.category == category]
 
-    def get_by_priority(self, priority: Priority) -> List[Tenet]:
+    def get_by_priority(self, priority: Priority) -> list[Tenet]:
         """Get all tenets of a specific priority."""
         return [t for t in self.tenets if t.priority == priority]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "name": self.name,

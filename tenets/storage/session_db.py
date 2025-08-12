@@ -14,9 +14,12 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
+# Python 3.9 compatibility: datetime.UTC added in 3.11
+UTC = getattr(datetime, "UTC", timezone.utc)
 
 from tenets.config import TenetsConfig
 from tenets.storage.sqlite import Database
@@ -28,7 +31,7 @@ class SessionRecord:
     id: int
     name: str
     created_at: datetime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class SessionDB:
@@ -78,7 +81,7 @@ class SessionDB:
         finally:
             conn.close()
 
-    def create_session(self, name: str, metadata: Optional[Dict[str, Any]] = None) -> SessionRecord:
+    def create_session(self, name: str, metadata: Optional[dict[str, Any]] = None) -> SessionRecord:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
@@ -120,7 +123,7 @@ class SessionDB:
         finally:
             conn.close()
 
-    def list_sessions(self) -> List[SessionRecord]:
+    def list_sessions(self) -> list[SessionRecord]:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
@@ -128,7 +131,7 @@ class SessionDB:
                 "SELECT id, name, created_at, metadata FROM sessions ORDER BY created_at DESC"
             )
             rows = cur.fetchall()
-            records: List[SessionRecord] = []
+            records: list[SessionRecord] = []
             for row in rows:
                 meta = json.loads(row[3]) if row[3] else {}
                 created = row[2]
@@ -233,7 +236,7 @@ class SessionDB:
         finally:
             conn.close()
 
-    def update_session_metadata(self, name: str, updates: Dict[str, Any]) -> bool:
+    def update_session_metadata(self, name: str, updates: dict[str, Any]) -> bool:
         """Merge ``updates`` into the session's metadata JSON.
 
         Returns True if the session exists and was updated.
@@ -264,7 +267,7 @@ class SessionDB:
         guarantee there is at most one active session at a time.
         """
         timestamp = datetime.now(UTC).isoformat(timespec="seconds")
-        updates: Dict[str, Any] = {"active": active, "updated_at": timestamp}
+        updates: dict[str, Any] = {"active": active, "updated_at": timestamp}
         if active:
             updates["resumed_at"] = timestamp
         else:
