@@ -1,3 +1,6 @@
+# Tenets Project Configuration
+# PEP 517/518/621 compliant pyproject.toml
+
 [project]
 name = "tenets"
 version = "0.1.0"
@@ -6,7 +9,9 @@ authors = [{name = "Tenets Team", email = "team@tenets.dev"}]
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
-keywords = ["ai", "llm", "code-analysis", "context-management", "developer-tools"]
+keywords = ["ai", "llm", "code-analysis", "developer-tools", "prompt-engineering]
+
+# PyPI classifiers
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -21,19 +26,20 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 
+# Core dependencies - minimal set for basic functionality
 dependencies = [
-    "typer>=0.9.0",
-    "rich>=13.0.0",
-    "pydantic>=2.0.0",
-    "pydantic-settings>=2.0.0",
-    "httpx>=0.25.0",
-    "gitpython>=3.1.0",
-    "pathspec>=0.11.0",
-    "chardet>=5.0.0",
-    "aiofiles>=23.0.0",
-    "tqdm>=4.65.0",
-    "psutil>=5.9.0",
-    "PyYAML>=6.0"
+    "typer>=0.9.0",           # CLI framework
+    "rich>=13.0.0",           # Terminal formatting
+    "pydantic>=2.0.0",        # Data validation
+    "pydantic-settings>=2.0.0",  # Settings management
+    "httpx>=0.25.0",          # HTTP client
+    "gitpython>=3.1.0",       # Git operations
+    "pathspec>=0.11.0",       # .gitignore parsing
+    "chardet>=5.0.0",         # Encoding detection
+    "aiofiles>=23.0.0",       # Async file operations
+    "tqdm>=4.65.0",           # Progress bars
+    "psutil>=5.9.0",          # System monitoring
+    "PyYAML>=6.0"             # YAML parsing
 ]
 
 [project.urls]
@@ -44,54 +50,55 @@ Issues = "https://github.com/jddunn/tenets/issues"
 Changelog = "https://github.com/jddunn/tenets/blob/main/CHANGELOG.md"
 
 [project.scripts]
+# CLI entry point
 tenets = "tenets.cli.app:app"
 
 [project.optional-dependencies]
 # Light NLP features (statistical analysis)
 light = [
-    "yake>=0.4.8",
-    "scikit-learn>=1.3.0",
-    "textstat>=0.7.3",
+    "yake>=0.4.8",            # Keyword extraction
+    "scikit-learn>=1.3.0",    # ML utilities
+    "textstat>=0.7.3",        # Text statistics
 ]
 
 # Deep learning features
 ml = [
-    "torch>=2.0.0",
-    "transformers>=4.30.0",
-    "sentence-transformers>=2.2.0",
-    "tiktoken>=0.5.0",
-    "faiss-cpu>=1.7.4",
-    "openai>=1.0.0",
-    "anthropic>=0.25.0",
-    "litellm>=1.0.0",
+    "torch>=2.0.0",                    # PyTorch
+    "transformers>=4.30.0",            # Hugging Face transformers
+    "sentence-transformers>=2.2.0",    # Sentence embeddings
+    "tiktoken>=0.5.0",                 # OpenAI tokenizer
+    "faiss-cpu>=1.7.4",                # Vector search
+    "openai>=1.0.0",                   # OpenAI API
+    "anthropic>=0.25.0",               # Anthropic API
+    "litellm>=1.0.0",                  # Multi-LLM support
 ]
 
 # Visualization features
 viz = [
-    "matplotlib>=3.7.0",
-    "networkx>=3.0",
-    "pydot>=1.4.0",
-    "plotly>=5.0.0",
+    "matplotlib>=3.7.0",      # Plotting
+    "networkx>=3.0",          # Graph visualization
+    "pydot>=1.4.0",          # Graphviz interface
+    "plotly>=5.0.0",         # Interactive plots
 ]
 
 # Web interface
 web = [
-    "fastapi>=0.100.0",
-    "uvicorn[standard]>=0.23.0",
-    "websockets>=11.0",
-    "jinja2>=3.1.0",
-    "python-multipart>=0.0.6",
-    "sse-starlette>=1.6.0",
+    "fastapi>=0.100.0",               # Web framework
+    "uvicorn[standard]>=0.23.0",      # ASGI server
+    "websockets>=11.0",               # WebSocket support
+    "jinja2>=3.1.0",                  # Templating
+    "python-multipart>=0.0.6",        # Form data
+    "sse-starlette>=1.6.0",          # Server-sent events
 ]
 
 # Database and caching
 db = [
-    "alembic>=1.12.0",
-    "sqlalchemy>=2.0.0",
-    "redis>=5.0.0",
+    "alembic>=1.12.0",        # Database migrations
+    "sqlalchemy>=2.0.0",      # ORM
+    "redis>=5.0.0",           # Caching
 ]
 
-# Development dependencies
+# Development dependencies - everything needed for development
 dev = [
     # Testing
     "pytest>=7.4.0",
@@ -145,8 +152,8 @@ test = [
     "pytest-timeout>=2.2.0",
     "pytest-xdist>=3.3.0",
     "hypothesis>=6.92.0",
-    "responses>=0.24.0",
-    "faker>=20.0.0",
+    "responses>=0.24.0",      # Mock HTTP responses
+    "faker>=20.0.0",          # Generate test data
 ]
 
 # Documentation dependencies
@@ -162,16 +169,21 @@ docs = [
     "mike>=2.0.0",
 ]
 
-# All features
+# All features combined
 all = [
     "tenets[light,ml,viz,web,db]",
 ]
+
+# ============================================================================
+# Build System Configuration
+# ============================================================================
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
+# Include patterns for build
 include = [
     "tenets/**/*.py",
     "tenets/**/*.json",
@@ -182,6 +194,7 @@ include = [
     "tenets/**/*.css",
     "tenets/**/*.js",
 ]
+# Exclude patterns for build
 exclude = [
     "tests",
     "docs",
@@ -189,6 +202,11 @@ exclude = [
     "__pycache__",
 ]
 
+# ============================================================================
+# Tool Configurations
+# ============================================================================
+
+# Black - Code Formatter
 [tool.black]
 line-length = 100
 target-version = ['py39']
@@ -207,6 +225,7 @@ extend-exclude = '''
 )/
 '''
 
+# isort - Import Sorting
 [tool.isort]
 profile = "black"
 line_length = 100
@@ -217,6 +236,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 skip_glob = ["*/migrations/*", "*/venv/*"]
 
+# Ruff - Fast Python Linter
 [tool.ruff]
 line-length = 100
 target-version = "py39"
@@ -271,6 +291,7 @@ exclude = [
 "__init__.py" = ["F401", "F403"]
 "tests/*" = ["ARG", "S101", "PLR2004"]
 
+# MyPy - Type Checking
 [tool.mypy]
 python_version = "3.9"
 warn_return_any = true
@@ -297,6 +318,7 @@ module = [
 ]
 ignore_missing_imports = true
 
+# Pytest - Testing Configuration
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = [
@@ -328,6 +350,7 @@ filterwarnings = [
     "ignore::PendingDeprecationWarning",
 ]
 
+# Coverage - Test Coverage Configuration
 [tool.coverage.run]
 source = ["tenets"]
 branch = true
@@ -352,6 +375,7 @@ exclude_lines = [
     "@abstractmethod",
 ]
 
+# Commitizen - Version Bumping and Changelog
 [tool.commitizen]
 name = "cz_conventional_commits"
 version = "0.1.0"
@@ -366,21 +390,26 @@ changelog_file = "CHANGELOG.md"
 changelog_incremental = true
 changelog_start_rev = "v0.1.0"
 
+# FIXED: Using table format to allow spaces in keys
 [tool.commitizen.customize]
-bump_pattern = "^(feat|fix|perf|refactor)"
-bump_map = {
-    "BREAKING CHANGE" = "MAJOR",
-    "feat" = "MINOR", 
-    "fix" = "PATCH",
-    "perf" = "PATCH",
-    "refactor" = "PATCH"
-}
+bump_pattern = "^(feat|fix|perf|refactor|BREAKING)"
 
+# Using table syntax instead of inline to support spaces
+[tool.commitizen.customize.bump_map]
+"BREAKING CHANGE" = "MAJOR"
+"BREAKING" = "MAJOR"
+"feat" = "MINOR"
+"fix" = "PATCH"
+"perf" = "PATCH"
+"refactor" = "PATCH"
+
+# Bandit - Security Linting
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
-skips = ["B101", "B601"]
+skips = ["B101", "B601"]  # Skip assert_used and shell_task tests
 
+# Pydocstyle - Docstring Checking
 [tool.pydocstyle]
 convention = "google"
 match-dir = "^(?!tests|venv|build|dist).*"
-add-ignore = ["D100", "D104"]
+add-ignore = ["D100", "D104"]  # Missing docstring in public module/package
