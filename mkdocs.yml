@@ -245,9 +245,9 @@ extra_javascript:
 # Navigation structure
 nav:
   - Home: index.md
-  - Features: features.md
   - Quick Start: quickstart.md
-  - Installation: installation.md
+  - Features: features.md
+  - Supported Languages: supported-languages.md
   - Documentation:
     - CLI Reference: CLI.md
     - Configuration: CONFIG.md

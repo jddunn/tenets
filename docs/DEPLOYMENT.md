@@ -2,52 +2,70 @@
 
 This guide outlines the process for releasing new versions of Tenets to PyPI and deploying documentation.
 
-## Release Process
+## Release Process (Automated)
 
-We follow a manual, tag-based release process. Releases are not automatically created on every commit to `main`.
+Standard path: merge conventional commits into `main`; automation versions & publishes.
 
-### 1. Pre-Release Checklist
+### How It Works
+1. Merge PR → `version-bump.yml` runs
+2. Determines bump size (major / minor / patch / skip) from commit messages
+3. Updates `pyproject.toml` + appends grouped section to `CHANGELOG.md`
+4. Commits `chore(release): vX.Y.Z` and tags `vX.Y.Z`
+5. Tag triggers `release.yml`: build, publish to PyPI, (future) Docker, docs deploy
+6. Release notes composed from changelog / draft config
 
-Before creating a new release, ensure the following are complete:
+### Bump Rules (Summary)
+| Commit Types Seen | Result |
+|-------------------|--------|
+| BREAKING CHANGE / `!` | Major |
+| feat / perf | Minor |
+| fix / refactor / chore | Patch (unless higher trigger present) |
+| Only docs / test / style | Skip |
 
-- [ ] All relevant feature branches have been merged into `main`.
-- [ ] The `main` branch has passed all CI checks (tests, linting, etc.).
-- [ ] The `CHANGELOG.md` file has been updated with all notable changes for the new version.
-- [ ] The version number in `pyproject.toml` has been incremented according to [Semantic Versioning](https://semver.org/).
+### Manual Overrides (Rare)
+If automation blocked (workflow infra outage):
+```bash
+git checkout main && git pull
+cz bump --increment PATCH  # or MINOR / MAJOR
+git push && git push --tags
+```
+Resume automation next merge.
 
-### 2. Creating a Release
+### First Release Bootstrap
+If repository has no version tag yet:
+- Merge a `feat: initial release` commit → workflow sets starting version (e.g. 0.1.0)
+- Alternatively manually create `v0.1.0` tag once, then rely on automation.
 
-1.  **Create a Git Tag**: Create a new Git tag that matches the version in `pyproject.toml`.
+### Verification Checklist
+| Step | Command / Action |
+|------|------------------|
+| Install published wheel | `pip install --no-cache-dir tenets==X.Y.Z` |
+| CLI version matches | `tenets --version` |
+| Release notes present | Check GitHub Release page |
+| Docs updated | Visit docs site / gh-pages commit |
 
-    ```bash
-    # Example for version 1.2.3
-    git tag -a v1.2.3 -m "Release version 1.2.3"
-    ```
-
-2.  **Push the Tag**: Push the new tag to the `origin` remote.
-
-    ```bash
-    git push origin v1.2.3
-    ```
-
-### 3. Automated Release Workflow
-
-Pushing a new tag triggers the `release.yml` GitHub Actions workflow, which automates the following steps:
-
-1.  **Builds the Package**: Builds the source distribution (`sdist`) and wheel (`bdist_wheel`) for the project.
-2.  **Publishes to PyPI**: Publishes the built package to the Python Package Index (PyPI) using the `PYPI_API_TOKEN` secret.
-3.  **Creates a GitHub Release**: Creates a new release on GitHub, using the tag and release notes from the `CHANGELOG.md`.
+### Troubleshooting
+| Issue | Cause | Resolution |
+|-------|-------|------------|
+| No tag created | Only docs/test/style commits | Land a fix/feat/perf commit |
+| Wrong bump size | Mis-typed commit message | Amend & force push before merge; or follow-up commit |
+| PyPI publish failed | Missing PyPI token / trust approval pending | Add `PYPI_API_TOKEN` or approve trusted publisher |
+| Duplicate releases | Manual tag + automated tag | Avoid manual tagging unless emergency |
 
 ## Documentation Deployment
 
-The documentation is automatically deployed to GitHub Pages whenever a commit is pushed to the `main` branch. This is handled by the `ci.yml` workflow.
+Docs are (a) built in CI on PR for validation; (b) deployed on release tag push by `release.yml` (or dedicated docs deploy step on main). GitHub Pages serves from `gh-pages`.
 
-## Required Secrets
+## Required / Optional Secrets
 
-The following secrets must be configured in the GitHub repository settings under **Settings > Secrets and variables > Actions**:
+| Secret | Required | Purpose | Notes |
+|--------|----------|---------|-------|
+| `PYPI_API_TOKEN` | Yes* | PyPI publish in `release.yml` | *Omit if using Trusted Publishing (approve first build). |
+| `CODECOV_TOKEN` | Public: often no / Private: yes | Coverage uploads | Set to be explicit. |
+| `DOCKER_USERNAME` / `DOCKER_TOKEN` | Optional | Future Docker image publishing | Not required yet. |
+| `GH_PAT` | No | Cross-repo automation (not standard) | Avoid storing if unused. |
 
--   **`PYPI_API_TOKEN`**: An API token from PyPI with permission to upload packages to the `tenets` project.
--   **`CODECOV_TOKEN`**: The repository upload token from Codecov, used to upload coverage reports.
+Environment (optional): `TENETS_DEBUG`, `TENETS_CACHE_DIRECTORY`.
 
 # With specific features
 pip install tenets[ml]  # ML features

@@ -1,0 +1,29 @@
+# Automatic label rules for PRs / issues
+# Requires github actions workflow using actions/labeler
+
+'area: ranking':
+  - 'tenets/core/ranking/**'
+
+'area: analysis':
+  - 'tenets/core/analysis/**'
+
+'area: cli':
+  - 'tenets/cli/**'
+
+'area: docs':
+  - 'docs/**'
+  - 'README.md'
+
+'area: config':
+  - 'tenets/config.py'
+  - '**/pyproject.toml'
+
+'area: tests':
+  - 'tests/**'
+
+'type: security':
+  - 'SECURITY.md'
+  - 'tenets/**/security*'
+
+'type: performance':
+  - '**/*perf*'
