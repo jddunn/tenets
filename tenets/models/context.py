@@ -6,11 +6,11 @@ the distillation and instillation process.
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 
 class TaskType(Enum):
@@ -66,17 +66,17 @@ class PromptContext:
 
     text: str
     original: Optional[str] = None
-    keywords: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
     task_type: str = "general"
     intent: str = "understand"
-    entities: List[Dict[str, Any]] = field(default_factory=list)
-    file_patterns: List[str] = field(default_factory=list)
-    focus_areas: List[str] = field(default_factory=list)
-    temporal_context: Optional[Dict[str, Any]] = None
-    scope: Dict[str, Any] = field(default_factory=dict)
-    external_context: Optional[Dict[str, Any]] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    confidence_scores: Dict[str, float] = field(default_factory=dict)
+    entities: list[dict[str, Any]] = field(default_factory=list)
+    file_patterns: list[str] = field(default_factory=list)
+    focus_areas: list[str] = field(default_factory=list)
+    temporal_context: Optional[dict[str, Any]] = None
+    scope: dict[str, Any] = field(default_factory=dict)
+    external_context: Optional[dict[str, Any]] = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    confidence_scores: dict[str, float] = field(default_factory=dict)
     session_id: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.now)
 
@@ -149,7 +149,7 @@ class PromptContext:
 
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "text": self.text,
@@ -170,16 +170,26 @@ class PromptContext:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PromptContext":
+    def from_dict(cls, data: dict[str, Any]) -> "PromptContext":
         """Create PromptContext from dictionary."""
         if "timestamp" in data and isinstance(data["timestamp"], str):
             data["timestamp"] = datetime.fromisoformat(data["timestamp"])
         return cls(**data)
 
     def get_hash(self) -> str:
-        """Get a hash of this context for caching."""
+        """Compute a deterministic cache key for this prompt context.
+
+        The hash incorporates the normalized prompt text, task type, and the
+        ordered list of unique keywords. MD5 is chosen (with
+        ``usedforsecurity=False``) for speed; collision risk is acceptable for
+        internal memoization.
+
+        Returns:
+            str: Hex digest suitable for use as an internal cache key.
+        """
         key_data = f"{self.text}_{self.task_type}_{sorted(self.keywords)}"
-        return hashlib.md5(key_data.encode()).hexdigest()
+        # nosec B324 - MD5 used only for non-security cache key generation
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()  # nosec
 
 
 @dataclass
@@ -213,17 +223,17 @@ class ContextResult:
     format: str = "markdown"
     token_count: int = 0
     # Support both names for files
-    files: List[str] = field(default_factory=list)
-    files_included: List[str] = field(default_factory=list)
-    files_summarized: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    files: list[str] = field(default_factory=list)
+    files_included: list[str] = field(default_factory=list)
+    files_summarized: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     session_id: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.now)
-    statistics: Dict[str, Any] = field(default_factory=dict)
+    statistics: dict[str, Any] = field(default_factory=dict)
     prompt_context: Optional[PromptContext] = None
-    cost_estimate: Optional[Dict[str, float]] = None
-    warnings: List[str] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
+    cost_estimate: Optional[dict[str, float]] = None
+    warnings: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Post-initialization processing and alias synchronization."""
@@ -264,7 +274,7 @@ class ContextResult:
         """Update a statistic value."""
         self.statistics[key] = value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         data = {
             # Prefer normalized keys expected by tests
@@ -291,7 +301,7 @@ class ContextResult:
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ContextResult":
+    def from_dict(cls, data: dict[str, Any]) -> "ContextResult":
         """Create from dictionary."""
         if "timestamp" in data and isinstance(data["timestamp"], str):
             data["timestamp"] = datetime.fromisoformat(data["timestamp"])
@@ -312,16 +322,16 @@ class ContextResult:
         path = Path(path)
 
         if self.format == "json":
-            with open(path, "w") as f:
+            with path.open("w") as f:
                 json.dump(self.to_dict(), f, indent=2, default=str)
         else:
-            with open(path, "w") as f:
+            with path.open("w") as f:
                 f.write(self.content or "")
 
     def get_summary(self) -> str:
         """Get a summary of the context result."""
         lines = [
-            f"Context Result Summary:",
+            "Context Result Summary:",
             f"  Format: {self.format}",
             f"  Token Count: {self.token_count:,}",
             f"  Files Included: {len(self.files_included)}",
@@ -366,18 +376,18 @@ class SessionContext:
     session_id: str
     name: str = ""
     project_root: Optional[Path] = None
-    shown_files: Set[str] = field(default_factory=set)
-    ignored_files: Set[str] = field(default_factory=set)
-    context_history: List[ContextResult] = field(default_factory=list)
-    current_focus: List[str] = field(default_factory=list)
-    tenets_applied: List[str] = field(default_factory=list)
+    shown_files: set[str] = field(default_factory=set)
+    ignored_files: set[str] = field(default_factory=set)
+    context_history: list[ContextResult] = field(default_factory=list)
+    current_focus: list[str] = field(default_factory=list)
+    tenets_applied: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    ai_requests: List[Dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    ai_requests: list[dict[str, Any]] = field(default_factory=list)
     branch: Optional[str] = None
     # New: pinned files explicitly added via instill --add-file / --add-folder
-    pinned_files: Set[str] = field(default_factory=set)
+    pinned_files: set[str] = field(default_factory=set)
 
     def add_shown_file(self, file_path: str) -> None:
         """Mark file as shown."""
@@ -399,7 +409,7 @@ class SessionContext:
         context.session_id = self.session_id
         self.updated_at = datetime.now()
 
-    def add_ai_request(self, request_type: str, request_data: Dict[str, Any]) -> None:
+    def add_ai_request(self, request_type: str, request_data: dict[str, Any]) -> None:
         """Record an AI request."""
         self.ai_requests.append(
             {"type": request_type, "data": request_data, "timestamp": datetime.now().isoformat()}
@@ -415,7 +425,7 @@ class SessionContext:
         self.pinned_files.add(file_path)
         self.updated_at = datetime.now()
 
-    def list_pinned_files(self) -> List[str]:
+    def list_pinned_files(self) -> list[str]:
         """Return pinned file paths."""
         return sorted(self.pinned_files)
 
@@ -431,7 +441,7 @@ class SessionContext:
             return True
         return None  # No preference
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "session_id": self.session_id,
@@ -450,7 +460,7 @@ class SessionContext:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SessionContext":
+    def from_dict(cls, data: dict[str, Any]) -> "SessionContext":
         """Create from dictionary."""
         if "created_at" in data and isinstance(data["created_at"], str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
@@ -468,7 +478,7 @@ class SessionContext:
                 for c in data["context_history"]
             ]
 
-        if "project_root" in data and data["project_root"]:
+        if data.get("project_root"):
             data["project_root"] = Path(data["project_root"])
 
         return cls(**data)

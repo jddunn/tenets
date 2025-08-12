@@ -17,15 +17,13 @@ Test Coverage:
 """
 
 import math
-import os
-import tempfile
 from concurrent.futures import TimeoutError as FutureTimeoutError
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, call, mock_open, patch
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
+from datetime import datetime, timedelta
+from tenets.models.analysis import ClassInfo, CodeStructure, FunctionInfo
 
-from tenets.config import TenetsConfig
 from tenets.core.ranking.ranker import (
     BalancedRankingStrategy,
     FastRankingStrategy,
@@ -57,14 +55,15 @@ class TestTFIDFCalculator:
         # Mock the stopwords file
         stopwords_content = "the\na\nan\nand\nis\n"
 
-        with patch("builtins.open", mock_open(read_data=stopwords_content)):
-            with patch("pathlib.Path.exists", return_value=True):
-                calc = TFIDFCalculator(use_stopwords=True)
+        with patch("builtins.open", mock_open(read_data=stopwords_content)), patch(
+            "pathlib.Path.exists", return_value=True
+        ):
+            calc = TFIDFCalculator(use_stopwords=True)
 
-                assert calc.use_stopwords is True
-                assert "the" in calc.stopwords
-                assert "a" in calc.stopwords
-                assert "and" in calc.stopwords
+            assert calc.use_stopwords is True
+            assert "the" in calc.stopwords
+            assert "a" in calc.stopwords
+            assert "and" in calc.stopwords
 
     def test_tokenize_without_stopwords(self):
         """Test tokenization without stopword filtering."""
@@ -318,7 +317,6 @@ class TestRankingFactors:
 
         score = factors.get_weighted_score(weights)
 
-        # Expected: (0.8*0.5) + (0.6*0.3) + (0.4*0.1) + (0.2*0.1) = 0.64
         assert abs(score - 0.64) < 0.001
 
     def test_get_weighted_score_with_custom(self):
@@ -331,7 +329,6 @@ class TestRankingFactors:
 
         score = factors.get_weighted_score(weights)
 
-        # Expected: (0.5*0.4) + (0.8*0.3) + (0.6*0.3) = 0.62
         assert abs(score - 0.62) < 0.001
 
     def test_get_weighted_score_clamping(self):
@@ -416,7 +413,9 @@ class TestFastRankingStrategy:
         assert weights["keyword_match"] == 0.6
         assert weights["path_relevance"] == 0.3
         assert weights["type_relevance"] == 0.1
-        assert sum(weights.values()) == 1.0
+        # Float summation can yield 0.9999999999999999 on some platforms; allow tiny tolerance
+        total = sum(weights.values())
+        assert total == pytest.approx(1.0, rel=0, abs=1e-12)
 
 
 class TestBalancedRankingStrategy:
@@ -521,7 +520,6 @@ def helper():
 
     def test_git_recency_scoring(self, strategy):
         """Test git recency scoring."""
-        from datetime import datetime, timedelta
 
         # Recent file
         recent_file = FileAnalysis(
@@ -650,7 +648,6 @@ def logout():
 
     def test_ast_relevance_analysis(self, strategy):
         """Test AST-based relevance analysis."""
-        from tenets.models.analysis import ClassInfo, CodeStructure, FunctionInfo
 
         file = FileAnalysis(
             path="test.py",
@@ -686,23 +683,18 @@ class TestMainRankingPipeline:
 
     @pytest.fixture
     def ranker(self, test_config):
-        """Provide a RelevanceRanker instance."""
         with patch("tenets.core.ranking.ranker.get_logger"):
             return RelevanceRanker(test_config)
 
     def test_rank_files_basic(self, ranker):
-        """Test basic file ranking."""
         files = [
             FileAnalysis(path="file1.py", content="auth code", language="python"),
             FileAnalysis(path="file2.py", content="unrelated", language="python"),
             FileAnalysis(path="file3.py", content="authentication logic", language="python"),
         ]
-
         prompt_context = PromptContext(
             text="authentication", keywords=["authentication", "auth"], task_type="feature"
         )
-
-        # Mock strategy
         mock_strategy = Mock()
         mock_strategy.rank_file.side_effect = [
             RankingFactors(keyword_match=0.5),
@@ -710,52 +702,35 @@ class TestMainRankingPipeline:
             RankingFactors(keyword_match=0.9),
         ]
         mock_strategy.get_weights.return_value = {"keyword_match": 1.0}
-
         ranker._get_strategy = Mock(return_value=mock_strategy)
-
         ranked = ranker.rank_files(files, prompt_context, algorithm="fast", parallel=False)
-
-        # Should be sorted by relevance
-        assert len(ranked) >= 2  # At least some files above threshold
+        assert len(ranked) >= 2
         assert ranked[0].relevance_score >= ranked[-1].relevance_score
 
     def test_rank_files_parallel(self, ranker):
-        """Test parallel file ranking."""
         files = [FileAnalysis(path=f"file{i}.py", content=f"content {i}") for i in range(20)]
-
         prompt_context = PromptContext(text="test", keywords=["test"], task_type="general")
-
         mock_strategy = Mock()
         mock_strategy.rank_file.return_value = RankingFactors(keyword_match=0.5)
         mock_strategy.get_weights.return_value = {"keyword_match": 1.0}
-
         ranker._get_strategy = Mock(return_value=mock_strategy)
-
-        # Should use parallel processing for 20 files
         with patch.object(ranker._executor, "submit") as mock_submit:
             mock_future = Mock()
             mock_future.result.return_value = RankedFile(
                 analysis=files[0], score=0.5, factors=RankingFactors(), explanation=""
             )
             mock_submit.return_value = mock_future
-
-            ranked = ranker.rank_files(files, prompt_context, parallel=True)
-
-            # Should have submitted parallel tasks
+            _ = ranker.rank_files(files, prompt_context, parallel=True)
             assert mock_submit.call_count == 20
 
     def test_rank_files_with_threshold(self, ranker, test_config):
-        """Test ranking with threshold filtering."""
         test_config.ranking.threshold = 0.5
-
         files = [
             FileAnalysis(path="high.py", content="very relevant"),
             FileAnalysis(path="medium.py", content="somewhat relevant"),
             FileAnalysis(path="low.py", content="not relevant"),
         ]
-
         prompt_context = PromptContext(text="test", keywords=["test"], task_type="general")
-
         mock_strategy = Mock()
         mock_strategy.rank_file.side_effect = [
             RankingFactors(keyword_match=0.8),
@@ -763,81 +738,52 @@ class TestMainRankingPipeline:
             RankingFactors(keyword_match=0.3),
         ]
         mock_strategy.get_weights.return_value = {"keyword_match": 1.0}
-
         ranker._get_strategy = Mock(return_value=mock_strategy)
-
         ranked = ranker.rank_files(files, prompt_context, parallel=False)
-
-        # Only files above threshold should be returned
         assert len(ranked) == 2
         assert all(f.relevance_score >= 0.5 for f in ranked)
 
     def test_rank_files_empty_input(self, ranker):
-        """Test ranking with empty file list."""
-        files = []
+        files: list[FileAnalysis] = []
         prompt_context = PromptContext(text="test", keywords=[], task_type="general")
-
         ranked = ranker.rank_files(files, prompt_context)
-
         assert ranked == []
 
     def test_rank_files_with_error(self, ranker):
-        """Test ranking handles individual file errors."""
         files = [
             FileAnalysis(path="good.py", content="content"),
             FileAnalysis(path="bad.py", content="content"),
         ]
-
         prompt_context = PromptContext(text="test", keywords=["test"], task_type="general")
-
         mock_strategy = Mock()
         mock_strategy.rank_file.side_effect = [
             RankingFactors(keyword_match=0.5),
             Exception("Ranking failed"),
         ]
         mock_strategy.get_weights.return_value = {"keyword_match": 1.0}
-
         ranker._get_strategy = Mock(return_value=mock_strategy)
-
-        # Should handle error gracefully in sequential mode
         ranked = ranker.rank_files(files, prompt_context, parallel=False)
-
-        # Should still return the successful file
         assert len(ranked) >= 1
 
     def test_custom_ranker_registration(self, ranker):
-        """Test registering and applying custom rankers."""
-
         def custom_ranker(ranked_files, prompt_context):
-            # Boost files with "special" in path
             for rf in ranked_files:
                 if "special" in rf.analysis.path:
                     rf.score *= 2
             return ranked_files
-
         ranker.register_custom_ranker(custom_ranker)
-
         assert len(ranker._custom_rankers) == 1
-
-        # Test that custom ranker is applied
         files = [
             FileAnalysis(path="normal.py", content=""),
             FileAnalysis(path="special.py", content=""),
         ]
-
         prompt_context = PromptContext(text="test", keywords=[], task_type="general")
-
         mock_strategy = Mock()
         mock_strategy.rank_file.return_value = RankingFactors(keyword_match=0.5)
         mock_strategy.get_weights.return_value = {"keyword_match": 1.0}
-
         ranker._get_strategy = Mock(return_value=mock_strategy)
-
-        # Mock the custom ranker application
         with patch.object(ranker, "_custom_rankers", [custom_ranker]):
             ranked = ranker.rank_files(files, prompt_context, parallel=False)
-
-        # Custom ranker should be applied (though effect depends on implementation details)
         assert len(ranked) >= 0
 
 
@@ -1013,7 +959,7 @@ class TestEdgeCases:
         mock_future.result.side_effect = FutureTimeoutError()
 
         with patch.object(ranker._executor, "submit", return_value=mock_future):
-            ranked = ranker.rank_files(files, prompt_context, parallel=True)
+            _ = ranker.rank_files(files, prompt_context, parallel=True)
 
             # Should handle timeout gracefully
             # Files that timeout get score 0
