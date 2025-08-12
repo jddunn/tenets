@@ -63,9 +63,25 @@ $ tenets distill "fix payment processing bug"
 # (recent changes inform ranking) — all ranked by relevance
 ```
 
+## How it Works
+
+1. **Scans** your codebase respecting .gitignore
+2. **Analyzes** code structure, imports, and dependencies
+3. **Ranks** files using multi-factor scoring:
+   - Keyword matching (TF-IDF with `light` extra)
+   - Import relationships
+   - Git activity and recency (used for relevance; not shown in output)
+   - Code complexity
+   - Path relevance
+   - Semantic similarity (with `ml` extra)
+4. **Aggregates** intelligently within token limits
+5. **Formats** for optimal consumption
+
+*All processing is local. Your code never leaves your machine. By design tenets never offloads any logic to LLMs, using classical ML / NLP techniques when desired.*
+
 ## Key Features
 
-### 🎯 Intelligent Context Distillation
+### Intelligent Context Distillation
 
 Like repomix on steroids - smart filters, automatic relevance ranking, and configurable aggregation:
 
@@ -93,7 +109,7 @@ tenets distill "investigate slow queries" --session new-feature --full
 tenets distill "summarize public API" --session new-feature --remove-comments --condense
 ```
 
-### 🧭 Guiding Principles (Tenets)
+### Guiding Principles (Tenets)
 
 Add persistent instructions that guide AI interactions:
 
@@ -105,7 +121,7 @@ tenets tenet add "Include error handling"
 tenets instill # Apply tenets to the session
 ```
 
-### 📊 Code Intelligence & Visualization
+### Code Intelligence & Visualization
 
 Understand your codebase at a glance:
 
@@ -121,7 +137,7 @@ tenets chronicle --since "last week"
 tenets viz contributors --active
 ```
 
-### 🚀 Developer Productivity
+### Developer Productivity
 
 Track velocity, identify bottlenecks, measure progress:
 
@@ -136,7 +152,7 @@ tenets examine . --ownership
 tenets examine . --complexity-trend
 ```
 
-### 🔧 Flexible Configuration
+### Flexible Configuration
 
 Works instantly with smart defaults, fully configurable when needed:
 
@@ -270,37 +286,6 @@ tenets viz deps . --cluster-by directory
 tenets examine . --complexity --threshold 10
 ```
 
-## How It Works
-
-1. **Scans** your codebase respecting .gitignore
-2. **Analyzes** code structure, imports, and dependencies
-3. **Ranks** files using multi-factor scoring:
-   - Keyword matching (TF-IDF with `light` extra)
-   - Import relationships
-   - Git activity and recency (used for relevance; not shown in output)
-   - Code complexity
-   - Path relevance
-   - Semantic similarity (with `ml` extra)
-4. **Aggregates** intelligently within token limits
-5. **Formats** for optimal consumption
-
-*All processing is local. Your code never leaves your machine.*
-
-## Storage and Cache
-
-- Main SQLite database lives at `${CACHE_DIR}/tenets.db` where `CACHE_DIR` is `config.cache.directory`.
-  - Defaults: `~/.tenets/cache` (Linux/macOS), `%USERPROFILE%\.tenets\cache` (Windows)
-- Sub-directories for caches (future/optional), e.g. `analysis/`, `general/` under the same cache root
-- SQLite PRAGMAs applied by default for safety and performance: `journal_mode=WAL`, `synchronous=NORMAL`, in-memory temp store, and larger page cache. This keeps writes safe and works well even when tenets is installed via pip because the DB resides in a writable user cache directory.
-- Override location via either environment or config file:
-  - Env: `TENETS_CACHE_DIRECTORY=/path/to/cache`
-  - `.tenets.yml`:
-    ```yaml
-    cache:
-      directory: /path/to/cache
-    ```
-- Sessions: when you pass `--session <name>` and a configuration is loaded, session state is persisted to the SQLite database so your context history can survive CLI runs.
-
 ## Advanced Features
 
 ### Multi-Factor Ranking
@@ -357,7 +342,6 @@ make docs-deploy
 # Or directly:
 mkdocs gh-deploy
 ```
-
 ## Configuration (quick start)
 
 - Create a starter file: `tenets config init` (writes `.tenets.yml` at project root)
@@ -379,19 +363,7 @@ TENETS_RANKING_THRESHOLD=0.05 TENETS_RANKING_ALGORITHM=fast tenets distill "impl
 
 See the full guide: `docs/CONFIG.md`.
 
-## Contributing
-
-We love contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-*Development sponsored by [manic.agency](https://manic.agency)*
-
-## Storage & Persistence
+## Storage & Cache
 
 Tenets stores all writable state in a user/project cache directory. This avoids writing into the installed package location (which may be read‑only under pip installs).
 
@@ -411,8 +383,6 @@ You can change the cache location via config or environment variables:
 - Environment variable: `TENETS_CACHE_DIRECTORY=/path/to/custom/cache`
 
 Sessions are persisted to the main SQLite database by default when a `TenetsConfig` is provided. The `SessionManager` uses an in‑memory mirror for speed and will write session metadata and context snapshots to `${CACHE_DIR}/tenets.db`.
-
-No project code leaves your machine; all processing and storage are local.
 
 ## Supported languages and formats
 
@@ -461,3 +431,15 @@ Notes
 - JSX/TSX are owned by JavaScriptAnalyzer; HTMLAnalyzer focuses on HTML and Vue SFCs.
 - YAML heuristics set structure.framework (e.g., docker-compose, kubernetes) and populate modules with services/resources.
 - Generic analyzer extracts imports/references from config where possible (images, depends_on, ConfigMaps/Secrets, etc.).
+
+## Contributing
+
+We love contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+*Development sponsored by [manic.agency](https://manic.agency)*
