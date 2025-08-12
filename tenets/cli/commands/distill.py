@@ -168,7 +168,7 @@ def distill(
                 remove_comments=remove_comments,
             )
 
-    # Prepare metadata and interactivity flags
+        # Prepare metadata and interactivity flags
         metadata = getattr(result, "metadata", {}) or {}
         files_included = metadata.get("files_included", 0)
         files_analyzed = metadata.get("files_analyzed", 0)
@@ -232,7 +232,9 @@ def distill(
             pass
         if do_copy:
             copied = False
-            text_to_copy = output_text if format != "json" else json.dumps(result.to_dict(), indent=2)
+            text_to_copy = (
+                output_text if format != "json" else json.dumps(result.to_dict(), indent=2)
+            )
             # Try pyperclip first
             try:  # pragma: no cover - environment dependent
                 import pyperclip
@@ -255,7 +257,9 @@ def distill(
                         p.communicate(input=text_to_copy.encode("utf-8"))
                         copied = p.returncode == 0
                     elif shutil.which("xclip"):
-                        p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE)
+                        p = subprocess.Popen(
+                            ["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE
+                        )
                         p.communicate(input=text_to_copy.encode("utf-8"))
                         copied = p.returncode == 0
                     elif shutil.which("wl-copy"):
