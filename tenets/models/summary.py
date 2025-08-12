@@ -4,12 +4,12 @@ This module defines data structures for managing file summaries
 when content needs to be condensed to fit within token limits.
 """
 
-from typing import List, Dict, Any, Optional, Union
-from dataclasses import dataclass, field, asdict
+import json
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-import json
+from typing import Any, Dict, List, Optional, Union
 
 
 class SummaryStrategy(Enum):

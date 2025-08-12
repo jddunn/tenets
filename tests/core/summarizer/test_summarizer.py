@@ -1,10 +1,11 @@
 """Tests for file summarizer."""
 
-import pytest
-import tempfile
 import ast
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
 
 from tenets.core.summarizer.summarizer import FileSummarizer
 from tenets.models.summary import FileSummary

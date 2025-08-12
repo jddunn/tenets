@@ -7,8 +7,8 @@ This module handles all storage needs including:
 """
 
 from tenets.storage.cache import AnalysisCache, CacheManager
-from tenets.storage.sqlite import Database, SQLitePaths
 from tenets.storage.session_db import SessionDB
+from tenets.storage.sqlite import Database, SQLitePaths
 
 __all__ = [
     "AnalysisCache",

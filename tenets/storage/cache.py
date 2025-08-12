@@ -4,19 +4,18 @@ This module provides a multi-level caching system with memory and disk caches
 to speed up repeated operations.
 """
 
-import json
 import hashlib
+import json
+import pickle
 import sqlite3
-from pathlib import Path
-from typing import Optional, Dict, Any, List, Callable, TypeVar
 from datetime import datetime, timedelta
 from functools import lru_cache
-import pickle
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
 from tenets.utils.logger import get_logger
-
 
 T = TypeVar("T")
 

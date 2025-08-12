@@ -1,23 +1,24 @@
 """Tests for the main CodeAnalyzer orchestrator."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
-import tempfile
 import json
+import tempfile
+from datetime import datetime
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
+from tenets.config import TenetsConfig
 from tenets.core.analysis.analyzer import CodeAnalyzer
 from tenets.core.analysis.implementations.python_analyzer import PythonAnalyzer
 from tenets.models.analysis import (
-    FileAnalysis,
-    ProjectAnalysis,
-    ComplexityMetrics,
     CodeStructure,
-    ImportInfo,
+    ComplexityMetrics,
     DependencyGraph,
+    FileAnalysis,
+    ImportInfo,
+    ProjectAnalysis,
 )
-from tenets.config import TenetsConfig
 
 
 @pytest.fixture

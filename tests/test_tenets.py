@@ -15,14 +15,14 @@ Test Coverage:
 """
 
 import json
-from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 import yaml
 
-from tenets import Tenets, TenetsConfig, ContextResult, Tenet, Priority, TenetCategory
+from tenets import ContextResult, Priority, Tenet, TenetCategory, Tenets, TenetsConfig
 
 
 class TestTenetsInitialization:

@@ -33,7 +33,7 @@ __license__ = "MIT"
 import os
 import sys
 from pathlib import Path
-from typing import Optional, Union, List, Dict, Any
+from typing import Any, Dict, List, Optional, Union
 
 # Check Python version
 if sys.version_info < (3, 9):
@@ -41,13 +41,13 @@ if sys.version_info < (3, 9):
 
 # Import core components
 from tenets.config import TenetsConfig
+from tenets.core.analysis.analyzer import CodeAnalyzer
 from tenets.core.distiller import Distiller
 from tenets.core.instiller import Instiller
 from tenets.core.instiller.manager import TenetManager
 from tenets.models.context import ContextResult
-from tenets.models.tenet import Tenet, Priority, TenetCategory
+from tenets.models.tenet import Priority, Tenet, TenetCategory
 from tenets.utils.logger import get_logger
-from tenets.core.analysis.analyzer import CodeAnalyzer
 
 
 class Tenets:
@@ -687,7 +687,8 @@ class Tenets:
         Returns:
             Dictionary with token counts and cost estimates
         """
-        from tenets.models.llm import estimate_cost as _estimate_cost, get_model_limits
+        from tenets.models.llm import estimate_cost as _estimate_cost
+        from tenets.models.llm import get_model_limits
 
         input_tokens = result.token_count
         # Use a conservative default for expected output if not specified elsewhere

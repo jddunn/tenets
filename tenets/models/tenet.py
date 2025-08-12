@@ -4,11 +4,11 @@ This module defines the data structures for tenets - the guiding principles
 that can be instilled into context to maintain consistency across AI interactions.
 """
 
-from typing import Optional, List, Dict, Any
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import uuid
+from typing import Any, Dict, List, Optional
 
 
 class Priority(Enum):

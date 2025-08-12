@@ -1,11 +1,12 @@
 """Shared fixtures for instiller tests."""
 
-import pytest
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from tenets.config import TenetsConfig
-from tenets.models.tenet import Tenet, Priority, TenetCategory
+from tenets.models.tenet import Priority, Tenet, TenetCategory
 
 
 @pytest.fixture

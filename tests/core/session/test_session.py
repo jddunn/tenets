@@ -1,14 +1,15 @@
 """Tests for session management."""
 
-import pytest
+import json
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import json
+from unittest.mock import MagicMock, Mock, patch
 
-from tenets.core.session.session import SessionManager
-from tenets.models.context import SessionContext, ContextResult
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.core.session.session import SessionManager
+from tenets.models.context import ContextResult, SessionContext
 from tenets.storage.session_db import SessionDB
 
 
@@ -103,8 +104,9 @@ class TestSessionManager:
     def test_list_sessions_with_db(self, session_manager_db):
         """Test listing sessions with database."""
         # Mock database returning sessions
-        from tenets.storage.session_db import SessionRecord
         from datetime import datetime
+
+        from tenets.storage.session_db import SessionRecord
 
         mock_records = [
             SessionRecord(id=1, name="db_session1", created_at=datetime.now(), metadata={}),
@@ -136,8 +138,9 @@ class TestSessionManager:
 
     def test_get_session_from_db(self, session_manager_db):
         """Test getting session from database."""
-        from tenets.storage.session_db import SessionRecord
         from datetime import datetime
+
+        from tenets.storage.session_db import SessionRecord
 
         mock_record = SessionRecord(
             id=1, name="db_session", created_at=datetime.now(), metadata={"key": "value"}

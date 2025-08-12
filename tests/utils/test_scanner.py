@@ -1,12 +1,13 @@
 """Tests for the FileScanner utility."""
 
-import pytest
+import os
 import tempfile
 from pathlib import Path
-import os
 
-from tenets.utils.scanner import FileScanner
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.utils.scanner import FileScanner
 
 
 @pytest.fixture

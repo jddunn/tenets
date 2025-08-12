@@ -4,16 +4,16 @@ The aggregator is responsible for selecting and combining files in a way that
 maximizes relevance while staying within token constraints.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
 from tenets.config import TenetsConfig
+from tenets.core.summarizer import Summarizer
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
 from tenets.models.summary import FileSummary
-from tenets.core.summarizer import Summarizer
-from tenets.utils.tokens import count_tokens
 from tenets.utils.logger import get_logger
+from tenets.utils.tokens import count_tokens
 
 
 @dataclass
@@ -106,10 +106,10 @@ class ContextAggregator:
             transformed_stats = {}
             if remove_comments or condense:
                 try:
-                    from .transform import (
-                        detect_language_from_extension,
+                    from .transform import (  # local import
                         apply_transformations,
-                    )  # local import
+                        detect_language_from_extension,
+                    )
 
                     lang = detect_language_from_extension(str(file.path))
                     transformed, transformed_stats = apply_transformations(

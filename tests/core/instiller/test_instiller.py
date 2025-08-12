@@ -1,16 +1,17 @@
 """Tests for main Instiller orchestrator."""
 
-import pytest
-import tempfile
 import json
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+import tempfile
 from datetime import datetime
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
 
-from tenets.core.instiller.instiller import Instiller, InstillationResult, MetricsTracker
-from tenets.models.tenet import Tenet, Priority, TenetStatus
-from tenets.models.context import ContextResult
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.core.instiller.instiller import InstillationResult, Instiller, MetricsTracker
+from tenets.models.context import ContextResult
+from tenets.models.tenet import Priority, Tenet, TenetStatus
 
 
 @pytest.fixture

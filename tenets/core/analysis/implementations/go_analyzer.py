@@ -6,17 +6,18 @@ including package management, goroutines, channels, and Go-specific patterns.
 
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
-from ..base import LanguageAnalyzer  # updated path after relocation
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 from tenets.utils.logger import get_logger
+
+from ..base import LanguageAnalyzer  # updated path after relocation
 
 
 class GoAnalyzer(LanguageAnalyzer):

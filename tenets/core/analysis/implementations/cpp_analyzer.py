@@ -4,20 +4,21 @@ This module provides comprehensive analysis for C and C++ source files,
 including headers, templates, and modern C++ features.
 """
 
+import math
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set
-import math
+from typing import Any, Dict, List, Optional, Set
 
-from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 from tenets.utils.logger import get_logger
+
+from ..base import LanguageAnalyzer
 
 
 class CppAnalyzer(LanguageAnalyzer):

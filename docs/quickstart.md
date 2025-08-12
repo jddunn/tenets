@@ -77,4 +77,4 @@ tenets viz deps --format ascii
 
 * See full CLI options: [CLI Reference](CLI.md)
 * Tune ranking & tokens: [Configuration](CONFIG.md)
-* Dive deeper: [Architecture](DEEP-DIVE.md)
+* Dive deeper: [Architecture](ARCHITECTURE.md)

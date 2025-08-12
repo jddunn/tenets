@@ -16,27 +16,27 @@ Test Coverage:
     - Edge cases and error handling
 """
 
-from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch, call, mock_open
-from concurrent.futures import TimeoutError as FutureTimeoutError
 import math
-import tempfile
 import os
+import tempfile
+from concurrent.futures import TimeoutError as FutureTimeoutError
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, call, mock_open, patch
 
 import pytest
 
+from tenets.config import TenetsConfig
 from tenets.core.ranking.ranker import (
-    RelevanceRanker,
+    BalancedRankingStrategy,
+    FastRankingStrategy,
+    RankedFile,
     RankingAlgorithm,
     RankingFactors,
-    RankedFile,
-    FastRankingStrategy,
-    BalancedRankingStrategy,
-    ThoroughRankingStrategy,
+    RelevanceRanker,
     TFIDFCalculator,
+    ThoroughRankingStrategy,
 )
-from tenets.config import TenetsConfig
-from tenets.models.analysis import FileAnalysis, ComplexityMetrics
+from tenets.models.analysis import ComplexityMetrics, FileAnalysis
 from tenets.models.context import PromptContext
 
 
@@ -650,7 +650,7 @@ def logout():
 
     def test_ast_relevance_analysis(self, strategy):
         """Test AST-based relevance analysis."""
-        from tenets.models.analysis import CodeStructure, ClassInfo, FunctionInfo
+        from tenets.models.analysis import ClassInfo, CodeStructure, FunctionInfo
 
         file = FileAnalysis(
             path="test.py",

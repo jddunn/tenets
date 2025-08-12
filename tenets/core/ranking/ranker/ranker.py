@@ -16,19 +16,19 @@ Rankings can be customized through configuration or by implementing custom
 ranking algorithms.
 """
 
-import re
-import math
-import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple, Set, Callable
-from dataclasses import dataclass, field
-from collections import defaultdict, Counter
-from datetime import datetime, timedelta
 import concurrent.futures
-from abc import ABC, abstractmethod
-from enum import Enum
-import string
+import json
+import math
 import os
+import re
+import string
+from abc import ABC, abstractmethod
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis

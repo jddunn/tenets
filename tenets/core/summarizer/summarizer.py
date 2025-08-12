@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Optional
 
 from tenets.models.summary import FileSummary
-from tenets.utils.tokens import count_tokens
 from tenets.utils.logger import get_logger
+from tenets.utils.tokens import count_tokens
 
 logger = get_logger(__name__)
 

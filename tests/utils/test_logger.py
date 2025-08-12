@@ -1,12 +1,13 @@
 """Tests for logging utilities."""
 
-import pytest
 import logging
 import os
-from unittest.mock import Mock, patch, MagicMock
 import sys
+from unittest.mock import MagicMock, Mock, patch
 
-from tenets.utils.logger import get_logger, _configure_root
+import pytest
+
+from tenets.utils.logger import _configure_root, get_logger
 
 
 class TestLogger:

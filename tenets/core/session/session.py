@@ -13,8 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from tenets.models.context import SessionContext, ContextResult
 from tenets.config import TenetsConfig
+from tenets.models.context import ContextResult, SessionContext
 from tenets.storage.session_db import SessionDB
 from tenets.utils.logger import get_logger
 

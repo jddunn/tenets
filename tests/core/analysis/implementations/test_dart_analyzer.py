@@ -15,19 +15,19 @@ Test Coverage:
     - Error handling for invalid Dart code
 """
 
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-from datetime import datetime
 
 import pytest
 
 from tenets.core.analysis.implementations.dart_analyzer import DartAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 
 

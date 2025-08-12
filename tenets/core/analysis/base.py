@@ -7,9 +7,9 @@ imports, exports, structure, and calculating complexity metrics.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from tenets.models.analysis import ImportInfo, CodeStructure, ComplexityMetrics
+from tenets.models.analysis import CodeStructure, ComplexityMetrics, ImportInfo
 
 
 class LanguageAnalyzer(ABC):

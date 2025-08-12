@@ -3,13 +3,13 @@
 import json
 import sys
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 import typer
 from rich import print
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from tenets import Tenets
 from tenets.models.llm import get_model_pricing
@@ -244,7 +244,9 @@ def distill(
             except Exception:
                 # Fallbacks by platform
                 try:
-                    import subprocess, platform, shutil
+                    import platform
+                    import shutil
+                    import subprocess
 
                     plat = platform.system().lower()
                     if "windows" in plat:

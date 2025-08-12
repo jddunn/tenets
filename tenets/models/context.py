@@ -4,13 +4,13 @@ This module defines the data structures for managing context throughout
 the distillation and instillation process.
 """
 
-from typing import List, Dict, Any, Optional, Set, Union
-from dataclasses import dataclass, field, asdict
+import hashlib
+import json
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-import json
-import hashlib
+from typing import Any, Dict, List, Optional, Set, Union
 
 
 class TaskType(Enum):

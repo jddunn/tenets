@@ -7,12 +7,12 @@ high-level Summarizer adapter used by other components.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, List, Union
+from typing import List, Optional, Union
 
-from tenets.models.summary import FileSummary
 from tenets.models.analysis import FileAnalysis
-from tenets.utils.tokens import count_tokens
+from tenets.models.summary import FileSummary
 from tenets.utils.logger import get_logger
+from tenets.utils.tokens import count_tokens
 
 # Re-export the lightweight file summarizer
 from .summarizer import FileSummarizer  # noqa: F401
