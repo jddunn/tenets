@@ -1,0 +1,99 @@
+name: Manual Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type (major|minor|patch)"
+        required: true
+        default: patch
+      publish_release:
+        description: "Create GitHub release + tag? (true/false)"
+        required: false
+        default: "false"
+      dry_run:
+        description: "Dry run (don't commit/tag)? true/false"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read current version
+        id: cur
+        run: |
+          cur=$(grep -E '^version\s*=\s*"' pyproject.toml | head -1 | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)"/\1/')
+          initv=$(grep -E '__version__\s*=\s*"' tenets/__init__.py | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+)"/\1/')
+          if [ "$cur" != "$initv" ]; then echo "Mismatch pyproject($cur) != __init__($initv)" >&2; exit 1; fi
+          echo "current=$cur" >> $GITHUB_OUTPUT
+          echo "Current version: $cur"
+
+      - name: Compute next version
+        id: next
+        run: |
+          cur=${{ steps.cur.outputs.current }}
+          IFS='.' read -r MA MI PA <<< "$cur"
+          case "${{ github.event.inputs.bump }}" in
+            major) MA=$((MA+1)); MI=0; PA=0 ;;
+            minor) MI=$((MI+1)); PA=0 ;;
+            patch) PA=$((PA+1)) ;;
+            *) echo "Invalid bump"; exit 1 ;;
+          esac
+          next="${MA}.${MI}.${PA}"
+          echo "next=$next" >> $GITHUB_OUTPUT
+          echo "Next version: $next"
+
+      - name: Apply version (dry-run aware)
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        run: |
+          next=${{ steps.next.outputs.next }}
+          sed -i "0,/^version = \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/s//version = \"$next\"/" pyproject.toml
+          sed -i "s/__version__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/__version__ = \"$next\"/" tenets/__init__.py
+          echo "## [v$next] - $(date +%Y-%m-%d)"$'\n- Manual bump.'$'\n\n' | cat - CHANGELOG.md > CHANGELOG.tmp && mv CHANGELOG.tmp CHANGELOG.md
+          git add pyproject.toml tenets/__init__.py CHANGELOG.md
+          git diff --staged --color
+
+      - name: Commit & tag
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+        run: |
+          next=${{ steps.next.outputs.next }}
+          git commit -m "chore(release): v$next" || echo "No changes"
+          if [ '${{ github.event.inputs.publish_release }}' = 'true' ]; then
+            git tag -a v$next -m "v$next"
+            git push origin HEAD:master --tags
+          else
+            git push origin HEAD:master
+          fi
+
+      - name: Create GitHub Release (optional)
+        if: ${{ github.event.inputs.publish_release == 'true' && github.event.inputs.dry_run == 'false' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.next.outputs.next }}
+          name: v${{ steps.next.outputs.next }}
+          body: |
+            Manual release v${{ steps.next.outputs.next }}.
+            See CHANGELOG.md for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "current=${{ steps.cur.outputs.current }}" >> $GITHUB_STEP_SUMMARY
+          echo "next=${{ steps.next.outputs.next }}" >> $GITHUB_STEP_SUMMARY
+          echo "dry_run=${{ github.event.inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
