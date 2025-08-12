@@ -1,0 +1,374 @@
+# Manual Version Bump Workflow
+# Allows manual triggering of version bumps with full control
+# Location: .github/workflows/manual-version-bump.yml
+
+name: Manual Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      
+      custom_version:
+        description: 'Custom version (only if bump_type is custom, e.g., 1.2.3)'
+        required: false
+        type: string
+      
+      prerelease:
+        description: 'Pre-release identifier (e.g., beta.1, rc.1, leave empty for stable)'
+        required: false
+        type: string
+      
+      create_tag:
+        description: 'Create git tag?'
+        required: true
+        type: boolean
+        default: true
+      
+      trigger_release:
+        description: 'Trigger release workflow after tagging?'
+        required: true
+        type: boolean
+        default: true
+      
+      update_changelog:
+        description: 'Update CHANGELOG.md?'
+        required: true
+        type: boolean
+        default: true
+      
+      changelog_message:
+        description: 'Changelog entry (leave empty for auto-generated)'
+        required: false
+        type: string
+      
+      dry_run:
+        description: 'Dry run (show changes without committing)?'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'master' }}
+
+jobs:
+  bump:
+    name: Manual version bump
+    runs-on: ubuntu-latest
+    outputs:
+      old_version: ${{ steps.current.outputs.version }}
+      new_version: ${{ steps.new.outputs.version }}
+      tag_name: ${{ steps.tag.outputs.name }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Configure git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Get current version
+        id: current
+        run: |
+          # Read version from pyproject.toml
+          CURRENT_VERSION=$(python -c "
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+              print(data['project']['version'])
+          ")
+          
+          # Also check __init__.py for consistency
+          if [ -f "tenets/__init__.py" ]; then
+            INIT_VERSION=$(grep -E '__version__\s*=\s*"' tenets/__init__.py | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+).*"/\1/')
+            if [ "$CURRENT_VERSION" != "$INIT_VERSION" ]; then
+              echo "⚠️ Version mismatch detected!"
+              echo "  pyproject.toml: $CURRENT_VERSION"
+              echo "  __init__.py: $INIT_VERSION"
+              echo "Using pyproject.toml version as source of truth"
+            fi
+          fi
+          
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "📌 Current version: $CURRENT_VERSION"
+      
+      - name: Calculate new version
+        id: new
+        run: |
+          CURRENT_VERSION="${{ steps.current.outputs.version }}"
+          BUMP_TYPE="${{ github.event.inputs.bump_type }}"
+          CUSTOM_VERSION="${{ github.event.inputs.custom_version }}"
+          PRERELEASE="${{ github.event.inputs.prerelease }}"
+          
+          if [ "$BUMP_TYPE" = "custom" ]; then
+            # Use custom version
+            if [ -z "$CUSTOM_VERSION" ]; then
+              echo "❌ Custom version not provided!"
+              exit 1
+            fi
+            NEW_VERSION="$CUSTOM_VERSION"
+          else
+            # Parse semantic version
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+            
+            # Remove any existing pre-release or build metadata
+            PATCH=${PATCH%%-*}
+            PATCH=${PATCH%%+*}
+            
+            # Bump version based on type
+            case "$BUMP_TYPE" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+            
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          
+          # Add pre-release identifier if provided
+          if [ -n "$PRERELEASE" ]; then
+            NEW_VERSION="${NEW_VERSION}-${PRERELEASE}"
+          fi
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "📦 New version: $NEW_VERSION"
+          
+          # Validate version format
+          if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?(\+[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
+            echo "❌ Invalid version format: $NEW_VERSION"
+            exit 1
+          fi
+      
+      - name: Update version in files
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          CURRENT_VERSION="${{ steps.current.outputs.version }}"
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          
+          echo "📝 Updating version in files..."
+          
+          # Update pyproject.toml
+          sed -i "s/^version = \"${CURRENT_VERSION}\"/version = \"${NEW_VERSION}\"/" pyproject.toml
+          echo "  ✓ Updated pyproject.toml"
+          
+          # Update __init__.py if it exists
+          if [ -f "tenets/__init__.py" ]; then
+            # Handle both with and without pre-release versions
+            sed -i "s/__version__ = \".*\"/__version__ = \"${NEW_VERSION}\"/" tenets/__init__.py
+            echo "  ✓ Updated tenets/__init__.py"
+          fi
+          
+          # Update any other version files if they exist
+          if [ -f "package.json" ]; then
+            sed -i "s/\"version\": \".*\"/\"version\": \"${NEW_VERSION}\"/" package.json
+            echo "  ✓ Updated package.json"
+          fi
+          
+          # Show changes
+          echo ""
+          echo "📋 Changed files:"
+          git diff --name-only
+      
+      - name: Update CHANGELOG
+        if: github.event.inputs.update_changelog == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          CHANGELOG_MESSAGE="${{ github.event.inputs.changelog_message }}"
+          TODAY=$(date +%Y-%m-%d)
+          
+          # Use custom message or generate one
+          if [ -z "$CHANGELOG_MESSAGE" ]; then
+            CHANGELOG_MESSAGE="Manual version bump to v${NEW_VERSION}"
+          fi
+          
+          # Create changelog entry
+          CHANGELOG_ENTRY="## [v${NEW_VERSION}] - ${TODAY}
+
+          ### Changed
+          - ${CHANGELOG_MESSAGE}
+          
+          "
+          
+          # Update CHANGELOG.md
+          if [ -f "CHANGELOG.md" ]; then
+            # Create temp file with new entry
+            echo "$CHANGELOG_ENTRY" > temp_changelog.md
+            
+            # Append existing changelog, skipping the header
+            tail -n +3 CHANGELOG.md >> temp_changelog.md
+            
+            # Recreate file with header
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            cat temp_changelog.md >> CHANGELOG.md
+            rm temp_changelog.md
+          else
+            # Create new CHANGELOG.md
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "$CHANGELOG_ENTRY" >> CHANGELOG.md
+          fi
+          
+          echo "📝 Updated CHANGELOG.md"
+      
+      - name: Show changes (dry run)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          CURRENT_VERSION="${{ steps.current.outputs.version }}"
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          
+          echo "🔍 DRY RUN - No changes will be committed"
+          echo ""
+          echo "Would update:"
+          echo "  - pyproject.toml: $CURRENT_VERSION → $NEW_VERSION"
+          
+          if [ -f "tenets/__init__.py" ]; then
+            echo "  - tenets/__init__.py: $CURRENT_VERSION → $NEW_VERSION"
+          fi
+          
+          if [ "${{ github.event.inputs.update_changelog }}" = "true" ]; then
+            echo "  - CHANGELOG.md: Add entry for v$NEW_VERSION"
+          fi
+          
+          if [ "${{ github.event.inputs.create_tag }}" = "true" ]; then
+            echo "  - Git tag: v$NEW_VERSION"
+          fi
+      
+      - name: Commit changes
+        id: commit
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          
+          # Stage changes
+          git add pyproject.toml
+          if [ -f "tenets/__init__.py" ]; then
+            git add tenets/__init__.py
+          fi
+          if [ "${{ github.event.inputs.update_changelog }}" = "true" ] && [ -f "CHANGELOG.md" ]; then
+            git add CHANGELOG.md
+          fi
+          
+          # Commit
+          COMMIT_MESSAGE="chore(release): bump version to v${NEW_VERSION}
+
+          Manual version bump triggered by @${{ github.actor }}
+          Bump type: ${{ github.event.inputs.bump_type }}"
+          
+          if [ -n "${{ github.event.inputs.changelog_message }}" ]; then
+            COMMIT_MESSAGE="${COMMIT_MESSAGE}
+          
+          ${{ github.event.inputs.changelog_message }}"
+          fi
+          
+          git commit -m "$COMMIT_MESSAGE" || {
+            echo "❌ No changes to commit"
+            exit 1
+          }
+          
+          # Push to branch
+          git push origin HEAD:${{ env.DEFAULT_BRANCH }}
+          
+          echo "✅ Pushed version bump commit"
+          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      
+      - name: Create tag
+        id: tag
+        if: github.event.inputs.create_tag == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          TAG_NAME="v${NEW_VERSION}"
+          
+          # Create annotated tag
+          TAG_MESSAGE="Release ${TAG_NAME}
+
+          Manual release triggered by @${{ github.actor }}"
+          
+          if [ -n "${{ github.event.inputs.changelog_message }}" ]; then
+            TAG_MESSAGE="${TAG_MESSAGE}
+          
+          ${{ github.event.inputs.changelog_message }}"
+          fi
+          
+          git tag -a "$TAG_NAME" -m "$TAG_MESSAGE"
+          
+          # Push tag
+          git push origin "$TAG_NAME"
+          
+          echo "✅ Created and pushed tag $TAG_NAME"
+          echo "name=$TAG_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Trigger release workflow
+        if: |
+          github.event.inputs.trigger_release == 'true' && 
+          github.event.inputs.create_tag == 'true' && 
+          github.event.inputs.dry_run != 'true'
+        run: |
+          echo "🚀 Tag created: ${{ steps.tag.outputs.name }}"
+          echo "The release workflow will be triggered automatically by the new tag."
+      
+      - name: Summary
+        run: |
+          echo "# 📦 Manual Version Bump Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "## 🔍 DRY RUN MODE" >> $GITHUB_STEP_SUMMARY
+            echo "No changes were made. This was a simulation." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "## Version Change" >> $GITHUB_STEP_SUMMARY
+          echo "- **From**: ${{ steps.current.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **To**: ${{ steps.new.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bump type**: ${{ github.event.inputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "## Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Create tag**: ${{ github.event.inputs.create_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Update changelog**: ${{ github.event.inputs.update_changelog }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger release**: ${{ github.event.inputs.trigger_release }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pre-release**: ${{ github.event.inputs.prerelease || 'none' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
+            echo "## Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **Commit**: ${{ steps.commit.outputs.commit_sha || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Tag**: ${{ steps.tag.outputs.name || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Version bump completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "*Triggered by @${{ github.actor }}*" >> $GITHUB_STEP_SUMMARY

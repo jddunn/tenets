@@ -1,0 +1,33 @@
+/* animations.css - drawer slide + subtle fades */
+
+/* Drawer slide-in for mobile */
+@media screen and (max-width: 599px) {
+  .md-sidebar--primary {
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    opacity: 0;
+  }
+  
+  /* When drawer checkbox checked */
+  #__drawer:checked ~ .md-container .md-sidebar--primary,
+  body.drawer-open .md-sidebar--primary {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  
+  /* Overlay fade */
+  .md-overlay { transition: opacity 0.3s ease !important; }
+}
+
+/* Smooth fade for nav links on desktop load */
+.md-header-nav__link { opacity: 0; animation: navFade 0.4s ease forwards; }
+.md-header-nav__link:nth-child(1){animation-delay:0.05s}
+.md-header-nav__link:nth-child(2){animation-delay:0.1s}
+.md-header-nav__link:nth-child(3){animation-delay:0.15s}
+.md-header-nav__link:nth-child(4){animation-delay:0.2s}
+.md-header-nav__link:nth-child(5){animation-delay:0.25s}
+.md-header-nav__link:nth-child(6){animation-delay:0.3s}
+.md-header-nav__link:nth-child(7){animation-delay:0.35s}
+.md-header-nav__link:nth-child(8){animation-delay:0.4s}
+
+@keyframes navFade { from { opacity: 0; transform: translateY(-4px);} to { opacity: 1; transform: translateY(0);} }

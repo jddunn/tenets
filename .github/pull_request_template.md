@@ -1,50 +1,98 @@
-## Summary
+<!-- 
+PR Template for Tenets
+Please fill out relevant sections below.
+Delete any sections that don't apply.
+-->
 
-Explain the motivation and context. What does this PR change?
+## 📋 Summary
 
-## Type of Change
+<!-- Provide a brief description of what this PR changes and why -->
 
-- [ ] feat (new feature)
-- [ ] fix (bug fix)
-- [ ] refactor (no functional change)
-- [ ] perf (performance)
-- [ ] docs (documentation)
-- [ ] test (tests only)
-- [ ] chore / build / ci
-- [ ] other: ______
+## 🔗 Related Issues
 
-## Related Issues / Tickets
+<!-- Link related issues using keywords: Closes #123, Fixes #456, Resolves #789 -->
+Closes #
 
-Closes #____
+## 📝 Type of Change
 
-## How Has This Been Tested?
+<!-- Check all that apply -->
+- [ ] 🐛 Bug fix (non-breaking change fixing an issue)
+- [ ] ✨ New feature (non-breaking change adding functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📚 Documentation update
+- [ ] 🎨 Style/formatting (no functional changes)
+- [ ] ♻️ Refactoring (no functional changes)
+- [ ] ⚡ Performance improvement
+- [ ] ✅ Test update
+- [ ] 🔧 Build/CI configuration change
+- [ ] 🔄 Dependency update
+- [ ] 🔒 Security fix
 
-Describe test coverage or steps taken.
+## 🧪 Testing
 
+<!-- Describe the tests you ran and/or added -->
+- [ ] All existing tests pass locally
+- [ ] Added new tests for changes
+- [ ] Tested manually (describe below)
+
+### Manual Testing Steps
+<!-- If applicable, describe how to manually test your changes -->
 ```bash
-# Example
-pytest -q
-ruff check .
-mypy tenets
+# Example commands to test
+pytest tests/
+tenets --version
 ```
 
-## Screenshots / Logs (if UI or output changes)
+## 📸 Screenshots/Logs
 
-<!-- drag/drop or paste -->
+<!-- If applicable, add screenshots or logs to help explain your changes -->
+<!-- You can drag and drop images directly into this text area -->
 
-## Breaking Changes
+## ✅ Checklist
 
-- [ ] No
-- [ ] Yes (describe migration path):
+<!-- Check all that apply. PRs cannot be merged until all boxes are checked -->
+- [ ] My code follows the project's style guidelines (`black`, `isort`, `ruff`)
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+- [ ] Any dependent changes have been merged and published
+- [ ] I have updated the CHANGELOG.md (if user-facing changes)
 
-## Checklist
+## 💥 Breaking Changes
 
-- [ ] Tests added/updated (or N/A)
-- [ ] Docs updated (README/docs site) (or N/A)
-- [ ] Lint & type checks pass
-- [ ] Conventional commit message
-- [ ] Added to CHANGELOG (if user-facing)
+<!-- If this PR introduces breaking changes, describe them here -->
+- [ ] This PR introduces breaking changes
+  <!-- If yes, describe:
+  - What breaks?
+  - Migration path for users
+  - Why is this necessary?
+  -->
 
-## Additional Notes
+## 📌 Additional Notes
 
-Anything reviewers should pay attention to.
+<!-- Any additional information that reviewers should know -->
+<!-- E.g., deployment notes, performance impact, security considerations -->
+
+## 🚀 Post-Merge Actions
+
+<!-- List any actions needed after merging -->
+- [ ] Update documentation site
+- [ ] Notify team in Slack/Discord
+- [ ] Update related issues/tickets
+- [ ] Monitor metrics/logs
+
+---
+
+<!-- 
+Reviewers: Please ensure:
+1. Code quality and style
+2. Test coverage
+3. Documentation updates
+4. No security vulnerabilities
+5. Performance impact is acceptable
+-->
+
+<!-- Thank you for contributing to Tenets! 🎉 -->
