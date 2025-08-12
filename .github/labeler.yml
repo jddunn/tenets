@@ -1,29 +1,213 @@
-# Automatic label rules for PRs / issues
-# Requires github actions workflow using actions/labeler
+# Labeler Configuration
+# This file configures automatic PR/issue labeling based on file paths
+# Location: .github/labeler.yml (NOT in workflows/)
+# Used by: .github/workflows/auto-label.yml workflow
 
-'area: ranking':
-  - 'tenets/core/ranking/**'
-
-'area: analysis':
-  - 'tenets/core/analysis/**'
-
-'area: cli':
-  - 'tenets/cli/**'
-
+# Documentation changes
 'area: docs':
-  - 'docs/**'
-  - 'README.md'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'docs/**'
+      - '**/*.md'
+      - 'mkdocs.yml'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'CONTRIBUTING.md'
 
+# Core ranking functionality
+'area: ranking':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/core/ranking/**'
+      - 'tenets/ranking/**'
+
+# Analysis modules
+'area: analysis':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/core/analysis/**'
+      - 'tenets/analysis/**'
+
+# CLI changes
+'area: cli':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/cli/**'
+      - 'tenets/__main__.py'
+
+# Configuration changes
 'area: config':
-  - 'tenets/config.py'
-  - '**/pyproject.toml'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/config.py'
+      - 'tenets/config/**'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'setup.cfg'
+      - '.env*'
 
+# Test changes
 'area: tests':
-  - 'tests/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/**'
+      - 'test_*.py'
+      - '*_test.py'
+      - 'pytest.ini'
+      - '.coveragerc'
+      - 'conftest.py'
 
-'type: security':
-  - 'SECURITY.md'
-  - 'tenets/**/security*'
+# API changes
+'area: api':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/api/**'
+      - 'tenets/web/**'
+      - 'tenets/server/**'
 
-'type: performance':
-  - '**/*perf*'
+# Machine Learning
+'area: ml':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/ml/**'
+      - 'tenets/models/**'
+      - 'tenets/embeddings/**'
+
+# Build and CI/CD
+'area: ci/cd':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - 'Dockerfile*'
+      - '.dockerignore'
+      - 'docker-compose*.yml'
+      - '.pre-commit-config.yaml'
+
+# Dependencies
+'dependencies':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - 'Pipfile*'
+      - 'poetry.lock'
+      - 'environment*.yml'
+
+# Security-related changes
+'security':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'SECURITY.md'
+      - 'tenets/security/**'
+      - 'tenets/auth/**'
+      - '**/*secret*'
+      - '**/*token*'
+      - '**/*credential*'
+
+# Performance-related changes
+'performance':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/performance/**'
+      - 'tenets/cache/**'
+      - 'tenets/optimization/**'
+      - '**/*perf*'
+      - '**/*optim*'
+
+# Frontend/UI changes
+'area: frontend':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'frontend/**'
+      - 'static/**'
+      - 'templates/**'
+      - '**/*.html'
+      - '**/*.css'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.ts'
+      - '**/*.tsx'
+
+# Database changes
+'area: database':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'migrations/**'
+      - 'alembic/**'
+      - 'tenets/db/**'
+      - 'tenets/database/**'
+      - 'tenets/models/**'
+      - '**/*.sql'
+
+# Size labels based on lines changed
+'size: XS':
+  - changed-files:
+    - all-globs-to-all-files:
+      - '**/*'
+    - head-branch:
+      - '^.{0,10}$'  # Less than 10 lines changed
+
+'size: S':
+  - changed-files:
+    - all-globs-to-all-files:
+      - '**/*'
+    - head-branch:
+      - '^.{11,50}$'  # 11-50 lines changed
+
+'size: M':
+  - changed-files:
+    - all-globs-to-all-files:
+      - '**/*'
+    - head-branch:
+      - '^.{51,200}$'  # 51-200 lines changed
+
+'size: L':
+  - changed-files:
+    - all-globs-to-all-files:
+      - '**/*'
+    - head-branch:
+      - '^.{201,500}$'  # 201-500 lines changed
+
+'size: XL':
+  - changed-files:
+    - all-globs-to-all-files:
+      - '**/*'
+    - head-branch:
+      - '^.{501,}$'  # More than 500 lines changed
+
+# Type labels based on conventional commits in branch name
+'type: feat':
+  - head-branch:
+    - '^feat(ure)?/'
+
+'type: fix':
+  - head-branch:
+    - '^fix/'
+    - '^bug/'
+    - '^hotfix/'
+
+'type: docs':
+  - head-branch:
+    - '^docs?/'
+
+'type: refactor':
+  - head-branch:
+    - '^refactor/'
+
+'type: test':
+  - head-branch:
+    - '^test/'
+
+'type: chore':
+  - head-branch:
+    - '^chore/'
+    - '^maintenance/'
+
+# Priority labels (manual usually, but can auto-detect critical files)
+'priority: critical':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tenets/__init__.py'
+      - 'tenets/core/**'
+      - 'SECURITY.md'

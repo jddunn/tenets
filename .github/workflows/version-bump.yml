@@ -1,3 +1,8 @@
+# Automatic Version Bump Workflow
+# Automatically bumps version when PRs are merged to master
+# Uses conventional commits to determine bump type
+# Location: .github/workflows/version-bump.yml
+
 name: Auto Version Bump
 
 on:
@@ -5,174 +10,332 @@ on:
     types: [closed]
     branches:
       - master
+      - main
 
 permissions:
-  contents: write
-  pull-requests: write
-  packages: write
+  contents: write       # Push commits and tags
+  pull-requests: write  # Comment on PRs
+  actions: write       # Trigger other workflows
+
+env:
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'master' }}
 
 jobs:
   bump:
+    name: Bump version
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
+    # Only run when PR is merged (not just closed)
+    if: github.event.pull_request.merged == true
+    
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+      old_version: ${{ steps.bump.outputs.old_version }}
+      bump_type: ${{ steps.bump.outputs.bump_type }}
+      skipped: ${{ steps.bump.outputs.skipped }}
+    
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Gather PR metadata
-        id: pr
-        run: |
-          echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
-          echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-          echo "base=${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
-          echo "head=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
-
-      - name: Collect commit messages
-        id: commits
-        run: |
-          git fetch --no-tags --prune --unshallow || true
-          base=${{ steps.pr.outputs.base }}
-          head=${{ steps.pr.outputs.head }}
-          git log --pretty=%s ${base}..${head} > commit_messages.txt || echo "(no commits)" > commit_messages.txt
-          echo "Collected commit messages:" >&2
-          cat commit_messages.txt
-
-      - name: Decide bump level from commits
-        id: decide
-        run: |
-          level=patch
-          if grep -Eiq 'BREAKING CHANGE' commit_messages.txt; then level=major; fi
-          if [ "$level" = patch ] && (grep -Eiq '^feat(\(|:)' commit_messages.txt || grep -Eiq '^perf(\(|:)' commit_messages.txt); then level=minor; fi
-          # perf or refactor or fix => patch (default) unless feat or breaking
-          echo "level=$level" >> $GITHUB_OUTPUT
-
-      - name: Detect docs/chore-only change
-        id: scope
-        run: |
-          # Collect changed files in PR (requires earlier gh call if needed) fallback to diff
-          files=$(git diff --name-only ${{ steps.pr.outputs.base }}..${{ steps.pr.outputs.head }})
-          echo "$files" > changed.txt
-          # If every file matches docs or md or workflow or README/CHANGELOG only, mark skip
-          if awk 'NF' changed.txt | grep -Ev '^docs/|^README.md$|^CHANGELOG.md$|^LICENSE$|^\.github/' | grep . >/dev/null; then
-            echo "pure_docs=false" >> $GITHUB_OUTPUT
-          else
-            echo "pure_docs=true" >> $GITHUB_OUTPUT
-          fi
-          echo "level=$level" >> $GITHUB_OUTPUT
-
-      - name: Determine previous tag
-        id: prev
-        run: |
-          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
-          echo "last_tag=$last_tag" >> $GITHUB_OUTPUT
-          if [ -n "$last_tag" ]; then
-            last_commit_tag=$(git rev-list -n 1 "$last_tag")
-            head_commit=$(git rev-parse HEAD)
-            if [ "$last_commit_tag" = "$head_commit" ]; then
-              echo "already_tagged=true" >> $GITHUB_OUTPUT
-            else
-              echo "already_tagged=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "already_tagged=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Read current version
-        id: cur
-        run: |
-          pyver=$(grep -E '^version\s*=\s*"' pyproject.toml | head -1 | sed -E 's/version\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+).*"/\1/')
-          initver=$(grep -E '__version__\s*=\s*"' tenets/__init__.py | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+).*"/\1/')
-          if [ "$pyver" != "$initver" ]; then echo "Version mismatch" && exit 1; fi
-          echo "current=$pyver" >> $GITHUB_OUTPUT
-
-      - name: Skip decision
-        id: skip
-        run: |
-          if [ '${{ steps.prev.outputs.already_tagged }}' = 'true' ]; then echo "skip=already-tagged" >> $GITHUB_OUTPUT; exit 0; fi
-          if [ '${{ steps.scope.outputs.pure_docs }}' = 'true' ]; then echo "skip=pure-docs" >> $GITHUB_OUTPUT; exit 0; fi
-          # If no conventional commit of interest present, skip
-          if ! grep -Eiq '^(feat|fix|perf|refactor|chore|BREAKING CHANGE)' commit_messages.txt; then echo "skip=no-semantic" >> $GITHUB_OUTPUT; exit 0; fi
-          echo "skip=none" >> $GITHUB_OUTPUT
-
-      - name: Compute next version
-        id: next
-        if: steps.skip.outputs.skip == 'none'
-        run: |
-          cur=${{ steps.cur.outputs.current }}
-          IFS='.' read -r MA MI PA <<< "$cur"
-          case ${{ steps.decide.outputs.level }} in
-            major) MA=$((MA+1)); MI=0; PA=0 ;;
-            minor) MI=$((MI+1)); PA=0 ;;
-            patch) PA=$((PA+1)) ;;
-          esac
-          next="${MA}.${MI}.${PA}"
-          echo "next=$next" >> $GITHUB_OUTPUT
-
-      - name: Update versions
-        if: steps.skip.outputs.skip == 'none'
-        run: |
-          next=${{ steps.next.outputs.next }}
-          sed -i "s/^version = \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/version = \"$next\"/" pyproject.toml
-          sed -i "s/__version__ = \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/__version__ = \"$next\"/" tenets/__init__.py
-          echo "## [v$next] - $(date +%Y-%m-%d)"$'\n' >> CHANGELOG.md
-          echo "<!-- Bump type: ${{ steps.decide.outputs.level }} (PR #${{ steps.pr.outputs.number }}) -->" >> CHANGELOG.md
-          # Extract categorized commit messages
-          feats=$(grep -E '^feat(\(|:)' commit_messages.txt || true)
-          perfs=$(grep -E '^perf(\(|:)' commit_messages.txt || true)
-          fixes=$(grep -E '^fix(\(|:)' commit_messages.txt || true)
-          refs=$(grep -E '^refactor(\(|:)' commit_messages.txt || true)
-          # Helper function to print a section
-          format_section() {
-            header="$1"; content="$2"; category="$3"; # category is feat/perf/fix/refactor
-            if [ -n "$content" ]; then
-              echo "### $header" >> CHANGELOG.md
-              echo "$content" | sed -E 's/^(feat|perf|fix|refactor)(\([^)]+\))?: *//' | while IFS= read -r line; do
-                [ -z "$line" ] && continue; echo "- $line" >> CHANGELOG.md; done
-              echo >> CHANGELOG.md
-            fi
-          }
-          format_section "Added" "$feats" feat
-          format_section "Performance" "$perfs" perf
-          format_section "Fixed" "$fixes" fix
-          format_section "Refactored" "$refs" refactor
-          if ! grep -Eq "^### (Added|Performance|Fixed|Refactored)" <(tail -n +1 CHANGELOG.md | sed -n "/^## \[v$next\]/,/^## \[/p"); then
-            echo "- Maintenance release." >> CHANGELOG.md
-          fi
-          echo >> CHANGELOG.md
-
-      - name: Commit & tag
-        if: steps.skip.outputs.skip == 'none'
-        env:
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
-        run: |
-          next=${{ steps.next.outputs.next }}
-          git add pyproject.toml tenets/__init__.py CHANGELOG.md
-          git commit -m "chore(release): v$next" || echo "No changes to commit"
-          git tag -a v$next -m "v$next"
-          git push origin master --tags
-
-      - name: Publish release (Release Drafter)
-        if: steps.skip.outputs.skip == 'none'
-        uses: release-drafter/release-drafter@v6
+          fetch-depth: 0  # Need full history
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          config-name: release-drafter.yml
-          publish: true
-          tag: v${{ steps.next.outputs.next }}
-          name: v${{ steps.next.outputs.next }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Trigger release workflow (if present)
-        if: steps.skip.outputs.skip == 'none'
+          python-version: '3.11'
+      
+      - name: Configure git
         run: |
-          echo "Tag pushed: v${{ steps.next.outputs.next }}"
-
-      - name: Skipped reason
-        if: steps.skip.outputs.skip != 'none'
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Get PR information
+        id: pr_info
         run: |
-          echo "Version bump skipped: ${{ steps.skip.outputs.skip }}"
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "pr_title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "pr_body=${{ github.event.pull_request.body }}" >> $GITHUB_OUTPUT
+          echo "pr_labels=${{ join(github.event.pull_request.labels.*.name, ',') }}" >> $GITHUB_OUTPUT
+      
+      - name: Check if version bump should be skipped
+        id: check_skip
+        run: |
+          PR_LABELS="${{ steps.pr_info.outputs.pr_labels }}"
+          PR_TITLE="${{ steps.pr_info.outputs.pr_title }}"
+          
+          # Skip if labeled with skip-version-bump
+          if [[ "$PR_LABELS" == *"skip-version-bump"* ]]; then
+            echo "skip_reason=has skip-version-bump label" >> $GITHUB_OUTPUT
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Skip if PR title indicates a docs-only or chore-only change
+          if [[ "$PR_TITLE" =~ ^docs(\(.*\))?:|^chore(\(.*\))?:|^ci(\(.*\))?:|^style(\(.*\))?:|^test(\(.*\))?: ]]; then
+            echo "skip_reason=docs/chore/ci/style/test only change" >> $GITHUB_OUTPUT
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Skip if it's a revert
+          if [[ "$PR_TITLE" =~ ^[Rr]evert ]]; then
+            echo "skip_reason=revert commit" >> $GITHUB_OUTPUT
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "should_skip=false" >> $GITHUB_OUTPUT
+      
+      - name: Determine version bump type
+        id: determine_bump
+        if: steps.check_skip.outputs.should_skip != 'true'
+        run: |
+          PR_TITLE="${{ steps.pr_info.outputs.pr_title }}"
+          PR_BODY="${{ steps.pr_info.outputs.pr_body }}"
+          PR_LABELS="${{ steps.pr_info.outputs.pr_labels }}"
+          
+          # Default to patch
+          BUMP_TYPE="patch"
+          
+          # Check for breaking change indicators
+          if [[ "$PR_LABELS" == *"breaking"* ]] || \
+             [[ "$PR_LABELS" == *"breaking-change"* ]] || \
+             [[ "$PR_TITLE" == *"BREAKING CHANGE"* ]] || \
+             [[ "$PR_TITLE" == *"!"* ]] || \
+             [[ "$PR_BODY" == *"BREAKING CHANGE"* ]]; then
+            BUMP_TYPE="major"
+          # Check for feature/enhancement
+          elif [[ "$PR_TITLE" =~ ^feat(\(.*\))?: ]] || \
+               [[ "$PR_LABELS" == *"feature"* ]] || \
+               [[ "$PR_LABELS" == *"enhancement"* ]]; then
+            BUMP_TYPE="minor"
+          # Check for fix/perf/refactor
+          elif [[ "$PR_TITLE" =~ ^(fix|perf|refactor)(\(.*\))?: ]]; then
+            BUMP_TYPE="patch"
+          fi
+          
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "Determined bump type: $BUMP_TYPE"
+      
+      - name: Get current version
+        id: current_version
+        if: steps.check_skip.outputs.should_skip != 'true'
+        run: |
+          # Read version from pyproject.toml
+          CURRENT_VERSION=$(python -c "
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+              print(data['project']['version'])
+          ")
+          
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+      
+      - name: Calculate new version
+        id: new_version
+        if: steps.check_skip.outputs.should_skip != 'true'
+        run: |
+          CURRENT_VERSION="${{ steps.current_version.outputs.current_version }}"
+          BUMP_TYPE="${{ steps.determine_bump.outputs.bump_type }}"
+          
+          # Parse semantic version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          # Remove any pre-release or build metadata
+          PATCH=${PATCH%%-*}
+          PATCH=${PATCH%%+*}
+          
+          # Bump version based on type
+          case "$BUMP_TYPE" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+      
+      - name: Update version in files
+        id: update_files
+        if: steps.check_skip.outputs.should_skip != 'true'
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          CURRENT_VERSION="${{ steps.current_version.outputs.current_version }}"
+          
+          # Update pyproject.toml
+          sed -i "s/^version = \"${CURRENT_VERSION}\"/version = \"${NEW_VERSION}\"/" pyproject.toml
+          
+          # Update __init__.py if it exists
+          if [ -f "tenets/__init__.py" ]; then
+            sed -i "s/__version__ = \"${CURRENT_VERSION}\"/__version__ = \"${NEW_VERSION}\"/" tenets/__init__.py
+          fi
+          
+          # Show changes
+          echo "📝 Updated files:"
+          git diff --name-only
+      
+      - name: Update CHANGELOG
+        if: steps.check_skip.outputs.should_skip != 'true'
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          PR_NUMBER="${{ steps.pr_info.outputs.pr_number }}"
+          PR_TITLE="${{ steps.pr_info.outputs.pr_title }}"
+          BUMP_TYPE="${{ steps.determine_bump.outputs.bump_type }}"
+          TODAY=$(date +%Y-%m-%d)
+          
+          # Create changelog entry
+          CHANGELOG_ENTRY="## [v${NEW_VERSION}] - ${TODAY}
+
+          ### Changed
+          - ${PR_TITLE} (#${PR_NUMBER})
+          
+          "
+          
+          # Add to CHANGELOG.md (after the header)
+          if [ -f "CHANGELOG.md" ]; then
+            # Create temp file with new entry
+            echo "$CHANGELOG_ENTRY" > temp_changelog.md
+            
+            # Append existing changelog, skipping empty lines at the top
+            tail -n +2 CHANGELOG.md >> temp_changelog.md
+            
+            # Add header back
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            cat temp_changelog.md >> CHANGELOG.md
+            rm temp_changelog.md
+          else
+            # Create new CHANGELOG.md
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "$CHANGELOG_ENTRY" >> CHANGELOG.md
+          fi
+          
+          echo "📝 Updated CHANGELOG.md"
+      
+      - name: Commit and push changes
+        id: commit
+        if: steps.check_skip.outputs.should_skip != 'true'
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          BUMP_TYPE="${{ steps.determine_bump.outputs.bump_type }}"
+          PR_NUMBER="${{ steps.pr_info.outputs.pr_number }}"
+          
+          # Stage changes
+          git add pyproject.toml CHANGELOG.md
+          if [ -f "tenets/__init__.py" ]; then
+            git add tenets/__init__.py
+          fi
+          
+          # Commit
+          git commit -m "chore(release): bump version to v${NEW_VERSION}
+
+          Automated version bump after PR #${PR_NUMBER}
+          Bump type: ${BUMP_TYPE}" || {
+            echo "No changes to commit"
+            echo "no_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          }
+          
+          # Push to master
+          git push origin HEAD:${{ env.DEFAULT_BRANCH }}
+          
+          echo "✅ Pushed version bump commit"
+      
+      - name: Create version tag
+        id: tag
+        if: steps.check_skip.outputs.should_skip != 'true' && steps.commit.outputs.no_changes != 'true'
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          
+          # Create annotated tag
+          git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}
+
+          Automated release after PR #${{ steps.pr_info.outputs.pr_number }}"
+          
+          # Push tag
+          git push origin "v${NEW_VERSION}"
+          
+          echo "✅ Created and pushed tag v${NEW_VERSION}"
+          echo "tag_name=v${NEW_VERSION}" >> $GITHUB_OUTPUT
+      
+      - name: Output results
+        id: bump
+        run: |
+          if [[ "${{ steps.check_skip.outputs.should_skip }}" == "true" ]]; then
+            echo "skipped=true" >> $GITHUB_OUTPUT
+            echo "skip_reason=${{ steps.check_skip.outputs.skip_reason }}" >> $GITHUB_OUTPUT
+            echo "⏭️ Version bump skipped: ${{ steps.check_skip.outputs.skip_reason }}"
+          else
+            echo "skipped=false" >> $GITHUB_OUTPUT
+            echo "old_version=${{ steps.current_version.outputs.current_version }}" >> $GITHUB_OUTPUT
+            echo "new_version=${{ steps.new_version.outputs.new_version }}" >> $GITHUB_OUTPUT
+            echo "bump_type=${{ steps.determine_bump.outputs.bump_type }}" >> $GITHUB_OUTPUT
+            echo "tag_name=${{ steps.tag.outputs.tag_name }}" >> $GITHUB_OUTPUT
+            echo "🎉 Version bumped: ${{ steps.current_version.outputs.current_version }} → ${{ steps.new_version.outputs.new_version }}"
+          fi
+      
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const skipped = '${{ steps.bump.outputs.skipped }}' === 'true';
+            
+            let body;
+            if (skipped) {
+              body = `⏭️ **Version bump skipped**\n\n` +
+                     `Reason: ${{ steps.check_skip.outputs.skip_reason }}`;
+            } else {
+              const oldVersion = '${{ steps.bump.outputs.old_version }}';
+              const newVersion = '${{ steps.bump.outputs.new_version }}';
+              const bumpType = '${{ steps.bump.outputs.bump_type }}';
+              const tagName = '${{ steps.bump.outputs.tag_name }}';
+              
+              body = `🎉 **Version bumped!**\n\n` +
+                     `- **Version**: ${oldVersion} → ${newVersion}\n` +
+                     `- **Bump type**: ${bumpType}\n` +
+                     `- **Tag**: ${tagName}\n\n` +
+                     `The release workflow will be triggered automatically.`;
+            }
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+        continue-on-error: true
+      
+      - name: Trigger release workflow
+        if: steps.check_skip.outputs.should_skip != 'true' && steps.commit.outputs.no_changes != 'true'
+        run: |
+          echo "🚀 Version tag created: ${{ steps.tag.outputs.tag_name }}"
+          echo "The release workflow will be triggered automatically by the new tag."
+      
+      - name: Job summary
+        run: |
+          echo "# Version Bump Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ steps.bump.outputs.skipped }}" == "true" ]]; then
+            echo "⏭️ **Skipped**: ${{ steps.check_skip.outputs.skip_reason }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **Success**" >> $GITHUB_STEP_SUMMARY
+            echo "- Old version: ${{ steps.bump.outputs.old_version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- New version: ${{ steps.bump.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Bump type: ${{ steps.bump.outputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Tag: ${{ steps.bump.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          fi
