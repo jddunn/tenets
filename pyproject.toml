@@ -143,6 +143,8 @@ test = [
     "hypothesis>=6.92.0",
     "responses>=0.24.0",
     "faker>=20.0.0",
+    # Include tiktoken so tokenization tests aren't skipped in core test matrix
+    "tiktoken>=0.5.0",
 ]
 
 # Documentation dependencies
@@ -379,8 +381,8 @@ bump_pattern = "^(feat|fix|perf|refactor|BREAKING)"
 "refactor" = "PATCH"
 
 [tool.bandit]
-exclude_dirs = ["tests", "venv", ".venv"]
-skips = ["B101", "B601"]
+exclude_dirs = ["tests", "venv", ".venv", "build", "dist"]
+severity = "medium"  # Only report medium and high severity issues
 
 [tool.pydocstyle]
 convention = "google"

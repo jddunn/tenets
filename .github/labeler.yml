@@ -3,120 +3,180 @@
 # Location: .github/labeler.yml (NOT in workflows/)
 # Used by: .github/workflows/auto-label.yml
 #
-# IMPORTANT: actions/labeler@v5 uses simple glob patterns
-# Just list the file patterns - no complex nested structures!
+# V5 FORMAT: Each label needs changed-files with any/all conditions
 
 # Documentation changes
 'area: docs':
-  - 'docs/**'
-  - '**/*.md'
-  - 'mkdocs.yml'
-  - 'README.md'
-  - 'CHANGELOG.md'
-  - 'CONTRIBUTING.md'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '**/*.md'
+          - 'mkdocs.yml'
+          - 'README.md'
+          - 'CHANGELOG.md'
+          - 'CONTRIBUTING.md'
 
 # Core ranking functionality
 'area: ranking':
-  - 'tenets/core/ranking/**'
-  - 'tenets/ranking/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/core/ranking/**'
+          - 'tenets/ranking/**'
 
 # Analysis modules
 'area: analysis':
-  - 'tenets/core/analysis/**'
-  - 'tenets/analysis/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/core/analysis/**'
+          - 'tenets/analysis/**'
 
 # CLI changes
 'area: cli':
-  - 'tenets/cli/**'
-  - 'tenets/__main__.py'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/cli/**'
+          - 'tenets/__main__.py'
 
 # Configuration changes
 'area: config':
-  - 'tenets/config.py'
-  - 'tenets/config/**'
-  - 'pyproject.toml'
-  - 'setup.py'
-  - 'setup.cfg'
-  - '.env*'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/config.py'
+          - 'tenets/config/**'
+          - 'pyproject.toml'
+          - 'setup.py'
+          - 'setup.cfg'
+          - '.env*'
 
 # Test changes
 'area: tests':
-  - 'tests/**'
-  - 'test_*.py'
-  - '*_test.py'
-  - 'pytest.ini'
-  - '.coveragerc'
-  - 'conftest.py'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/**'
+          - 'test_*.py'
+          - '*_test.py'
+          - 'pytest.ini'
+          - '.coveragerc'
+          - 'conftest.py'
 
 # API changes
 'area: api':
-  - 'tenets/api/**'
-  - 'tenets/web/**'
-  - 'tenets/server/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/api/**'
+          - 'tenets/web/**'
+          - 'tenets/server/**'
 
 # Machine Learning
 'area: ml':
-  - 'tenets/ml/**'
-  - 'tenets/models/**'
-  - 'tenets/embeddings/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/ml/**'
+          - 'tenets/models/**'
+          - 'tenets/embeddings/**'
 
 # Build and CI/CD
 'area: ci/cd':
-  - '.github/workflows/**'
-  - '.github/actions/**'
-  - 'Dockerfile*'
-  - '.dockerignore'
-  - 'docker-compose*.yml'
-  - '.pre-commit-config.yaml'
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/actions/**'
+          - 'Dockerfile*'
+          - '.dockerignore'
+          - 'docker-compose*.yml'
+          - '.pre-commit-config.yaml'
 
 # Dependencies
 'dependencies':
-  - 'pyproject.toml'
-  - 'requirements*.txt'
-  - 'Pipfile*'
-  - 'poetry.lock'
-  - 'environment*.yml'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'pyproject.toml'
+          - 'requirements*.txt'
+          - 'Pipfile*'
+          - 'poetry.lock'
+          - 'environment*.yml'
 
 # Security-related changes
 'security':
-  - 'SECURITY.md'
-  - 'tenets/security/**'
-  - 'tenets/auth/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'SECURITY.md'
+          - 'tenets/security/**'
+          - 'tenets/auth/**'
 
 # Performance-related changes
 'performance':
-  - 'tenets/performance/**'
-  - 'tenets/cache/**'
-  - 'tenets/optimization/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/performance/**'
+          - 'tenets/cache/**'
+          - 'tenets/optimization/**'
 
 # Frontend/UI changes
 'area: frontend':
-  - 'frontend/**'
-  - 'static/**'
-  - 'templates/**'
-  - '**/*.html'
-  - '**/*.css'
-  - '**/*.js'
-  - '**/*.jsx'
-  - '**/*.ts'
-  - '**/*.tsx'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'frontend/**'
+          - 'static/**'
+          - 'templates/**'
+          - '**/*.html'
+          - '**/*.css'
+          - '**/*.js'
+          - '**/*.jsx'
+          - '**/*.ts'
+          - '**/*.tsx'
 
 # Database changes
 'area: database':
-  - 'migrations/**'
-  - 'alembic/**'
-  - 'tenets/db/**'
-  - 'tenets/database/**'
-  - 'tenets/models/**'
-  - '**/*.sql'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'migrations/**'
+          - 'alembic/**'
+          - 'tenets/db/**'
+          - 'tenets/database/**'
+          - 'tenets/models/**'
+          - '**/*.sql'
 
 # Docker-related
 'docker':
-  - 'Dockerfile*'
-  - 'docker-compose*.yml'
-  - '.dockerignore'
-  - 'docker/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'Dockerfile*'
+          - 'docker-compose*.yml'
+          - '.dockerignore'
+          - 'docker/**'
 
 # GitHub-related
 'github':
-  - '.github/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+
+# Core Python changes
+'area: core':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/__init__.py'
+          - 'tenets/core/**'
+
+# Storage and caching
+'area: storage':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/storage/**'
+          - 'tenets/cache/**'
+
+# Utils and helpers
+'area: utils':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/utils/**'
+          - 'tenets/helpers/**'
+
+# Session management
+'area: session':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tenets/session/**'
+          - 'tenets/core/session/**'
+          - 'tenets/storage/session*.py'
