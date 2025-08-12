@@ -461,4 +461,14 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
+### Automated Releases (Summary)
+
+Tenets uses conventional commits + GitHub Actions to version & publish automatically:
+
+- Merge PR into `main` → workflow determines bump (feat/perf = minor; fix/refactor/chore = patch; BREAKING/! = major; docs/test/style only = skip)
+- Updates version + CHANGELOG, creates tag `vX.Y.Z`
+- Tag triggers build & PyPI publish (and docs update)
+
+You normally just write good commits and merge. See detailed flow in `docs/DEVELOPMENT.md` (Release & Versioning) and deployment specifics in `docs/DEPLOYMENT.md`.
+
 *Development sponsored by [manic.agency](https://manic.agency)*
