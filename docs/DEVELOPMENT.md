@@ -122,12 +122,28 @@ start htmlcov/index.html
 xdg-open htmlcov/index.html
 ```
 
-## 3. Required API Keys and Secrets
+## 3. Required / Optional Secrets
 
-For CI/CD and releasing the package, you need to configure the following secrets in your GitHub repository under **Settings > Secrets and variables > Actions**.
+Configure these in GitHub: Settings → Secrets and variables → Actions.
 
-- **`PYPI_API_TOKEN`**: An API token from PyPI with permission to upload packages to the `tenets` project. This is required for the release workflow.
-- **`CODECOV_TOKEN`**: The repository upload token from Codecov. This is used by the CI workflow to upload coverage reports.
+| Secret | Required? | Purpose | Notes |
+|--------|-----------|---------|-------|
+| `PYPI_API_TOKEN` | Yes* | Upload package in `release.yml` | *If using PyPI Trusted Publishing you can omit and approve first publication manually. Keep token while bootstrapping. |
+| `CODECOV_TOKEN` | Yes (private repo) / No (public) | Coverage uploads in CI | Public repos sometimes auto-detect; set to be explicit. |
+| `DOCKER_USERNAME` | Optional | Auth for Docker image push (if enabled) | Only needed if/when container publishing is turned on. |
+| `DOCKER_TOKEN` | Optional | Password / token for Docker Hub | Pair with username. |
+| `GH_PAT` | No | Only for advanced workflows (e.g. cross‑repo automation) | Not needed for standard release pipeline. |
+
+Additional environment driven configs (rarely needed):
+| Variable | Effect |
+|----------|-------|
+| `TENETS_CACHE_DIRECTORY` | Override default cache directory |
+| `TENETS_DEBUG` | Enables verbose debug logging when `true` |
+
+Security tips:
+- Grant least privilege (PyPI token scoped to project if possible)
+- Rotate any credentials annually or on role changes
+- Prefer Trusted Publishing over long‑lived API tokens once stable
 
 ## 4. Code Style and Linting
 
@@ -495,29 +511,91 @@ def test_performance(benchmark):
 - Join our Discord (coming soon)
 - Email: team@tenets.dev
 
-## Release Process
+## Release & Versioning
 
-Releases are automated but here's the manual process:
+Releases are automated. Merging conventional commits into `main` (from PRs) is all you normally do.
 
-1. **Ensure main is stable**:
-   ```bash
-   git checkout main
-   git pull origin main
-   make test
-   ```
+### Branch Model
+| Branch | Purpose |
+|--------|---------|
+| `dev` (or feature branches) | Integration / iterative work |
+| `main` | Always releasable; auto-versioned on merge |
 
-2. **Create release**:
-   ```bash
-   make release  # Interactive
-   # Or manually:
-   cz bump
-   git push && git push --tags
-   ```
+### Workflows (high level)
+1. PR merged into `main`.
+2. `version-bump.yml` runs:
+    - Collects commits since last tag
+    - Determines next version:
+      - Major: commit body contains `BREAKING CHANGE:` or type suffixed with `!`
+      - Minor: at least one `feat:` or `perf:` commit (performance treated as minor to signal impact)
+      - Patch: any `fix`, `refactor`, `chore` (unless a higher bump already chosen)
+      - Skip: only docs / test / style commits (no release)
+    - Updates `pyproject.toml`
+    - Appends a section to `CHANGELOG.md` grouping commits (Features / Performance / Fixes / Refactoring / Chore)
+    - Commits with message `chore(release): vX.Y.Z` and creates annotated tag `vX.Y.Z`
+3. Tag push triggers `release.yml`:
+    - Builds wheel + sdist
+    - Publishes to PyPI (token or Trusted Publishing)
+    - (Optional) Builds & publishes Docker image (future enablement)
+    - Deploys docs (if configured) / updates site
+4. `release-drafter` (config) ensures GitHub Release notes reflect categorized changes (either via draft or final publish depending on config state).
 
-3. **Monitor CI/CD**:
-   - Check GitHub Actions
-   - Verify PyPI deployment
-   - Check documentation update
+You do NOT run `cz bump` manually during normal flow; the workflow handles versioning.
+
+### Conventional Commit Expectations
+Use clear scopes where possible:
+```
+feat(ranking): add semantic similarity signal
+fix(cli): prevent crash on empty directory
+perf(analyzer): cache parsed ASTs
+refactor(config): simplify loading logic
+docs: update quickstart for --copy flag
+```
+
+Edge cases:
+- Multiple commit types: highest precedence decides (major > minor > patch)
+- Mixed docs + fix: still releases (fix wins)
+- Only docs/test/style: skipped; no tag produced
+
+### First Release (Bootstrap)
+If no existing tag:
+1. Merge initial feature set into `main`
+2. Push a commit with `feat: initial release` (or similar)
+3. Workflow sets version to `0.1.0` (or bump logic starting point defined in workflow)
+
+If you need a different starting version (e.g. `0.3.0`): create an annotated tag manually once, then subsequent merges resume automation.
+
+### Manual / Emergency Release
+Only when automation is blocked:
+```bash
+git checkout main && git pull
+cz bump --increment PATCH  # or MINOR / MAJOR
+git push && git push --tags
+```
+Monitor `release.yml`. After resolution, revert to automated flow.
+
+### Verifying a Release
+After automation completes:
+```bash
+pip install --no-cache-dir tenets==<new_version>
+tenets --version
+```
+Smoke test a core command:
+```bash
+tenets distill "smoke" . --max-tokens 2000 --mode fast --stats || true
+```
+
+### Troubleshooting
+| Symptom | Likely Cause | Fix |
+|---------|--------------|-----|
+| No new tag after merge | Only docs/test/style commits | Land a non-skipped commit (e.g. fix) |
+| Wrong bump size | Commit type misclassified | Amend / add corrective commit (e.g. feat) |
+| PyPI publish failed | Missing / invalid `PYPI_API_TOKEN` or Trusted Publishing not approved yet | Add token or approve in PyPI UI |
+| Changelog missing section | Commit type not in allowed list | Ensure conventional type used |
+| Duplicate release notes | Manual tag + automated tag | Avoid manual tagging except emergencies |
+
+### Philosophy
+Keep `main` always shippable. Small, frequent releases reduce risk and keep context fresh for users.
 
 ## Advanced Topics
 
