@@ -67,7 +67,7 @@ source ~/.bashrc
         imports = analyzer.extract_imports(code, Path("mixed.txt"))
 
         assert len(imports) >= 8
-        
+
         # Check different include types
         assert any(imp.module == "stdio.h" for imp in imports)
         assert any(imp.module == "local.h" for imp in imports)
@@ -105,7 +105,7 @@ url: "https://example.com/api"
 
         reference_imports = [imp for imp in imports if imp.type == "reference"]
         assert len(reference_imports) >= 4
-        
+
         # Check relative path detection
         logo_import = next(imp for imp in imports if "logo.png" in imp.module)
         assert logo_import.is_relative is True
@@ -246,7 +246,7 @@ features:
 
         config_keys = [e for e in exports if e["type"] == "config_key"]
         key_names = [k["name"] for k in config_keys]
-        
+
         assert "database" in key_names
         assert "server" in key_names
         assert "features" in key_names
@@ -263,7 +263,7 @@ port = 8080
 
         sections = [e for e in exports if e["type"] == "config_section"]
         assert len(sections) >= 2
-        
+
         keys = [e for e in exports if e["type"] == "config_key"]
         assert any(k["name"] == "host" for k in keys)
         assert any(k["name"] == "port" for k in keys)
@@ -351,7 +351,7 @@ Very detailed
         structure = analyzer.extract_structure(code, Path("doc.md"))
 
         assert len(structure.sections) >= 5
-        
+
         # Check section levels
         main_title = next(s for s in structure.sections if s["title"] == "Main Title")
         assert main_title["level"] == 1
@@ -379,7 +379,7 @@ class Important {}
         structure = analyzer.extract_structure(code, Path("todos.txt"))
 
         assert len(structure.todos) >= 6
-        
+
         todo_types = [t["type"] for t in structure.todos]
         assert "TODO" in todo_types
         assert "FIXME" in todo_types
@@ -398,7 +398,7 @@ def function():
             deep_action()
 """
         structure = analyzer.extract_structure(space_code, Path("spaces.py"))
-        
+
         assert structure.indent_levels["style"] == "spaces"
         assert structure.indent_levels["max_level"] > 0
 
@@ -410,7 +410,7 @@ function test() {
 }
 """
         structure = analyzer.extract_structure(tab_code, Path("tabs.js"))
-        
+
         assert structure.indent_levels["style"] == "tabs"
 
     def test_extract_constants_and_variables(self, analyzer):
@@ -561,7 +561,7 @@ John,30,NYC
 Jane,25,LA
 Bob,35,Chicago
 Alice,28,Boston"""
-        
+
         metrics = analyzer.calculate_complexity(code, Path("data.csv"))
 
         assert metrics.column_count == 3
@@ -576,15 +576,18 @@ function simple() {
 }
 """
         simple_metrics = analyzer.calculate_complexity(simple_code, Path("simple.txt"))
-        
+
         # Complex file
-        complex_code = """
+        complex_code = (
+            """
 if (a) { if (b) { if (c) { if (d) { if (e) {
     for (i = 0; i < 100; i++) {
         while (x) { switch(y) { case 1: case 2: case 3: break; }}
     }
 }}}}}
-""" * 50  # Make it very long and complex
+"""
+            * 50
+        )  # Make it very long and complex
 
         complex_metrics = analyzer.calculate_complexity(complex_code, Path("complex.txt"))
 
@@ -635,7 +638,7 @@ class TestErrorHandling:
 
         # Should handle gracefully
         metrics = analyzer.calculate_complexity(code, Path("long.txt"))
-        
+
         assert metrics.line_count == 2
         assert metrics.character_count == 20002
 
@@ -689,7 +692,7 @@ function phpFunction() {
 Some markdown content
 """
         structure = analyzer.extract_structure(code, Path("mixed.html"))
-        
+
         # Should extract various patterns
         assert len(structure.functions) >= 2
         assert len(structure.sections) >= 1
@@ -705,7 +708,7 @@ file=/var/log/app.log
 path: /usr/local/bin
 """
         imports = analyzer.extract_imports(code, Path("app.log"))
-        
+
         # Should extract file references from logs
         assert any("config.yml" in imp.module for imp in imports)
 
@@ -721,7 +724,7 @@ EXPOSE 3000
 CMD ["npm", "start"]
 """
         structure = analyzer.extract_structure(code, Path("Dockerfile"))
-        
+
         # Should detect as configuration file
         assert structure.file_type == "configuration"
 
@@ -742,11 +745,11 @@ clean:
 .PHONY: all clean
 """
         structure = analyzer.extract_structure(code, Path("Makefile"))
-        
+
         # Should extract targets as exports
         exports = analyzer.extract_exports(code, Path("Makefile"))
         export_names = [e["name"] for e in exports]
-        
+
         assert "CC" in export_names
         assert "CFLAGS" in export_names
 
@@ -767,7 +770,7 @@ INSERT INTO logs VALUES (1, 'test');
 UPDATE settings SET value = 'new' WHERE key = 'config';
 """
         structure = analyzer.extract_structure(code, Path("schema.sql"))
-        
+
         # Should detect as query file
         assert structure.file_type == "query"
 
@@ -781,6 +784,6 @@ UPDATE settings SET value = 'new' WHERE key = 'config';
             code += "  " * i + "}\n"
 
         metrics = analyzer.calculate_complexity(code, Path("deep.txt"))
-        
+
         # Should cap max depth at reasonable level
         assert metrics.max_depth <= 10  # Capped at 10 for generic files

@@ -67,7 +67,7 @@ import MyComponent from './components/MyComponent';
         imports = analyzer.extract_imports(code, Path("app.js"))
 
         assert len(imports) == 3
-        
+
         # Check React import
         react_import = next(imp for imp in imports if imp.module == "react")
         assert react_import.alias == "React"
@@ -108,7 +108,7 @@ import * as styles from './styles.module.css';
         imports = analyzer.extract_imports(code, Path("app.js"))
 
         assert len(imports) == 3
-        
+
         utils_import = next(imp for imp in imports if imp.alias == "utils")
         assert utils_import.type == "es6_namespace"
         assert utils_import.module == "./utils"
@@ -139,7 +139,7 @@ import './config/init';
         imports = analyzer.extract_imports(code, Path("app.js"))
 
         assert len(imports) == 3
-        
+
         css_import = next(imp for imp in imports if imp.module == "./styles.css")
         assert css_import.type == "es6_side_effect"
         assert css_import.is_relative is True
@@ -184,7 +184,7 @@ async function loadModule() {
 
         dynamic_imports = [imp for imp in imports if imp.type == "dynamic"]
         assert len(dynamic_imports) == 3
-        
+
         assert any(imp.module == "./module" for imp in dynamic_imports)
         assert any(imp.module == "./lazy-component" for imp in dynamic_imports)
         assert any(imp.module == "conditional-module" for imp in dynamic_imports)
@@ -295,7 +295,7 @@ export { func1 as exportedFunc };
 
         assert any(exp["name"] == "var1" for exp in exports)
         assert any(exp["name"] == "var2" for exp in exports)
-        
+
         # Check aliased export
         aliased = next(exp for exp in exports if exp["name"] == "exportedFunc")
         assert aliased.get("original_name") == "func1"
@@ -310,7 +310,9 @@ export { default as MyComponent } from './MyComponent';
 """
         exports = analyzer.extract_exports(code, Path("index.js"))
 
-        re_exports = [exp for exp in exports if exp["type"] == "re-export" or exp["type"] == "re-export-all"]
+        re_exports = [
+            exp for exp in exports if exp["type"] == "re-export" or exp["type"] == "re-export-all"
+        ]
         assert len(re_exports) >= 3
 
         # Check specific re-export
@@ -482,7 +484,7 @@ export class ExportedClass {
         # Check base class
         base_class = next(c for c in structure.classes if c.name == "BaseClass")
         assert len(base_class.methods) >= 4
-        
+
         constructor = next(m for m in base_class.methods if m["name"] == "constructor")
         assert constructor["is_constructor"] is True
 
@@ -578,7 +580,7 @@ const enum ConstEnum {
 
         # Check interfaces
         assert len(structure.interfaces) >= 2
-        
+
         user_interface = next(i for i in structure.interfaces if i["name"] == "User")
         assert user_interface["is_exported"] is False
 
@@ -592,7 +594,7 @@ const enum ConstEnum {
 
         # Check enums
         assert len(structure.enums) >= 2
-        
+
         role_enum = next(e for e in structure.enums if e["name"] == "Role")
         assert role_enum["is_const"] is False
 
@@ -868,7 +870,7 @@ function withDestructuring({ name, age = 18 }) {
 const complexDestructure = ({ a: { b: { c } } }) => c;
 """
         structure = analyzer.extract_structure(code, Path("app.js"))
-        
+
         # Should handle destructuring in functions
         func = next(f for f in structure.functions if f.name == "withDestructuring")
         assert len(func.args) == 1
@@ -973,7 +975,7 @@ class ModernClass {
         structure = analyzer.extract_structure(code, Path("app.js"))
 
         modern_class = structure.classes[0]
-        
+
         # Should detect private methods
         private_methods = [m for m in modern_class.methods if m["is_private"]]
         assert len(private_methods) >= 3

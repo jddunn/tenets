@@ -305,13 +305,14 @@ class PythonAnalyzer(LanguageAnalyzer):
                                 return_type=self._get_name(item.returns) if item.returns else None,
                                 is_constructor=item.name == "__init__",
                                 is_abstract=any(
-                                    self._get_name(d) == "abstractmethod" 
+                                    self._get_name(d) == "abstractmethod"
                                     for d in item.decorator_list
                                 ),
                                 is_static=self._is_static_method(item),
                                 is_class=self._is_class_method(item),
                                 is_property=self._is_property(item),
-                                is_private=item.name.startswith("_") and not item.name.startswith("__"),
+                                is_private=item.name.startswith("_")
+                                and not item.name.startswith("__"),
                             )
                             class_info.methods.append(method_info)
                         elif isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
@@ -343,12 +344,13 @@ class PythonAnalyzer(LanguageAnalyzer):
                         return_type=self._get_name(node.returns) if node.returns else None,
                         is_constructor=False,  # Top-level functions are never constructors
                         is_abstract=any(
-                            self._get_name(d) == "abstractmethod" 
-                            for d in node.decorator_list
+                            self._get_name(d) == "abstractmethod" for d in node.decorator_list
                         ),
                         is_static=False,  # Top-level functions are not static methods
-                        is_class=False,   # Top-level functions are not class methods
-                        is_property=self._is_property(node),  # Top-level properties possible with decorators
+                        is_class=False,  # Top-level functions are not class methods
+                        is_property=self._is_property(
+                            node
+                        ),  # Top-level properties possible with decorators
                         is_private=node.name.startswith("_") and not node.name.startswith("__"),
                     )
                     structure.functions.append(func_info)

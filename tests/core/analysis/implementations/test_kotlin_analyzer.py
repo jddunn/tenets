@@ -214,7 +214,7 @@ class MyClass {
 
         objects = [e for e in exports if "object" in e["type"]]
         public_objects = [o for o in objects if o.get("visibility") != "private"]
-        
+
         singleton = next((o for o in objects if o["name"] == "Singleton"), None)
         assert singleton is not None
         assert singleton["type"] == "object"
@@ -1087,7 +1087,7 @@ fun destructuringExample() {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.kt"))
-        
+
         # Should handle destructuring without errors
         assert len(structure.functions) >= 1
 

@@ -90,9 +90,7 @@ class SessionDB:
             )
             conn.commit()
             session_id = cur.lastrowid
-            return SessionRecord(
-                id=session_id, name=name, created_at=now, metadata=metadata or {}
-            )
+            return SessionRecord(id=session_id, name=name, created_at=now, metadata=metadata or {})
         finally:
             conn.close()
 
@@ -100,7 +98,9 @@ class SessionDB:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
-            cur.execute("SELECT id, name, created_at, metadata FROM sessions WHERE name= ?", (name,))
+            cur.execute(
+                "SELECT id, name, created_at, metadata FROM sessions WHERE name= ?", (name,)
+            )
             row = cur.fetchone()
             if not row:
                 return None
@@ -110,7 +110,11 @@ class SessionDB:
                 try:
                     created_dt = datetime.fromisoformat(created)
                 except Exception:
-                    created_dt = datetime.strptime(created.replace("T", " "), "%Y-%m-%d %H:%M:%S.%f%z") if created else datetime.now(UTC)
+                    created_dt = (
+                        datetime.strptime(created.replace("T", " "), "%Y-%m-%d %H:%M:%S.%f%z")
+                        if created
+                        else datetime.now(UTC)
+                    )
             else:
                 created_dt = created
             return SessionRecord(id=row[0], name=row[1], created_at=created_dt, metadata=meta)
@@ -133,7 +137,11 @@ class SessionDB:
                     try:
                         created_dt = datetime.fromisoformat(created)
                     except Exception:
-                        created_dt = datetime.strptime(created.replace("T", " "), "%Y-%m-%d %H:%M:%S.%f%z") if created else datetime.now(UTC)
+                        created_dt = (
+                            datetime.strptime(created.replace("T", " "), "%Y-%m-%d %H:%M:%S.%f%z")
+                            if created
+                            else datetime.now(UTC)
+                        )
                 else:
                     created_dt = created
                 records.append(

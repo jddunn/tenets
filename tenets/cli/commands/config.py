@@ -156,7 +156,9 @@ def config_set(
 
 
 @config_app.command("clear-cache")
-def config_clear_cache(confirm: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation")):
+def config_clear_cache(
+    confirm: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation")
+):
     """Wipe all Tenets caches (analysis + general)."""
     if not confirm:
         typer.confirm("This will delete all cached analysis. Continue?", abort=True)

@@ -2,7 +2,7 @@
 Unit tests for the CSS code analyzer with preprocessor and framework support.
 
 This module tests the CSS-specific code analysis functionality including
-import statements, selectors, CSS frameworks (Tailwind, UnoCSS), 
+import statements, selectors, CSS frameworks (Tailwind, UnoCSS),
 preprocessors (SCSS/Sass), methodologies (BEM, OOCSS), and modern CSS features.
 
 Test Coverage:
@@ -258,7 +258,9 @@ class TestExportExtraction:
         custom_props = [exp for exp in exports if exp["type"] == "custom_property"]
         assert len(custom_props) >= 4
 
-        primary_color = next((exp for exp in custom_props if exp["name"] == "--primary-color"), None)
+        primary_color = next(
+            (exp for exp in custom_props if exp["name"] == "--primary-color"), None
+        )
         assert primary_color is not None
         assert primary_color["value"] == "#007bff"
 
@@ -966,12 +968,12 @@ body > div > div > div > div > div > span { margin: 5px !important; }
         metrics = analyzer.calculate_complexity(css, Path("tailwind.css"))
 
         # Should detect Tailwind classes
-        assert hasattr(metrics, 'tailwind_classes')
-        if hasattr(metrics, 'tailwind_classes'):
+        assert hasattr(metrics, "tailwind_classes")
+        if hasattr(metrics, "tailwind_classes"):
             assert metrics.tailwind_classes > 0
 
-        assert hasattr(metrics, 'custom_utilities')
-        if hasattr(metrics, 'custom_utilities'):
+        assert hasattr(metrics, "custom_utilities")
+        if hasattr(metrics, "custom_utilities"):
             assert metrics.custom_utilities >= 1
 
 
@@ -999,11 +1001,11 @@ div.complex[data-attr="value"] {
         parser.parse()
 
         assert len(parser.rules) >= 3
-        
+
         # Check first rule
         first_rule = parser.rules[0]
-        assert first_rule['selector'] == '.class1'
-        assert len(first_rule['properties']) == 2
+        assert first_rule["selector"] == ".class1"
+        assert len(first_rule["properties"]) == 2
 
     def test_parse_custom_properties(self):
         """Test parsing of CSS custom properties."""
@@ -1022,8 +1024,8 @@ div.complex[data-attr="value"] {
         parser.parse()
 
         assert len(parser.custom_properties) >= 4
-        assert parser.custom_properties.get('--primary-color') == '#007bff'
-        assert parser.custom_properties.get('--spacing') == '8px'
+        assert parser.custom_properties.get("--primary-color") == "#007bff"
+        assert parser.custom_properties.get("--spacing") == "8px"
 
     def test_parse_scss_features(self):
         """Test parsing of SCSS features."""
@@ -1044,13 +1046,13 @@ $secondary: #6c757d;
         parser.parse()
 
         assert len(parser.variables) == 2
-        assert parser.variables.get('$primary') == '#007bff'
+        assert parser.variables.get("$primary") == "#007bff"
 
         assert len(parser.mixins) == 1
-        assert parser.mixins[0]['name'] == 'button'
+        assert parser.mixins[0]["name"] == "button"
 
         assert len(parser.functions) == 1
-        assert parser.functions[0]['name'] == 'rem'
+        assert parser.functions[0]["name"] == "rem"
 
     def test_parse_media_queries(self):
         """Test parsing of media queries."""
@@ -1071,7 +1073,7 @@ $secondary: #6c757d;
         parser.parse()
 
         assert len(parser.media_queries) == 2
-        assert parser.media_queries[0]['condition'] == 'screen and (min-width: 768px)'
+        assert parser.media_queries[0]["condition"] == "screen and (min-width: 768px)"
 
     def test_parse_keyframes(self):
         """Test parsing of keyframe animations."""
@@ -1090,22 +1092,22 @@ $secondary: #6c757d;
         parser.parse()
 
         assert len(parser.keyframes) == 2
-        assert parser.keyframes[0]['name'] == 'fadeIn'
-        assert parser.keyframes[1]['name'] == 'slideIn'
+        assert parser.keyframes[0]["name"] == "fadeIn"
+        assert parser.keyframes[1]["name"] == "slideIn"
 
     def test_calculate_specificity(self):
         """Test specificity calculation."""
         parser = CSSParser("")
-        
+
         # Test various selectors
-        assert parser._calculate_specificity('div') == (0, 0, 1)
-        assert parser._calculate_specificity('.class') == (0, 1, 0)
-        assert parser._calculate_specificity('#id') == (1, 0, 0)
-        assert parser._calculate_specificity('div.class') == (0, 1, 1)
-        assert parser._calculate_specificity('#id.class') == (1, 1, 0)
-        assert parser._calculate_specificity('div#id.class') == (1, 1, 1)
-        assert parser._calculate_specificity('[data-attr]') == (0, 1, 0)
-        assert parser._calculate_specificity(':hover') == (0, 1, 0)
+        assert parser._calculate_specificity("div") == (0, 0, 1)
+        assert parser._calculate_specificity(".class") == (0, 1, 0)
+        assert parser._calculate_specificity("#id") == (1, 0, 0)
+        assert parser._calculate_specificity("div.class") == (0, 1, 1)
+        assert parser._calculate_specificity("#id.class") == (1, 1, 0)
+        assert parser._calculate_specificity("div#id.class") == (1, 1, 1)
+        assert parser._calculate_specificity("[data-attr]") == (0, 1, 0)
+        assert parser._calculate_specificity(":hover") == (0, 1, 0)
 
 
 class TestErrorHandling:

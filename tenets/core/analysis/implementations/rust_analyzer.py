@@ -509,9 +509,7 @@ class RustAnalyzer(LanguageAnalyzer):
         structure.unsafe_functions = len(re.findall(r"\bunsafe\s+fn\b", content))
 
         # Detect closures (lambdas) of the form `|...|` possibly with move/async before
-        structure.lambda_count = len(
-            re.findall(r"\|[^|]*\|\s*(?:->\s*[^\s{]+)?", content)
-        )
+        structure.lambda_count = len(re.findall(r"\|[^|]*\|\s*(?:->\s*[^\s{]+)?", content))
 
         # Detect test functions
         structure.test_functions = len(re.findall(r"#\[test\]", content))
@@ -644,11 +642,13 @@ class RustAnalyzer(LanguageAnalyzer):
             span = self._find_block_span(content, m.end())
             if span:
                 spans.append(span)
+
         def _in_spans(idx: int) -> bool:
             for s, e in spans:
                 if s <= idx < e:
                     return True
             return False
+
         metrics.unsafe_functions = sum(1 for m in unsafe_fn_matches if not _in_spans(m.start()))
         metrics.unsafe_traits = len(re.findall(r"\bunsafe\s+trait\b", content))
         metrics.unsafe_impl = len(re.findall(r"\bunsafe\s+impl\b", content))

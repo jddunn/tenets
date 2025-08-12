@@ -88,7 +88,7 @@ import static java.lang.Math.PI;
 
         # Check static imports
         assert any(imp.type == "static" for imp in imports)
-        
+
         # Check wildcard static import
         wildcard = next(imp for imp in imports if "*" in imp.module)
         assert wildcard.is_wildcard is True
@@ -128,7 +128,7 @@ import com.example.MyClass;
         imports = analyzer.extract_imports(code, Path("Test.java"))
 
         categories = {imp.module: imp.category for imp in imports}
-        
+
         assert categories["java.util.List"] == "jdk"
         assert categories["javax.servlet.http.HttpServlet"] == "javax"
         assert categories["org.springframework.stereotype.Service"] == "third_party"
@@ -259,7 +259,7 @@ public class MyClass {
         exports = analyzer.extract_exports(code, Path("Test.java"))
 
         method_exports = [e for e in exports if e["type"] == "method"]
-        
+
         method_names = [m["name"] for m in method_exports]
         assert "publicMethod" in method_names
         assert "staticMethod" in method_names
@@ -354,7 +354,7 @@ public class Person {
         structure = analyzer.extract_structure(code, Path("Test.java"))
 
         person_class = structure.classes[0]
-        
+
         # Check fields
         assert len(person_class.fields) >= 3
         field_names = [f["name"] for f in person_class.fields]

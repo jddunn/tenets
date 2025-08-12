@@ -65,7 +65,9 @@ class FileSummarizer:
             i += 1
         if i > 0:
             # Limit to max_lines
-            comment_block = "\n".join(line.lstrip("# ") for line in lines[: min(i, max_lines)]).strip()
+            comment_block = "\n".join(
+                line.lstrip("# ") for line in lines[: min(i, max_lines)]
+            ).strip()
             if comment_block:
                 return comment_block
         # Head snippet, limited to max_lines

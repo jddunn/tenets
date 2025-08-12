@@ -299,7 +299,7 @@ class TenetsConfig:
         else:
             # Normalize explicit path
             self.config_file = Path(self.config_file)
-            
+
             # Check if this looks like a load operation vs save location setup
             # Load operations are indicated by:
             # 1. Paths that contain "nonexistent" (test indicator for missing files)
@@ -307,16 +307,18 @@ class TenetsConfig:
             # 3. Absolute paths that look like they're trying to load specific configs
             #    (not in temp/test directories)
             path_str = str(self.config_file)
-            is_test_temp_path = ('temp' in path_str.lower() or 
-                               'pytest' in path_str.lower() or
-                               'tmp' in path_str.lower())
-            
-            is_load_operation = (
-                'nonexistent' in path_str or
-                (path_str.startswith('/') and not is_test_temp_path) or 
-                (path_str.startswith('\\') and not is_test_temp_path)
+            is_test_temp_path = (
+                "temp" in path_str.lower()
+                or "pytest" in path_str.lower()
+                or "tmp" in path_str.lower()
             )
-            
+
+            is_load_operation = (
+                "nonexistent" in path_str
+                or (path_str.startswith("/") and not is_test_temp_path)
+                or (path_str.startswith("\\") and not is_test_temp_path)
+            )
+
             if is_load_operation and not self.config_file.exists():
                 raise FileNotFoundError(f"Config file not found: {self.config_file}")
 
@@ -569,6 +571,7 @@ class TenetsConfig:
         Returns:
             Dictionary representation of configuration
         """
+
         def _as_serializable(obj):
             if isinstance(obj, Path):
                 return str(obj)

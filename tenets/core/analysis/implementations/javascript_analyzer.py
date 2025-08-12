@@ -558,7 +558,10 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
             # Methods (inside classes)
             if in_class and current_class:
                 # Match methods including private, getters/setters, and static
-                method_match = re.match(r"^\s*(?:static\s+)?(?:async\s+)?(?:(get|set)\s+)?(#?\w+)\s*\(([^)]*)\)\s*\{", line)
+                method_match = re.match(
+                    r"^\s*(?:static\s+)?(?:async\s+)?(?:(get|set)\s+)?(#?\w+)\s*\(([^)]*)\)\s*\{",
+                    line,
+                )
                 if method_match:
                     method_name = method_match.group(2)
                     if method_name not in ["if", "for", "while", "switch", "catch"]:
@@ -581,7 +584,11 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                         {
                             "name": match.group(1),
                             "line": i,
-                            "extends": [e.strip() for e in match.group(2).split(",")] if match.group(2) else [],
+                            "extends": (
+                                [e.strip() for e in match.group(2).split(",")]
+                                if match.group(2)
+                                else []
+                            ),
                             "is_exported": "export" in line,
                         }
                     )
@@ -627,9 +634,13 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                         )
                         seen.add(comp)
             # Detect memoized components assigned from React.memo
-            memo_assign = re.compile(r"(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*=\s*React\.memo\s*\(")
+            memo_assign = re.compile(
+                r"(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*=\s*React\.memo\s*\("
+            )
             # corrected pattern (no quote after parenthesis)
-            memo_assign = re.compile(r"(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*=\s*React\.memo\s*\(")
+            memo_assign = re.compile(
+                r"(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*=\s*React\.memo\s*\("
+            )
             for m in memo_assign.finditer(content):
                 comp_name = m.group(1)
                 line_no = content[: m.start()].count("\n") + 1

@@ -537,7 +537,10 @@ class PhpAnalyzer(LanguageAnalyzer):
 
         # Count anonymous classes
         structure.anonymous_classes_count = len(
-            re.findall(r"new\s+class(?:\s*\([^)]*\))?\s*(?:extends\s+[\w\\]+)?\s*(?:implements\s+[\w\\,\s]+)?\s*\{", content)
+            re.findall(
+                r"new\s+class(?:\s*\([^)]*\))?\s*(?:extends\s+[\w\\]+)?\s*(?:implements\s+[\w\\,\s]+)?\s*\{",
+                content,
+            )
         )
 
         return structure

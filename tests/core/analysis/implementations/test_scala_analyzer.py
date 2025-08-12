@@ -862,7 +862,7 @@ def renderHtml(title: String): scala.xml.Elem =
   </html>
 """
         structure = analyzer.extract_structure(code, Path("test.scala"))
-        
+
         # Should handle XML without errors
         assert len(structure.functions) >= 1
 
@@ -887,7 +887,7 @@ object :: {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.scala"))
-        
+
         vector_class = next(c for c in structure.classes if c.name == "Vector")
         assert len(vector_class.methods) >= 4
 
@@ -911,7 +911,7 @@ package subpackage {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.scala"))
-        
+
         # Should find the package object
         assert any(o["name"] == "utils" for o in structure.objects)
 
@@ -938,7 +938,7 @@ def assert(condition: => Boolean, message: => String): Unit =
   if (!condition) throw new AssertionError(message)
 """
         structure = analyzer.extract_structure(code, Path("test.scala"))
-        
+
         retry_func = next(f for f in structure.functions if f.name == "retry")
         assert retry_func is not None
 
@@ -970,7 +970,7 @@ trait Service {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.scala"))
-        
+
         assert len(structure.traits) >= 4
 
     def test_handle_extractors(self, analyzer):
@@ -997,7 +997,7 @@ val email = "test@example.com" match {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.scala"))
-        
+
         email_object = next(o for o in structure.objects if o["name"] == "Email")
         assert any(m["name"] == "unapply" for m in email_object["methods"])
 

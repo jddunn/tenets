@@ -62,54 +62,97 @@ class RubyAnalyzer(LanguageAnalyzer):
         load_pattern = re.compile(r'^\s*load\s+["\']([^"\']+)["\']')
         gem_pattern = re.compile(r'^\s*gem\s+["\']([^"\']+)["\'](?:,\s*["\']([^"\']+)["\'])?')
         autoload_pattern = re.compile(r'^\s*autoload\s+:(\w+),\s*["\']([^"\']+)["\']')
-        conditional_require_pattern = re.compile(r'^\s*require\s+["\']([^"\']+)["\']\s+(?:if|unless)\b')
+        conditional_require_pattern = re.compile(
+            r'^\s*require\s+["\']([^"\']+)["\']\s+(?:if|unless)\b'
+        )
 
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
-            if not stripped or stripped.startswith('#'):
+            if not stripped or stripped.startswith("#"):
                 continue
 
             # Conditional requires first (covers also standard require pattern)
             m = conditional_require_pattern.match(line)
             if m:
                 mod = m.group(1)
-                imports.append(ImportInfo(module=mod, line=i, type="conditional_require", conditional=True))
+                imports.append(
+                    ImportInfo(module=mod, line=i, type="conditional_require", conditional=True)
+                )
                 continue
 
             m = require_pattern.match(line)
             if m:
                 mod = m.group(1)
                 is_stdlib = self._is_stdlib_module(mod)
-                imports.append(ImportInfo(module=mod, line=i, type="require", is_stdlib=is_stdlib, is_gem=not is_stdlib and not mod.startswith('.')))
+                imports.append(
+                    ImportInfo(
+                        module=mod,
+                        line=i,
+                        type="require",
+                        is_stdlib=is_stdlib,
+                        is_gem=not is_stdlib and not mod.startswith("."),
+                    )
+                )
                 continue
 
             m = require_relative_pattern.match(line)
             if m:
-                imports.append(ImportInfo(module=m.group(1), line=i, type="require_relative", is_relative=True, is_project_file=True))
+                imports.append(
+                    ImportInfo(
+                        module=m.group(1),
+                        line=i,
+                        type="require_relative",
+                        is_relative=True,
+                        is_project_file=True,
+                    )
+                )
                 continue
 
             m = load_pattern.match(line)
             if m:
                 mod = m.group(1)
-                imports.append(ImportInfo(module=mod, line=i, type="load", is_relative=mod.startswith('.'), reloads=True))
+                imports.append(
+                    ImportInfo(
+                        module=mod,
+                        line=i,
+                        type="load",
+                        is_relative=mod.startswith("."),
+                        reloads=True,
+                    )
+                )
                 continue
 
             m = gem_pattern.match(line)
             if m:
                 gem_name = m.group(1)
                 version = m.group(2)
-                imports.append(ImportInfo(module=gem_name, line=i, type="gem", version=version, is_gem=True))
+                imports.append(
+                    ImportInfo(module=gem_name, line=i, type="gem", version=version, is_gem=True)
+                )
                 continue
 
             m = autoload_pattern.match(line)
             if m:
-                imports.append(ImportInfo(module=m.group(2), alias=m.group(1), line=i, type="autoload", is_relative=m.group(2).startswith('.'), lazy_load=True))
+                imports.append(
+                    ImportInfo(
+                        module=m.group(2),
+                        alias=m.group(1),
+                        line=i,
+                        type="autoload",
+                        is_relative=m.group(2).startswith("."),
+                        lazy_load=True,
+                    )
+                )
                 continue
 
-            if 'Bundler.require' in line:
-                imports.append(ImportInfo(module='Bundler', line=i, type='bundler_require', loads_all_gems=True))
+            if "Bundler.require" in line:
+                imports.append(
+                    ImportInfo(
+                        module="Bundler", line=i, type="bundler_require", loads_all_gems=True
+                    )
+                )
 
-        if file_path.name == 'Gemfile':
+        if file_path.name == "Gemfile":
             imports.extend(self._extract_gemfile_dependencies(content))
 
         return imports
@@ -380,7 +423,7 @@ class RubyAnalyzer(LanguageAnalyzer):
             for c in structure.classes:
                 # Rough check: if the singleton block appears after class start
                 singleton_pos = re.search(r"^\s*class\s*<<\s*(self|\w+)", content, re.MULTILINE)
-                if singleton_pos and content[:singleton_pos.start()].count("\n") + 1 >= c.line:
+                if singleton_pos and content[: singleton_pos.start()].count("\n") + 1 >= c.line:
                     try:
                         setattr(c, "is_singleton", True)
                     except Exception:
@@ -524,10 +567,14 @@ class RubyAnalyzer(LanguageAnalyzer):
 
         # Test metrics
         if "_test.rb" in file_path.name or "_spec.rb" in file_path.name:
-            metrics.test_count = len(re.findall(r'\b(?:test|it|describe|context)\s+[\'\"]', content))
+            metrics.test_count = len(
+                re.findall(r"\b(?:test|it|describe|context)\s+[\'\"]", content)
+            )
             metrics.assertion_count = len(re.findall(r"\bassert\b", content))
             # Count RSpec expectations (expect/should) and include asserts as expectations for robustness
-            metrics.expectation_count = len(re.findall(r"\bexpect\b|\bshould\b", content)) + metrics.assertion_count
+            metrics.expectation_count = (
+                len(re.findall(r"\bexpect\b|\bshould\b", content)) + metrics.assertion_count
+            )
 
         # Calculate maintainability index
         import math

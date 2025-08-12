@@ -452,7 +452,9 @@ class Person {
         assert default_const is not None
 
         # Check named constructor
-        named_const = next(c for c in constructors if c["type"] == "named" and c.get("name") == "fromJson")
+        named_const = next(
+            c for c in constructors if c["type"] == "named" and c.get("name") == "fromJson"
+        )
         assert named_const is not None
 
         # Check factory constructor
@@ -1012,7 +1014,7 @@ class Complex<T, U extends List<T>, V extends Map<String, U>> {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.dart"))
-        
+
         container_class = next(c for c in structure.classes if c.name == "Container")
         assert container_class.generics == "T extends Comparable<T>"
 
@@ -1043,7 +1045,7 @@ class Builder {
 }
 """
         metrics = analyzer.calculate_complexity(code, Path("test.dart"))
-        
+
         # Should handle cascades without errors
         assert metrics.line_count > 0
 
@@ -1071,7 +1073,7 @@ class PatternTest {
 """
         structure = analyzer.extract_structure(code, Path("test.dart"))
         metrics = analyzer.calculate_complexity(code, Path("test.dart"))
-        
+
         # Should handle new syntax without errors
         assert len(structure.functions) >= 1
         assert metrics.cyclomatic > 1
@@ -1099,7 +1101,7 @@ double calculateArea(Shape shape) {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.dart"))
-        
+
         # Should identify sealed class pattern
         shape_class = next((c for c in structure.classes if c.name == "Shape"), None)
         assert shape_class is not None

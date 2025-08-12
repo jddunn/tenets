@@ -13,8 +13,10 @@ except Exception:  # pragma: no cover - optional dependency
 try:  # pragma: no cover - optional dependency
     from torch.nn.functional import cosine_similarity  # type: ignore  # noqa: F401
 except Exception:  # pragma: no cover
+
     def cosine_similarity(*args, **kwargs):  # type: ignore
         raise RuntimeError("cosine_similarity not available")
+
 
 # Import and re-export ranker classes/strategies
 from .ranker import (  # noqa: F401,E402

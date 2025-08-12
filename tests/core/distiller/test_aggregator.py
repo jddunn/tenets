@@ -287,9 +287,10 @@ class TestContextAggregator:
             )
 
             # Should pass model to token counting
-            assert mock_count.called, f"count_tokens should have been called, calls: {mock_count.call_args_list}"
+            assert (
+                mock_count.called
+            ), f"count_tokens should have been called, calls: {mock_count.call_args_list}"
             # Check that it was called with the model parameter
             assert any(
-                len(call[0]) >= 2 and call[0][1] == "gpt-4" 
-                for call in mock_count.call_args_list
+                len(call[0]) >= 2 and call[0][1] == "gpt-4" for call in mock_count.call_args_list
             ), f"Expected model 'gpt-4' in calls, got: {mock_count.call_args_list}"

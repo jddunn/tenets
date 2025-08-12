@@ -232,7 +232,7 @@ class ComplexityMetrics:
     task_count: int = 0
     task_groups: int = 0
     await_calls: int = 0
-    # Swift optional handling metrics  
+    # Swift optional handling metrics
     optional_types: int = 0
     force_unwraps: int = 0
     optional_chaining: int = 0

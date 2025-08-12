@@ -101,7 +101,7 @@ global using static System.Console;
         imports = analyzer.extract_imports(code, Path("test.cs"))
 
         assert len(imports) == 3
-        
+
         json_import = next(imp for imp in imports if "Json" in imp.module)
         assert json_import.type == "global_using"
 
@@ -157,7 +157,7 @@ namespace MyApp.Models
         imports = analyzer.extract_imports(code, Path("test.cs"))
 
         namespace_import = next((imp for imp in imports if "DataAnnotations" in imp.module), None)
-        if namespace_import and hasattr(namespace_import, 'namespace_context'):
+        if namespace_import and hasattr(namespace_import, "namespace_context"):
             assert namespace_import.namespace_context == "MyApp.Models"
 
     def test_extract_csproj_dependencies(self, analyzer):
@@ -183,7 +183,9 @@ namespace MyApp.Models
 
         package_refs = [imp for imp in imports if imp.type == "nuget_package"]
         assert len(package_refs) >= 3
-        assert any(imp.module == "Newtonsoft.Json" and imp.version == "13.0.1" for imp in package_refs)
+        assert any(
+            imp.module == "Newtonsoft.Json" and imp.version == "13.0.1" for imp in package_refs
+        )
 
         project_refs = [imp for imp in imports if imp.type == "project_reference"]
         assert len(project_refs) >= 1
@@ -582,11 +584,11 @@ public class DataProcessor
         structure = analyzer.extract_structure(code, Path("test.cs"))
 
         assert len(structure.linq_queries) >= 2
-        
+
         # Check query types
         query_syntax = [q for q in structure.linq_queries if q["type"] == "query_syntax"]
         method_syntax = [q for q in structure.linq_queries if q["type"] == "method_syntax"]
-        
+
         assert len(query_syntax) >= 1
         assert len(method_syntax) >= 1
 
@@ -1081,5 +1083,7 @@ public partial class PartialClass
         structure = analyzer.extract_structure(code, Path("test.cs"))
 
         # Should detect partial classes
-        partial_classes = [c for c in structure.classes if "partial" in c.modifiers or c.name == "PartialClass"]
+        partial_classes = [
+            c for c in structure.classes if "partial" in c.modifiers or c.name == "PartialClass"
+        ]
         assert len(partial_classes) >= 1

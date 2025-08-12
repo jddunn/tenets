@@ -26,7 +26,7 @@ import pytest
 import yaml
 
 # Set environment variables for testing
-os.environ['GIT_PYTHON_REFRESH'] = 'quiet'
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 # Import the modules we're testing
 from tenets.config import TenetsConfig
@@ -209,6 +209,7 @@ def mock_external_dependencies(monkeypatch, request):
 
     # Mock expensive ML operations (graceful if dependency not installed)
     import sys, types, importlib
+
     try:
         monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
     except ModuleNotFoundError:

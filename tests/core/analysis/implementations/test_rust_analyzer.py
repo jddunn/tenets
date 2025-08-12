@@ -69,7 +69,7 @@ extern crate tokio;
         imports = analyzer.extract_imports(code, Path("main.rs"))
 
         assert len(imports) >= 8
-        
+
         # Check standard library imports
         hashmap_import = next(imp for imp in imports if "HashMap" in imp.module)
         assert hashmap_import.type == "use"
@@ -142,7 +142,7 @@ use super::utils::*;
 
         glob_imports = [imp for imp in imports if imp.module.endswith("*")]
         assert len(glob_imports) == 2
-        
+
         for imp in glob_imports:
             assert imp.is_glob is True
             assert imp.type == "use_glob"
@@ -235,7 +235,7 @@ pub extern "C" fn c_function(x: i32) -> i32 {
         exports = analyzer.extract_exports(code, Path("lib.rs"))
 
         func_exports = [e for e in exports if e["type"] == "function"]
-        
+
         func_names = [f["name"] for f in func_exports]
         assert "public_function" in func_names
         assert "async_function" in func_names
@@ -278,7 +278,7 @@ pub struct DerivedStruct {
         exports = analyzer.extract_exports(code, Path("lib.rs"))
 
         struct_exports = [e for e in exports if e["type"] == "struct"]
-        
+
         struct_names = [s["name"] for s in struct_exports]
         assert "PublicStruct" in struct_names
         assert "TupleStruct" in struct_names
@@ -309,7 +309,7 @@ pub enum Message {
         exports = analyzer.extract_exports(code, Path("lib.rs"))
 
         enum_exports = [e for e in exports if e["type"] == "enum"]
-        
+
         enum_names = [e["name"] for e in enum_exports]
         assert "Result" in enum_names
         assert "Message" in enum_names
@@ -333,7 +333,7 @@ pub unsafe trait UnsafeTrait {
         exports = analyzer.extract_exports(code, Path("lib.rs"))
 
         trait_exports = [e for e in exports if e["type"] == "trait"]
-        
+
         trait_names = [t["name"] for t in trait_exports]
         assert "Display" in trait_names
         assert "UnsafeTrait" in trait_names
@@ -370,7 +370,7 @@ pub static mut MUTABLE_STATIC: i32 = 0;
         # Check statics
         static_exports = [e for e in exports if e["type"] == "static"]
         assert any(e["name"] == "GLOBAL_CONFIG" for e in static_exports)
-        
+
         mutable_static = next(e for e in static_exports if e["name"] == "MUTABLE_STATIC")
         assert mutable_static["is_mutable"] is True
 
@@ -466,7 +466,7 @@ enum HttpStatus {
         # Check enum variants
         message_enum = next(e for e in structure.enums if e["name"] == "Message")
         assert len(message_enum["variants"]) == 4
-        
+
         quit_variant = next(v for v in message_enum["variants"] if v["name"] == "Quit")
         assert quit_variant["type"] == "unit"
 
@@ -528,23 +528,25 @@ impl<T> From<T> for MyWrapper<T> {
         structure = analyzer.extract_structure(code, Path("traits.rs"))
 
         assert len(structure.traits) == 2
-        
+
         # Check trait methods
         display_trait = next(t for t in structure.traits if t["name"] == "Display")
         assert len(display_trait["methods"]) == 1
 
         iterator_trait = next(t for t in structure.traits if t["name"] == "Iterator")
         assert len(iterator_trait["methods"]) == 2
-        
+
         # Check default implementation
         count_method = next(m for m in iterator_trait["methods"] if m["name"] == "count")
         assert count_method["has_default"] is True
 
         # Check impl blocks
         assert len(structure.impl_blocks) >= 3
-        
+
         # Check inherent impl
-        mystruct_impl = next(i for i in structure.impl_blocks if i["type"] == "MyStruct" and i["trait"] is None)
+        mystruct_impl = next(
+            i for i in structure.impl_blocks if i["type"] == "MyStruct" and i["trait"] is None
+        )
         assert len(mystruct_impl["methods"]) >= 1
 
         # Check trait impl
@@ -576,7 +578,7 @@ async fn concurrent_tasks() {
 
         # Check async functions
         assert structure.async_functions >= 2
-        
+
         # Check await points
         assert structure.await_points >= 3
 
@@ -614,7 +616,7 @@ unsafe impl UnsafeTrait for MyType {
 
         assert structure.unsafe_blocks >= 1
         assert structure.unsafe_functions >= 1
-        
+
         # Check unsafe trait
         unsafe_trait = next(t for t in structure.traits if t["name"] == "UnsafeTrait")
         assert unsafe_trait["is_unsafe"] is True
@@ -941,7 +943,7 @@ fn destructuring() {
 }
 """
         structure = analyzer.extract_structure(code, Path("patterns.rs"))
-        
+
         # Should handle pattern matching without errors
         assert len(structure.functions) >= 4
 
@@ -973,7 +975,7 @@ fn iterator_chains() {
 }
 """
         structure = analyzer.extract_structure(code, Path("functional.rs"))
-        
+
         # Should detect closures/lambdas
         assert structure.lambda_count > 0
 
@@ -1009,7 +1011,7 @@ fn with_lints() {
 }
 """
         structure = analyzer.extract_structure(code, Path("attributes.rs"))
-        
+
         # Check derive detection
         assert "Debug" in structure.derives
         assert "Clone" in structure.derives
@@ -1032,13 +1034,13 @@ impl<T, const N: usize> Array<T, N> {
 }
 """
         structure = analyzer.extract_structure(code, Path("const_generics.rs"))
-        
+
         # Should handle const generics without errors
         assert len(structure.classes) >= 1
 
     def test_raw_strings_and_bytes(self, analyzer):
         """Test handling of raw strings and byte literals."""
-        code = '''
+        code = """
 fn raw_strings() {
     let raw = r"This is a raw string with \n not escaped";
     let raw_hash = r#"This can contain "quotes""#;
@@ -1047,7 +1049,7 @@ fn raw_strings() {
     let bytes = b"byte string";
     let raw_bytes = br"raw byte string";
 }
-'''
+"""
         # Should handle raw strings without treating content as code
         structure = analyzer.extract_structure(code, Path("strings.rs"))
         assert len(structure.functions) == 1

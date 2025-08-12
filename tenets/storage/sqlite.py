@@ -28,9 +28,7 @@ from tenets.utils.logger import get_logger
 # This ensures consistent behavior across all connections in this process.
 def _register_datetime_adapters_and_converters() -> None:
     # Adapt datetime -> ISO-8601 string with space separator for readability.
-    sqlite3.register_adapter(
-        datetime, lambda v: v.isoformat(sep=" ", timespec="microseconds")
-    )
+    sqlite3.register_adapter(datetime, lambda v: v.isoformat(sep=" ", timespec="microseconds"))
 
     def _convert_timestamp(val: bytes) -> datetime:
         s = val.decode("utf-8")

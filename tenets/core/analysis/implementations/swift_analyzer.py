@@ -1,7 +1,7 @@
 """Swift code analyzer with iOS/macOS and SwiftUI support.
 
 This module provides comprehensive analysis for Swift source files,
-including support for iOS/macOS development, SwiftUI, UIKit, 
+including support for iOS/macOS development, SwiftUI, UIKit,
 async/await, and modern Swift features.
 """
 
@@ -73,18 +73,18 @@ class SwiftAnalyzer(LanguageAnalyzer):
                 continue
 
             # Basic import
-            import_pattern = r'^\s*(?:(@\w+)\s+)?import\s+(?:(struct|class|enum|protocol|func|var|let|typealias)\s+)?([.\w]+)'
+            import_pattern = r"^\s*(?:(@\w+)\s+)?import\s+(?:(struct|class|enum|protocol|func|var|let|typealias)\s+)?([.\w]+)"
             match = re.match(import_pattern, line)
             if match:
                 attribute = match.group(1)
                 import_kind = match.group(2)
                 module = match.group(3)
-                
+
                 # Determine import type
                 import_type = "import"
                 is_testable = False
                 is_exported = False
-                
+
                 if attribute:
                     if attribute == "@testable":
                         is_testable = True
@@ -92,11 +92,11 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     elif attribute == "@_exported":
                         is_exported = True
                         import_type = "exported_import"
-                
+
                 # Categorize the import
                 category = self._categorize_import(module)
                 is_apple_framework = self._is_apple_framework(module)
-                
+
                 imports.append(
                     ImportInfo(
                         module=module,
@@ -133,7 +133,7 @@ class SwiftAnalyzer(LanguageAnalyzer):
         exports = []
 
         # Classes (reference types)
-        class_pattern = r'^\s*(?:(public|open|internal|fileprivate|private)\s+)?(?:(final|abstract)\s+)?class\s+(\w+)'
+        class_pattern = r"^\s*(?:(public|open|internal|fileprivate|private)\s+)?(?:(final|abstract)\s+)?class\s+(\w+)"
         for match in re.finditer(class_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access in ["public", "open"]:
@@ -141,7 +141,7 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(3),
                         "type": "class",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                         "is_final": match.group(2) == "final",
                         "is_open": access == "open",
@@ -149,7 +149,7 @@ class SwiftAnalyzer(LanguageAnalyzer):
                 )
 
         # Structs (value types)
-        struct_pattern = r'^\s*(?:(public|internal|fileprivate|private)\s+)?struct\s+(\w+)'
+        struct_pattern = r"^\s*(?:(public|internal|fileprivate|private)\s+)?struct\s+(\w+)"
         for match in re.finditer(struct_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access == "public":
@@ -157,13 +157,15 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(2),
                         "type": "struct",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                     }
                 )
 
         # Enums
-        enum_pattern = r'^\s*(?:(public|internal|fileprivate|private)\s+)?(?:(indirect)\s+)?enum\s+(\w+)'
+        enum_pattern = (
+            r"^\s*(?:(public|internal|fileprivate|private)\s+)?(?:(indirect)\s+)?enum\s+(\w+)"
+        )
         for match in re.finditer(enum_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access == "public":
@@ -171,14 +173,14 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(3),
                         "type": "enum",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                         "is_indirect": match.group(2) == "indirect",
                     }
                 )
 
         # Protocols
-        protocol_pattern = r'^\s*(?:(public|internal|fileprivate|private)\s+)?protocol\s+(\w+)'
+        protocol_pattern = r"^\s*(?:(public|internal|fileprivate|private)\s+)?protocol\s+(\w+)"
         for match in re.finditer(protocol_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access == "public":
@@ -186,13 +188,13 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(2),
                         "type": "protocol",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                     }
                 )
 
         # Actors
-        actor_pattern = r'^\s*(?:(public|internal|fileprivate|private)\s+)?actor\s+(\w+)'
+        actor_pattern = r"^\s*(?:(public|internal|fileprivate|private)\s+)?actor\s+(\w+)"
         for match in re.finditer(actor_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access == "public":
@@ -200,31 +202,31 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(2),
                         "type": "actor",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                     }
                 )
 
         # Functions
-        func_pattern = r'^\s*(?:(public|open|internal|fileprivate|private)\s+)?(?:((?:static|class|mutating|async|throws|rethrows)\s+)*)func\s+(\w+)'
+        func_pattern = r"^\s*(?:(public|open|internal|fileprivate|private)\s+)?(?:((?:static|class|mutating|async|throws|rethrows)\s+)*)func\s+(\w+)"
         for match in re.finditer(func_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access in ["public", "open"]:
                 modifier_string = match.group(2).strip() if match.group(2) else ""
                 modifiers = modifier_string.split() if modifier_string else []
                 # Scan ahead to include post-parameter modifiers (e.g., "async throws") before the function body
-                ahead = content[match.end():]
-                brace_match = re.search(r'\{', ahead)
+                ahead = content[match.end() :]
+                brace_match = re.search(r"\{", ahead)
                 sig_tail = ahead[: brace_match.start()] if brace_match else ahead[:200]
-                is_async = ("async" in modifiers) or bool(re.search(r'\basync\b', sig_tail))
+                is_async = ("async" in modifiers) or bool(re.search(r"\basync\b", sig_tail))
                 is_throwing = ("throws" in modifiers or "rethrows" in modifiers) or bool(
-                    re.search(r'\b(?:throws|rethrows)\b', sig_tail)
+                    re.search(r"\b(?:throws|rethrows)\b", sig_tail)
                 )
                 exports.append(
                     {
                         "name": match.group(3),
                         "type": "function",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                         "modifiers": modifiers,
                         "is_async": is_async,
@@ -233,23 +235,23 @@ class SwiftAnalyzer(LanguageAnalyzer):
                 )
 
         # Properties
-        prop_pattern = r'^\s*(?:(public|internal|fileprivate|private)\s+)?(?:(static|class|lazy|weak|unowned)\s+)?(let|var)\s+(\w+)'
+        prop_pattern = r"^\s*(?:(public|internal|fileprivate|private)\s+)?(?:(static|class|lazy|weak|unowned)\s+)?(let|var)\s+(\w+)"
         for match in re.finditer(prop_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access == "public":
                 modifiers = match.group(2)
                 prop_kind = match.group(3)
                 prop_name = match.group(4)
-                
+
                 # Skip if it looks like a local variable
                 if not self._is_likely_property(content, match.start()):
                     continue
-                    
+
                 exports.append(
                     {
                         "name": prop_name,
                         "type": "property",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                         "is_constant": prop_kind == "let",
                         "is_variable": prop_kind == "var",
@@ -258,7 +260,7 @@ class SwiftAnalyzer(LanguageAnalyzer):
                 )
 
         # Type aliases
-        typealias_pattern = r'^\s*(?:(public|internal|fileprivate|private)\s+)?typealias\s+(\w+)'
+        typealias_pattern = r"^\s*(?:(public|internal|fileprivate|private)\s+)?typealias\s+(\w+)"
         for match in re.finditer(typealias_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access == "public":
@@ -266,13 +268,13 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(2),
                         "type": "typealias",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                     }
                 )
 
         # Extensions (public extensions export their methods)
-        extension_pattern = r'^\s*(?:(public|internal|fileprivate|private)\s+)?extension\s+(\w+)'
+        extension_pattern = r"^\s*(?:(public|internal|fileprivate|private)\s+)?extension\s+(\w+)"
         for match in re.finditer(extension_pattern, content, re.MULTILINE):
             access = match.group(1) or "internal"
             if access == "public":
@@ -281,7 +283,7 @@ class SwiftAnalyzer(LanguageAnalyzer):
                         "name": f"extension_{match.group(2)}",
                         "type": "extension",
                         "extended_type": match.group(2),
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "access_level": access,
                     }
                 )
@@ -316,22 +318,22 @@ class SwiftAnalyzer(LanguageAnalyzer):
         structure.is_uikit = self._is_uikit_file(content)
 
         # Extract classes
-        class_pattern = r'''
+        class_pattern = r"""
             ^\s*(?:(public|open|internal|fileprivate|private)\s+)?
             (?:(final)\s+)?
             class\s+(\w+)
             (?:<([^>]+)>)?  # Generic parameters
             (?:\s*:\s*([^{]+?))?  # Inheritance/conformance
             \s*\{
-        '''
-        
+        """
+
         for match in re.finditer(class_pattern, content, re.VERBOSE | re.MULTILINE):
             access = match.group(1) or "internal"
             is_final = match.group(2) == "final"
             class_name = match.group(3)
             generics = match.group(4)
             inheritance = match.group(5)
-            
+
             # Parse inheritance and protocol conformance
             superclass = None
             protocols = []
@@ -343,10 +345,10 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     protocols = inherited[1:]
                 else:
                     protocols = inherited
-            
+
             # Extract class body
             class_body = self._extract_body(content, match.end())
-            
+
             if class_body:
                 methods = self._extract_methods(class_body)
                 properties = self._extract_properties(class_body)
@@ -355,7 +357,7 @@ class SwiftAnalyzer(LanguageAnalyzer):
                 methods = []
                 properties = []
                 nested_types = []
-            
+
             # Check for UIKit/SwiftUI types
             ui_type = None
             if structure.is_ios:
@@ -366,10 +368,10 @@ class SwiftAnalyzer(LanguageAnalyzer):
                         ui_type = "uiview"
                     elif "ViewModel" in class_name:
                         ui_type = "view_model"
-            
+
             class_info = ClassInfo(
                 name=class_name,
-                line=content[:match.start()].count("\n") + 1,
+                line=content[: match.start()].count("\n") + 1,
                 access_level=access,
                 is_final=is_final,
                 is_open=access == "open",
@@ -381,32 +383,32 @@ class SwiftAnalyzer(LanguageAnalyzer):
                 nested_types=nested_types,
                 ui_type=ui_type,
             )
-            
+
             structure.classes.append(class_info)
 
         # Extract structs
-        struct_pattern = r'''
+        struct_pattern = r"""
             ^\s*(?:(public|internal|fileprivate|private)\s+)?
             struct\s+(\w+)
             (?:<([^>]+)>)?
             (?:\s*:\s*([^{]+?))?
             \s*\{
-        '''
-        
+        """
+
         for match in re.finditer(struct_pattern, content, re.VERBOSE | re.MULTILINE):
             struct_name = match.group(2)
             struct_body = self._extract_body(content, match.end())
-            
+
             # Check if it's a SwiftUI View
             is_swiftui_view = False
             if match.group(4):
                 protocols = self._parse_inheritance(match.group(4))
                 is_swiftui_view = "View" in protocols
-            
+
             structure.structs.append(
                 {
                     "name": struct_name,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "access_level": match.group(1) or "internal",
                     "generics": match.group(3),
                     "protocols": self._parse_inheritance(match.group(4)) if match.group(4) else [],
@@ -417,19 +419,19 @@ class SwiftAnalyzer(LanguageAnalyzer):
             )
 
         # Extract enums
-        enum_pattern = r'''
+        enum_pattern = r"""
             ^\s*(?:(public|internal|fileprivate|private)\s+)?
             (?:(indirect)\s+)?
             enum\s+(\w+)
             (?:<([^>]+)>)?
             (?:\s*:\s*([^{]+?))?
             \s*\{
-        '''
-        
+        """
+
         for match in re.finditer(enum_pattern, content, re.VERBOSE | re.MULTILINE):
             enum_name = match.group(3)
             enum_body = self._extract_body(content, match.end())
-            
+
             # Parse raw value type or conformance
             raw_type = None
             protocols = []
@@ -441,11 +443,11 @@ class SwiftAnalyzer(LanguageAnalyzer):
                     protocols = inherited[1:]
                 else:
                     protocols = inherited
-            
+
             structure.enums.append(
                 {
                     "name": enum_name,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "access_level": match.group(1) or "internal",
                     "is_indirect": match.group(2) == "indirect",
                     "generics": match.group(4),
@@ -457,41 +459,45 @@ class SwiftAnalyzer(LanguageAnalyzer):
             )
 
         # Extract protocols
-        protocol_pattern = r'''
+        protocol_pattern = r"""
             ^\s*(?:(public|internal|fileprivate|private)\s+)?
             protocol\s+(\w+)
             (?:\s*:\s*([^{]+?))?
             \s*\{
-        '''
-        
+        """
+
         for match in re.finditer(protocol_pattern, content, re.VERBOSE | re.MULTILINE):
             protocol_body = self._extract_body(content, match.end())
-            
+
             structure.protocols.append(
                 {
                     "name": match.group(2),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "access_level": match.group(1) or "internal",
-                    "inherited_protocols": self._parse_inheritance(match.group(3)) if match.group(3) else [],
-                    "requirements": self._extract_protocol_requirements(protocol_body) if protocol_body else [],
+                    "inherited_protocols": (
+                        self._parse_inheritance(match.group(3)) if match.group(3) else []
+                    ),
+                    "requirements": (
+                        self._extract_protocol_requirements(protocol_body) if protocol_body else []
+                    ),
                 }
             )
 
         # Extract actors
-        actor_pattern = r'''
+        actor_pattern = r"""
             ^\s*(?:(public|internal|fileprivate|private)\s+)?
             actor\s+(\w+)
             (?:\s*:\s*([^{]+?))?
             \s*\{
-        '''
-        
+        """
+
         for match in re.finditer(actor_pattern, content, re.MULTILINE | re.VERBOSE):
             actor_body = self._extract_body(content, match.end())
-            
+
             structure.actors.append(
                 {
                     "name": match.group(2),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "access_level": match.group(1) or "internal",
                     "protocols": self._parse_inheritance(match.group(3)) if match.group(3) else [],
                     "methods": self._extract_methods(actor_body) if actor_body else [],
@@ -500,31 +506,33 @@ class SwiftAnalyzer(LanguageAnalyzer):
             )
 
         # Extract extensions
-        extension_pattern = r'''
+        extension_pattern = r"""
             ^\s*(?:(public|internal|fileprivate|private)\s+)?
             extension\s+(\w+)
             (?:\s*:\s*([^{]+?))?
             (?:\s+where\s+([^{]+?))?
             \s*\{
-        '''
-        
+        """
+
         for match in re.finditer(extension_pattern, content, re.VERBOSE | re.MULTILINE):
             extension_body = self._extract_body(content, match.end())
-            
+
             structure.extensions.append(
                 {
                     "extended_type": match.group(2),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "access_level": match.group(1) or "internal",
                     "protocols": self._parse_inheritance(match.group(3)) if match.group(3) else [],
                     "where_clause": match.group(4),
                     "methods": self._extract_methods(extension_body) if extension_body else [],
-                    "properties": self._extract_properties(extension_body) if extension_body else [],
+                    "properties": (
+                        self._extract_properties(extension_body) if extension_body else []
+                    ),
                 }
             )
 
         # Extract global functions (including operators)
-        func_pattern = r'''
+        func_pattern = r"""
             ^\s*(?:(public|internal|fileprivate|private)\s+)?
             (?:(static|class|mutating|async|throws|rethrows|prefix|postfix|infix)\s+)*
             func\s+(\w+|[+\-*/%=<>!&|^~?]+)  # Include operator symbols
@@ -534,22 +542,22 @@ class SwiftAnalyzer(LanguageAnalyzer):
             (?:\s*->\s*([^{]+?))?  # Return type
             (?:\s+where\s+([^{]+?))?  # Where clause
             \s*\{
-        '''
-        
+        """
+
         for match in re.finditer(func_pattern, content, re.VERBOSE | re.MULTILINE):
             # Simple check: if the function is not heavily indented, it's likely global
-            line_start = content.rfind('\n', 0, match.start()) + 1
-            line_content = content[line_start:match.start()]
+            line_start = content.rfind("\n", 0, match.start()) + 1
+            line_content = content[line_start : match.start()]
             indent = len(line_content) - len(line_content.lstrip())
-            
+
             # Functions with small indent (0-4 spaces) are likely global
             if indent <= 4:
                 func_info = FunctionInfo(
                     name=match.group(3),
-                    line=content[:match.start()].count("\n") + 1,
+                    line=content[: match.start()].count("\n") + 1,
                     access_level=match.group(1) or "internal",
-                    is_async="async" in content[match.start():match.end()],
-                    is_throwing="throws" in content[match.start():match.end()],
+                    is_async="async" in content[match.start() : match.end()],
+                    is_throwing="throws" in content[match.start() : match.end()],
                     generics=match.group(4),
                     return_type=match.group(5).strip() if match.group(5) else "Void",
                     where_clause=match.group(6),
@@ -557,59 +565,86 @@ class SwiftAnalyzer(LanguageAnalyzer):
                 structure.functions.append(func_info)
 
         # Count Swift-specific patterns
-        structure.optional_count = len(re.findall(r'\w+\?(?:\s|,|\)|>)', content))
-        structure.force_unwrap_count = len(re.findall(r'!(?:\.|,|\s|\))', content))
-        structure.optional_chaining_count = len(re.findall(r'\?\.', content))
-        structure.nil_coalescing_count = len(re.findall(r'\?\?', content))
-        structure.guard_count = len(re.findall(r'\bguard\s+', content))
-        structure.if_let_count = len(re.findall(r'\bif\s+let\s+', content))
-        structure.guard_let_count = len(re.findall(r'\bguard\s+let\s+', content))
+        structure.optional_count = len(re.findall(r"\w+\?(?:\s|,|\)|>)", content))
+        structure.force_unwrap_count = len(re.findall(r"!(?:\.|,|\s|\))", content))
+        structure.optional_chaining_count = len(re.findall(r"\?\.", content))
+        structure.nil_coalescing_count = len(re.findall(r"\?\?", content))
+        structure.guard_count = len(re.findall(r"\bguard\s+", content))
+        structure.if_let_count = len(re.findall(r"\bif\s+let\s+", content))
+        structure.guard_let_count = len(re.findall(r"\bguard\s+let\s+", content))
 
         # Count async/await
-        structure.async_functions = len(re.findall(r'\basync\s+func\b|\bfunc\s+\w+[^{]*\basync\b', content))
-        structure.await_count = len(re.findall(r'\bawait\s+', content))
-        
+        structure.async_functions = len(
+            re.findall(r"\basync\s+func\b|\bfunc\s+\w+[^{]*\basync\b", content)
+        )
+        structure.await_count = len(re.findall(r"\bawait\s+", content))
+
         # Count tasks more comprehensively
         task_patterns = [
-            r'\bTask\s*\{',
-            r'\bTask\.detached\s*\{',
-            r'group\.addTask\s*\{',
+            r"\bTask\s*\{",
+            r"\bTask\.detached\s*\{",
+            r"group\.addTask\s*\{",
         ]
         task_count = 0
         for pattern in task_patterns:
             task_count += len(re.findall(pattern, content))
         structure.task_count = task_count
-        
+
         structure.actor_count = len(structure.actors)
 
         # Count property wrappers
-        structure.property_wrappers = len(re.findall(r'@(?:State|StateObject|ObservedObject|Published|Binding|Environment|EnvironmentObject|AppStorage|SceneStorage|FocusState|GestureState)\b', content))
-        
+        structure.property_wrappers = len(
+            re.findall(
+                r"@(?:State|StateObject|ObservedObject|Published|Binding|Environment|EnvironmentObject|AppStorage|SceneStorage|FocusState|GestureState)\b",
+                content,
+            )
+        )
+
         # Count result builders
-        structure.result_builders = len(re.findall(r'@(?:ViewBuilder|SceneBuilder|CommandsBuilder|ToolbarContentBuilder)\b', content))
+        structure.result_builders = len(
+            re.findall(
+                r"@(?:ViewBuilder|SceneBuilder|CommandsBuilder|ToolbarContentBuilder)\b", content
+            )
+        )
 
         # Count Combine usage
-        structure.combine_publishers = len(re.findall(r'(?:Published|PassthroughSubject|CurrentValueSubject|AnyPublisher)', content))
-        structure.combine_operators = len(re.findall(r'\.(?:sink|map|filter|flatMap|combineLatest|merge|zip|debounce|throttle)\s*(?:\{|\()', content))
+        structure.combine_publishers = len(
+            re.findall(
+                r"(?:Published|PassthroughSubject|CurrentValueSubject|AnyPublisher)", content
+            )
+        )
+        structure.combine_operators = len(
+            re.findall(
+                r"\.(?:sink|map|filter|flatMap|combineLatest|merge|zip|debounce|throttle)\s*(?:\{|\()",
+                content,
+            )
+        )
 
         # SwiftUI specific
         if structure.is_swiftui:
-            structure.swiftui_views = len([s for s in structure.structs if s.get("is_swiftui_view")])
-            structure.view_modifiers = len(re.findall(r'\.(?:padding|frame|background|foregroundColor|font|cornerRadius|shadow|overlay|offset|opacity|scaleEffect|rotationEffect|animation|transition)\s*\(', content))
-            structure.body_count = len(re.findall(r'\bvar\s+body\s*:\s*some\s+View\s*\{', content))
+            structure.swiftui_views = len(
+                [s for s in structure.structs if s.get("is_swiftui_view")]
+            )
+            structure.view_modifiers = len(
+                re.findall(
+                    r"\.(?:padding|frame|background|foregroundColor|font|cornerRadius|shadow|overlay|offset|opacity|scaleEffect|rotationEffect|animation|transition)\s*\(",
+                    content,
+                )
+            )
+            structure.body_count = len(re.findall(r"\bvar\s+body\s*:\s*some\s+View\s*\{", content))
 
         # Detect test file
         structure.is_test_file = (
-            "Test" in file_path.name or
-            file_path.name.endswith("Tests.swift") or
-            any(part in ["Tests", "UITests", "test"] for part in file_path.parts)
+            "Test" in file_path.name
+            or file_path.name.endswith("Tests.swift")
+            or any(part in ["Tests", "UITests", "test"] for part in file_path.parts)
         )
 
         # Detect main app entry
         structure.has_main = bool(
-            re.search(r'@main\b', content) or
-            re.search(r'@UIApplicationMain\b', content) or
-            re.search(r'@NSApplicationMain\b', content)
+            re.search(r"@main\b", content)
+            or re.search(r"@UIApplicationMain\b", content)
+            or re.search(r"@NSApplicationMain\b", content)
         )
 
         return structure
@@ -638,19 +673,19 @@ class SwiftAnalyzer(LanguageAnalyzer):
         complexity = 1
 
         decision_keywords = [
-            r'\bif\b',
-            r'\belse\s+if\b',
-            r'\belse\b',
-            r'\bswitch\b',
-            r'\bcase\b',
-            r'\bfor\b',
-            r'\bwhile\b',
-            r'\brepeat\b',
-            r'\bguard\b',
-            r'\bcatch\b',
-            r'&&',
-            r'\|\|',
-            r'\?\?',  # Nil coalescing
+            r"\bif\b",
+            r"\belse\s+if\b",
+            r"\belse\b",
+            r"\bswitch\b",
+            r"\bcase\b",
+            r"\bfor\b",
+            r"\bwhile\b",
+            r"\brepeat\b",
+            r"\bguard\b",
+            r"\bcatch\b",
+            r"&&",
+            r"\|\|",
+            r"\?\?",  # Nil coalescing
         ]
 
         for keyword in decision_keywords:
@@ -677,15 +712,15 @@ class SwiftAnalyzer(LanguageAnalyzer):
 
             # Control structures with nesting penalty
             control_patterns = [
-                (r'\bif\b', 1),
-                (r'\belse\s+if\b', 1),
-                (r'\belse\b', 0),
-                (r'\bswitch\b', 2),
-                (r'\bfor\b', 1),
-                (r'\bwhile\b', 1),
-                (r'\brepeat\b', 1),
-                (r'\bguard\b', 1),
-                (r'\bcatch\b', 1),
+                (r"\bif\b", 1),
+                (r"\belse\s+if\b", 1),
+                (r"\belse\b", 0),
+                (r"\bswitch\b", 2),
+                (r"\bfor\b", 1),
+                (r"\bwhile\b", 1),
+                (r"\brepeat\b", 1),
+                (r"\bguard\b", 1),
+                (r"\bcatch\b", 1),
             ]
 
             for pattern, weight in control_patterns:
@@ -697,128 +732,147 @@ class SwiftAnalyzer(LanguageAnalyzer):
 
         # Count code elements
         metrics.line_count = len(lines)
-        metrics.code_lines = len([l for l in lines if l.strip() and not l.strip().startswith('//')])
-        metrics.comment_lines = len([l for l in lines if l.strip().startswith('//')])
-        metrics.comment_ratio = metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+        metrics.code_lines = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+        metrics.comment_lines = len([l for l in lines if l.strip().startswith("//")])
+        metrics.comment_ratio = (
+            metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+        )
 
         # Count types
-        metrics.class_count = len(re.findall(r'\bclass\s+\w+', content))
-        metrics.struct_count = len(re.findall(r'\bstruct\s+\w+', content))
-        metrics.enum_count = len(re.findall(r'\benum\s+\w+', content))
-        metrics.protocol_count = len(re.findall(r'\bprotocol\s+\w+', content))
-        metrics.extension_count = len(re.findall(r'\bextension\s+\w+', content))
-        metrics.actor_count = len(re.findall(r'\bactor\s+\w+', content))
+        metrics.class_count = len(re.findall(r"\bclass\s+\w+", content))
+        metrics.struct_count = len(re.findall(r"\bstruct\s+\w+", content))
+        metrics.enum_count = len(re.findall(r"\benum\s+\w+", content))
+        metrics.protocol_count = len(re.findall(r"\bprotocol\s+\w+", content))
+        metrics.extension_count = len(re.findall(r"\bextension\s+\w+", content))
+        metrics.actor_count = len(re.findall(r"\bactor\s+\w+", content))
 
         # Optional handling metrics
         # Count optional type declarations more comprehensively
         optional_type_patterns = [
-            r'\w+\?\s*(?:[,\)\]>=\n]|$)',  # Type? (more permissive ending)
-            r'\w+!\s*(?:[,\)\]>=\n]|$)',  # Type! (implicitly unwrapped)
-            r':\s*\w+\?\s*(?:[,=\{\n]|$)',  # : Type?
-            r':\s*\w+!\s*(?:[,=\{\n]|$)',  # : Type!
-            r'let\s+\w+:\s*\w+\?',  # let variable: Type?
-            r'var\s+\w+:\s*\w+\?',  # var variable: Type?
-            r'let\s+\w+:\s*\w+!',  # let variable: Type!
-            r'var\s+\w+:\s*\w+!',  # var variable: Type!
+            r"\w+\?\s*(?:[,\)\]>=\n]|$)",  # Type? (more permissive ending)
+            r"\w+!\s*(?:[,\)\]>=\n]|$)",  # Type! (implicitly unwrapped)
+            r":\s*\w+\?\s*(?:[,=\{\n]|$)",  # : Type?
+            r":\s*\w+!\s*(?:[,=\{\n]|$)",  # : Type!
+            r"let\s+\w+:\s*\w+\?",  # let variable: Type?
+            r"var\s+\w+:\s*\w+\?",  # var variable: Type?
+            r"let\s+\w+:\s*\w+!",  # let variable: Type!
+            r"var\s+\w+:\s*\w+!",  # var variable: Type!
         ]
         optional_count = 0
         for pattern in optional_type_patterns:
             optional_count += len(re.findall(pattern, content))
         metrics.optional_types = optional_count
-        
-        metrics.force_unwraps = len(re.findall(r'!(?:\.|,|\s|\))', content))
-        metrics.optional_chaining = len(re.findall(r'\?\.', content))
-        metrics.nil_coalescing = len(re.findall(r'\?\?', content))
-        metrics.guard_statements = len(re.findall(r'\bguard\s+', content))
-        metrics.if_let_bindings = len(re.findall(r'\bif\s+let\s+', content))
-        metrics.guard_let_bindings = len(re.findall(r'\bguard\s+let\s+', content))
+
+        metrics.force_unwraps = len(re.findall(r"!(?:\.|,|\s|\))", content))
+        metrics.optional_chaining = len(re.findall(r"\?\.", content))
+        metrics.nil_coalescing = len(re.findall(r"\?\?", content))
+        metrics.guard_statements = len(re.findall(r"\bguard\s+", content))
+        metrics.if_let_bindings = len(re.findall(r"\bif\s+let\s+", content))
+        metrics.guard_let_bindings = len(re.findall(r"\bguard\s+let\s+", content))
 
         # Async/await metrics
-        metrics.async_functions = len(re.findall(r'\basync\s+func\b|\bfunc\s+\w+[^{]*\basync\b', content))
-        metrics.await_calls = len(re.findall(r'\bawait\s+', content))
-        
+        metrics.async_functions = len(
+            re.findall(r"\basync\s+func\b|\bfunc\s+\w+[^{]*\basync\b", content)
+        )
+        metrics.await_calls = len(re.findall(r"\bawait\s+", content))
+
         # Task patterns - more comprehensive detection
         task_patterns = [
-            r'\bTask\s*\{',  # Task { }
-            r'\bTask\.detached\s*\{',  # Task.detached { }
-            r'group\.addTask\s*\{',  # group.addTask { }
-            r'\bwithTaskGroup\s*\(',  # withTaskGroup
-            r'\bwithThrowingTaskGroup\s*\(',  # withThrowingTaskGroup
+            r"\bTask\s*\{",  # Task { }
+            r"\bTask\.detached\s*\{",  # Task.detached { }
+            r"group\.addTask\s*\{",  # group.addTask { }
+            r"\bwithTaskGroup\s*\(",  # withTaskGroup
+            r"\bwithThrowingTaskGroup\s*\(",  # withThrowingTaskGroup
         ]
         task_count = 0
         for pattern in task_patterns:
             task_count += len(re.findall(pattern, content))
         metrics.task_count = task_count
-        
+
         # Task groups specifically
         task_group_patterns = [
-            r'\bwithTaskGroup\s*\(',
-            r'\bwithThrowingTaskGroup\s*\(',
-            r'group\.addTask\s*\{',
+            r"\bwithTaskGroup\s*\(",
+            r"\bwithThrowingTaskGroup\s*\(",
+            r"group\.addTask\s*\{",
         ]
         task_groups = 0
         for pattern in task_group_patterns:
             task_groups += len(re.findall(pattern, content))
         metrics.task_groups = task_groups
-        
-        metrics.main_actor = len(re.findall(r'@MainActor\b', content))
+
+        metrics.main_actor = len(re.findall(r"@MainActor\b", content))
 
         # Error handling
-        metrics.do_blocks = len(re.findall(r'\bdo\s*\{', content))
-        metrics.try_statements = len(re.findall(r'\btry[!?]?\s+', content))
-        metrics.catch_blocks = len(re.findall(r'\bcatch\s+', content))
-        metrics.throw_statements = len(re.findall(r'\bthrow\s+', content))
-        metrics.defer_statements = len(re.findall(r'\bdefer\s*\{', content))
+        metrics.do_blocks = len(re.findall(r"\bdo\s*\{", content))
+        metrics.try_statements = len(re.findall(r"\btry[!?]?\s+", content))
+        metrics.catch_blocks = len(re.findall(r"\bcatch\s+", content))
+        metrics.throw_statements = len(re.findall(r"\bthrow\s+", content))
+        metrics.defer_statements = len(re.findall(r"\bdefer\s*\{", content))
 
         # Closures and functional programming
-        metrics.closure_count = len(re.findall(r'\{[^}]*(?:in\s+|\$0)[^}]*\}', content))
-        metrics.trailing_closures = len(re.findall(r'\)\s*\{[^}]*(?:in\s+|\$0)', content))
-        metrics.higher_order_functions = len(re.findall(r'\.(?:map|filter|reduce|flatMap|compactMap|forEach)\s*(?:\{|\()', content))
+        metrics.closure_count = len(re.findall(r"\{[^}]*(?:in\s+|\$0)[^}]*\}", content))
+        metrics.trailing_closures = len(re.findall(r"\)\s*\{[^}]*(?:in\s+|\$0)", content))
+        metrics.higher_order_functions = len(
+            re.findall(r"\.(?:map|filter|reduce|flatMap|compactMap|forEach)\s*(?:\{|\()", content)
+        )
 
         # Property wrappers (SwiftUI and others)
-        metrics.state_wrappers = len(re.findall(r'@State\b', content))
-        metrics.stateobject_wrappers = len(re.findall(r'@StateObject\b', content))
-        metrics.observedobject_wrappers = len(re.findall(r'@ObservedObject\b', content))
-        metrics.published_wrappers = len(re.findall(r'@Published\b', content))
-        metrics.binding_wrappers = len(re.findall(r'@Binding\b', content))
-        metrics.environment_wrappers = len(re.findall(r'@Environment(?:Object)?\b', content))
+        metrics.state_wrappers = len(re.findall(r"@State\b", content))
+        metrics.stateobject_wrappers = len(re.findall(r"@StateObject\b", content))
+        metrics.observedobject_wrappers = len(re.findall(r"@ObservedObject\b", content))
+        metrics.published_wrappers = len(re.findall(r"@Published\b", content))
+        metrics.binding_wrappers = len(re.findall(r"@Binding\b", content))
+        metrics.environment_wrappers = len(re.findall(r"@Environment(?:Object)?\b", content))
 
         # SwiftUI specific
         if self._is_swiftui_file(content):
-            metrics.swiftui_views = len(re.findall(r':\s*(?:some\s+)?View\s*\{', content))
-            metrics.view_body_count = len(re.findall(r'\bvar\s+body\s*:\s*some\s+View\s*\{', content))
-            metrics.view_modifiers = len(re.findall(r'\.(?:padding|frame|background|foregroundColor|font|cornerRadius|shadow|overlay|offset|opacity|scaleEffect|rotationEffect|animation|transition)\s*\(', content))
-            metrics.geometryreader_usage = len(re.findall(r'\bGeometryReader\s*\{', content))
-            metrics.foreach_usage = len(re.findall(r'\bForEach\s*(?:\(|<)', content))
+            metrics.swiftui_views = len(re.findall(r":\s*(?:some\s+)?View\s*\{", content))
+            metrics.view_body_count = len(
+                re.findall(r"\bvar\s+body\s*:\s*some\s+View\s*\{", content)
+            )
+            metrics.view_modifiers = len(
+                re.findall(
+                    r"\.(?:padding|frame|background|foregroundColor|font|cornerRadius|shadow|overlay|offset|opacity|scaleEffect|rotationEffect|animation|transition)\s*\(",
+                    content,
+                )
+            )
+            metrics.geometryreader_usage = len(re.findall(r"\bGeometryReader\s*\{", content))
+            metrics.foreach_usage = len(re.findall(r"\bForEach\s*(?:\(|<)", content))
 
         # UIKit specific
         if self._is_uikit_file(content):
-            metrics.viewcontroller_count = len(re.findall(r':\s*UI\w*ViewController', content))
-            metrics.view_lifecycle = len(re.findall(r'\boverride\s+func\s+(?:viewDid|viewWill)', content))
-            metrics.iboutlet_count = len(re.findall(r'@IBOutlet\b', content))
-            metrics.ibaction_count = len(re.findall(r'@IBAction\b', content))
-            metrics.delegation_count = len(re.findall(r'delegate\s*=\s*self', content))
+            metrics.viewcontroller_count = len(re.findall(r":\s*UI\w*ViewController", content))
+            metrics.view_lifecycle = len(
+                re.findall(r"\boverride\s+func\s+(?:viewDid|viewWill)", content)
+            )
+            metrics.iboutlet_count = len(re.findall(r"@IBOutlet\b", content))
+            metrics.ibaction_count = len(re.findall(r"@IBAction\b", content))
+            metrics.delegation_count = len(re.findall(r"delegate\s*=\s*self", content))
 
         # Combine framework
-        metrics.combine_publishers = len(re.findall(r'(?:Published|PassthroughSubject|CurrentValueSubject|AnyPublisher)', content))
-        metrics.combine_subscriptions = len(re.findall(r'\.sink\s*\{', content))
-        
+        metrics.combine_publishers = len(
+            re.findall(
+                r"(?:Published|PassthroughSubject|CurrentValueSubject|AnyPublisher)", content
+            )
+        )
+        metrics.combine_subscriptions = len(re.findall(r"\.sink\s*\{", content))
+
         # Combine operators
         combine_operator_patterns = [
-            r'\.map\s*\{',
-            r'\.filter\s*\{',
-            r'\.flatMap\s*\{',
-            r'\.debounce\s*\(',
-            r'\.removeDuplicates\s*\(',
-            r'\.delay\s*\(',
-            r'\.throttle\s*\(',
-            r'\.combineLatest\s*\(',
-            r'\.merge\s*\(',
-            r'\.zip\s*\(',
-            r'\.retry\s*\(',
-            r'\.catch\s*\{',
-            r'\.replaceError\s*\(',
-            r'\.switchToLatest\s*\(',
+            r"\.map\s*\{",
+            r"\.filter\s*\{",
+            r"\.flatMap\s*\{",
+            r"\.debounce\s*\(",
+            r"\.removeDuplicates\s*\(",
+            r"\.delay\s*\(",
+            r"\.throttle\s*\(",
+            r"\.combineLatest\s*\(",
+            r"\.merge\s*\(",
+            r"\.zip\s*\(",
+            r"\.retry\s*\(",
+            r"\.catch\s*\{",
+            r"\.replaceError\s*\(",
+            r"\.switchToLatest\s*\(",
         ]
         combine_operators = 0
         for pattern in combine_operator_patterns:
@@ -826,9 +880,15 @@ class SwiftAnalyzer(LanguageAnalyzer):
         metrics.combine_operators = combine_operators
 
         # Access control
-        metrics.public_declarations = len(re.findall(r'\bpublic\s+(?:class|struct|enum|protocol|func|var|let)\b', content))
-        metrics.private_declarations = len(re.findall(r'\bprivate\s+(?:class|struct|enum|protocol|func|var|let)\b', content))
-        metrics.fileprivate_declarations = len(re.findall(r'\bfileprivate\s+(?:class|struct|enum|protocol|func|var|let)\b', content))
+        metrics.public_declarations = len(
+            re.findall(r"\bpublic\s+(?:class|struct|enum|protocol|func|var|let)\b", content)
+        )
+        metrics.private_declarations = len(
+            re.findall(r"\bprivate\s+(?:class|struct|enum|protocol|func|var|let)\b", content)
+        )
+        metrics.fileprivate_declarations = len(
+            re.findall(r"\bfileprivate\s+(?:class|struct|enum|protocol|func|var|let)\b", content)
+        )
 
         # Calculate maintainability index
         import math
@@ -897,21 +957,61 @@ class SwiftAnalyzer(LanguageAnalyzer):
         """
         # Core Apple frameworks that don't follow prefix patterns
         core_apple_frameworks = [
-            "Foundation", "Swift", "Combine", "SwiftUI", "Testing",
-            "Network", "Compression", "OSLog", "Observation"
+            "Foundation",
+            "Swift",
+            "Combine",
+            "SwiftUI",
+            "Testing",
+            "Network",
+            "Compression",
+            "OSLog",
+            "Observation",
         ]
-        
+
         if module in core_apple_frameworks:
             return True
-            
+
         apple_prefixes = [
-            "UI", "NS", "CF", "CG", "CI", "CA", "AV", "ML", "AR", "VN",
-            "Core", "Metal", "Vision", "Natural", "Speech", "Sound",
-            "Photos", "Messages", "Maps", "Health", "Home", "Music",
-            "Contacts", "Calendar", "Reminders", "Notes", "Safari",
-            "WebKit", "JavaScriptCore", "CloudKit", "StoreKit",
-            "GameKit", "PassKit", "WatchKit", "WidgetKit", "App",
-            "Accessibility", "Accounts", "AdSupport", "AuthenticationServices"
+            "UI",
+            "NS",
+            "CF",
+            "CG",
+            "CI",
+            "CA",
+            "AV",
+            "ML",
+            "AR",
+            "VN",
+            "Core",
+            "Metal",
+            "Vision",
+            "Natural",
+            "Speech",
+            "Sound",
+            "Photos",
+            "Messages",
+            "Maps",
+            "Health",
+            "Home",
+            "Music",
+            "Contacts",
+            "Calendar",
+            "Reminders",
+            "Notes",
+            "Safari",
+            "WebKit",
+            "JavaScriptCore",
+            "CloudKit",
+            "StoreKit",
+            "GameKit",
+            "PassKit",
+            "WatchKit",
+            "WidgetKit",
+            "App",
+            "Accessibility",
+            "Accounts",
+            "AdSupport",
+            "AuthenticationServices",
         ]
         return any(module.startswith(prefix) for prefix in apple_prefixes)
 
@@ -997,17 +1097,17 @@ class SwiftAnalyzer(LanguageAnalyzer):
             char = content[pos]
 
             if not escape_next:
-                if content[pos:pos+3] == '"""':
+                if content[pos : pos + 3] == '"""':
                     in_multiline_string = not in_multiline_string
                     pos += 2
                 elif char == '"' and not in_multiline_string:
                     in_string = not in_string
-                elif char == '\\':
+                elif char == "\\":
                     escape_next = True
                 elif not in_string and not in_multiline_string:
-                    if char == '{':
+                    if char == "{":
                         brace_count += 1
-                    elif char == '}':
+                    elif char == "}":
                         brace_count -= 1
             else:
                 escape_next = False
@@ -1015,7 +1115,7 @@ class SwiftAnalyzer(LanguageAnalyzer):
             pos += 1
 
         if brace_count == 0:
-            return content[start_pos:pos - 1]
+            return content[start_pos : pos - 1]
 
         return None
 
@@ -1036,11 +1136,11 @@ class SwiftAnalyzer(LanguageAnalyzer):
         depth = 0
 
         for char in inheritance_str:
-            if char in '<([':
+            if char in "<([":
                 depth += 1
-            elif char in '>)]':
+            elif char in ">)]":
                 depth -= 1
-            elif char == ',' and depth == 0:
+            elif char == "," and depth == 0:
                 if current.strip():
                     items.append(current.strip())
                 current = ""
@@ -1063,23 +1163,31 @@ class SwiftAnalyzer(LanguageAnalyzer):
         """
         # Common protocol patterns in Swift
         protocol_patterns = [
-            r'Protocol$',
-            r'Delegate$',
-            r'DataSource$',
-            r'able$',  # Codable, Comparable, etc.
-            r'^Any\b',  # AnyObject, AnyHashable
+            r"Protocol$",
+            r"Delegate$",
+            r"DataSource$",
+            r"able$",  # Codable, Comparable, etc.
+            r"^Any\b",  # AnyObject, AnyHashable
         ]
-        
+
         # Known Swift protocols
         known_protocols = {
-            "Codable", "Encodable", "Decodable", "Equatable", "Hashable",
-            "Comparable", "CustomStringConvertible", "Error", "View",
-            "ObservableObject", "Identifiable", "RandomAccessCollection"
+            "Codable",
+            "Encodable",
+            "Decodable",
+            "Equatable",
+            "Hashable",
+            "Comparable",
+            "CustomStringConvertible",
+            "Error",
+            "View",
+            "ObservableObject",
+            "Identifiable",
+            "RandomAccessCollection",
         }
-        
-        return (
-            type_name in known_protocols or
-            any(re.search(pattern, type_name) for pattern in protocol_patterns)
+
+        return type_name in known_protocols or any(
+            re.search(pattern, type_name) for pattern in protocol_patterns
         )
 
     def _is_likely_property(self, content: str, position: int) -> bool:
@@ -1093,16 +1201,18 @@ class SwiftAnalyzer(LanguageAnalyzer):
             True if likely a property (not local variable)
         """
         # Check context before the position
-        before = content[max(0, position - 100):position]
-        
+        before = content[max(0, position - 100) : position]
+
         # If inside a function body, likely a local variable
-        if re.search(r'\bfunc\s+\w+[^{]*\{[^}]*$', before):
+        if re.search(r"\bfunc\s+\w+[^{]*\{[^}]*$", before):
             return False
-            
+
         # If inside a closure, likely a local variable
-        if re.search(r'\{[^}]*$', before) and not re.search(r'(?:class|struct|enum|protocol|extension)\s+\w+[^{]*\{[^}]*$', before):
+        if re.search(r"\{[^}]*$", before) and not re.search(
+            r"(?:class|struct|enum|protocol|extension)\s+\w+[^{]*\{[^}]*$", before
+        ):
             return False
-            
+
         return True
 
     def _extract_methods(self, body: str) -> List[Dict[str, Any]]:

@@ -69,7 +69,7 @@ use const App\\Constants\\MAX_RETRIES;
         imports = analyzer.extract_imports(code, Path("UserController.php"))
 
         assert len(imports) == 5
-        
+
         # Check class use
         user_import = next(imp for imp in imports if "User" in imp.module)
         assert user_import.type == "use_class"
@@ -166,7 +166,7 @@ if ($debug) {
         # Should extract non-PHP dependencies
         assert any("laravel/framework" in imp.module for imp in imports)
         assert any("guzzlehttp/guzzle" in imp.module for imp in imports)
-        
+
         # Check dev dependencies
         phpunit_import = next(imp for imp in imports if "phpunit" in imp.module)
         assert phpunit_import.is_dev_dependency is True
@@ -271,7 +271,7 @@ trait Singleton {
 
         trait_exports = [e for e in exports if e["type"] == "trait"]
         assert len(trait_exports) == 2
-        
+
         trait_names = [t["name"] for t in trait_exports]
         assert "TimestampTrait" in trait_names
         assert "Singleton" in trait_names
@@ -326,7 +326,7 @@ $closure = function($x) {
 
         func_exports = [e for e in exports if e["type"] == "function"]
         assert len(func_exports) == 2
-        
+
         func_names = [f["name"] for f in func_exports]
         assert "helper_function" in func_names
         assert "another_function" in func_names
@@ -350,7 +350,7 @@ class Config {
 
         const_exports = [e for e in exports if e["type"] == "constant"]
         assert len(const_exports) >= 4
-        
+
         const_names = [c["name"] for c in const_exports]
         assert "APP_VERSION" in const_names
         assert "DEBUG_MODE" in const_names
@@ -399,10 +399,10 @@ class User {
         structure = analyzer.extract_structure(code, Path("User.php"))
 
         user_class = structure.classes[0]
-        
+
         # Check properties
         assert len(user_class.properties) >= 4
-        
+
         name_prop = next(p for p in user_class.properties if p["name"] == "name")
         assert name_prop["visibility"] == "public"
         assert name_prop["type"] == "string"
@@ -416,7 +416,7 @@ class User {
 
         # Check methods
         assert len(user_class.methods) >= 5
-        
+
         constructor = next(m for m in user_class.methods if m["name"] == "__construct")
         assert constructor["is_constructor"] is True
 
@@ -453,7 +453,7 @@ class Product {
         structure = analyzer.extract_structure(code, Path("Product.php"))
 
         product_class = structure.classes[0]
-        
+
         assert len(product_class.traits_used) >= 4
         trait_names = [t["name"] for t in product_class.traits_used]
         assert "LoggerTrait" in trait_names
@@ -484,14 +484,14 @@ class MagicClass {
         structure = analyzer.extract_structure(code, Path("MagicClass.php"))
 
         magic_class = structure.classes[0]
-        
+
         # Check magic methods are detected
         magic_methods = [m for m in magic_class.methods if m["is_magic"]]
         assert len(magic_methods) == 11
-        
+
         constructor = next(m for m in magic_class.methods if m["name"] == "__construct")
         assert constructor["is_constructor"] is True
-        
+
         destructor = next(m for m in magic_class.methods if m["name"] == "__destruct")
         assert destructor["is_destructor"] is True
 
@@ -762,7 +762,7 @@ function test() {
 </html>
 """
         structure = analyzer.extract_structure(code, Path("mixed.php"))
-        
+
         # Should still extract PHP elements
         assert len(structure.functions) == 1
 
@@ -777,7 +777,7 @@ class TestEdgeCases:
 
     def test_heredoc_nowdoc(self, analyzer):
         """Test handling of heredoc and nowdoc strings."""
-        code = '''<?php
+        code = """<?php
 $heredoc = <<<EOT
 This is a heredoc string
 with multiple lines
@@ -796,7 +796,7 @@ function with_heredoc() {
     
     return $sql;
 }
-'''
+"""
         # Should handle heredoc/nowdoc without treating content as code
         structure = analyzer.extract_structure(code, Path("strings.php"))
         assert len(structure.functions) == 1
@@ -821,7 +821,7 @@ $extended = new class extends BaseClass implements Interface {
 };
 """
         structure = analyzer.extract_structure(code, Path("anonymous.php"))
-        
+
         # Anonymous classes are counted but not named
         assert structure.anonymous_classes_count >= 2
 
@@ -843,9 +843,9 @@ function mixed_params($first, $second, ...$rest) {
 }
 """
         structure = analyzer.extract_structure(code, Path("variadic.php"))
-        
+
         assert len(structure.functions) == 3
-        
+
         # Check parameter parsing includes variadics
         variadic_func = structure.functions[0]
         assert any(p.get("is_variadic") for p in variadic_func.parameters)
@@ -869,6 +869,6 @@ function delegating_generator() {
 }
 """
         structure = analyzer.extract_structure(code, Path("generators.php"))
-        
+
         # Should detect generator functions
         assert len(structure.functions) == 3

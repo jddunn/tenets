@@ -97,9 +97,11 @@ class GitAnalyzer:
             return []
         results: List[Dict[str, Any]] = []
         try:
-            iter_commits = self.repo.iter_commits(
-                paths=files, max_count=limit
-            ) if files else self.repo.iter_commits(max_count=limit)
+            iter_commits = (
+                self.repo.iter_commits(paths=files, max_count=limit)
+                if files
+                else self.repo.iter_commits(max_count=limit)
+            )
             for c in iter_commits:
                 dt = datetime.fromtimestamp(getattr(c, "committed_date", 0))
                 results.append(
@@ -129,7 +131,9 @@ class GitAnalyzer:
             return []
         counts: Dict[str, Dict[str, Any]] = {}
         try:
-            iter_commits = self.repo.iter_commits(paths=files) if files else self.repo.iter_commits()
+            iter_commits = (
+                self.repo.iter_commits(paths=files) if files else self.repo.iter_commits()
+            )
             for c in iter_commits:
                 name = getattr(c.author, "name", "") or "Unknown"
                 email = getattr(c.author, "email", "") or ""
@@ -157,7 +161,10 @@ class GitAnalyzer:
             return "HEAD"
 
     def get_changes_since(
-        self, path: Optional[Path] = None, since: str = "1 week ago", files: Optional[List[str]] = None
+        self,
+        path: Optional[Path] = None,
+        since: str = "1 week ago",
+        files: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """Return a lightweight list of changes since a given time.
 

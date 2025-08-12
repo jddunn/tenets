@@ -76,7 +76,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 continue
 
             # Package declaration
-            package_pattern = r'^\s*package\s+([\w\.]+)'
+            package_pattern = r"^\s*package\s+([\w\.]+)"
             match = re.match(package_pattern, line)
             if match:
                 current_package = match.group(1)
@@ -92,23 +92,23 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 continue
 
             # Import statements
-            import_pattern = r'^\s*import\s+([^\s]+?)(?:\s+as\s+(\w+))?(?:\s*//.*)?$'
+            import_pattern = r"^\s*import\s+([^\s]+?)(?:\s+as\s+(\w+))?(?:\s*//.*)?$"
             match = re.match(import_pattern, line)
             if match:
                 module_path = match.group(1)
                 alias = match.group(2)
-                
+
                 # Check for wildcard import
-                is_wildcard = module_path.endswith('.*')
+                is_wildcard = module_path.endswith(".*")
                 if is_wildcard:
                     base_path = module_path[:-2]
                     category = self._categorize_import(base_path)
                 else:
                     category = self._categorize_import(module_path)
-                
+
                 # Determine if it's an Android import
                 is_android = self._is_android_import(module_path)
-                
+
                 imports.append(
                     ImportInfo(
                         module=module_path,
@@ -147,13 +147,13 @@ class KotlinAnalyzer(LanguageAnalyzer):
         exports = []
 
         # Classes (including data, sealed, enum)
-        class_pattern = r'^\s*(?:(public|internal|private|protected)\s+)?(?:(abstract|open|final|sealed|inner|data|enum|annotation|inline|value)\s+)*class\s+(\w+)'
+        class_pattern = r"^\s*(?:(public|internal|private|protected)\s+)?(?:(abstract|open|final|sealed|inner|data|enum|annotation|inline|value)\s+)*class\s+(\w+)"
         for match in re.finditer(class_pattern, content, re.MULTILINE):
             visibility = match.group(1) or "public"
             if visibility != "private":
                 modifiers = match.group(2).split() if match.group(2) else []
                 class_name = match.group(3)
-                
+
                 class_type = "class"
                 if "data" in modifiers:
                     class_type = "data_class"
@@ -165,12 +165,12 @@ class KotlinAnalyzer(LanguageAnalyzer):
                     class_type = "annotation_class"
                 elif "value" in modifiers or "inline" in modifiers:
                     class_type = "value_class"
-                
+
                 exports.append(
                     {
                         "name": class_name,
                         "type": class_type,
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "visibility": visibility,
                         "modifiers": modifiers,
                         "is_public": visibility == "public",
@@ -178,7 +178,9 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 )
 
         # Interfaces
-        interface_pattern = r'^\s*(?:(public|internal|private|protected)\s+)?(?:(sealed|fun)\s+)?interface\s+(\w+)'
+        interface_pattern = (
+            r"^\s*(?:(public|internal|private|protected)\s+)?(?:(sealed|fun)\s+)?interface\s+(\w+)"
+        )
         for match in re.finditer(interface_pattern, content, re.MULTILINE):
             visibility = match.group(1) or "public"
             if visibility != "private":
@@ -186,7 +188,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(3),
                         "type": "sealed_interface" if match.group(2) == "sealed" else "interface",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "visibility": visibility,
                         "is_fun_interface": match.group(2) == "fun",
                         "is_public": visibility == "public",
@@ -194,7 +196,9 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 )
 
         # Objects (including companion objects)
-        object_pattern = r'^\s*(?:(public|internal|private|protected)\s+)?(?:(companion)\s+)?object\s+(\w+)'
+        object_pattern = (
+            r"^\s*(?:(public|internal|private|protected)\s+)?(?:(companion)\s+)?object\s+(\w+)"
+        )
         for match in re.finditer(object_pattern, content, re.MULTILINE):
             visibility = match.group(1) or "public"
             if visibility != "private":
@@ -202,26 +206,26 @@ class KotlinAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(3),
                         "type": "companion_object" if match.group(2) else "object",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "visibility": visibility,
                         "is_public": visibility == "public",
                     }
                 )
 
         # Functions (including extension and suspend functions)
-        func_pattern = r'^\s*(?:(public|internal|private|protected)\s+)?(?:(suspend|inline|tailrec|operator|infix|external|actual|expect)\s+)*fun\s+(?:<[^>]+>\s+)?(?:(\w+(?:<[^>]*>)?|\w+)\.)?(\w+)'
+        func_pattern = r"^\s*(?:(public|internal|private|protected)\s+)?(?:(suspend|inline|tailrec|operator|infix|external|actual|expect)\s+)*fun\s+(?:<[^>]+>\s+)?(?:(\w+(?:<[^>]*>)?|\w+)\.)?(\w+)"
         for match in re.finditer(func_pattern, content, re.MULTILINE):
             visibility = match.group(1) or "public"
             if visibility != "private":
                 modifiers = match.group(2).split() if match.group(2) else []
                 receiver = match.group(3)
                 func_name = match.group(4)
-                
+
                 exports.append(
                     {
                         "name": func_name,
                         "type": "extension_function" if receiver else "function",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "visibility": visibility,
                         "modifiers": modifiers,
                         "receiver": receiver,
@@ -233,7 +237,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 )
 
         # Properties (including extension properties)
-        prop_pattern = r'^\s*(?:(public|internal|private|protected)\s+)?(?:(const|lateinit)\s+)?(?:override\s+)?(val|var)\s+(?:(\w+)\.)?(\w+)'
+        prop_pattern = r"^\s*(?:(public|internal|private|protected)\s+)?(?:(const|lateinit)\s+)?(?:override\s+)?(val|var)\s+(?:(\w+)\.)?(\w+)"
         for match in re.finditer(prop_pattern, content, re.MULTILINE):
             visibility = match.group(1) or "public"
             if visibility != "private":
@@ -241,12 +245,12 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 prop_type = match.group(3)
                 receiver = match.group(4)
                 prop_name = match.group(5)
-                
+
                 exports.append(
                     {
                         "name": prop_name,
                         "type": "extension_property" if receiver else "property",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "visibility": visibility,
                         "is_mutable": prop_type == "var",
                         "is_const": modifier == "const",
@@ -257,7 +261,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 )
 
         # Type aliases
-        typealias_pattern = r'^\s*(?:(public|internal|private)\s+)?typealias\s+(\w+)'
+        typealias_pattern = r"^\s*(?:(public|internal|private)\s+)?typealias\s+(\w+)"
         for match in re.finditer(typealias_pattern, content, re.MULTILINE):
             visibility = match.group(1) or "public"
             if visibility != "private":
@@ -265,7 +269,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(2),
                         "type": "typealias",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "visibility": visibility,
                         "is_public": visibility == "public",
                     }
@@ -297,7 +301,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
         structure = CodeStructure()
 
         # Extract package
-        package_match = re.search(r'^\s*package\s+([\w\.]+)', content, re.MULTILINE)
+        package_match = re.search(r"^\s*package\s+([\w\.]+)", content, re.MULTILINE)
         if package_match:
             structure.package = package_match.group(1)
 
@@ -305,7 +309,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
         structure.is_android = self._is_android_file(content)
 
         # Extract classes
-        class_pattern = r'''
+        class_pattern = r"""
             ^\s*(?:(internal|private|protected|public)\s+)?
             (?:(abstract|open|final|sealed|inner|data|enum|annotation|inline|value)\s+)*
             class\s+(\w+)
@@ -314,8 +318,8 @@ class KotlinAnalyzer(LanguageAnalyzer):
             (?:\s*\(([^)]*)\))?  # Primary constructor
             (?:\s*:\s*([^{]+?))?  # Inheritance
             \s*(?:\{|$)
-        '''
-        
+        """
+
         for match in re.finditer(class_pattern, content, re.VERBOSE | re.MULTILINE):
             visibility = match.group(1) or "public"
             modifiers = match.group(2).split() if match.group(2) else []
@@ -323,12 +327,12 @@ class KotlinAnalyzer(LanguageAnalyzer):
             type_params = match.group(4)
             constructor_params = match.group(5)
             inheritance = match.group(6)
-            
+
             # Parse inheritance (superclass and interfaces)
             bases = []
             interfaces = []
             delegates = {}
-            
+
             if inheritance:
                 for item in self._parse_inheritance(inheritance):
                     if " by " in item:
@@ -347,10 +351,10 @@ class KotlinAnalyzer(LanguageAnalyzer):
                             interfaces.append(item)
                         else:
                             bases.append(item)
-            
+
             # Extract class body
             class_body = self._extract_body(content, match.end())
-            
+
             if class_body:
                 methods = self._extract_methods(class_body)
                 properties = self._extract_properties(class_body)
@@ -361,13 +365,16 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 properties = []
                 companion = None
                 nested_classes = []
-            
+
             # Check for Android components
             android_type = None
             if structure.is_android:
                 # Remove parentheses and generics from base class names for matching
-                clean_bases = [base.split('(')[0].split('<')[0].strip() for base in bases]
-                if any(base in ["Activity", "AppCompatActivity", "ComponentActivity"] for base in clean_bases):
+                clean_bases = [base.split("(")[0].split("<")[0].strip() for base in bases]
+                if any(
+                    base in ["Activity", "AppCompatActivity", "ComponentActivity"]
+                    for base in clean_bases
+                ):
                     android_type = "activity"
                 elif any(base in ["Fragment", "DialogFragment"] for base in clean_bases):
                     android_type = "fragment"
@@ -377,14 +384,16 @@ class KotlinAnalyzer(LanguageAnalyzer):
                     android_type = "service"
                 elif any(base in ["BroadcastReceiver"] for base in clean_bases):
                     android_type = "receiver"
-            
+
             class_info = ClassInfo(
                 name=class_name,
-                line=content[:match.start()].count("\n") + 1,
+                line=content[: match.start()].count("\n") + 1,
                 visibility=visibility,
                 modifiers=modifiers,
                 type_parameters=type_params,
-                constructor_params=self._parse_constructor_params(constructor_params) if constructor_params else [],
+                constructor_params=(
+                    self._parse_constructor_params(constructor_params) if constructor_params else []
+                ),
                 bases=bases,
                 interfaces=interfaces,
                 delegates=delegates,
@@ -399,19 +408,19 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 is_value_class="value" in modifiers or "inline" in modifiers,
                 android_type=android_type,
             )
-            
+
             structure.classes.append(class_info)
 
         # Extract interfaces
-        interface_pattern = r'''
+        interface_pattern = r"""
             ^\s*(?:(internal|private|protected|public)\s+)?
             (?:(sealed|fun)\s+)?
             interface\s+(\w+)
             (?:<([^>]+)>)?
             (?:\s*:\s*([^\{]+?))?
             \s*\{?
-        '''
-        
+        """
+
         for match in re.finditer(interface_pattern, content, re.VERBOSE | re.MULTILINE):
             interface_name = match.group(3)
             # Body may be omitted for marker interfaces
@@ -420,36 +429,40 @@ class KotlinAnalyzer(LanguageAnalyzer):
             structure.interfaces.append(
                 {
                     "name": interface_name,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "visibility": match.group(1) or "public",
                     "is_sealed": is_sealed,
                     "is_fun_interface": match.group(2) == "fun",
                     "type_parameters": match.group(4),
                     "extends": self._parse_inheritance(match.group(5)) if match.group(5) else [],
-                    "methods": self._extract_interface_methods(interface_body) if interface_body else [],
+                    "methods": (
+                        self._extract_interface_methods(interface_body) if interface_body else []
+                    ),
                 }
             )
 
         # Extract objects
-        object_pattern = r'^\s*(?:(internal|private|protected|public)\s+)?object\s+(\w+)(?:\s*:\s*([^{]+?))?\s*\{'
-        
+        object_pattern = r"^\s*(?:(internal|private|protected|public)\s+)?object\s+(\w+)(?:\s*:\s*([^{]+?))?\s*\{"
+
         for match in re.finditer(object_pattern, content, re.MULTILINE):
             if not self._is_companion_object(content, match.start()):
                 object_body = self._extract_body(content, match.end())
-                
+
                 structure.objects.append(
                     {
                         "name": match.group(2),
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "visibility": match.group(1) or "public",
-                        "implements": self._parse_inheritance(match.group(3)) if match.group(3) else [],
+                        "implements": (
+                            self._parse_inheritance(match.group(3)) if match.group(3) else []
+                        ),
                         "methods": self._extract_methods(object_body) if object_body else [],
                         "properties": self._extract_properties(object_body) if object_body else [],
                     }
                 )
 
         # Extract top-level functions
-        func_pattern = r'''
+        func_pattern = r"""
             ^\s*(?:(internal|private|protected|public)\s+)?
             (?:(suspend|inline|tailrec|operator|infix|external|actual|expect)\s+)*
             fun\s+
@@ -459,8 +472,8 @@ class KotlinAnalyzer(LanguageAnalyzer):
             \s*\(([^)]*)\)  # Parameters
             (?:\s*:\s*([^{=\n]+))?  # Return type
             \s*[{=]
-        '''
-        
+        """
+
         for match in re.finditer(func_pattern, content, re.VERBOSE | re.MULTILINE):
             if not self._is_inside_class(content, match.start()):
                 visibility = match.group(1) or "public"
@@ -470,10 +483,10 @@ class KotlinAnalyzer(LanguageAnalyzer):
                 func_name = match.group(5)
                 params = match.group(6)
                 return_type = match.group(7)
-                
+
                 func_info = FunctionInfo(
                     name=func_name,
-                    line=content[:match.start()].count("\n") + 1,
+                    line=content[: match.start()].count("\n") + 1,
                     visibility=visibility,
                     modifiers=modifiers,
                     type_parameters=type_params,
@@ -486,47 +499,53 @@ class KotlinAnalyzer(LanguageAnalyzer):
                     is_operator="operator" in modifiers,
                     is_infix="infix" in modifiers,
                 )
-                
+
                 structure.functions.append(func_info)
 
         # Extract type aliases
-        typealias_pattern = r'^\s*(?:(internal|private|public)\s+)?typealias\s+(\w+)(?:<[^>]+>)?\s*=\s*([^\n]+)'
+        typealias_pattern = (
+            r"^\s*(?:(internal|private|public)\s+)?typealias\s+(\w+)(?:<[^>]+>)?\s*=\s*([^\n]+)"
+        )
         for match in re.finditer(typealias_pattern, content, re.MULTILINE):
             structure.type_aliases.append(
                 {
                     "name": match.group(2),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "visibility": match.group(1) or "public",
                     "definition": match.group(3).strip(),
                 }
             )
 
         # Count coroutine usage
-        structure.suspend_functions = len(re.findall(r'\bsuspend\s+fun\b', content))
-        structure.coroutine_launches = len(re.findall(r'\b(?:launch|async)\s*\{', content))
-        structure.flow_usage = len(re.findall(r'\bFlow<|\bflow\s*\{', content))
+        structure.suspend_functions = len(re.findall(r"\bsuspend\s+fun\b", content))
+        structure.coroutine_launches = len(re.findall(r"\b(?:launch|async)\s*\{", content))
+        structure.flow_usage = len(re.findall(r"\bFlow<|\bflow\s*\{", content))
 
         # Count null safety features
-        structure.nullable_types = len(re.findall(r'\w+\?(?:\s|,|\)|>)', content))
-        structure.null_assertions = len(re.findall(r'!!', content))
-        structure.safe_calls = len(re.findall(r'\?\.', content))
-        structure.elvis_operators = len(re.findall(r'\?:', content))
+        structure.nullable_types = len(re.findall(r"\w+\?(?:\s|,|\)|>)", content))
+        structure.null_assertions = len(re.findall(r"!!", content))
+        structure.safe_calls = len(re.findall(r"\?\.", content))
+        structure.elvis_operators = len(re.findall(r"\?:", content))
 
         # Count lambda expressions
-        structure.lambda_expressions = len(re.findall(r'\{[^}]*->[^}]*\}', content))
-        
+        structure.lambda_expressions = len(re.findall(r"\{[^}]*->[^}]*\}", content))
+
         # Count scope functions
         structure.scope_functions = (
-            len(re.findall(r'\.let\s*\{', content)) +
-            len(re.findall(r'\.run\s*\{', content)) +
-            len(re.findall(r'\.apply\s*\{', content)) +
-            len(re.findall(r'\.also\s*\{', content)) +
-            len(re.findall(r'\bwith\s*\([^)]+\)\s*\{', content))
+            len(re.findall(r"\.let\s*\{", content))
+            + len(re.findall(r"\.run\s*\{", content))
+            + len(re.findall(r"\.apply\s*\{", content))
+            + len(re.findall(r"\.also\s*\{", content))
+            + len(re.findall(r"\bwith\s*\([^)]+\)\s*\{", content))
         )
 
         # Count extension functions and properties
-        structure.extension_functions = len(re.findall(r'fun\s+(?:<[^>]*>\s+)?\w+(?:<[^>]*>)?\.\w+', content))
-        structure.extension_properties = len(re.findall(r'(?:val|var)\s+\w+(?:<[^>]*>)?\.\w+', content))
+        structure.extension_functions = len(
+            re.findall(r"fun\s+(?:<[^>]*>\s+)?\w+(?:<[^>]*>)?\.\w+", content)
+        )
+        structure.extension_properties = len(
+            re.findall(r"(?:val|var)\s+\w+(?:<[^>]*>)?\.\w+", content)
+        )
 
         # Detect test file
         structure.is_test_file = (
@@ -536,12 +555,12 @@ class KotlinAnalyzer(LanguageAnalyzer):
         )
 
         # Detect main function
-        structure.has_main = bool(re.search(r'fun\s+main\s*\(', content))
+        structure.has_main = bool(re.search(r"fun\s+main\s*\(", content))
 
         # Multiplatform detection
         structure.is_multiplatform = bool(
-            re.search(r'\b(?:expect|actual)\s+', content) or
-            re.search(r'@(?:JvmStatic|JvmOverloads|JvmName|JsName)', content)
+            re.search(r"\b(?:expect|actual)\s+", content)
+            or re.search(r"@(?:JvmStatic|JvmOverloads|JvmName|JsName)", content)
         )
 
         return structure
@@ -570,18 +589,18 @@ class KotlinAnalyzer(LanguageAnalyzer):
         complexity = 1
 
         decision_keywords = [
-            r'\bif\b',
-            r'\belse\s+if\b',
-            r'\belse\b',
-            r'\bwhen\b',
-            r'\bfor\b',
-            r'\bwhile\b',
-            r'\bdo\b',
-            r'\btry\b',
-            r'\bcatch\b',
-            r'&&',
-            r'\|\|',
-            r'\?:',  # Elvis operator
+            r"\bif\b",
+            r"\belse\s+if\b",
+            r"\belse\b",
+            r"\bwhen\b",
+            r"\bfor\b",
+            r"\bwhile\b",
+            r"\bdo\b",
+            r"\btry\b",
+            r"\bcatch\b",
+            r"&&",
+            r"\|\|",
+            r"\?:",  # Elvis operator
         ]
 
         for keyword in decision_keywords:
@@ -608,15 +627,15 @@ class KotlinAnalyzer(LanguageAnalyzer):
 
             # Control structures with nesting penalty
             control_patterns = [
-                (r'\bif\b', 1),
-                (r'\belse\s+if\b', 1),
-                (r'\belse\b', 0),
-                (r'\bwhen\b', 1),
-                (r'\bfor\b', 1),
-                (r'\bwhile\b', 1),
-                (r'\bdo\b', 1),
-                (r'\btry\b', 1),
-                (r'\bcatch\b', 1),
+                (r"\bif\b", 1),
+                (r"\belse\s+if\b", 1),
+                (r"\belse\b", 0),
+                (r"\bwhen\b", 1),
+                (r"\bfor\b", 1),
+                (r"\bwhile\b", 1),
+                (r"\bdo\b", 1),
+                (r"\btry\b", 1),
+                (r"\bcatch\b", 1),
             ]
 
             for pattern, weight in control_patterns:
@@ -628,66 +647,73 @@ class KotlinAnalyzer(LanguageAnalyzer):
 
         # Count code elements
         metrics.line_count = len(lines)
-        metrics.code_lines = len([l for l in lines if l.strip() and not l.strip().startswith('//')])
-        metrics.comment_lines = len([l for l in lines if l.strip().startswith('//')])
-        metrics.comment_ratio = metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+        metrics.code_lines = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+        metrics.comment_lines = len([l for l in lines if l.strip().startswith("//")])
+        metrics.comment_ratio = (
+            metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+        )
 
         # Count classes and interfaces
-        metrics.class_count = len(re.findall(r'\bclass\s+\w+', content))
-        metrics.interface_count = len(re.findall(r'\binterface\s+\w+', content))
-        metrics.object_count = len(re.findall(r'\bobject\s+\w+', content))
-        metrics.data_class_count = len(re.findall(r'\bdata\s+class\s+\w+', content))
-        metrics.sealed_class_count = len(re.findall(r'\bsealed\s+(?:class|interface)\s+\w+', content))
+        metrics.class_count = len(re.findall(r"\bclass\s+\w+", content))
+        metrics.interface_count = len(re.findall(r"\binterface\s+\w+", content))
+        metrics.object_count = len(re.findall(r"\bobject\s+\w+", content))
+        metrics.data_class_count = len(re.findall(r"\bdata\s+class\s+\w+", content))
+        metrics.sealed_class_count = len(
+            re.findall(r"\bsealed\s+(?:class|interface)\s+\w+", content)
+        )
 
         # Null safety metrics
-        metrics.nullable_types = len(re.findall(r'\w+\?(?:\s|,|\)|>)', content))
-        metrics.null_assertions = len(re.findall(r'!!', content))
-        metrics.safe_calls = len(re.findall(r'\?\.', content))
-        metrics.elvis_operators = len(re.findall(r'\?:', content))
-        metrics.lateinit_count = len(re.findall(r'\blateinit\s+var\b', content))
-        metrics.let_calls = len(re.findall(r'\.let\s*\{', content))
+        metrics.nullable_types = len(re.findall(r"\w+\?(?:\s|,|\)|>)", content))
+        metrics.null_assertions = len(re.findall(r"!!", content))
+        metrics.safe_calls = len(re.findall(r"\?\.", content))
+        metrics.elvis_operators = len(re.findall(r"\?:", content))
+        metrics.lateinit_count = len(re.findall(r"\blateinit\s+var\b", content))
+        metrics.let_calls = len(re.findall(r"\.let\s*\{", content))
 
         # Coroutine metrics
-        metrics.suspend_functions = len(re.findall(r'\bsuspend\s+fun\b', content))
-        metrics.coroutine_launches = len(re.findall(r'\b(?:launch|async)\s*\{', content))
-        metrics.await_calls = len(re.findall(r'\.await\(\)', content))
-        metrics.flow_usage = len(re.findall(r'\bFlow<|\bflow\s*\{', content))
-        metrics.channel_usage = len(re.findall(r'\bChannel<|\bchannel\s*\{', content))
-        metrics.runblocking_usage = len(re.findall(r'\brunBlocking\s*\{', content))
+        metrics.suspend_functions = len(re.findall(r"\bsuspend\s+fun\b", content))
+        metrics.coroutine_launches = len(re.findall(r"\b(?:launch|async)\s*\{", content))
+        metrics.await_calls = len(re.findall(r"\.await\(\)", content))
+        metrics.flow_usage = len(re.findall(r"\bFlow<|\bflow\s*\{", content))
+        metrics.channel_usage = len(re.findall(r"\bChannel<|\bchannel\s*\{", content))
+        metrics.runblocking_usage = len(re.findall(r"\brunBlocking\s*\{", content))
 
         # Functional programming metrics
-        metrics.lambda_count = len(re.findall(r'\{[^}]*->[^}]*\}', content))
-        metrics.higher_order_functions = len(re.findall(r'(?:map|filter|fold|reduce|flatMap|forEach)\s*\{', content))
-        metrics.inline_functions = len(re.findall(r'\binline\s+fun\b', content))
-        metrics.extension_functions = len(re.findall(r'fun\s+\w+\.\w+', content))
-        metrics.scope_functions = (
-            len(re.findall(r'\.(?:let|run|apply|also)\s*\{', content)) +
-            len(re.findall(r'\bwith\s*\([^)]+\)\s*\{', content))
+        metrics.lambda_count = len(re.findall(r"\{[^}]*->[^}]*\}", content))
+        metrics.higher_order_functions = len(
+            re.findall(r"(?:map|filter|fold|reduce|flatMap|forEach)\s*\{", content)
+        )
+        metrics.inline_functions = len(re.findall(r"\binline\s+fun\b", content))
+        metrics.extension_functions = len(re.findall(r"fun\s+\w+\.\w+", content))
+        metrics.scope_functions = len(re.findall(r"\.(?:let|run|apply|also)\s*\{", content)) + len(
+            re.findall(r"\bwith\s*\([^)]+\)\s*\{", content)
         )
 
         # When expression metrics
-        metrics.when_expressions = len(re.findall(r'\bwhen\s*(?:\(|\{)', content))
-        metrics.when_branches = len(re.findall(r'->\s*(?:\{|[^,\n]+)', content))
+        metrics.when_expressions = len(re.findall(r"\bwhen\s*(?:\(|\{)", content))
+        metrics.when_branches = len(re.findall(r"->\s*(?:\{|[^,\n]+)", content))
 
         # Exception handling
-        metrics.try_blocks = len(re.findall(r'\btry\s*\{', content))
-        metrics.catch_blocks = len(re.findall(r'\bcatch\s*\(', content))
-        metrics.finally_blocks = len(re.findall(r'\bfinally\s*\{', content))
-        metrics.throw_statements = len(re.findall(r'\bthrow\s+', content))
+        metrics.try_blocks = len(re.findall(r"\btry\s*\{", content))
+        metrics.catch_blocks = len(re.findall(r"\bcatch\s*\(", content))
+        metrics.finally_blocks = len(re.findall(r"\bfinally\s*\{", content))
+        metrics.throw_statements = len(re.findall(r"\bthrow\s+", content))
 
         # Android-specific metrics (if applicable)
         if self._is_android_file(content):
-            metrics.activity_count = len(re.findall(r':\s*(?:AppCompat)?Activity\(\)', content))
-            metrics.fragment_count = len(re.findall(r':\s*Fragment\(\)', content))
-            metrics.viewmodel_count = len(re.findall(r':\s*(?:Android)?ViewModel\(\)', content))
-            metrics.livedata_usage = len(re.findall(r'\bLiveData<|\bMutableLiveData<', content))
-            metrics.observer_usage = len(re.findall(r'\.observe\(', content))
-            metrics.binding_usage = len(re.findall(r'Binding\b|\.binding', content))
+            metrics.activity_count = len(re.findall(r":\s*(?:AppCompat)?Activity\(\)", content))
+            metrics.fragment_count = len(re.findall(r":\s*Fragment\(\)", content))
+            metrics.viewmodel_count = len(re.findall(r":\s*(?:Android)?ViewModel\(\)", content))
+            metrics.livedata_usage = len(re.findall(r"\bLiveData<|\bMutableLiveData<", content))
+            metrics.observer_usage = len(re.findall(r"\.observe\(", content))
+            metrics.binding_usage = len(re.findall(r"Binding\b|\.binding", content))
 
         # Delegation metrics
-        metrics.delegation_count = len(re.findall(r'\bby\s+\w+', content))
-        metrics.lazy_properties = len(re.findall(r'\bby\s+lazy\s*\{', content))
-        metrics.observable_properties = len(re.findall(r'\bby\s+(?:\w+\.)?(?:observable|vetoable)\s*\(', content))
+        metrics.delegation_count = len(re.findall(r"\bby\s+\w+", content))
+        metrics.lazy_properties = len(re.findall(r"\bby\s+lazy\s*\{", content))
+        metrics.observable_properties = len(
+            re.findall(r"\bby\s+(?:\w+\.)?(?:observable|vetoable)\s*\(", content)
+        )
 
         # Calculate maintainability index
         import math
@@ -809,9 +835,9 @@ class KotlinAnalyzer(LanguageAnalyzer):
         """
         if start_pos >= len(content):
             return None
-            
+
         # Handle case where there's no body (just semicolon or nothing)
-        if start_pos > 0 and content[start_pos - 1] != '{':
+        if start_pos > 0 and content[start_pos - 1] != "{":
             return None
 
         brace_count = 1
@@ -824,17 +850,17 @@ class KotlinAnalyzer(LanguageAnalyzer):
             char = content[pos]
 
             if not escape_next:
-                if content[pos:pos+3] == '"""':
+                if content[pos : pos + 3] == '"""':
                     in_multiline_string = not in_multiline_string
                     pos += 2
                 elif char == '"' and not in_multiline_string:
                     in_string = not in_string
-                elif char == '\\':
+                elif char == "\\":
                     escape_next = True
                 elif not in_string and not in_multiline_string:
-                    if char == '{':
+                    if char == "{":
                         brace_count += 1
-                    elif char == '}':
+                    elif char == "}":
                         brace_count -= 1
             else:
                 escape_next = False
@@ -842,7 +868,7 @@ class KotlinAnalyzer(LanguageAnalyzer):
             pos += 1
 
         if brace_count == 0:
-            return content[start_pos:pos - 1]
+            return content[start_pos : pos - 1]
 
         return None
 
@@ -863,11 +889,11 @@ class KotlinAnalyzer(LanguageAnalyzer):
         depth = 0
 
         for char in inheritance_str:
-            if char in '<([':
+            if char in "<([":
                 depth += 1
-            elif char in '>)]':
+            elif char in ">)]":
                 depth -= 1
-            elif char == ',' and depth == 0:
+            elif char == "," and depth == 0:
                 if current.strip():
                     items.append(current.strip())
                 current = ""
@@ -890,15 +916,15 @@ class KotlinAnalyzer(LanguageAnalyzer):
         """
         # Common interface naming patterns
         interface_patterns = [
-            r'^I[A-Z]',  # IInterface pattern
-            r'able$',  # Readable, Comparable, etc.
-            r'ible$',  # Accessible, etc.
-            r'Listener$',
-            r'Callback$',
-            r'Handler$',
-            r'Observer$',
+            r"^I[A-Z]",  # IInterface pattern
+            r"able$",  # Readable, Comparable, etc.
+            r"ible$",  # Accessible, etc.
+            r"Listener$",
+            r"Callback$",
+            r"Handler$",
+            r"Observer$",
         ]
-        
+
         return any(re.search(pattern, type_name) for pattern in interface_patterns)
 
     def _parse_constructor_params(self, params_str: str) -> List[Dict[str, Any]]:
@@ -940,14 +966,14 @@ class KotlinAnalyzer(LanguageAnalyzer):
             for visibility in ["private", "protected", "internal", "public"]:
                 if param.startswith(visibility + " "):
                     param_dict["visibility"] = visibility
-                    param = param[len(visibility) + 1:]
+                    param = param[len(visibility) + 1 :]
                     break
 
             # Parse name and type
             if ":" in param:
                 parts = param.split(":", 1)
                 param_dict["name"] = parts[0].strip()
-                
+
                 # Check for default value
                 if "=" in parts[1]:
                     type_parts = parts[1].split("=", 1)
@@ -977,14 +1003,14 @@ class KotlinAnalyzer(LanguageAnalyzer):
         in_string = False
 
         for char in params_str:
-            if char == '"' and (not current or current[-1] != '\\'):
+            if char == '"' and (not current or current[-1] != "\\"):
                 in_string = not in_string
             elif not in_string:
-                if char in '<([':
+                if char in "<([":
                     depth += 1
-                elif char in '>)]':
+                elif char in ">)]":
                     depth -= 1
-                elif char == ',' and depth == 0:
+                elif char == "," and depth == 0:
                     if current.strip():
                         params.append(current.strip())
                     current = ""
@@ -1001,76 +1027,76 @@ class KotlinAnalyzer(LanguageAnalyzer):
         """Extract methods from class body."""
         methods = []
         # Match function declarations with modifiers
-        method_pattern = r'(?:(public|private|protected|internal)\s+)?(?:(operator|suspend|inline|override|abstract|final|open)\s+)*fun\s+(\w+)\s*\('
+        method_pattern = r"(?:(public|private|protected|internal)\s+)?(?:(operator|suspend|inline|override|abstract|final|open)\s+)*fun\s+(\w+)\s*\("
         for match in re.finditer(method_pattern, body):
             visibility = match.group(1) or "public"
             modifiers_str = match.group(2) or ""
             modifiers = modifiers_str.split() if modifiers_str else []
             method_name = match.group(3)
-            
-            methods.append({
-                "name": method_name,
-                "visibility": visibility,
-                "modifiers": modifiers,
-                "is_operator": "operator" in modifiers,
-                "is_suspend": "suspend" in modifiers,
-                "is_inline": "inline" in modifiers,
-                "is_override": "override" in modifiers,
-                "is_abstract": "abstract" in modifiers,
-            })
+
+            methods.append(
+                {
+                    "name": method_name,
+                    "visibility": visibility,
+                    "modifiers": modifiers,
+                    "is_operator": "operator" in modifiers,
+                    "is_suspend": "suspend" in modifiers,
+                    "is_inline": "inline" in modifiers,
+                    "is_override": "override" in modifiers,
+                    "is_abstract": "abstract" in modifiers,
+                }
+            )
         return methods
 
     def _extract_properties(self, body: str) -> List[Dict[str, Any]]:
         """Extract properties from class body."""
         properties = []
         # Match property declarations
-        prop_pattern = r'(?:(public|private|protected|internal)\s+)?(?:(const|lateinit|override)\s+)?(val|var)\s+(\w+)'
+        prop_pattern = r"(?:(public|private|protected|internal)\s+)?(?:(const|lateinit|override)\s+)?(val|var)\s+(\w+)"
         for match in re.finditer(prop_pattern, body):
             visibility = match.group(1) or "public"
             modifier = match.group(2)
             prop_type = match.group(3)
             prop_name = match.group(4)
-            
-            properties.append({
-                "name": prop_name,
-                "visibility": visibility,
-                "is_mutable": prop_type == "var",
-                "is_const": modifier == "const",
-                "is_lateinit": modifier == "lateinit",
-                "is_override": modifier == "override",
-            })
+
+            properties.append(
+                {
+                    "name": prop_name,
+                    "visibility": visibility,
+                    "is_mutable": prop_type == "var",
+                    "is_const": modifier == "const",
+                    "is_lateinit": modifier == "lateinit",
+                    "is_override": modifier == "override",
+                }
+            )
         return properties
 
     def _extract_companion_object(self, body: str) -> Optional[Dict[str, Any]]:
         """Extract companion object from class body."""
-        companion_pattern = r'companion\s+object(?:\s+(\w+))?\s*\{'
+        companion_pattern = r"companion\s+object(?:\s+(\w+))?\s*\{"
         match = re.search(companion_pattern, body)
         if match:
             companion_name = match.group(1) if match.group(1) else "Companion"
             companion_body = self._extract_body(body, match.end())
             return {
                 "name": companion_name,
-                "members": self._extract_companion_members(companion_body) if companion_body else []
+                "members": (
+                    self._extract_companion_members(companion_body) if companion_body else []
+                ),
             }
         return None
-    
+
     def _extract_companion_members(self, body: str) -> List[Dict[str, Any]]:
         """Extract members from companion object body."""
         members = []
         # Extract functions
-        func_pattern = r'fun\s+(\w+)\s*\([^)]*\)'
+        func_pattern = r"fun\s+(\w+)\s*\([^)]*\)"
         for match in re.finditer(func_pattern, body):
-            members.append({
-                "type": "function",
-                "name": match.group(1)
-            })
+            members.append({"type": "function", "name": match.group(1)})
         # Extract properties
-        prop_pattern = r'(?:val|var)\s+(\w+)'
+        prop_pattern = r"(?:val|var)\s+(\w+)"
         for match in re.finditer(prop_pattern, body):
-            members.append({
-                "type": "property", 
-                "name": match.group(1)
-            })
+            members.append({"type": "property", "name": match.group(1)})
         return members
 
     def _extract_nested_classes(self, body: str) -> List[Dict[str, Any]]:

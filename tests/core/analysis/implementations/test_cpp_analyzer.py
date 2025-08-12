@@ -80,11 +80,11 @@ class TestImportExtraction:
 
     def test_extract_local_includes(self, analyzer):
         """Test extraction of local includes."""
-        code = '''
+        code = """
 #include "myheader.h"
 #include "utils/helper.hpp"
 #include "../common/base.h"
-'''
+"""
         imports = analyzer.extract_imports(code, Path("test.cpp"))
 
         assert len(imports) == 3
@@ -136,7 +136,7 @@ class TestImportExtraction:
 
         # Check if include guard was detected
         for imp in imports:
-            assert hasattr(imp, 'has_include_guard')
+            assert hasattr(imp, "has_include_guard")
 
     def test_detect_pragma_once(self, analyzer):
         """Test detection of pragma once."""
@@ -149,7 +149,7 @@ class TestImportExtraction:
         imports = analyzer.extract_imports(code, Path("header.hpp"))
 
         for imp in imports:
-            assert hasattr(imp, 'uses_pragma_once')
+            assert hasattr(imp, "uses_pragma_once")
 
 
 class TestExportExtraction:
@@ -187,7 +187,7 @@ T max(T a, T b) {
         exports = analyzer.extract_exports(code, Path("test.cpp"))
 
         func_exports = [e for e in exports if e["type"] == "function"]
-        
+
         func_names = [f["name"] for f in func_exports]
         assert "calculate" in func_names
         assert "square" in func_names
@@ -358,10 +358,10 @@ protected:
         structure = analyzer.extract_structure(code, Path("test.cpp"))
 
         my_class = structure.classes[0]
-        
+
         # Check methods
         assert len(my_class.methods) >= 6
-        
+
         method_names = [m["name"] for m in my_class.methods]
         assert "MyClass" in method_names  # Constructor
         assert "~MyClass" in method_names  # Destructor

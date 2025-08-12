@@ -60,19 +60,19 @@ class GenericAnalyzer(LanguageAnalyzer):
         # Common import/include patterns
         patterns = [
             # Include patterns (C-style, various scripting languages)
-            (r'^\s*#include\s+<([^>]+)>', "include"),            # angle includes
-            (r'^\s*#include\s+"([^"]+)"', "include"),          # quote includes
-            (r'^\s*include\s+[\'\"]([^\'\"]+)[\'\"]', "include"),
+            (r"^\s*#include\s+<([^>]+)>", "include"),  # angle includes
+            (r'^\s*#include\s+"([^"]+)"', "include"),  # quote includes
+            (r"^\s*include\s+[\'\"]([^\'\"]+)[\'\"]", "include"),
             # CMake include()
-            (r'^\s*include\s*\(\s*([^)\s]+)\s*\)', "include"),
+            (r"^\s*include\s*\(\s*([^)\s]+)\s*\)", "include"),
             # Import patterns (various languages)
-            (r'^\s*import\s+[\'"]([^\'"]+)[\'"]', "import"),              # import "module"
-            (r'^\s*import\s+([A-Za-z_][\w\.]*)\b', "import"),                      # import os
-            (r'^\s*from\s+[\'"]([^\'"]+)[\'"]', "from"),                  # from "mod"
-            (r'^\s*from\s+([A-Za-z_][\w\.]*)\s+import\b', "from"),                # from pkg import X
+            (r'^\s*import\s+[\'"]([^\'"]+)[\'"]', "import"),  # import "module"
+            (r"^\s*import\s+([A-Za-z_][\w\.]*)\b", "import"),  # import os
+            (r'^\s*from\s+[\'"]([^\'"]+)[\'"]', "from"),  # from "mod"
+            (r"^\s*from\s+([A-Za-z_][\w\.]*)\s+import\b", "from"),  # from pkg import X
             (r'^\s*require\s+[\'"]([^\'"]+)[\'"]', "require"),
             # PHP/Perl and JS style use statements
-            (r'^\s*use\s+([\\\w:]+);?', "use"),                                    # use Data::Dumper; or use Foo\Bar;
+            (r"^\s*use\s+([\\\w:]+);?", "use"),  # use Data::Dumper; or use Foo\Bar;
             # Load/source patterns (shell scripts)
             (r'^\s*source\s+[\'"]?([^\'"]+)[\'"]?', "source"),
             (r'^\s*\.[ \t]+[\'"]?([^\'"]+)[\'"]?', "source"),
@@ -84,8 +84,9 @@ class GenericAnalyzer(LanguageAnalyzer):
 
         for i, line in enumerate(lines, 1):
             # Skip comments (generic comment patterns) but keep C preprocessor includes
-            if ((line.strip().startswith("#") and not re.match(r'^\s*#include\b', line))
-                or line.strip().startswith("//")):
+            if (
+                line.strip().startswith("#") and not re.match(r"^\s*#include\b", line)
+            ) or line.strip().startswith("//"):
                 continue
 
             for pattern, import_type in patterns:
@@ -104,10 +105,8 @@ class GenericAnalyzer(LanguageAnalyzer):
                     break
 
             # Special case: 'use strict;' (JavaScript directive)
-            if re.match(r'^\s*use\s+strict\s*;?\s*$', line):
-                imports.append(
-                    ImportInfo(module="strict", line=i, type="use", is_relative=False)
-                )
+            if re.match(r"^\s*use\s+strict\s*;?\s*$", line):
+                imports.append(ImportInfo(module="strict", line=i, type="use", is_relative=False))
                 captured_modules.add("strict")
 
         # Special handling for specific file types
@@ -124,7 +123,10 @@ class GenericAnalyzer(LanguageAnalyzer):
                 if module not in captured_modules:
                     imports.append(
                         ImportInfo(
-                            module=module, line=i, type="reference", is_relative=self._is_relative_path(module)
+                            module=module,
+                            line=i,
+                            type="reference",
+                            is_relative=self._is_relative_path(module),
                         )
                     )
                     captured_modules.add(module)
@@ -184,27 +186,51 @@ class GenericAnalyzer(LanguageAnalyzer):
         try:
             if suffix == ".json":
                 # naive top-level key extractor
-                for m in re.finditer(r'^\s*\"([A-Za-z0-9_\-\.]+)\"\s*:\s*', content, re.MULTILINE):
-                    keys.append({"name": m.group(1), "type": "config_key", "line": content[: m.start()].count("\n") + 1})
+                for m in re.finditer(r"^\s*\"([A-Za-z0-9_\-\.]+)\"\s*:\s*", content, re.MULTILINE):
+                    keys.append(
+                        {
+                            "name": m.group(1),
+                            "type": "config_key",
+                            "line": content[: m.start()].count("\n") + 1,
+                        }
+                    )
             elif suffix in [".yaml", ".yml"]:
                 # YAML top-level keys: key: value at column 0
-                for m in re.finditer(r'^(\w[\w\-\./]*)\s*:\s*', content, re.MULTILINE):
+                for m in re.finditer(r"^(\w[\w\-\./]*)\s*:\s*", content, re.MULTILINE):
                     if m.start() == content.rfind("\n", 0, m.start()) + 1:  # ensure start of line
-                        keys.append({"name": m.group(1), "type": "config_key", "line": content[: m.start()].count("\n") + 1})
+                        keys.append(
+                            {
+                                "name": m.group(1),
+                                "type": "config_key",
+                                "line": content[: m.start()].count("\n") + 1,
+                            }
+                        )
             elif suffix == ".toml":
                 # TOML keys: key = value at top-level (ignore dotted tables)
-                for m in re.finditer(r'^\s*([A-Za-z0-9_\-]+)\s*=\s*', content, re.MULTILINE):
-                    keys.append({"name": m.group(1), "type": "config_key", "line": content[: m.start()].count("\n") + 1})
+                for m in re.finditer(r"^\s*([A-Za-z0-9_\-]+)\s*=\s*", content, re.MULTILINE):
+                    keys.append(
+                        {
+                            "name": m.group(1),
+                            "type": "config_key",
+                            "line": content[: m.start()].count("\n") + 1,
+                        }
+                    )
             elif suffix == ".ini":
                 # INI: capture both [sections] and keys inside sections
                 in_section = False
                 for i, line in enumerate(content.splitlines(), 1):
-                    if re.match(r'^\s*\[.+\]', line):
+                    if re.match(r"^\s*\[.+\]", line):
                         in_section = True
-                        keys.append({"name": re.sub(r'^\s*\[|\]\s*$', '', line).strip(), "type": "config_section", "line": i})
+                        keys.append(
+                            {
+                                "name": re.sub(r"^\s*\[|\]\s*$", "", line).strip(),
+                                "type": "config_section",
+                                "line": i,
+                            }
+                        )
                         continue
                     # Capture key=value lines regardless of being in a section
-                    m = re.match(r'^\s*([A-Za-z0-9_\-\.]+)\s*=\s*', line)
+                    m = re.match(r"^\s*([A-Za-z0-9_\-\.]+)\s*=\s*", line)
                     if m:
                         keys.append({"name": m.group(1), "type": "config_key", "line": i})
         except Exception:
@@ -254,7 +280,9 @@ class GenericAnalyzer(LanguageAnalyzer):
                         structure.framework = getattr(structure, "framework", None) or "helm"
                     elif name == "kustomization.yaml":
                         structure.framework = "kustomize"
-                    elif ".github" in str(file_path).replace("\\", "/") and "/workflows/" in str(file_path).replace("\\", "/"):
+                    elif ".github" in str(file_path).replace("\\", "/") and "/workflows/" in str(
+                        file_path
+                    ).replace("\\", "/"):
                         structure.framework = "github-actions"
         except Exception:
             # Never fail generic structure on heuristics
@@ -635,36 +663,54 @@ class GenericAnalyzer(LanguageAnalyzer):
 
             # Common YAML references
             # Images (compose and k8s)
-            for m in re.finditer(r'(?mi)^\s*image:\s*[\"\']?([^\s\"\']+)', content):
+            for m in re.finditer(r"(?mi)^\s*image:\s*[\"\']?([^\s\"\']+)", content):
                 imports.append(ImportInfo(module=m.group(1), type="image", is_relative=False))
 
             if is_compose:
                 # depends_on services
                 lines = content.splitlines()
                 for i, line in enumerate(lines):
-                    if re.match(r'^\s*depends_on\s*:\s*$', line):
+                    if re.match(r"^\s*depends_on\s*:\s*$", line):
                         j = i + 1
-                        while j < len(lines) and re.match(r'^\s*-\s*', lines[j]):
-                            svc = re.sub(r'^\s*-\s*', '', lines[j]).strip()
+                        while j < len(lines) and re.match(r"^\s*-\s*", lines[j]):
+                            svc = re.sub(r"^\s*-\s*", "", lines[j]).strip()
                             if svc:
-                                imports.append(ImportInfo(module=svc, type="depends_on", is_relative=False))
+                                imports.append(
+                                    ImportInfo(module=svc, type="depends_on", is_relative=False)
+                                )
                             j += 1
                 # External compose file references via extends/include (compose v2)
-                for m in re.finditer(r'(?mi)^\s*extends:\s*[\"\']?([^\s\"\']+)', content):
-                    imports.append(ImportInfo(module=m.group(1), type="extends", is_relative=self._is_relative_path(m.group(1))))
+                for m in re.finditer(r"(?mi)^\s*extends:\s*[\"\']?([^\s\"\']+)", content):
+                    imports.append(
+                        ImportInfo(
+                            module=m.group(1),
+                            type="extends",
+                            is_relative=self._is_relative_path(m.group(1)),
+                        )
+                    )
 
             if looks_k8s:
                 # ConfigMap and Secret references
-                for m in re.finditer(r'(?mis)(configMapRef|configMapKeyRef):\s*.*?\bname:\s*([\w.-]+)', content):
-                    imports.append(ImportInfo(module=m.group(2), type="configmap", is_relative=False))
-                for m in re.finditer(r'(?mis)(secretRef|secretKeyRef):\s*.*?\bname:\s*([\w.-]+)', content):
+                for m in re.finditer(
+                    r"(?mis)(configMapRef|configMapKeyRef):\s*.*?\bname:\s*([\w.-]+)", content
+                ):
+                    imports.append(
+                        ImportInfo(module=m.group(2), type="configmap", is_relative=False)
+                    )
+                for m in re.finditer(
+                    r"(?mis)(secretRef|secretKeyRef):\s*.*?\bname:\s*([\w.-]+)", content
+                ):
                     imports.append(ImportInfo(module=m.group(2), type="secret", is_relative=False))
                 # Ingress hosts
-                for m in re.finditer(r'(?mi)^\s*host:\s*([^\s#]+)', content):
-                    imports.append(ImportInfo(module=m.group(1), type="ingress_host", is_relative=False))
+                for m in re.finditer(r"(?mi)^\s*host:\s*([^\s#]+)", content):
+                    imports.append(
+                        ImportInfo(module=m.group(1), type="ingress_host", is_relative=False)
+                    )
                 # ServiceAccounts
-                for m in re.finditer(r'(?mi)^\s*serviceAccountName:\s*([\w.-]+)', content):
-                    imports.append(ImportInfo(module=m.group(1), type="serviceaccount", is_relative=False))
+                for m in re.finditer(r"(?mi)^\s*serviceAccountName:\s*([\w.-]+)", content):
+                    imports.append(
+                        ImportInfo(module=m.group(1), type="serviceaccount", is_relative=False)
+                    )
 
         return imports
 
@@ -711,7 +757,9 @@ class GenericAnalyzer(LanguageAnalyzer):
                         structure.framework = getattr(structure, "framework", None) or "helm"
                     elif name == "kustomization.yaml":
                         structure.framework = "kustomize"
-                    elif ".github" in str(file_path).replace("\\", "/") and "/workflows/" in str(file_path).replace("\\", "/"):
+                    elif ".github" in str(file_path).replace("\\", "/") and "/workflows/" in str(
+                        file_path
+                    ).replace("\\", "/"):
                         structure.framework = "github-actions"
         except Exception:
             # Never fail generic structure on heuristics
@@ -807,7 +855,10 @@ class GenericAnalyzer(LanguageAnalyzer):
 
     def _looks_like_kubernetes_yaml(self, content: str) -> bool:
         # Heuristic: presence of apiVersion and kind keys
-        return bool(re.search(r"(?mi)^\s*apiVersion\s*:\s*\S+", content) and re.search(r"(?mi)^\s*kind\s*:\s*\S+", content))
+        return bool(
+            re.search(r"(?mi)^\s*apiVersion\s*:\s*\S+", content)
+            and re.search(r"(?mi)^\s*kind\s*:\s*\S+", content)
+        )
 
     def _extract_compose_services(self, content: str) -> List[Dict[str, Any]]:
         """Best-effort extraction of docker-compose services with images."""
@@ -815,7 +866,7 @@ class GenericAnalyzer(LanguageAnalyzer):
         lines = content.splitlines()
         # Find the services: block
         try:
-            svc_start = next(i for i, l in enumerate(lines) if re.match(r'^\s*services\s*:\s*$', l))
+            svc_start = next(i for i, l in enumerate(lines) if re.match(r"^\s*services\s*:\s*$", l))
         except StopIteration:
             return services
 
@@ -824,7 +875,7 @@ class GenericAnalyzer(LanguageAnalyzer):
         while i < len(lines):
             line = lines[i]
             # Service key like "  web:" or with more spaces
-            m = re.match(r'^(\s{2,})([A-Za-z0-9._-]+)\s*:\s*$', line)
+            m = re.match(r"^(\s{2,})([A-Za-z0-9._-]+)\s*:\s*$", line)
             if m:
                 base_indent = len(m.group(1))
                 name = m.group(2)
@@ -833,22 +884,22 @@ class GenericAnalyzer(LanguageAnalyzer):
                 while j < len(lines):
                     ln = lines[j]
                     # Stop when indent less than or equal to base and a key starts
-                    if re.match(r'^\s*$', ln):
+                    if re.match(r"^\s*$", ln):
                         j += 1
                         continue
-                    cur_indent = len(ln) - len(ln.lstrip(' '))
+                    cur_indent = len(ln) - len(ln.lstrip(" "))
                     if cur_indent <= base_indent:
                         break
                     # Capture common fields
                     img_m = re.match(r'^\s*image\s*:\s*"?([^"\s]+)"?', ln)
                     if img_m:
                         info["image"] = img_m.group(1)
-                    port_m = re.match(r'^\s*ports\s*:\s*$', ln)
+                    port_m = re.match(r"^\s*ports\s*:\s*$", ln)
                     if port_m:
                         # count following list items
                         k = j + 1
                         ports = 0
-                        while k < len(lines) and re.match(r'^\s*-\s*', lines[k]):
+                        while k < len(lines) and re.match(r"^\s*-\s*", lines[k]):
                             ports += 1
                             k += 1
                         if ports:
@@ -858,7 +909,7 @@ class GenericAnalyzer(LanguageAnalyzer):
                 i = j
                 continue
             # Break if we hit another top-level key
-            if re.match(r'^\s*\w[^:]*\s*:\s*$', line) and not line.startswith('  '):
+            if re.match(r"^\s*\w[^:]*\s*:\s*$", line) and not line.startswith("  "):
                 break
             i += 1
 
@@ -867,13 +918,13 @@ class GenericAnalyzer(LanguageAnalyzer):
     def _extract_k8s_resources(self, content: str) -> List[Dict[str, Any]]:
         """Extract Kubernetes resources (kind, name, images) from YAML (supports multi-doc)."""
         resources: List[Dict[str, Any]] = []
-        docs = re.split(r'(?m)^---\s*$', content)
+        docs = re.split(r"(?m)^---\s*$", content)
         for doc in docs:
-            kind_m = re.search(r'(?mi)^\s*kind\s*:\s*([\w.-]+)', doc)
+            kind_m = re.search(r"(?mi)^\s*kind\s*:\s*([\w.-]+)", doc)
             if not kind_m:
                 continue
             res: Dict[str, Any] = {"kind": kind_m.group(1)}
-            name_m = re.search(r'(?mis)metadata\s*:\s*.*?\bname\s*:\s*([\w.-]+)', doc)
+            name_m = re.search(r"(?mis)metadata\s*:\s*.*?\bname\s*:\s*([\w.-]+)", doc)
             if name_m:
                 res["name"] = name_m.group(1)
             # collect images
@@ -900,23 +951,23 @@ class GenericAnalyzer(LanguageAnalyzer):
         for ln in lines:
             if not ln.strip():
                 continue
-            leading = len(ln) - len(ln.lstrip(' \t'))
+            leading = len(ln) - len(ln.lstrip(" \t"))
             if leading > max_indent:
                 max_indent = leading
-            if ln.startswith('\t'):
+            if ln.startswith("\t"):
                 tabs += 1
-            elif ln.startswith(' '):
+            elif ln.startswith(" "):
                 spaces += 1
-                count = len(ln) - len(ln.lstrip(' '))
+                count = len(ln) - len(ln.lstrip(" "))
                 if count:
                     indent_sizes[count] = indent_sizes.get(count, 0) + 1
-        style = 'tabs' if tabs > spaces else 'spaces'
+        style = "tabs" if tabs > spaces else "spaces"
         return {
-            'style': style,
-            'indent_char': 'tab' if style == 'tabs' else 'space',
-            'indent_sizes': indent_sizes,
-            'max_level': self._calculate_max_indent(lines),
-            'max_indent': max_indent,
+            "style": style,
+            "indent_char": "tab" if style == "tabs" else "space",
+            "indent_sizes": indent_sizes,
+            "max_level": self._calculate_max_indent(lines),
+            "max_indent": max_indent,
         }
 
     def _calculate_max_indent(self, lines: List[str]) -> int:
@@ -924,8 +975,8 @@ class GenericAnalyzer(LanguageAnalyzer):
         # Determine common indent size (2 or 4), fallback 4
         sizes: Dict[int, int] = {}
         for ln in lines:
-            if ln.startswith(' '):
-                count = len(ln) - len(ln.lstrip(' '))
+            if ln.startswith(" "):
+                count = len(ln) - len(ln.lstrip(" "))
                 if count:
                     sizes[count] = sizes.get(count, 0) + 1
         # Pick the most common divisor of 2 or 4
@@ -941,11 +992,11 @@ class GenericAnalyzer(LanguageAnalyzer):
         for ln in lines:
             if not ln.strip():
                 continue
-            if ln.startswith('\t'):
+            if ln.startswith("\t"):
                 # Treat tab as one level
-                level = ln.count('\t')
+                level = ln.count("\t")
             else:
-                spaces = len(ln) - len(ln.lstrip(' '))
+                spaces = len(ln) - len(ln.lstrip(" "))
                 level = spaces // indent_unit if indent_unit else 0
             if level > max_level:
                 max_level = level

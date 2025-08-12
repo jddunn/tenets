@@ -2,7 +2,7 @@
 Unit tests for the HTML code analyzer with modern web framework support.
 
 This module tests the HTML-specific code analysis functionality including
-resource imports, semantic elements, accessibility features, 
+resource imports, semantic elements, accessibility features,
 web components, framework detection, and modern HTML5 features.
 
 Test Coverage:
@@ -374,13 +374,13 @@ class TestStructureExtraction:
         assert structure.viewport is not None
         assert structure.is_responsive is True
 
-        assert hasattr(structure, 'header_count') and structure.header_count == 1
-        assert hasattr(structure, 'nav_count') and structure.nav_count == 1
-        assert hasattr(structure, 'main_count') and structure.main_count == 1
-        assert hasattr(structure, 'article_count') and structure.article_count == 1
-        assert hasattr(structure, 'section_count') and structure.section_count == 2
-        assert hasattr(structure, 'aside_count') and structure.aside_count == 1
-        assert hasattr(structure, 'footer_count') and structure.footer_count == 1
+        assert hasattr(structure, "header_count") and structure.header_count == 1
+        assert hasattr(structure, "nav_count") and structure.nav_count == 1
+        assert hasattr(structure, "main_count") and structure.main_count == 1
+        assert hasattr(structure, "article_count") and structure.article_count == 1
+        assert hasattr(structure, "section_count") and structure.section_count == 2
+        assert hasattr(structure, "aside_count") and structure.aside_count == 1
+        assert hasattr(structure, "footer_count") and structure.footer_count == 1
 
     def test_extract_forms_and_inputs(self, analyzer):
         """Test extraction of forms and input elements."""
@@ -749,7 +749,7 @@ class TestComplexityCalculation:
 </html>
 """
         good_metrics = analyzer.calculate_complexity(good_html, Path("test.html"))
-        
+
         # Poor accessibility
         poor_html = """
 <!DOCTYPE html>
@@ -791,7 +791,7 @@ class TestComplexityCalculation:
 </html>
 """
         good_metrics = analyzer.calculate_complexity(good_html, Path("test.html"))
-        
+
         # Poor SEO
         poor_html = """
 <html>
@@ -821,7 +821,7 @@ class TestComplexityCalculation:
 </html>
 """
         good_metrics = analyzer.calculate_complexity(good_html, Path("test.html"))
-        
+
         # Poor performance
         poor_html = """
 <!DOCTYPE html>
@@ -892,8 +892,8 @@ class TestComplexityCalculation:
 </html>
 """
         react_metrics = analyzer.calculate_complexity(react_html, Path("test.html"))
-        assert hasattr(react_metrics, 'react_components')
-        assert hasattr(react_metrics, 'jsx_expressions')
+        assert hasattr(react_metrics, "react_components")
+        assert hasattr(react_metrics, "jsx_expressions")
 
         # Vue
         vue_html = """
@@ -910,8 +910,8 @@ class TestComplexityCalculation:
 </html>
 """
         vue_metrics = analyzer.calculate_complexity(vue_html, Path("test.html"))
-        assert hasattr(vue_metrics, 'vue_directives')
-        assert hasattr(vue_metrics, 'vue_interpolations')
+        assert hasattr(vue_metrics, "vue_directives")
+        assert hasattr(vue_metrics, "vue_interpolations")
 
         # Angular
         angular_html = """
@@ -928,8 +928,8 @@ class TestComplexityCalculation:
 </html>
 """
         angular_metrics = analyzer.calculate_complexity(angular_html, Path("test.html"))
-        assert hasattr(angular_metrics, 'angular_directives')
-        assert hasattr(angular_metrics, 'angular_bindings')
+        assert hasattr(angular_metrics, "angular_directives")
+        assert hasattr(angular_metrics, "angular_bindings")
 
 
 class TestHTMLParser:
@@ -1096,7 +1096,7 @@ class TestEdgeCases:
         # Should handle various template syntaxes without errors
         structure = analyzer.extract_structure(html, Path("test.html"))
         metrics = analyzer.calculate_complexity(html, Path("test.html"))
-        
+
         assert structure is not None
         assert metrics is not None
 
@@ -1133,7 +1133,7 @@ class TestEdgeCases:
 </html>
 """
         exports = analyzer.extract_exports(html, Path("test.html"))
-        
+
         custom_elements = [exp for exp in exports if exp["type"] == "custom_element"]
         assert any(exp["name"] == "my-element" for exp in custom_elements)
 
@@ -1165,7 +1165,7 @@ class TestEdgeCases:
 """
         structure = analyzer.extract_structure(html, Path("test.html"))
         exports = analyzer.extract_exports(html, Path("test.html"))
-        
+
         # Should recognize AMP components as custom elements
         custom_elements = [exp for exp in exports if exp["type"] == "custom_element"]
         assert any("amp-" in exp["name"] for exp in custom_elements)
@@ -1202,7 +1202,7 @@ class TestEdgeCases:
 """
         structure = analyzer.extract_structure(html, Path("test.html"))
         exports = analyzer.extract_exports(html, Path("test.html"))
-        
+
         og_tags = [exp for exp in exports if exp["type"] == "open_graph"]
         assert len(og_tags) == 4
 
@@ -1242,6 +1242,6 @@ class TestEdgeCases:
 </html>
 """
         metrics = analyzer.calculate_complexity(html, Path("test.html"))
-        
+
         assert metrics.max_depth >= 10
         assert metrics.avg_depth > 5

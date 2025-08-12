@@ -23,6 +23,7 @@ from .implementations.ruby_analyzer import RubyAnalyzer
 from .implementations.php_analyzer import PhpAnalyzer
 from .implementations.rust_analyzer import RustAnalyzer
 from .implementations.generic_analyzer import GenericAnalyzer
+
 # New analyzers
 from .implementations.html_analyzer import HTMLAnalyzer
 from .implementations.css_analyzer import CSSAnalyzer
@@ -137,17 +138,45 @@ class CodeAnalyzer:
         generic = GenericAnalyzer()
         generic_exts = [
             # Docs/markdown
-            ".md", ".markdown", ".mdown", ".mkd", ".mkdn", ".mdwn", ".mdx",
+            ".md",
+            ".markdown",
+            ".mdown",
+            ".mkd",
+            ".mkdn",
+            ".mdwn",
+            ".mdx",
             # Config/data files
-            ".toml", ".ini", ".cfg", ".conf", ".cnf", ".properties", ".props",
-            ".env", ".dotenv", ".config", ".rc", ".editorconfig",
-            ".yml", ".yaml", ".json", ".xml", ".sql",
+            ".toml",
+            ".ini",
+            ".cfg",
+            ".conf",
+            ".cnf",
+            ".properties",
+            ".props",
+            ".env",
+            ".dotenv",
+            ".config",
+            ".rc",
+            ".editorconfig",
+            ".yml",
+            ".yaml",
+            ".json",
+            ".xml",
+            ".sql",
             # Shell and variants
-            ".sh", ".bash", ".zsh", ".fish",
+            ".sh",
+            ".bash",
+            ".zsh",
+            ".fish",
             # Build and misc text
-            ".dockerfile", ".makefile", ".cmake", ".lock",
+            ".dockerfile",
+            ".makefile",
+            ".cmake",
+            ".lock",
             # IaC/common config
-            ".tf", ".tfvars", ".hcl",
+            ".tf",
+            ".tfvars",
+            ".hcl",
         ]
         for ext in generic_exts:
             if ext not in analyzers:
@@ -476,8 +505,18 @@ class CodeAnalyzer:
             return self.analyzers.get(".cmake")
         # Common dotfiles and env files (no extensions)
         special_generic_names = {
-            ".env", ".env.local", ".env.dev", ".env.development", ".env.prod", ".env.production",
-            ".gitignore", ".gitattributes", ".editorconfig", ".npmrc", ".yarnrc", ".nvmrc",
+            ".env",
+            ".env.local",
+            ".env.dev",
+            ".env.development",
+            ".env.prod",
+            ".env.production",
+            ".gitignore",
+            ".gitattributes",
+            ".editorconfig",
+            ".npmrc",
+            ".yarnrc",
+            ".nvmrc",
         }
         if file_path.name in special_generic_names or file_path.name.lower().startswith(".env"):
             return GenericAnalyzer()
@@ -510,8 +549,18 @@ class CodeAnalyzer:
             return self.analyzers.get(".cmake", GenericAnalyzer()).language_name
         # Common dotfiles and env files
         special_generic_names = {
-            ".env", ".env.local", ".env.dev", ".env.development", ".env.prod", ".env.production",
-            ".gitignore", ".gitattributes", ".editorconfig", ".npmrc", ".yarnrc", ".nvmrc",
+            ".env",
+            ".env.local",
+            ".env.dev",
+            ".env.development",
+            ".env.prod",
+            ".env.production",
+            ".gitignore",
+            ".gitattributes",
+            ".editorconfig",
+            ".npmrc",
+            ".yarnrc",
+            ".nvmrc",
         }
         if file_path.name in special_generic_names or file_path.name.lower().startswith(".env"):
             return "generic"

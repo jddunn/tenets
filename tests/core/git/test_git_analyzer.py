@@ -14,6 +14,7 @@ from tenets.config import TenetsConfig
 try:
     from git import Repo
     import subprocess
+
     result = subprocess.run(["git", "--version"], capture_output=True, check=True)
     _HAS_GIT = True
 except (ImportError, subprocess.CalledProcessError, FileNotFoundError):
@@ -25,7 +26,7 @@ def temp_git_repo(tmp_path):
     """Create a temporary git repository."""
     if not _HAS_GIT:
         pytest.skip("Git not available")
-    
+
     from git import Repo
 
     # Initialize repo

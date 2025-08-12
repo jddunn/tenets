@@ -158,9 +158,11 @@ Bundler.require(:default, Rails.env)
 """
         imports = analyzer.extract_imports(code, Path("test.rb"))
 
-        bundler_imports = [imp for imp in imports if "Bundler" in imp.module or imp.type == "bundler_require"]
+        bundler_imports = [
+            imp for imp in imports if "Bundler" in imp.module or imp.type == "bundler_require"
+        ]
         assert len(bundler_imports) > 0
-        assert any(imp.loads_all_gems for imp in bundler_imports if hasattr(imp, 'loads_all_gems'))
+        assert any(imp.loads_all_gems for imp in bundler_imports if hasattr(imp, "loads_all_gems"))
 
     def test_gemfile_dependencies(self, analyzer):
         """Test extraction from Gemfile."""
@@ -283,7 +285,7 @@ end
         exports = analyzer.extract_exports(code, Path("test.rb"))
 
         method_exports = [e for e in exports if e["type"] == "method"]
-        
+
         # Only public methods should be exported
         assert any(e["name"] == "public_method" for e in method_exports)
         assert any(e["name"] == "another_public_method" for e in method_exports)
@@ -330,7 +332,7 @@ end
         exports = analyzer.extract_exports(code, Path("test.rb"))
 
         method_exports = [e for e in exports if e["type"] == "method"]
-        
+
         class_method = next((e for e in method_exports if e["name"] == "class_method"), None)
         if class_method:
             assert class_method["is_class_method"] is True
@@ -389,7 +391,7 @@ end
 
         assert len(structure.classes) == 1
         user_class = structure.classes[0]
-        
+
         assert user_class.name == "User"
         assert "ActiveRecord::Base" in user_class.bases
 
@@ -503,9 +505,9 @@ $global_var = "global"
         assert "@instance_var" in structure.instance_variables
         assert "@another_var" in structure.instance_variables
         assert "@dynamic_var" in structure.instance_variables
-        
+
         assert "@@class_var" in structure.class_variables
-        
+
         assert "$global_var" in structure.global_variables
 
     def test_extract_aliases(self, analyzer):
@@ -523,7 +525,7 @@ end
         structure = analyzer.extract_structure(code, Path("test.rb"))
 
         assert len(structure.aliases) >= 2
-        
+
         alias_names = [(a["new_name"], a["original_name"]) for a in structure.aliases]
         assert ("new_method", "original_method") in alias_names
         assert ("another_alias", "original_method") in alias_names
@@ -914,7 +916,7 @@ RSpec.describe User do
 end
 """
         structure = analyzer.extract_structure(code, Path("test.rb"))
-        
+
         # Should handle DSL patterns
         assert structure.block_count > 0
         assert isinstance(structure, CodeStructure)

@@ -421,7 +421,7 @@ def process_text(text: str) -> str:
     """Process multilingual text."""
     return text.upper()
 ''',
-            encoding='utf-8'
+            encoding="utf-8",
         )
 
         summary = summarizer.summarize_file(unicode_file)

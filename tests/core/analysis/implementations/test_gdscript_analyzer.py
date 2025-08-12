@@ -65,7 +65,7 @@ const Icon = preload("res://icon.png")
         imports = analyzer.extract_imports(code, Path("test.gd"))
 
         assert len(imports) == 4
-        
+
         player_import = next(imp for imp in imports if "player.gd" in imp.module)
         assert player_import.type == "preload"
         assert player_import.alias == "Player"
@@ -90,9 +90,9 @@ func _ready():
 
         load_imports = [imp for imp in imports if imp.type == "load"]
         assert len(load_imports) == 3
-        
+
         assert all(imp.is_runtime_load for imp in load_imports)
-        
+
         texture_import = next(imp for imp in load_imports if "sprite.png" in imp.module)
         assert texture_import.resource_type == "texture"
 
@@ -150,7 +150,7 @@ func _ready():
     pass
 """
         imports_v3 = analyzer.extract_imports(code_v3, Path("test.gd"))
-        
+
         tool_import = next((imp for imp in imports_v3 if imp.type == "tool_mode"), None)
         assert tool_import is not None
         assert tool_import.is_editor_script is True
@@ -164,7 +164,7 @@ func _ready():
     pass
 """
         imports_v4 = analyzer.extract_imports(code_v4, Path("test.gd"))
-        
+
         tool_annotation = next((imp for imp in imports_v4 if imp.type == "annotation"), None)
         assert tool_annotation is not None
         assert tool_annotation.is_editor_script is True
@@ -227,7 +227,9 @@ export(Array, Resource) var items = []
 """
         exports = analyzer.extract_exports(code, Path("test.gd"))
 
-        export_vars = [e for e in exports if e["type"] == "export_var" and e.get("godot_version") == 4]
+        export_vars = [
+            e for e in exports if e["type"] == "export_var" and e.get("godot_version") == 4
+        ]
         assert len(export_vars) >= 4
 
         speed_export = next(e for e in export_vars if e["name"] == "speed_multiplier")
@@ -885,7 +887,7 @@ func multiline_call():
     )
 """
         structure = analyzer.extract_structure(code, Path("test.gd"))
-        
+
         assert len(structure.variables) >= 2
         assert len(structure.functions) == 1
 
@@ -910,7 +912,7 @@ func format_text():
     })
 '''
         structure = analyzer.extract_structure(code, Path("test.gd"))
-        
+
         # Should handle without errors
         assert len(structure.variables) >= 3
         assert len(structure.functions) == 1
@@ -931,7 +933,7 @@ func _ready():
     var filtered = array.filter(func(x): return x > 2)
 """
         metrics = analyzer.calculate_complexity(code, Path("test.gd"))
-        
+
         # Should detect complexity from lambdas
         assert metrics.cyclomatic >= 2
 
@@ -956,7 +958,7 @@ func wait_for_signal():
     await my_signal
 """
         structure = analyzer.extract_structure(code, Path("test.gd"))
-        
+
         assert len(structure.functions) >= 3
 
     def test_annotations_and_decorators(self, analyzer):
@@ -985,6 +987,6 @@ func old_function():
     pass
 """
         structure = analyzer.extract_structure(code, Path("test.gd"))
-        
+
         assert structure.is_tool_script is True
         assert len(structure.export_vars) >= 5

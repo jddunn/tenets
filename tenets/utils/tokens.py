@@ -98,12 +98,14 @@ def _get_encoding_for_model(model: Optional[str]):
                         return tiktoken.encoding_for_model(model)  # type: ignore[attr-defined]
                     except Exception:
                         pass
+
                     # Heuristic wrapper so tests for known models still receive non-None
                     class _HeuristicEncoding:
                         def encode(self, text: str):  # type: ignore
                             if not text:
                                 return []
                             return list(range(max(1, len(text) // 4)))
+
                     return _HeuristicEncoding()
                 return None  # Forced error path expects None
         else:
@@ -117,12 +119,14 @@ def _get_encoding_for_model(model: Optional[str]):
                         return tiktoken.get_encoding(name)
                     except Exception:
                         continue
+
                 # Heuristic fallback for unknown models
                 class _HeuristicEncoding:
                     def encode(self, text: str):  # type: ignore
                         if not text:
                             return []
                         return list(range(max(1, len(text) // 4)))
+
                 return _HeuristicEncoding()
     else:
         # No model provided: try standard order
@@ -131,12 +135,14 @@ def _get_encoding_for_model(model: Optional[str]):
                 return tiktoken.get_encoding(name)
             except Exception:
                 continue
+
         # Heuristic fallback when all encodings fail
         class _HeuristicEncoding:
             def encode(self, text: str):  # type: ignore
                 if not text:
                     return []
                 return list(range(max(1, len(text) // 4)))
+
         return _HeuristicEncoding()
 
 

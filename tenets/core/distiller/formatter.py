@@ -115,7 +115,7 @@ class ContextFormatter:
             lines.append("> Suggestions:")
             lines.append("- Lower the relevance threshold or use `--mode greedy`.")
             lines.append("- Increase token budget with `--max-tokens`.")
-            lines.append("- Provide include patterns, e.g., `--include \"*.py,*.md\"`.")
+            lines.append('- Provide include patterns, e.g., `--include "*.py,*.md"`.')
             lines.append("- Ensure your prompt has keywords present in the repo.")
             lines.append("")
 

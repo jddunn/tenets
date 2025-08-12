@@ -208,7 +208,7 @@ class PromptParser:
             "url": r"https?://[^\s]+",
             "config_key": r"(?:config|setting|env|environment)\s+([A-Z_][A-Z0-9_]*)",
         }
-        
+
         # Temporal expression patterns
         self._temporal_patterns = {
             "relative": {
@@ -263,13 +263,13 @@ class PromptParser:
 
             if yake:
                 self._keyword_extractor = yake.KeywordExtractor(
-                lan="en",
-                n=3,  # Max ngram size
-                dedupLim=0.7,
-                dedupFunc="seqm",
-                windowsSize=1,
-                top=20,
-                features=None,
+                    lan="en",
+                    n=3,  # Max ngram size
+                    dedupLim=0.7,
+                    dedupFunc="seqm",
+                    windowsSize=1,
+                    top=20,
+                    features=None,
                 )
                 self.logger.debug("YAKE keyword extractor initialized")
             else:
@@ -913,7 +913,9 @@ class PromptParser:
                 if not entity_name:
                     entity_name = match.group(0)
 
-                self.logger.debug(f"Found {entity_type} entity: {entity_name} from match: {match.group(0)}")
+                self.logger.debug(
+                    f"Found {entity_type} entity: {entity_name} from match: {match.group(0)}"
+                )
 
                 # Get surrounding context
                 start = max(0, match.start() - 20)
@@ -959,7 +961,9 @@ class PromptParser:
         patterns.extend(file_mentions)
 
         # Look for directory patterns
-        dir_patterns = re.findall(r"(?:in|from|under)\s+(?:the\s+)?([a-zA-Z0-9_\-/]+)/?(?:\s+directory)?", text)
+        dir_patterns = re.findall(
+            r"(?:in|from|under)\s+(?:the\s+)?([a-zA-Z0-9_\-/]+)/?(?:\s+directory)?", text
+        )
         patterns.extend(dir_patterns)
 
         return list(set(patterns))  # Deduplicate
@@ -1117,15 +1121,23 @@ class PromptParser:
         scope["specific_files"] = list(set(files))
 
         # Exclusion patterns
-        exclude_pattern = r"(?:except|exclude|not|ignore)\s+(?:anything\s+in\s+)?([a-zA-Z0-9_\-/*]+/?)"
+        exclude_pattern = (
+            r"(?:except|exclude|not|ignore)\s+(?:anything\s+in\s+)?([a-zA-Z0-9_\-/*]+/?)"
+        )
         exclusions = set(re.findall(exclude_pattern, text, re.IGNORECASE))
 
         # Additionally, capture '... anything in the X directory/folder' tied to exclusion phrases
-        dir_excl_pattern = r"(?:anything\s+in\s+|in\s+)(?:the\s+)?([a-zA-Z0-9_\-./*]+)\s+(?:directory|folder)"
+        dir_excl_pattern = (
+            r"(?:anything\s+in\s+|in\s+)(?:the\s+)?([a-zA-Z0-9_\-./*]+)\s+(?:directory|folder)"
+        )
         for m in re.finditer(dir_excl_pattern, text, re.IGNORECASE):
             # Check for an exclusion keyword shortly before this phrase to reduce false positives
             preceding = text[: m.start()]
-            if re.search(r"(?:except|exclude|ignore|not(?:\s+include|\s+including)?)\b", preceding[-150:], re.IGNORECASE):
+            if re.search(
+                r"(?:except|exclude|ignore|not(?:\s+include|\s+including)?)\b",
+                preceding[-150:],
+                re.IGNORECASE,
+            ):
                 exclusions.add(m.group(1))
 
         scope["exclusions"] = list(exclusions)

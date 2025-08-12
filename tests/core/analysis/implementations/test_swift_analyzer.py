@@ -1311,7 +1311,7 @@ struct Vector2D {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.swift"))
-        
+
         # Should handle custom operators without errors
         assert len(structure.functions) >= 3
         assert len(structure.structs) >= 1
@@ -1347,7 +1347,7 @@ func getValue<T, V>(from object: T, at keyPath: KeyPath<T, V>) -> V {
 }
 """
         structure = analyzer.extract_structure(code, Path("test.swift"))
-        
+
         # Should handle key paths without errors
         assert len(structure.structs) >= 2
 

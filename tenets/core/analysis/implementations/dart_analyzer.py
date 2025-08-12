@@ -88,12 +88,12 @@ class DartAnalyzer(LanguageAnalyzer):
                 is_deferred = "deferred" in line
 
                 # Extract show clause
-                show_match = re.search(r'\bshow\s+([^;]+?)(?:\s+hide|$)', show_hide_part + " ")
+                show_match = re.search(r"\bshow\s+([^;]+?)(?:\s+hide|$)", show_hide_part + " ")
                 if show_match:
                     show_symbols = self._parse_symbols(show_match.group(1))
 
-                # Extract hide clause  
-                hide_match = re.search(r'\bhide\s+([^;]+?)(?:\s+show|$)', show_hide_part + " ")
+                # Extract hide clause
+                hide_match = re.search(r"\bhide\s+([^;]+?)(?:\s+show|$)", show_hide_part + " ")
                 if hide_match:
                     hide_symbols = self._parse_symbols(hide_match.group(1))
 
@@ -141,7 +141,8 @@ class DartAnalyzer(LanguageAnalyzer):
                         module=module_path,
                         line=i,
                         type="export",
-                        is_relative=not module_path.startswith("package:") and not module_path.startswith("dart:"),
+                        is_relative=not module_path.startswith("package:")
+                        and not module_path.startswith("dart:"),
                         show_symbols=self._parse_symbols(show_clause) if show_clause else [],
                         hide_symbols=self._parse_symbols(hide_clause) if hide_clause else [],
                         category=self._categorize_import(module_path),
@@ -194,7 +195,9 @@ class DartAnalyzer(LanguageAnalyzer):
         # import 'stub.dart'
         #   if (dart.library.io) 'io_implementation.dart'
         #   if (dart.library.html) 'web_implementation.dart';
-        cond_import_pattern = r"import\s+['\"]([^'\"]+)['\"]\s*(?:\s*if\s*\([^)]+\)\s*['\"][^'\"]+['\"]\s*)+;"
+        cond_import_pattern = (
+            r"import\s+['\"]([^'\"]+)['\"]\s*(?:\s*if\s*\([^)]+\)\s*['\"][^'\"]+['\"]\s*)+;"
+        )
         for m in re.finditer(cond_import_pattern, content, re.MULTILINE):
             first_module = m.group(1)
             # Avoid duplicates if already added (e.g., if written in one line)
@@ -202,7 +205,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 imports.append(
                     ImportInfo(
                         module=first_module,
-                        line=content[:m.start()].count("\n") + 1,
+                        line=content[: m.start()].count("\n") + 1,
                         type="import",
                         is_relative=first_module.startswith("../") or first_module.startswith("./"),
                         is_package=first_module.startswith("package:"),
@@ -238,7 +241,7 @@ class DartAnalyzer(LanguageAnalyzer):
         class_pattern = r"^\s*(?:abstract\s+)?(?:final\s+)?(?:base\s+)?(?:interface\s+)?(?:mixin\s+)?class\s+([A-Z]\w*)"
         for match in re.finditer(class_pattern, content, re.MULTILINE):
             class_name = match.group(1)
-            
+
             modifiers = []
             match_str = match.group(0)
             if "abstract" in match_str:
@@ -256,7 +259,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 {
                     "name": class_name,
                     "type": "class",
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "modifiers": modifiers,
                     "is_public": True,
                 }
@@ -270,7 +273,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     {
                         "name": match.group(1),
                         "type": "mixin",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "is_public": True,
                     }
                 )
@@ -285,7 +288,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     {
                         "name": func_name,
                         "type": "function",
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "is_public": True,
                         "is_async": ("async" in snippet),
                     }
@@ -295,13 +298,20 @@ class DartAnalyzer(LanguageAnalyzer):
         var_pattern = r"^\s*(?:final\s+|const\s+|late\s+)?(?:static\s+)?(?:final\s+|const\s+)?(?:[\w<>?]+\s+)?([a-z]\w*)\s*(?:=|;)"
         for match in re.finditer(var_pattern, content, re.MULTILINE):
             var_name = match.group(1)
-            if not var_name.startswith("_") and var_name not in ["if", "for", "while", "return", "class", "import"]:
+            if not var_name.startswith("_") and var_name not in [
+                "if",
+                "for",
+                "while",
+                "return",
+                "class",
+                "import",
+            ]:
                 var_type = "constant" if "const" in match.group(0) else "variable"
                 exports.append(
                     {
                         "name": var_name,
                         "type": var_type,
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "is_public": True,
                         "is_final": "final" in match.group(0),
                         "is_late": "late" in match.group(0),
@@ -315,7 +325,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 {
                     "name": match.group(1),
                     "type": "enum",
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "is_public": True,
                 }
             )
@@ -327,7 +337,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 {
                     "name": match.group(1),
                     "type": "typedef",
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "is_public": True,
                 }
             )
@@ -340,7 +350,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 {
                     "name": extension_name,
                     "type": "extension",
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "on_type": match.group(2),
                     "is_public": True,
                 }
@@ -389,24 +399,30 @@ class DartAnalyzer(LanguageAnalyzer):
             (?:\s+implements\s+([^\{]+?))?
             \s*\{
         """
-        
+
         for match in re.finditer(class_pattern, content, re.VERBOSE | re.MULTILINE):
             class_name = match.group(7)
-            
+
             # Extract class modifiers
             modifiers = []
-            if match.group(1): modifiers.append("abstract")
-            if match.group(2): modifiers.append("final")
-            if match.group(3): modifiers.append("base")
-            if match.group(4): modifiers.append("interface")
-            if match.group(5): modifiers.append("mixin")
-            if match.group(6): modifiers.append("sealed")
-            
+            if match.group(1):
+                modifiers.append("abstract")
+            if match.group(2):
+                modifiers.append("final")
+            if match.group(3):
+                modifiers.append("base")
+            if match.group(4):
+                modifiers.append("interface")
+            if match.group(5):
+                modifiers.append("mixin")
+            if match.group(6):
+                modifiers.append("sealed")
+
             # Parse inheritance
             extends = match.group(9).strip() if match.group(9) else None
             mixins = self._parse_type_list(match.group(10)) if match.group(10) else []
             implements = self._parse_type_list(match.group(11)) if match.group(11) else []
-            
+
             # Check if it's a Flutter widget
             is_widget = False
             widget_type = None
@@ -427,17 +443,17 @@ class DartAnalyzer(LanguageAnalyzer):
 
             # Extract class body
             class_body = self._extract_class_body(content, match.end())
-            
+
             if class_body:
                 # Extract constructors
                 constructors = self._extract_constructors(class_body, class_name)
-                
+
                 # Extract methods
                 methods = self._extract_methods(class_body)
-                
+
                 # Extract fields
                 fields = self._extract_fields(class_body)
-                
+
                 # Extract getters/setters
                 properties = self._extract_properties(class_body)
             else:
@@ -448,7 +464,7 @@ class DartAnalyzer(LanguageAnalyzer):
 
             class_info = ClassInfo(
                 name=class_name,
-                line=content[:match.start()].count("\n") + 1,
+                line=content[: match.start()].count("\n") + 1,
                 modifiers=modifiers,
                 generics=match.group(8),
                 bases=[extends] if extends else [],
@@ -462,29 +478,29 @@ class DartAnalyzer(LanguageAnalyzer):
                 widget_type=widget_type,
                 is_sealed="sealed" in modifiers,
             )
-            
+
             # Balance generics angle brackets if regex captured incomplete nested generics
             if class_info.generics:
                 try:
-                    opens = class_info.generics.count('<')
-                    closes = class_info.generics.count('>')
+                    opens = class_info.generics.count("<")
+                    closes = class_info.generics.count(">")
                     if opens > closes:
                         class_info.generics = class_info.generics + (">" * (opens - closes))
                 except Exception:
                     pass
-            
+
             structure.classes.append(class_info)
 
         # Fallback: capture classes with complex generic bounds that the primary regex may miss
         try:
             existing = {c.name for c in structure.classes}
-            complex_class_pattern = r'''^\s*
+            complex_class_pattern = r"""^\s*
                 (?:(abstract|final|base|interface|mixin|sealed)\s+)*
                 class\s+(\w+)\s*<([^\n{]+)>\s*
                 (?:extends\s+([^\n{]+?))?\s*
                 (?:with\s+([^\n{]+?))?\s*
                 (?:implements\s+([^\n{]+?))?\s*\{
-            '''
+            """
             for m in re.finditer(complex_class_pattern, content, re.MULTILINE | re.VERBOSE):
                 name = m.group(2)
                 if name in existing:
@@ -498,7 +514,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 structure.classes.append(
                     ClassInfo(
                         name=name,
-                        line=content[:m.start()].count("\n") + 1,
+                        line=content[: m.start()].count("\n") + 1,
                         generics=generics,
                         bases=[extends] if extends else [],
                         mixins=mixins,
@@ -514,7 +530,7 @@ class DartAnalyzer(LanguageAnalyzer):
             pass
 
         # Extract mixins (standalone)
-        mixin_pattern = r"^\s*(?:base\s+)?mixin\s+(\w+)(?:<([^>]+)>)?(?:\s+on\s+([^{]+))?\s*\{" 
+        mixin_pattern = r"^\s*(?:base\s+)?mixin\s+(\w+)(?:<([^>]+)>)?(?:\s+on\s+([^{]+))?\s*\{"
         for match in re.finditer(mixin_pattern, content, re.MULTILINE):
             mixin_name = match.group(1)
             # Avoid duplicates with mixin classes
@@ -522,7 +538,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 structure.mixins.append(
                     {
                         "name": mixin_name,
-                        "line": content[:match.start()].count("\n") + 1,
+                        "line": content[: match.start()].count("\n") + 1,
                         "generics": match.group(2),
                         "on_types": self._parse_type_list(match.group(3)) if match.group(3) else [],
                     }
@@ -539,34 +555,34 @@ class DartAnalyzer(LanguageAnalyzer):
             (?:(?:async|sync)\s*\*|async)?\s*  # async, async*, or sync*
             (?:=>|\{)
         """
-        
+
         for match in re.finditer(func_pattern, content, re.VERBOSE | re.MULTILINE):
             func_name = match.group(3)
             # Skip if it's inside a class
             if not self._is_top_level(content, match.start()):
                 continue
-                
+
             return_type = match.group(1) or match.group(2)
             params = match.group(4)
-            
-            span = content[match.start():match.end()]
+
+            span = content[match.start() : match.end()]
             is_async = "async" in span
             is_generator = "*" in span
-            
+
             func_info = FunctionInfo(
                 name=func_name,
-                line=content[:match.start()].count("\n") + 1,
+                line=content[: match.start()].count("\n") + 1,
                 return_type=return_type,
                 parameters=self._parse_parameters(params),
                 is_async=is_async,
                 is_generator=is_generator,
                 is_private=func_name.startswith("_"),
             )
-            
+
             structure.functions.append(func_info)
 
         # Extract enums (brace-aware, supports enhanced enums with methods)
-        enum_head_pattern = r"^\s*enum\s+(\w+)(?:\s*<[^>]+>)?(?:\s+implements\s+[^\{]+)?\s*\{" 
+        enum_head_pattern = r"^\s*enum\s+(\w+)(?:\s*<[^>]+>)?(?:\s+implements\s+[^\{]+)?\s*\{"
         for m in re.finditer(enum_head_pattern, content, re.MULTILINE):
             enum_name = m.group(1)
             enum_body = self._extract_block(content, m.end()) or ""
@@ -577,11 +593,11 @@ class DartAnalyzer(LanguageAnalyzer):
             depth = 0
             cutoff = None
             for i, ch in enumerate(enum_body):
-                if ch == '{':
+                if ch == "{":
                     depth += 1
-                elif ch == '}':
+                elif ch == "}":
                     depth = max(0, depth - 1)
-                elif ch == ';' and depth == 0:
+                elif ch == ";" and depth == 0:
                     cutoff = i
                     break
             if cutoff is not None:
@@ -590,9 +606,9 @@ class DartAnalyzer(LanguageAnalyzer):
             structure.enums.append(
                 {
                     "name": enum_name,
-                    "line": content[:m.start()].count("\n") + 1,
+                    "line": content[: m.start()].count("\n") + 1,
                     "values": values,
-                    "has_enhanced_features": ('(' in values_part) or (cutoff is not None),
+                    "has_enhanced_features": ("(" in values_part) or (cutoff is not None),
                 }
             )
 
@@ -601,11 +617,11 @@ class DartAnalyzer(LanguageAnalyzer):
         for match in re.finditer(extension_pattern, content, re.MULTILINE):
             extension_name = match.group(1) or f"on {match.group(2)}"
             on_type = match.group(2).strip()
-            
+
             structure.extensions.append(
                 {
                     "name": extension_name,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "on_type": on_type,
                 }
             )
@@ -616,31 +632,30 @@ class DartAnalyzer(LanguageAnalyzer):
             structure.typedefs.append(
                 {
                     "name": match.group(1),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "definition": match.group(2).strip(),
                 }
             )
 
         # Count null safety features
-        structure.nullable_types = len(re.findall(r'\w+\?(?:\s|,|\))', content))
-        structure.null_assertions = len(re.findall(r'\w+!(?:\.|;|\s|\))', content))
-        structure.late_variables = len(re.findall(r'\blate\s+', content))
-        structure.null_aware_operators = len(re.findall(r'\?\?|\?\.', content))
+        structure.nullable_types = len(re.findall(r"\w+\?(?:\s|,|\))", content))
+        structure.null_assertions = len(re.findall(r"\w+!(?:\.|;|\s|\))", content))
+        structure.late_variables = len(re.findall(r"\blate\s+", content))
+        structure.null_aware_operators = len(re.findall(r"\?\?|\?\.", content))
 
         # Count async features
-        structure.async_functions = len(re.findall(r'\basync\s*(?:\*)?\s*(?:=>|\{)', content))
-        structure.await_expressions = len(re.findall(r'\bawait\s+', content))
-        structure.future_count = len(re.findall(r'\bFuture(?:\s*<|[.(])', content))
-        structure.stream_count = len(re.findall(r'\bStream(?:\s*<|[.(])', content))
+        structure.async_functions = len(re.findall(r"\basync\s*(?:\*)?\s*(?:=>|\{)", content))
+        structure.await_expressions = len(re.findall(r"\bawait\s+", content))
+        structure.future_count = len(re.findall(r"\bFuture(?:\s*<|[.(])", content))
+        structure.stream_count = len(re.findall(r"\bStream(?:\s*<|[.(])", content))
 
         # Detect test file
         structure.is_test_file = (
-            "_test.dart" in file_path.name
-            or file_path.parts and "test" in file_path.parts
+            "_test.dart" in file_path.name or file_path.parts and "test" in file_path.parts
         )
 
         # Detect main function
-        structure.has_main = bool(re.search(r'\bvoid\s+main\s*\(', content))
+        structure.has_main = bool(re.search(r"\bvoid\s+main\s*\(", content))
 
         return structure
 
@@ -668,19 +683,19 @@ class DartAnalyzer(LanguageAnalyzer):
         complexity = 1
 
         decision_keywords = [
-            r'\bif\b',
-            r'\belse\s+if\b',
-            r'\belse\b',
-            r'\bfor\b',
-            r'\bwhile\b',
-            r'\bdo\b',
-            r'\bswitch\b',
-            r'\bcase\b',
-            r'\bcatch\b',
-            r'\b\?\s*[^:]+\s*:',  # Ternary operator
-            r'\?\?',  # Null coalescing
-            r'&&',
-            r'\|\|',
+            r"\bif\b",
+            r"\belse\s+if\b",
+            r"\belse\b",
+            r"\bfor\b",
+            r"\bwhile\b",
+            r"\bdo\b",
+            r"\bswitch\b",
+            r"\bcase\b",
+            r"\bcatch\b",
+            r"\b\?\s*[^:]+\s*:",  # Ternary operator
+            r"\?\?",  # Null coalescing
+            r"&&",
+            r"\|\|",
         ]
 
         for keyword in decision_keywords:
@@ -707,15 +722,15 @@ class DartAnalyzer(LanguageAnalyzer):
 
             # Control structures with nesting penalty
             control_patterns = [
-                (r'\bif\b', 1),
-                (r'\belse\s+if\b', 1),
-                (r'\belse\b', 0),
-                (r'\bfor\b', 1),
-                (r'\bwhile\b', 1),
-                (r'\bdo\b', 1),
-                (r'\bswitch\b', 1),
-                (r'\btry\b', 1),
-                (r'\bcatch\b', 1),
+                (r"\bif\b", 1),
+                (r"\belse\s+if\b", 1),
+                (r"\belse\b", 0),
+                (r"\bfor\b", 1),
+                (r"\bwhile\b", 1),
+                (r"\bdo\b", 1),
+                (r"\bswitch\b", 1),
+                (r"\btry\b", 1),
+                (r"\bcatch\b", 1),
             ]
 
             for pattern, weight in control_patterns:
@@ -727,54 +742,63 @@ class DartAnalyzer(LanguageAnalyzer):
 
         # Count code elements
         metrics.line_count = len(lines)
-        metrics.code_lines = len([l for l in lines if l.strip() and not l.strip().startswith('//')])
-        metrics.comment_lines = len([l for l in lines if l.strip().startswith('//')])
-        metrics.comment_ratio = metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+        metrics.code_lines = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+        metrics.comment_lines = len([l for l in lines if l.strip().startswith("//")])
+        metrics.comment_ratio = (
+            metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+        )
 
         # Count classes and methods
-        metrics.class_count = len(re.findall(r'\bclass\s+\w+', content))
-        metrics.mixin_count = len(re.findall(r'\bmixin\s+\w+', content))
-        metrics.method_count = len(re.findall(r'(?:^|\s)(?:Future|Stream|void|[\w<>]+)\s+\w+\s*\([^)]*\)\s*(?:async\s*)?(?:=>|\{)', content))
+        metrics.class_count = len(re.findall(r"\bclass\s+\w+", content))
+        metrics.mixin_count = len(re.findall(r"\bmixin\s+\w+", content))
+        metrics.method_count = len(
+            re.findall(
+                r"(?:^|\s)(?:Future|Stream|void|[\w<>]+)\s+\w+\s*\([^)]*\)\s*(?:async\s*)?(?:=>|\{)",
+                content,
+            )
+        )
 
         # Null safety metrics
-        metrics.nullable_types = len(re.findall(r'\w+\?(?:\s|,|\))', content))
-        metrics.null_assertions = len(re.findall(r'\w+!(?:\.|;|\s|\))', content))
-        metrics.late_keywords = len(re.findall(r'\blate\s+', content))
-        metrics.null_aware_ops = len(re.findall(r'\?\?|\?\.|\?\.\?', content))
-        metrics.required_keywords = len(re.findall(r'\brequired\s+', content))
+        metrics.nullable_types = len(re.findall(r"\w+\?(?:\s|,|\))", content))
+        metrics.null_assertions = len(re.findall(r"\w+!(?:\.|;|\s|\))", content))
+        metrics.late_keywords = len(re.findall(r"\blate\s+", content))
+        metrics.null_aware_ops = len(re.findall(r"\?\?|\?\.|\?\.\?", content))
+        metrics.required_keywords = len(re.findall(r"\brequired\s+", content))
 
         # Async metrics
-        metrics.async_functions = len(re.findall(r'\basync\s*(?:\*)?\s*(?:=>|\{)', content))
-        metrics.await_count = len(re.findall(r'\bawait\s+', content))
-        metrics.future_count = len(re.findall(r'\bFuture(?:\s*<|[.(])', content))
-        metrics.stream_count = len(re.findall(r'\bStream(?:\s*<|[.(])', content))
-        metrics.completer_count = len(re.findall(r'\bCompleter<', content))
+        metrics.async_functions = len(re.findall(r"\basync\s*(?:\*)?\s*(?:=>|\{)", content))
+        metrics.await_count = len(re.findall(r"\bawait\s+", content))
+        metrics.future_count = len(re.findall(r"\bFuture(?:\s*<|[.(])", content))
+        metrics.stream_count = len(re.findall(r"\bStream(?:\s*<|[.(])", content))
+        metrics.completer_count = len(re.findall(r"\bCompleter<", content))
 
         # Flutter-specific metrics
         if self._is_flutter_file(content):
-            metrics.widget_count = len(re.findall(r'\bWidget\b', content))
-            metrics.build_methods = len(re.findall(r'\bWidget\s+build\s*\(', content))
-            metrics.setstate_calls = len(re.findall(r'\bsetState\s*\(', content))
-            metrics.stateful_widgets = len(re.findall(r'extends\s+StatefulWidget', content))
-            metrics.stateless_widgets = len(re.findall(r'extends\s+StatelessWidget', content))
-            metrics.inherited_widgets = len(re.findall(r'extends\s+InheritedWidget', content))
-            
+            metrics.widget_count = len(re.findall(r"\bWidget\b", content))
+            metrics.build_methods = len(re.findall(r"\bWidget\s+build\s*\(", content))
+            metrics.setstate_calls = len(re.findall(r"\bsetState\s*\(", content))
+            metrics.stateful_widgets = len(re.findall(r"extends\s+StatefulWidget", content))
+            metrics.stateless_widgets = len(re.findall(r"extends\s+StatelessWidget", content))
+            metrics.inherited_widgets = len(re.findall(r"extends\s+InheritedWidget", content))
+
             # Flutter hooks and keys
-            metrics.keys_used = len(re.findall(r'\bKey\s*\(|GlobalKey|ValueKey|ObjectKey|UniqueKey', content))
-            metrics.context_usage = len(re.findall(r'\bBuildContext\b', content))
+            metrics.keys_used = len(
+                re.findall(r"\bKey\s*\(|GlobalKey|ValueKey|ObjectKey|UniqueKey", content)
+            )
+            metrics.context_usage = len(re.findall(r"\bBuildContext\b", content))
 
         # Exception handling metrics
-        metrics.try_blocks = len(re.findall(r'\btry\s*\{', content))
-        metrics.catch_blocks = len(re.findall(r'\bcatch\s*\(', content))
-        metrics.finally_blocks = len(re.findall(r'\bfinally\s*\{', content))
-        metrics.throw_statements = len(re.findall(r'\bthrow\s+', content))
-        metrics.rethrow_statements = len(re.findall(r'\brethrow\s*;', content))
+        metrics.try_blocks = len(re.findall(r"\btry\s*\{", content))
+        metrics.catch_blocks = len(re.findall(r"\bcatch\s*\(", content))
+        metrics.finally_blocks = len(re.findall(r"\bfinally\s*\{", content))
+        metrics.throw_statements = len(re.findall(r"\bthrow\s+", content))
+        metrics.rethrow_statements = len(re.findall(r"\brethrow\s*;", content))
 
         # Type system metrics
-        metrics.generic_types = len(re.findall(r'<[\w\s,<>]+>', content))
-        metrics.type_parameters = len(re.findall(r'<\w+(?:\s+extends\s+\w+)?>', content))
-        metrics.dynamic_types = len(re.findall(r'\bdynamic\b', content))
-        metrics.var_declarations = len(re.findall(r'\bvar\s+\w+', content))
+        metrics.generic_types = len(re.findall(r"<[\w\s,<>]+>", content))
+        metrics.type_parameters = len(re.findall(r"<\w+(?:\s+extends\s+\w+)?>", content))
+        metrics.dynamic_types = len(re.findall(r"\bdynamic\b", content))
+        metrics.var_declarations = len(re.findall(r"\bvar\s+\w+", content))
 
         # Calculate maintainability index
         import math
@@ -783,7 +807,9 @@ class DartAnalyzer(LanguageAnalyzer):
             # Adjusted for Dart
             null_safety_factor = 1 - (metrics.null_assertions * 0.01)
             async_factor = 1 - (metrics.async_functions * 0.01)
-            flutter_factor = 1 - (metrics.setstate_calls * 0.02) if hasattr(metrics, 'setstate_calls') else 1
+            flutter_factor = (
+                1 - (metrics.setstate_calls * 0.02) if hasattr(metrics, "setstate_calls") else 1
+            )
             type_factor = 1 + ((metrics.nullable_types - metrics.dynamic_types) * 0.001)
 
             mi = (
@@ -936,7 +962,7 @@ class DartAnalyzer(LanguageAnalyzer):
 
             # Handle string literals
             if not escape_next:
-                if content[pos:pos+3] in ['"""', "'''"]:
+                if content[pos : pos + 3] in ['"""', "'''"]:
                     in_multiline_string = not in_multiline_string
                     pos += 2
                 elif char in ['"', "'"] and not in_multiline_string:
@@ -954,7 +980,7 @@ class DartAnalyzer(LanguageAnalyzer):
             pos += 1
 
         if brace_count == 0:
-            return content[start_pos:pos - 1]
+            return content[start_pos : pos - 1]
 
         return None
 
@@ -971,7 +997,7 @@ class DartAnalyzer(LanguageAnalyzer):
 
             # Handle string literals
             if not escape_next:
-                if content[pos:pos+3] in ['"""', "'''"]:
+                if content[pos : pos + 3] in ['"""', "'''"]:
                     in_multiline_string = not in_multiline_string
                     pos += 2
                 elif char in ['"', "'"] and not in_multiline_string:
@@ -989,7 +1015,7 @@ class DartAnalyzer(LanguageAnalyzer):
             pos += 1
 
         if brace_count == 0:
-            return content[start_pos:pos - 1]
+            return content[start_pos : pos - 1]
         return None
 
     def _extract_constructors(self, class_body: str, class_name: str) -> List[Dict[str, Any]]:
@@ -1011,7 +1037,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 {
                     "type": "default",
                     "parameters": self._parse_parameters(match.group(1)),
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1023,7 +1049,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     "type": "named",
                     "name": match.group(1),
                     "parameters": self._parse_parameters(match.group(2)),
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1035,7 +1061,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     "type": "factory",
                     "name": match.group(1),
                     "parameters": self._parse_parameters(match.group(2)),
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1047,7 +1073,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     "type": "const",
                     "name": match.group(1),
                     "parameters": self._parse_parameters(match.group(2)),
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1078,7 +1104,7 @@ class DartAnalyzer(LanguageAnalyzer):
 
         for match in re.finditer(method_pattern, class_body, re.VERBOSE):
             method_name = match.group(4)
-            
+
             # Skip constructors
             if method_name[0].isupper():
                 continue
@@ -1086,9 +1112,9 @@ class DartAnalyzer(LanguageAnalyzer):
             is_static = match.group(1) == "static"
             return_type = match.group(2) or match.group(3)
             params = match.group(5)
-            span = class_body[match.start():match.end()]
+            span = class_body[match.start() : match.end()]
             is_async = "async" in span
-            is_override = "@override" in class_body[max(0, match.start()-50):match.start()]
+            is_override = "@override" in class_body[max(0, match.start() - 50) : match.start()]
 
             methods.append(
                 {
@@ -1099,7 +1125,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     "is_async": is_async,
                     "is_override": is_override,
                     "is_private": method_name.startswith("_"),
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1127,7 +1153,7 @@ class DartAnalyzer(LanguageAnalyzer):
 
         for match in re.finditer(field_pattern, class_body, re.VERBOSE | re.MULTILINE):
             field_name = match.group(5)
-            
+
             # Skip if it looks like a method call
             if "(" in match.group(0):
                 continue
@@ -1145,7 +1171,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     "is_const": modifier == "const",
                     "is_late": modifier == "late",
                     "is_private": field_name.startswith("_"),
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1170,7 +1196,7 @@ class DartAnalyzer(LanguageAnalyzer):
                     "name": match.group(2),
                     "type": "getter",
                     "return_type": match.group(1),
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1181,7 +1207,7 @@ class DartAnalyzer(LanguageAnalyzer):
                 {
                     "name": match.group(1),
                     "type": "setter",
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1298,17 +1324,19 @@ class DartAnalyzer(LanguageAnalyzer):
             List of enum value dictionaries
         """
         values = []
-        
+
         # Handle enhanced enums (Dart 2.17+)
         if "(" in enum_body:
             # Enhanced enum with constructors
             value_pattern = r"(\w+)(?:\([^)]*\))?"
             for match in re.finditer(value_pattern, enum_body):
                 if match.group(1) not in ["const", "final"]:
-                    values.append({
-                        "name": match.group(1),
-                        "has_args": "(" in match.group(0),
-                    })
+                    values.append(
+                        {
+                            "name": match.group(1),
+                            "has_args": "(" in match.group(0),
+                        }
+                    )
         else:
             # Simple enum
             for value in enum_body.split(","):

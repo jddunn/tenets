@@ -72,7 +72,9 @@ class CSharpAnalyzer(LanguageAnalyzer):
         namespace_re = re.compile(r"^\s*namespace\s+([\w\.]+)")
         alias_re = re.compile(r"^\s*(?:(global)\s+)?using\s+([\w\.]+)\s*=\s*([^;]+?)\s*;")
         using_re = re.compile(r"^\s*(?:(global)\s+)?using\s+(?:(static)\s+)?([\w\.]+)\s*;")
-        decl_re = re.compile(r"^\s*(?:public\s+)?(?:partial\s+)?(?:abstract\s+)?(?:sealed\s+)?(?:class|interface|struct|enum|delegate|record)\b")
+        decl_re = re.compile(
+            r"^\s*(?:public\s+)?(?:partial\s+)?(?:abstract\s+)?(?:sealed\s+)?(?:class|interface|struct|enum|delegate|record)\b"
+        )
 
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
@@ -179,7 +181,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
         for match in re.finditer(class_pattern, content, re.MULTILINE):
             class_name = match.group(1)
             inheritance = match.group(2)
-            
+
             modifiers = []
             if "abstract" in match.group(0):
                 modifiers.append("abstract")
@@ -208,7 +210,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                 {
                     "name": class_name,
                     "type": "class",
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "namespace": namespace,
                     "modifiers": modifiers,
                     "inheritance": inheritance,
@@ -225,7 +227,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                 {
                     "name": match.group(1),
                     "type": "interface",
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "namespace": namespace,
                     "extends": match.group(2),
                 }
@@ -245,7 +247,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                 {
                     "name": match.group(1),
                     "type": "struct",
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "namespace": namespace,
                     "modifiers": modifiers,
                 }
@@ -260,7 +262,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                 {
                     "name": match.group(1),
                     "type": enum_type,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "namespace": namespace,
                     "base_type": match.group(2),
                 }
@@ -275,7 +277,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "name": match.group(2),
                     "type": "delegate",
                     "return_type": match.group(1),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "namespace": namespace,
                 }
             )
@@ -289,7 +291,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                 {
                     "name": match.group(1),
                     "type": record_type,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "namespace": namespace,
                 }
             )
@@ -372,7 +374,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
             interfaces = []
             is_monobehaviour = False
             is_scriptable_object = False
-            
+
             if inheritance:
                 for item in inheritance.split(","):
                     item = item.strip()
@@ -403,14 +405,14 @@ class CSharpAnalyzer(LanguageAnalyzer):
                 properties = self._extract_properties(class_body)
                 fields = self._extract_fields(class_body)
                 events = self._extract_events(class_body)
-                
+
                 if is_monobehaviour or is_scriptable_object:
                     unity_methods = self._extract_unity_methods(class_body)
                     coroutines = self._extract_coroutines(class_body)
 
             class_info = ClassInfo(
                 name=class_name,
-                line=content[:match.start()].count("\n") + 1,
+                line=content[: match.start()].count("\n") + 1,
                 generics=generics,
                 bases=bases,
                 interfaces=interfaces,
@@ -444,7 +446,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
             structure.interfaces.append(
                 {
                     "name": interface_name,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "generics": generics,
                     "extends": self._parse_interface_list(extends) if extends else [],
                     "methods": methods,
@@ -452,12 +454,14 @@ class CSharpAnalyzer(LanguageAnalyzer):
             )
 
         # Extract structs
-        struct_pattern = r"(?:^|\n)\s*(?:public\s+)?(?:readonly\s+)?(?:ref\s+)?struct\s+(\w+)(?:<([^>]+)>)?"
+        struct_pattern = (
+            r"(?:^|\n)\s*(?:public\s+)?(?:readonly\s+)?(?:ref\s+)?struct\s+(\w+)(?:<([^>]+)>)?"
+        )
 
         for match in re.finditer(struct_pattern, content):
             struct_name = match.group(1)
             generics = match.group(2)
-            
+
             modifiers = []
             if "readonly" in match.group(0):
                 modifiers.append("readonly")
@@ -467,7 +471,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
             structure.structs.append(
                 {
                     "name": struct_name,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "generics": generics,
                     "modifiers": modifiers,
                 }
@@ -487,7 +491,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
             structure.enums.append(
                 {
                     "name": enum_name,
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                     "base_type": base_type,
                     "values": values,
                 }
@@ -502,7 +506,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "return_type": match.group(1),
                     "name": match.group(2),
                     "parameters": self._parse_parameters(match.group(3)),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -627,7 +631,9 @@ class CSharpAnalyzer(LanguageAnalyzer):
             metrics.line_count = len(lines)
             metrics.code_lines = self._count_code_lines(content)
             metrics.comment_lines = self._count_comment_lines(content)
-            metrics.comment_ratio = metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+            metrics.comment_ratio = (
+                metrics.comment_lines / metrics.line_count if metrics.line_count > 0 else 0
+            )
 
             # Count classes, interfaces, etc.
             metrics.class_count = len(re.findall(r"\bclass\s+\w+", content))
@@ -636,15 +642,27 @@ class CSharpAnalyzer(LanguageAnalyzer):
             metrics.enum_count = len(re.findall(r"\benum\s+\w+", content))
 
             # Count methods
-            metrics.method_count = len(re.findall(r"(?:public|private|protected|internal)\s+(?:static\s+)?(?:async\s+)?(?:override\s+)?(?:virtual\s+)?(?:[\w<>\[\]]+)\s+\w+\s*\([^)]*\)\s*\{", content))
+            metrics.method_count = len(
+                re.findall(
+                    r"(?:public|private|protected|internal)\s+(?:static\s+)?(?:async\s+)?(?:override\s+)?(?:virtual\s+)?(?:[\w<>\[\]]+)\s+\w+\s*\([^)]*\)\s*\{",
+                    content,
+                )
+            )
 
             # Property metrics
-            metrics.property_count = len(re.findall(r"(?:public|private|protected|internal)\s+(?:static\s+)?(?:[\w<>\[\]]+)\s+\w+\s*\{\s*(?:get|set)", content))
+            metrics.property_count = len(
+                re.findall(
+                    r"(?:public|private|protected|internal)\s+(?:static\s+)?(?:[\w<>\[\]]+)\s+\w+\s*\{\s*(?:get|set)",
+                    content,
+                )
+            )
             metrics.auto_property_count = len(re.findall(r"\{\s*get;\s*(?:set;)?\s*\}", content))
 
             # Exception handling metrics
             metrics.try_blocks = len(re.findall(r"\btry\s*\{", content))
-            metrics.catch_blocks = len(re.findall(r"\bcatch(?:\s+when\s*\([^)]*\))?\s*(?:\([^)]*\))?\s*\{", content))
+            metrics.catch_blocks = len(
+                re.findall(r"\bcatch(?:\s+when\s*\([^)]*\))?\s*(?:\([^)]*\))?\s*\{", content)
+            )
             metrics.finally_blocks = len(re.findall(r"\bfinally\s*\{", content))
             # Count both "throw;" and "throw new ..." forms
             metrics.throw_statements = len(re.findall(r"\bthrow\b", content))
@@ -655,13 +673,25 @@ class CSharpAnalyzer(LanguageAnalyzer):
 
             # LINQ metrics
             metrics.linq_queries = len(re.findall(r"\bfrom\s+\w+\s+in\s+", content))
-            metrics.linq_methods = len(re.findall(r"\.\s*(?:Where|Select|OrderBy|GroupBy|Join|Any|All|First|Last|Single)\s*\(", content))
+            metrics.linq_methods = len(
+                re.findall(
+                    r"\.\s*(?:Where|Select|OrderBy|GroupBy|Join|Any|All|First|Last|Single)\s*\(",
+                    content,
+                )
+            )
 
             # Unity-specific metrics
             if self._is_unity_script(content):
-                metrics.unity_components = len(re.findall(r":\s*(?:MonoBehaviour|ScriptableObject)", content))
+                metrics.unity_components = len(
+                    re.findall(r":\s*(?:MonoBehaviour|ScriptableObject)", content)
+                )
                 metrics.coroutines = len(re.findall(r"\bIEnumerator\s+\w+\s*\(", content))
-                metrics.unity_methods = len(re.findall(r"\b(?:Start|Update|FixedUpdate|LateUpdate|OnEnable|OnDisable|Awake|OnDestroy|OnCollision(?:Enter|Exit|Stay)?|OnTrigger(?:Enter|Exit|Stay)?)\s*\(", content))
+                metrics.unity_methods = len(
+                    re.findall(
+                        r"\b(?:Start|Update|FixedUpdate|LateUpdate|OnEnable|OnDisable|Awake|OnDestroy|OnCollision(?:Enter|Exit|Stay)?|OnTrigger(?:Enter|Exit|Stay)?)\s*\(",
+                        content,
+                    )
+                )
                 metrics.serialize_fields = len(re.findall(r"\[SerializeField\]", content))
                 metrics.unity_events = len(re.findall(r"\bUnityEvent(?:<[^>]+>)?\s+\w+", content))
 
@@ -672,13 +702,13 @@ class CSharpAnalyzer(LanguageAnalyzer):
             nullable_types = len(re.findall(r"[\w<>\[\]]+\?\s+\w+\s*[;=,)\}]", content))
             metrics.nullable_refs = nullable_types + len(re.findall(r"#nullable\s+enable", content))
 
-                # Calculate maintainability index
+            # Calculate maintainability index
             import math
 
             if metrics.code_lines > 0:
                 # Adjusted for C#
                 async_factor = 1 - (metrics.async_methods * 0.01)
-                unity_factor = 1 - (getattr(metrics, 'coroutines', 0) * 0.02)
+                unity_factor = 1 - (getattr(metrics, "coroutines", 0) * 0.02)
 
                 mi = (
                     171
@@ -705,7 +735,11 @@ class CSharpAnalyzer(LanguageAnalyzer):
             return "system"
         elif namespace.startswith("Microsoft"):
             return "microsoft"
-        elif namespace.startswith("Unity") or namespace.startswith("UnityEngine") or namespace.startswith("UnityEditor"):
+        elif (
+            namespace.startswith("Unity")
+            or namespace.startswith("UnityEngine")
+            or namespace.startswith("UnityEditor")
+        ):
             return "unity"
         elif namespace.startswith("TMPro"):
             return "unity_package"  # TextMeshPro
@@ -757,7 +791,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
             r"Vector[23]\s+",
             r"Quaternion\s+",
         ]
-        
+
         return any(re.search(pattern, content) for pattern in unity_indicators)
 
     def _extract_csproj_dependencies(self, content: str) -> List[ImportInfo]:
@@ -773,7 +807,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
 
         # Extract PackageReference elements
         package_pattern = r'<PackageReference\s+Include="([^"]+)"(?:\s+Version="([^"]+)")?'
-        
+
         for match in re.finditer(package_pattern, content):
             package_name = match.group(1)
             version = match.group(2)
@@ -790,7 +824,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
 
         # Extract ProjectReference elements
         project_pattern = r'<ProjectReference\s+Include="([^"]+)"'
-        
+
         for match in re.finditer(project_pattern, content):
             project_path = match.group(1)
 
@@ -879,7 +913,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
             pos += 1
 
         if brace_count == 0:
-            return content[brace_pos + 1:pos - 1]
+            return content[brace_pos + 1 : pos - 1]
 
         return None
 
@@ -910,7 +944,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
 
             visibility = match.group(1) or "private"
             modifiers = match.group(2).split() if match.group(2) else []
-            
+
             methods.append(
                 {
                     "name": method_name,
@@ -922,7 +956,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "is_async": "async" in modifiers,
                     "is_virtual": "virtual" in modifiers,
                     "is_override": "override" in modifiers,
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -949,7 +983,11 @@ class CSharpAnalyzer(LanguageAnalyzer):
             prop_name = match.group(4)
 
             # Check for auto-property
-            is_auto = bool(re.search(rf"{re.escape(prop_name)}\s*\{{\s*get;\s*(?:set;|init;)?\s*\}}", class_body))
+            is_auto = bool(
+                re.search(
+                    rf"{re.escape(prop_name)}\s*\{{\s*get;\s*(?:set;|init;)?\s*\}}", class_body
+                )
+            )
 
             properties.append(
                 {
@@ -958,7 +996,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "visibility": visibility,
                     "modifiers": modifiers,
                     "is_auto_property": is_auto,
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1012,7 +1050,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "modifiers": modifiers,
                     "initial_value": initial_value.strip() if initial_value else None,
                     "unity_attributes": unity_attributes,
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1039,12 +1077,14 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "type": match.group(3),
                     "visibility": match.group(1) or "private",
                     "modifiers": match.group(2).split() if match.group(2) else [],
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
         # Unity Events
-        unity_event_pattern = r"(?:^|\n)\s*(?:(public|private|protected)\s+)?UnityEvent(?:<([^>]+)>)?\s+(\w+)"
+        unity_event_pattern = (
+            r"(?:^|\n)\s*(?:(public|private|protected)\s+)?UnityEvent(?:<([^>]+)>)?\s+(\w+)"
+        )
 
         for match in re.finditer(unity_event_pattern, class_body):
             events.append(
@@ -1053,7 +1093,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "type": f"UnityEvent<{match.group(2)}>" if match.group(2) else "UnityEvent",
                     "visibility": match.group(1) or "public",
                     "is_unity_event": True,
-                    "line": class_body[:match.start()].count("\n") + 1,
+                    "line": class_body[: match.start()].count("\n") + 1,
                 }
             )
 
@@ -1069,20 +1109,48 @@ class CSharpAnalyzer(LanguageAnalyzer):
             List of Unity method names
         """
         unity_methods = []
-        
+
         unity_lifecycle = [
-            "Awake", "Start", "OnEnable", "OnDisable", "OnDestroy",
-            "Update", "FixedUpdate", "LateUpdate",
-            "OnGUI", "OnRenderObject", "OnPreCull", "OnBecameVisible", "OnBecameInvisible",
-            "OnWillRenderObject", "OnPreRender", "OnRenderImage", "OnPostRender",
-            "OnDrawGizmos", "OnDrawGizmosSelected",
-            "OnApplicationPause", "OnApplicationFocus", "OnApplicationQuit",
-            "OnCollisionEnter", "OnCollisionStay", "OnCollisionExit",
-            "OnCollisionEnter2D", "OnCollisionStay2D", "OnCollisionExit2D",
-            "OnTriggerEnter", "OnTriggerStay", "OnTriggerExit",
-            "OnTriggerEnter2D", "OnTriggerStay2D", "OnTriggerExit2D",
-            "OnMouseDown", "OnMouseUp", "OnMouseEnter", "OnMouseExit",
-            "OnMouseOver", "OnMouseDrag",
+            "Awake",
+            "Start",
+            "OnEnable",
+            "OnDisable",
+            "OnDestroy",
+            "Update",
+            "FixedUpdate",
+            "LateUpdate",
+            "OnGUI",
+            "OnRenderObject",
+            "OnPreCull",
+            "OnBecameVisible",
+            "OnBecameInvisible",
+            "OnWillRenderObject",
+            "OnPreRender",
+            "OnRenderImage",
+            "OnPostRender",
+            "OnDrawGizmos",
+            "OnDrawGizmosSelected",
+            "OnApplicationPause",
+            "OnApplicationFocus",
+            "OnApplicationQuit",
+            "OnCollisionEnter",
+            "OnCollisionStay",
+            "OnCollisionExit",
+            "OnCollisionEnter2D",
+            "OnCollisionStay2D",
+            "OnCollisionExit2D",
+            "OnTriggerEnter",
+            "OnTriggerStay",
+            "OnTriggerExit",
+            "OnTriggerEnter2D",
+            "OnTriggerStay2D",
+            "OnTriggerExit2D",
+            "OnMouseDown",
+            "OnMouseUp",
+            "OnMouseEnter",
+            "OnMouseExit",
+            "OnMouseOver",
+            "OnMouseDrag",
         ]
 
         for method in unity_lifecycle:
@@ -1182,7 +1250,9 @@ class CSharpAnalyzer(LanguageAnalyzer):
         # This is a simplified approach
         if not re.search(r"\bclass\s+\w+", content) and not re.search(r"\bnamespace\s+", content):
             # Might be a top-level program
-            func_pattern = r"(?:static\s+)?(?:async\s+)?(?:[\w<>\[\]]+)\s+(\w+)\s*\([^)]*\)\s*(?:\{|=>)"
+            func_pattern = (
+                r"(?:static\s+)?(?:async\s+)?(?:[\w<>\[\]]+)\s+(\w+)\s*\([^)]*\)\s*(?:\{|=>)"
+            )
 
             for match in re.finditer(func_pattern, content):
                 func_name = match.group(1)
@@ -1190,7 +1260,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     functions.append(
                         FunctionInfo(
                             name=func_name,
-                            line=content[:match.start()].count("\n") + 1,
+                            line=content[: match.start()].count("\n") + 1,
                         )
                     )
 
@@ -1216,12 +1286,14 @@ class CSharpAnalyzer(LanguageAnalyzer):
                     "type": "query_syntax",
                     "variable": match.group(1),
                     "source": match.group(2),
-                    "line": content[:match.start()].count("\n") + 1,
+                    "line": content[: match.start()].count("\n") + 1,
                 }
             )
 
         # Method syntax (simplified)
-        method_chains = re.findall(r"(\w+)\.(?:Where|Select|OrderBy|GroupBy|Join)\([^)]+\)", content)
+        method_chains = re.findall(
+            r"(\w+)\.(?:Where|Select|OrderBy|GroupBy|Join)\([^)]+\)", content
+        )
         for chain in method_chains:
             queries.append(
                 {
@@ -1253,11 +1325,11 @@ class CSharpAnalyzer(LanguageAnalyzer):
             current = ""
             depth = 0
             for ch in inner:
-                if ch == '(':
+                if ch == "(":
                     depth += 1
-                elif ch == ')':
+                elif ch == ")":
                     depth = max(0, depth - 1)
-                if ch == ',' and depth == 0:
+                if ch == "," and depth == 0:
                     piece = current.strip()
                     if piece:
                         m = re.match(r"(\w+)", piece)
@@ -1325,10 +1397,10 @@ class CSharpAnalyzer(LanguageAnalyzer):
         """
         # Handle various parameter formats
         # Examples: "int x", "ref int x", "out string s", "int x = 5", "params int[] args"
-        
+
         param_pattern = r"(?:(ref|out|in|params)\s+)?([\w<>\[\]\.]+)\s+(\w+)(?:\s*=\s*(.+))?"
         match = re.match(param_pattern, param_str)
-        
+
         if match:
             return {
                 "modifier": match.group(1),
@@ -1336,7 +1408,7 @@ class CSharpAnalyzer(LanguageAnalyzer):
                 "name": match.group(3),
                 "default": match.group(4),
             }
-        
+
         return None
 
     def _detect_framework(self, content: str) -> Optional[str]:
@@ -1369,7 +1441,9 @@ class CSharpAnalyzer(LanguageAnalyzer):
             return "MAUI"
 
         # Blazor
-        if re.search(r"@page\s+", content) or re.search(r"using\s+Microsoft\.AspNetCore\.Components", content):
+        if re.search(r"@page\s+", content) or re.search(
+            r"using\s+Microsoft\.AspNetCore\.Components", content
+        ):
             return "Blazor"
 
         # Console/Library

@@ -167,7 +167,11 @@ class CppAnalyzer(LanguageAnalyzer):
             ]:
                 line_content = content[match.start() : match.end()]
                 before_window = content[max(0, match.start() - 200) : match.start()]
-                is_tmpl = ("template" in line_content) or ("template" in before_window) or self._is_template_function(content, match.start())
+                is_tmpl = (
+                    ("template" in line_content)
+                    or ("template" in before_window)
+                    or self._is_template_function(content, match.start())
+                )
                 exports.append(
                     {
                         "name": func_name,
@@ -467,7 +471,6 @@ class CppAnalyzer(LanguageAnalyzer):
         operator_count = len(re.findall(operator_pattern, content))
         structure.operator_overloads = operator_count
 
-
         # Detect STL usage (boolean for test compatibility)
         stl_types_found = self._detect_stl_usage(content)
         structure.uses_stl = bool(stl_types_found)
@@ -593,13 +596,11 @@ class CppAnalyzer(LanguageAnalyzer):
         metrics.free_count = len(re.findall(r"\bfree\s*\(", content))
 
         # Smart pointer usage (count both types and factory helpers)
-        metrics.unique_ptr_count = (
-            len(re.findall(r"\bunique_ptr\s*<", content))
-            + len(re.findall(r"(?:\b[\w:]+::)?make_unique(?:\s*<[^>]+>)?\s*\(", content))
+        metrics.unique_ptr_count = len(re.findall(r"\bunique_ptr\s*<", content)) + len(
+            re.findall(r"(?:\b[\w:]+::)?make_unique(?:\s*<[^>]+>)?\s*\(", content)
         )
-        metrics.shared_ptr_count = (
-            len(re.findall(r"\bshared_ptr\s*<", content))
-            + len(re.findall(r"(?:\b[\w:]+::)?make_shared(?:\s*<[^>]+>)?\s*\(", content))
+        metrics.shared_ptr_count = len(re.findall(r"\bshared_ptr\s*<", content)) + len(
+            re.findall(r"(?:\b[\w:]+::)?make_shared(?:\s*<[^>]+>)?\s*\(", content)
         )
         metrics.weak_ptr_count = len(re.findall(r"\bweak_ptr\s*<", content))
 
@@ -867,7 +868,7 @@ class CppAnalyzer(LanguageAnalyzer):
             line = line.strip()
             if not line or line.startswith("//"):
                 continue
-                
+
             # Track visibility changes
             if re.match(r"^public:", line):
                 current_visibility = "public"
@@ -880,7 +881,10 @@ class CppAnalyzer(LanguageAnalyzer):
                 continue
 
             # Skip obvious field declarations only when no parentheses are present (to avoid skipping prototypes)
-            if "(" not in line and re.match(r"^(?:static\s+)?(?:const\s+)?[\w:\s\*&<>]+\s+\w+(?:\s*\[[^\]]*\])?\s*(?:=\s*[^;]+)?\s*;\s*$", line):
+            if "(" not in line and re.match(
+                r"^(?:static\s+)?(?:const\s+)?[\w:\s\*&<>]+\s+\w+(?:\s*\[[^\]]*\])?\s*(?:=\s*[^;]+)?\s*;\s*$",
+                line,
+            ):
                 continue
 
             # Method patterns - try multiple patterns
@@ -890,12 +894,24 @@ class CppAnalyzer(LanguageAnalyzer):
                 r"^\s*(?:virtual\s+|static\s+|inline\s+)*(?:[\w:<>]+(?:\s*[\*&])?\s+)+(~?\w+)\s*\([^)]*\)\s*(?:const\s+)?(?:override\s+)?(?:final\s+)?(?:=\s*(?:0|default|delete)\s*)?[{;]",
                 r"^\s*(?:explicit\s+)?(~?\w+)\s*\([^)]*\)\s*(?:[{;])",
             ]
-            
+
             for pattern in patterns:
                 match = re.search(pattern, line)
                 if match:
                     method_name = match.group(1)
-                    if method_name not in ["if", "for", "while", "switch", "return", "int", "float", "double", "char", "bool", "void"]:
+                    if method_name not in [
+                        "if",
+                        "for",
+                        "while",
+                        "switch",
+                        "return",
+                        "int",
+                        "float",
+                        "double",
+                        "char",
+                        "bool",
+                        "void",
+                    ]:
                         methods.append(
                             {
                                 "name": method_name,
@@ -968,7 +984,7 @@ class CppAnalyzer(LanguageAnalyzer):
 
     def _is_template_class(self, content: str, class_pos: int) -> bool:
         """Detect if a class is a template by looking for template<...> before the class."""
-        window = content[max(0, class_pos - 1000):class_pos]
+        window = content[max(0, class_pos - 1000) : class_pos]
         # Look for template<...> in the last few lines before class
         lines = [l.strip() for l in window.splitlines() if l.strip()]
         for l in reversed(lines[-10:]):
@@ -991,7 +1007,10 @@ class CppAnalyzer(LanguageAnalyzer):
             if "(" in line and ")" in line:
                 continue
             # Match field declarations
-            m = re.match(r"^(?:static\s+)?(?:const\s+)?([\w:\s\*&<>]+)\s+(\w+)(?:\s*\[[^\]]*\])?\s*(?:=\s*[^;]+)?\s*;\s*$", line)
+            m = re.match(
+                r"^(?:static\s+)?(?:const\s+)?([\w:\s\*&<>]+)\s+(\w+)(?:\s*\[[^\]]*\])?\s*(?:=\s*[^;]+)?\s*;\s*$",
+                line,
+            )
             if m:
                 type_str = m.group(1).strip()
                 name = m.group(2)
@@ -1014,9 +1033,9 @@ class CppAnalyzer(LanguageAnalyzer):
         brace_count = 1
         i = open_brace + 1
         while i < len(content) and brace_count > 0:
-            if content[i] == '{':
+            if content[i] == "{":
                 brace_count += 1
-            elif content[i] == '}':
+            elif content[i] == "}":
                 brace_count -= 1
             i += 1
         return open_brace < pos < i
@@ -1037,9 +1056,9 @@ class CppAnalyzer(LanguageAnalyzer):
         brace_count = 1
         i = open_brace + 1
         while i < len(content) and brace_count > 0:
-            if content[i] == '{':
+            if content[i] == "{":
                 brace_count += 1
-            elif content[i] == '}':
+            elif content[i] == "}":
                 brace_count -= 1
             i += 1
         return open_brace < pos < i
@@ -1047,7 +1066,19 @@ class CppAnalyzer(LanguageAnalyzer):
     def _detect_stl_usage(self, content: str) -> list:
         """Detect usage of STL headers/types."""
         stl_types = [
-            "vector", "map", "set", "unordered_map", "unordered_set", "list", "deque", "queue", "stack", "array", "string", "tuple", "pair"
+            "vector",
+            "map",
+            "set",
+            "unordered_map",
+            "unordered_set",
+            "list",
+            "deque",
+            "queue",
+            "stack",
+            "array",
+            "string",
+            "tuple",
+            "pair",
         ]
         found = set()
         for t in stl_types:
