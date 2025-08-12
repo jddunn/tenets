@@ -19,7 +19,7 @@ hide:
   <p class="hero-tagline">Context that feeds your prompts</p>
   <div class="hero-description">
     <p>Illuminate your codebase. Surface relevant files. Build optimal context.</p>
-    <p>All without leaving your machine.</p>
+  <p>All without leaving your machine. <strong>20+ languages</strong> including Python, Go, Rust, Java, C#, Kotlin, Swift, Dart, GDScript & more.</p>
   </div>
   <div class="hero-actions">
     <a href="quickstart/" class="btn-primary">
@@ -312,6 +312,9 @@ hide:
 # Generate context for debugging
 tenets make-context "users getting 401 errors on checkout"
 
+# Copy result straight to your clipboard
+tenets make-context "map out request lifecycle" --copy
+
 # Analyze codebase structure
 tenets analyze --complexity --hotspots
 
@@ -320,6 +323,9 @@ tenets track-changes --since "last-deploy"
 
 # Visualize dependencies
 tenets viz deps --format ascii
+
+# Force include critical files & copy
+tenets make-context "migrate payment logic" --pin services/payments/*.py --copy
 ```
 
 </div>

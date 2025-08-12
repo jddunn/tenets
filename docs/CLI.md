@@ -83,6 +83,7 @@ tenets distill <prompt> [path] [options]
 - `--full`: Include full content for all ranked files (no summarization) until token budget reached
 - `--condense`: Condense whitespace (collapse large blank runs, trim trailing spaces) before token counting
 - `--remove-comments`: Strip comments (heuristic, language-aware) before token counting
+ - `--copy`: Copy distilled context directly to clipboard (or set `output.copy_on_distill: true` in config)
 
 **Examples:**
 
@@ -173,6 +174,13 @@ One-off overrides (environment, Git Bash):
 ```bash
 TENETS_RANKING_THRESHOLD=0.05 TENETS_RANKING_ALGORITHM=fast \
   tenets distill "implement OAuth2" . --include "*.py,*.md" --max-tokens 50000
+
+# Copy output to clipboard directly
+tenets distill "implement OAuth2" --copy
+
+# Enable automatic copying in config
+output:
+  copy_on_distill: true
 ```
 
 Inspect current config:

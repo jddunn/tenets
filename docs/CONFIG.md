@@ -66,6 +66,7 @@ git:
 
 output:
   default_format: markdown  # markdown | xml | json
+  copy_on_distill: false    # copy distilled context to clipboard automatically
 
 cache:
   enabled: true
@@ -85,6 +86,7 @@ Notes:
 - ranking.use_embeddings adds a semantic factor (also available implicitly with --mode ml); requires installing ML extras.
 - ranking.custom_weights lets you tune factor influence; unspecified factors fall back to internal strategy defaults.
 - output.default_format affects default formatting; CLI -f/--format overrides it.
+- output.copy_on_distill copies result automatically (same as --copy flag) when true.
 - scanner.additional_ignore_patterns augments internal defaults; entries are simple fnmatch patterns.
 
 ## Environment variable overrides

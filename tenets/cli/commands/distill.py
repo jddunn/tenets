@@ -79,6 +79,11 @@ def distill(
     show_stats: bool = typer.Option(
         False, "--stats", help="Show statistics about context generation"
     ),
+    copy: bool = typer.Option(
+        False,
+        "--copy",
+        help="Copy distilled context to clipboard (also enabled automatically if config.output.copy_on_distill)",
+    ),
     # Context options
     ctx: typer.Context = typer.Context,
 ):
@@ -215,6 +220,60 @@ def distill(
                 print(output_text)
                 if interactive:
                     console.rule("End")
+
+        # Clipboard copy (after output so piping still works)
+        do_copy = copy
+        try:
+            # Check config flag (best-effort; Tenets() instance may expose config)
+            cfg = getattr(tenets, "config", None)
+            if cfg and getattr(getattr(cfg, "output", None), "copy_on_distill", False):
+                do_copy = True or copy
+        except Exception:
+            pass
+        if do_copy:
+            copied = False
+            text_to_copy = (
+                output_text if format != "json" else json.dumps(result.to_dict(), indent=2)
+            )
+            # Try pyperclip first
+            try:  # pragma: no cover - environment dependent
+                import pyperclip
+
+                pyperclip.copy(text_to_copy)
+                copied = True
+            except Exception:
+                # Fallbacks by platform
+                try:
+                    import subprocess, platform, shutil
+
+                    plat = platform.system().lower()
+                    if "windows" in plat:
+                        # Use clip
+                        p = subprocess.Popen(["clip"], stdin=subprocess.PIPE, close_fds=True)
+                        p.communicate(input=text_to_copy.encode("utf-8"))
+                        copied = p.returncode == 0
+                    elif "darwin" in plat and shutil.which("pbcopy"):
+                        p = subprocess.Popen(["pbcopy"], stdin=subprocess.PIPE)
+                        p.communicate(input=text_to_copy.encode("utf-8"))
+                        copied = p.returncode == 0
+                    elif shutil.which("xclip"):
+                        p = subprocess.Popen(
+                            ["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE
+                        )
+                        p.communicate(input=text_to_copy.encode("utf-8"))
+                        copied = p.returncode == 0
+                    elif shutil.which("wl-copy"):
+                        p = subprocess.Popen(["wl-copy"], stdin=subprocess.PIPE)
+                        p.communicate(input=text_to_copy.encode("utf-8"))
+                        copied = p.returncode == 0
+                except Exception:
+                    copied = False
+            if copied and not quiet:
+                console.print("[cyan]📋 Context copied to clipboard[/cyan]")
+            elif not copied and do_copy and not quiet:
+                console.print(
+                    "[yellow]Warning:[/yellow] Unable to copy to clipboard (missing pyperclip/xclip/pbcopy)."
+                )
 
         # Show cost estimation if requested
         if estimate_cost and model:
