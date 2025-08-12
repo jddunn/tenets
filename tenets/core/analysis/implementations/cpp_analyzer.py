@@ -7,8 +7,9 @@ including headers, templates, and modern C++ features.
 import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
+import math
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,
@@ -148,7 +149,7 @@ class CppAnalyzer(LanguageAnalyzer):
         namespace = self._extract_namespace(content)
 
         # Non-static functions
-        func_pattern = r"^(?!static)(?:(?:inline|extern|virtual|explicit|constexpr)\s+)*(?:[\w\s\*&:<>]+)\s+(\w+)\s*\([^)]*\)(?:\s*const)?(?:\s*noexcept)?(?:\s*override)?(?:\s*final)?(?:\s*=\s*0)?(?:\s*(?:\{|;))"
+        func_pattern = r"^(?:template\s*<[^>]*>\s*)?(?!static)(?:(?:inline|extern|virtual|explicit|constexpr)\s+)*(?:[\w\s\*&:<>]+)\s+(\w+)\s*\([^)]*\)(?:\s*const)?(?:\s*noexcept)?(?:\s*override)?(?:\s*final)?(?:\s*=\s*0)?(?:\s*(?:\{|;))"
 
         for match in re.finditer(func_pattern, content, re.MULTILINE):
             func_name = match.group(1)
@@ -165,6 +166,8 @@ class CppAnalyzer(LanguageAnalyzer):
                 "catch",
             ]:
                 line_content = content[match.start() : match.end()]
+                before_window = content[max(0, match.start() - 200) : match.start()]
+                is_tmpl = ("template" in line_content) or ("template" in before_window) or self._is_template_function(content, match.start())
                 exports.append(
                     {
                         "name": func_name,
@@ -175,16 +178,19 @@ class CppAnalyzer(LanguageAnalyzer):
                         "is_virtual": "virtual" in line_content,
                         "is_pure_virtual": "= 0" in line_content,
                         "is_constexpr": "constexpr" in line_content,
-                        "is_template": self._is_template_function(content, match.start()),
+                        "is_template": is_tmpl,
                     }
                 )
 
         # Classes and structs (public by default in struct)
-        class_pattern = r"\b(?:class|struct)\s+(?:__declspec\([^)]+\)\s+)?(\w+)(?:\s*:\s*(?:public|private|protected)\s+[\w:]+)?(?:\s*\{|;)"
-
+        class_pattern = r"\b(?:struct|(?<!enum\s)class)\s+(?:__declspec\([^)]+\)\s+)?(\w+)(?:\s*:\s*(?:public|private|protected)\s+[\w:]+)?(?:\s*\{|;)"
         for match in re.finditer(class_pattern, content):
             class_name = match.group(1)
             is_struct = "struct" in match.group(0)
+            # Find keyword position for accurate template check
+            inner = match.group(0)
+            kw = "struct" if "struct" in inner else "class"
+            kw_pos = match.start() + inner.find(kw)
 
             exports.append(
                 {
@@ -193,7 +199,7 @@ class CppAnalyzer(LanguageAnalyzer):
                     "line": content[: match.start()].count("\n") + 1,
                     "namespace": namespace,
                     "default_visibility": "public" if is_struct else "private",
-                    "is_template": self._is_template_class(content, match.start()),
+                    "is_template": self._is_template_class(content, kw_pos),
                 }
             )
 
@@ -317,7 +323,7 @@ class CppAnalyzer(LanguageAnalyzer):
                 )
 
         # Extract classes and structs
-        class_pattern = r"(?:template\s*<[^>]+>\s*)?(?:class|struct)\s+(\w+)(?:\s*:\s*((?:public|private|protected)\s+[\w:]+(?:\s*,\s*(?:public|private|protected)\s+[\w:]+)*))?"
+        class_pattern = r"(?:template\s*<[^>]+>\s*)?(?:struct|(?<!enum\s)class)\s+(\w+)(?:\s*:\s*((?:public|private|protected)\s+[\w:]+(?:\s*,\s*(?:public|private|protected)\s+[\w:]+)*))?"
 
         for match in re.finditer(class_pattern, content):
             class_name = match.group(1)
@@ -344,6 +350,9 @@ class CppAnalyzer(LanguageAnalyzer):
                 methods = self._extract_class_methods(class_body)
                 fields = self._extract_class_fields(class_body)
 
+            inner = match.group(0)
+            kw = "struct" if "struct" in inner else "class"
+            kw_pos = match.start() + inner.find(kw)
             class_info = ClassInfo(
                 name=class_name,
                 line=content[: match.start()].count("\n") + 1,
@@ -351,7 +360,7 @@ class CppAnalyzer(LanguageAnalyzer):
                 methods=methods,
                 fields=fields,
                 is_struct="struct" in match.group(0),
-                is_template="template" in content[max(0, match.start() - 100) : match.start()],
+                is_template=self._is_template_class(content, kw_pos),
             )
 
             structure.classes.append(class_info)
@@ -405,7 +414,7 @@ class CppAnalyzer(LanguageAnalyzer):
             )
 
         # Extract macros
-        macro_pattern = r"^#define\s+(\w+)(?:\([^)]*\))?"
+        macro_pattern = r"^\s*#define\s+(\w+)(?:\([^)]*\))?"
 
         for match in re.finditer(macro_pattern, content, re.MULTILINE):
             macro_name = match.group(1)
@@ -458,8 +467,11 @@ class CppAnalyzer(LanguageAnalyzer):
         operator_count = len(re.findall(operator_pattern, content))
         structure.operator_overloads = operator_count
 
-        # Detect STL usage
-        structure.uses_stl = self._detect_stl_usage(content)
+
+        # Detect STL usage (boolean for test compatibility)
+        stl_types_found = self._detect_stl_usage(content)
+        structure.uses_stl = bool(stl_types_found)
+        structure.stl_types = stl_types_found  # Optionally keep the list for other uses
 
         # Detect smart pointers
         structure.smart_pointers = self._detect_smart_pointers(content)
@@ -569,19 +581,26 @@ class CppAnalyzer(LanguageAnalyzer):
         metrics.template_specializations = len(re.findall(r"template\s*<>", content))
 
         # Preprocessor metrics
-        metrics.macro_count = len(re.findall(r"^#define\s+", content, re.MULTILINE))
-        metrics.ifdef_count = len(re.findall(r"^#if(?:def|ndef)?\s+", content, re.MULTILINE))
-        metrics.include_count = len(re.findall(r"^#include\s+", content, re.MULTILINE))
+        metrics.macro_count = len(re.findall(r"^\s*#define\s+", content, re.MULTILINE))
+        metrics.ifdef_count = len(re.findall(r"^\s*#if(?:def|ndef)?\s+", content, re.MULTILINE))
+        metrics.include_count = len(re.findall(r"^\s*#include\s+", content, re.MULTILINE))
 
         # Memory management metrics
         metrics.new_count = len(re.findall(r"\bnew\s+", content))
-        metrics.delete_count = len(re.findall(r"\bdelete\s+", content))
+        # Count delete and delete[]
+        metrics.delete_count = len(re.findall(r"\bdelete\s*(?:\[\])?", content))
         metrics.malloc_count = len(re.findall(r"\bmalloc\s*\(", content))
         metrics.free_count = len(re.findall(r"\bfree\s*\(", content))
 
-        # Smart pointer usage
-        metrics.unique_ptr_count = len(re.findall(r"\bunique_ptr\s*<", content))
-        metrics.shared_ptr_count = len(re.findall(r"\bshared_ptr\s*<", content))
+        # Smart pointer usage (count both types and factory helpers)
+        metrics.unique_ptr_count = (
+            len(re.findall(r"\bunique_ptr\s*<", content))
+            + len(re.findall(r"(?:\b[\w:]+::)?make_unique(?:\s*<[^>]+>)?\s*\(", content))
+        )
+        metrics.shared_ptr_count = (
+            len(re.findall(r"\bshared_ptr\s*<", content))
+            + len(re.findall(r"(?:\b[\w:]+::)?make_shared(?:\s*<[^>]+>)?\s*\(", content))
+        )
         metrics.weak_ptr_count = len(re.findall(r"\bweak_ptr\s*<", content))
 
         # RAII indicators
@@ -601,8 +620,6 @@ class CppAnalyzer(LanguageAnalyzer):
             metrics.memory_safety_score = 1.0
 
         # Calculate maintainability index
-        import math
-
         if metrics.code_lines > 0:
             # Adjusted for C++ complexity
             template_factor = 1 - (metrics.template_count * 0.02)
@@ -803,33 +820,6 @@ class CppAnalyzer(LanguageAnalyzer):
 
         return False
 
-    def _is_template_function(self, content: str, func_pos: int) -> bool:
-        """Check if a function is a template.
-
-        Args:
-            content: Source code
-            func_pos: Position of function in content
-
-        Returns:
-            True if it's a template function
-        """
-        # Look backwards for template declaration
-        before = content[max(0, func_pos - 200) : func_pos]
-        return bool(re.search(r"template\s*<[^>]*>\s*$", before))
-
-    def _is_template_class(self, content: str, class_pos: int) -> bool:
-        """Check if a class is a template.
-
-        Args:
-            content: Source code
-            class_pos: Position of class in content
-
-        Returns:
-            True if it's a template class
-        """
-        before = content[max(0, class_pos - 200) : class_pos]
-        return bool(re.search(r"template\s*<[^>]*>\s*$", before))
-
     def _extract_class_body(self, content: str, start_pos: int) -> Optional[str]:
         """Extract the body of a class/struct.
 
@@ -871,267 +861,205 @@ class CppAnalyzer(LanguageAnalyzer):
             List of method information
         """
         methods = []
-
-        # Method pattern
-        method_pattern = r"(?:(?:virtual|static|inline|explicit|constexpr)\s+)*(?:[\w\s\*&:<>]+)\s+(\w+)\s*\([^)]*\)(?:\s*const)?(?:\s*noexcept)?(?:\s*override)?(?:\s*final)?(?:\s*=\s*(?:0|default|delete))?"
-
         current_visibility = "private"  # Default for class
 
         for line in class_body.split("\n"):
+            line = line.strip()
+            if not line or line.startswith("//"):
+                continue
+                
             # Track visibility changes
-            if re.match(r"^\s*public:", line):
+            if re.match(r"^public:", line):
                 current_visibility = "public"
                 continue
-            elif re.match(r"^\s*private:", line):
+            elif re.match(r"^private:", line):
                 current_visibility = "private"
                 continue
-            elif re.match(r"^\s*protected:", line):
+            elif re.match(r"^protected:", line):
                 current_visibility = "protected"
                 continue
 
-            # Extract methods
-            match = re.search(method_pattern, line)
-            if match:
-                method_name = match.group(1)
-                if method_name not in ["if", "for", "while", "switch", "return"]:
-                    methods.append(
-                        {
-                            "name": method_name,
-                            "visibility": current_visibility,
-                            "is_virtual": "virtual" in line,
-                            "is_static": "static" in line,
-                            "is_const": "const" in line,
-                            "is_override": "override" in line,
-                            "is_final": "final" in line,
-                            "is_pure_virtual": "= 0" in line,
-                            "is_default": "= default" in line,
-                            "is_deleted": "= delete" in line,
-                        }
-                    )
+            # Skip obvious field declarations only when no parentheses are present (to avoid skipping prototypes)
+            if "(" not in line and re.match(r"^(?:static\s+)?(?:const\s+)?[\w:\s\*&<>]+\s+\w+(?:\s*\[[^\]]*\])?\s*(?:=\s*[^;]+)?\s*;\s*$", line):
+                continue
+
+            # Method patterns - try multiple patterns
+            patterns = [
+                r"^\s*(~?\w+)\s*\(\s*\)\s*;",  # ctor/dtor no params
+                r"^\s*(?:virtual\s+|static\s+|inline\s+)*void\s+(~?\w+)\s*\([^)]*\)\s*(?:const\s+)?(?:override\s+)?(?:final\s+)?(?:=\s*(?:0|default|delete)\s*)?[{;]",
+                r"^\s*(?:virtual\s+|static\s+|inline\s+)*(?:[\w:<>]+(?:\s*[\*&])?\s+)+(~?\w+)\s*\([^)]*\)\s*(?:const\s+)?(?:override\s+)?(?:final\s+)?(?:=\s*(?:0|default|delete)\s*)?[{;]",
+                r"^\s*(?:explicit\s+)?(~?\w+)\s*\([^)]*\)\s*(?:[{;])",
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, line)
+                if match:
+                    method_name = match.group(1)
+                    if method_name not in ["if", "for", "while", "switch", "return", "int", "float", "double", "char", "bool", "void"]:
+                        methods.append(
+                            {
+                                "name": method_name,
+                                "visibility": current_visibility,
+                                "is_virtual": "virtual" in line,
+                                "is_static": "static" in line,
+                                "is_const": "const" in line,
+                                "is_override": "override" in line,
+                                "is_final": "final" in line,
+                                "is_pure_virtual": "= 0" in line,
+                                "is_default": "= default" in line,
+                                "is_deleted": "= delete" in line,
+                            }
+                        )
+                        break
 
         return methods
 
-    def _extract_class_fields(self, class_body: str) -> List[Dict[str, Any]]:
-        """Extract fields from class body.
+    def _is_template_function(self, content: str, func_pos: int) -> bool:
+        """Check if a function is a template.
 
-        Args:
-            class_body: Content of class body
-
-        Returns:
-            List of field information
+        Looks back a reasonable window and checks recent non-empty lines
+        for a preceding template<...> declaration, ignoring comments and labels.
         """
+        window = content[max(0, func_pos - 1000) : func_pos]
+        # Quick substring check first
+        if re.search(r"template\s*<[^>]*>", window):
+            # Be a bit stricter by scanning the last few logical lines
+            lines = [l.strip() for l in window.splitlines() if l.strip()]
+            for l in reversed(lines[-10:]):
+                if l.startswith("//"):
+                    continue
+                if l.startswith("template"):
+                    return True
+                # Stop if another declaration boundary is encountered
+                if re.match(r"(?:class|struct|enum|namespace)\b", l):
+                    break
+        return False
+
+    def _count_code_lines(self, content: str) -> int:
+        """Count non-empty, non-comment, non-preprocessor lines."""
+        code_lines = 0
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith("//") or line.startswith("#"):
+                continue
+            if line.startswith("/*") or line.startswith("*") or line.endswith("*/"):
+                continue
+            code_lines += 1
+        return code_lines
+
+    def _count_comment_lines(self, content: str) -> int:
+        """Count lines that are comments (//, /*, */)."""
+        comment_lines = 0
+        in_block = False
+        for line in content.splitlines():
+            l = line.strip()
+            if in_block:
+                comment_lines += 1
+                if "*/" in l:
+                    in_block = False
+                continue
+            if l.startswith("//"):
+                comment_lines += 1
+            elif l.startswith("/*"):
+                comment_lines += 1
+                if not "*/" in l:
+                    in_block = True
+        return comment_lines
+
+    def _is_template_class(self, content: str, class_pos: int) -> bool:
+        """Detect if a class is a template by looking for template<...> before the class."""
+        window = content[max(0, class_pos - 1000):class_pos]
+        # Look for template<...> in the last few lines before class
+        lines = [l.strip() for l in window.splitlines() if l.strip()]
+        for l in reversed(lines[-10:]):
+            if l.startswith("//"):
+                continue
+            if l.startswith("template"):
+                return True
+            if re.match(r"(?:class|struct|enum|namespace)\b", l):
+                break
+        return False
+
+    def _extract_class_fields(self, class_body: str) -> list:
+        """Extract field declarations from a class body."""
         fields = []
-
-        # Field pattern
-        field_pattern = r"(?:(?:static|const|mutable)\s+)*(?:[\w\s\*&:<>]+)\s+(\w+)\s*(?:\[[^\]]*\])?\s*(?:=\s*[^;]+)?\s*;"
-
-        current_visibility = "private"  # Default for class
-
         for line in class_body.split("\n"):
-            # Track visibility changes
-            if re.match(r"^\s*public:", line):
-                current_visibility = "public"
-            elif re.match(r"^\s*private:", line):
-                current_visibility = "private"
-            elif re.match(r"^\s*protected:", line):
-                current_visibility = "protected"
-
+            line = line.strip()
+            if not line or line.startswith("//"):
+                continue
             # Skip method declarations
             if "(" in line and ")" in line:
                 continue
-
-            # Extract fields
-            match = re.search(field_pattern, line)
-            if match:
-                field_name = match.group(1)
-                if field_name not in ["if", "for", "while", "return", "class", "struct"]:
-                    fields.append(
-                        {
-                            "name": field_name,
-                            "visibility": current_visibility,
-                            "is_static": "static" in line,
-                            "is_const": "const" in line,
-                            "is_mutable": "mutable" in line,
-                        }
-                    )
-
+            # Match field declarations
+            m = re.match(r"^(?:static\s+)?(?:const\s+)?([\w:\s\*&<>]+)\s+(\w+)(?:\s*\[[^\]]*\])?\s*(?:=\s*[^;]+)?\s*;\s*$", line)
+            if m:
+                type_str = m.group(1).strip()
+                name = m.group(2)
+                fields.append({"name": name, "type": type_str})
         return fields
 
     def _is_inside_class(self, content: str, pos: int) -> bool:
-        """Check if a position is inside a class definition.
-
-        Args:
-            content: Source code
-            pos: Position to check
-
-        Returns:
-            True if inside a class
-        """
-        # Simple heuristic: count braces before position
+        """Heuristic to check if a position is inside a class body."""
+        # Look for the nearest preceding 'class' or 'struct' and its '{', and the next '}'
         before = content[:pos]
-
-        # Find last class/struct declaration
-        class_matches = list(
-            re.finditer(r"\b(?:class|struct)\s+\w+\s*(?::\s*[\w\s,]+)?\s*\{", before)
-        )
-        if not class_matches:
+        after = content[pos:]
+        class_match = list(re.finditer(r"(class|struct)\s+\w+[^;{]*{", before))
+        if not class_match:
             return False
-
-        last_class = class_matches[-1].end()
-
-        # Count braces between class and position
-        between = before[last_class:]
-        open_braces = between.count("{")
-        close_braces = between.count("}")
-
-        return open_braces > close_braces
+        last_class = class_match[-1]
+        open_brace = before.find("{", last_class.end() - 1)
+        if open_brace == -1:
+            return False
+        # Find matching closing brace
+        brace_count = 1
+        i = open_brace + 1
+        while i < len(content) and brace_count > 0:
+            if content[i] == '{':
+                brace_count += 1
+            elif content[i] == '}':
+                brace_count -= 1
+            i += 1
+        return open_brace < pos < i
 
     def _is_inside_function(self, content: str, pos: int) -> bool:
-        """Check if a position is inside a function definition.
-
-        Args:
-            content: Source code
-            pos: Position to check
-
-        Returns:
-            True if inside a function
-        """
-        # Find function definitions before position
+        """Heuristic to check if a position is inside a function body."""
+        # Look for the nearest preceding ')' and '{', and the next '}'
         before = content[:pos]
-        func_pattern = r"[\w\s\*&:<>]+\s+\w+\s*\([^)]*\)\s*\{"
-
-        func_matches = list(re.finditer(func_pattern, before))
-        if not func_matches:
+        after = content[pos:]
+        func_match = list(re.finditer(r"\)\s*{", before))
+        if not func_match:
             return False
+        last_func = func_match[-1]
+        open_brace = before.find("{", last_func.start())
+        if open_brace == -1:
+            return False
+        # Find matching closing brace
+        brace_count = 1
+        i = open_brace + 1
+        while i < len(content) and brace_count > 0:
+            if content[i] == '{':
+                brace_count += 1
+            elif content[i] == '}':
+                brace_count -= 1
+            i += 1
+        return open_brace < pos < i
 
-        # Check if we're inside the last function
-        last_func = func_matches[-1].end()
-        between = before[last_func:]
-
-        open_braces = between.count("{")
-        close_braces = between.count("}")
-
-        return open_braces > close_braces
-
-    def _detect_stl_usage(self, content: str) -> bool:
-        """Detect if STL is being used.
-
-        Args:
-            content: Source code
-
-        Returns:
-            True if STL is used
-        """
-        stl_patterns = [
-            r"std::",
-            r"using\s+namespace\s+std",
-            r"#include\s*<(?:vector|string|map|set|algorithm|iostream)>",
+    def _detect_stl_usage(self, content: str) -> list:
+        """Detect usage of STL headers/types."""
+        stl_types = [
+            "vector", "map", "set", "unordered_map", "unordered_set", "list", "deque", "queue", "stack", "array", "string", "tuple", "pair"
         ]
+        found = set()
+        for t in stl_types:
+            if re.search(r"\bstd::" + t + r"\b", content):
+                found.add(t)
+        return list(found)
 
-        for pattern in stl_patterns:
-            if re.search(pattern, content):
-                return True
-
-        return False
-
-    def _detect_smart_pointers(self, content: str) -> List[str]:
-        """Detect smart pointer usage.
-
-        Args:
-            content: Source code
-
-        Returns:
-            List of smart pointer types used
-        """
-        smart_ptrs = []
-
-        if re.search(r"\bunique_ptr\s*<", content):
-            smart_ptrs.append("unique_ptr")
-        if re.search(r"\bshared_ptr\s*<", content):
-            smart_ptrs.append("shared_ptr")
-        if re.search(r"\bweak_ptr\s*<", content):
-            smart_ptrs.append("weak_ptr")
-        if re.search(r"\bauto_ptr\s*<", content):
-            smart_ptrs.append("auto_ptr")  # Deprecated but still found
-
-        return smart_ptrs
-
-    def _count_code_lines(self, content: str) -> int:
-        """Count non-empty, non-comment lines of code.
-
-        Args:
-            content: C/C++ source code
-
-        Returns:
-            Number of code lines
-        """
-        count = 0
-        in_multiline_comment = False
-
-        for line in content.split("\n"):
-            stripped = line.strip()
-
-            # Handle multiline comments
-            if "/*" in line:
-                in_multiline_comment = True
-                # Check if comment ends on same line
-                if "*/" in line:
-                    in_multiline_comment = False
-                    # Count if there's code after comment
-                    after_comment = line.split("*/")[1].strip()
-                    if after_comment and not after_comment.startswith("//"):
-                        count += 1
-                continue
-
-            if in_multiline_comment:
-                if "*/" in line:
-                    in_multiline_comment = False
-                    after_comment = line.split("*/")[1].strip()
-                    if after_comment and not after_comment.startswith("//"):
-                        count += 1
-                continue
-
-            # Skip empty lines, single-line comments, and preprocessor directives
-            if stripped and not stripped.startswith("//"):
-                # Count preprocessor directives as code
-                if stripped.startswith("#"):
-                    count += 1
-                else:
-                    count += 1
-
-        return count
-
-    def _count_comment_lines(self, content: str) -> int:
-        """Count comment lines in C/C++ code.
-
-        Args:
-            content: C/C++ source code
-
-        Returns:
-            Number of comment lines
-        """
-        count = 0
-        in_multiline_comment = False
-
-        for line in content.split("\n"):
-            stripped = line.strip()
-
-            # Single-line comments
-            if stripped.startswith("//"):
-                count += 1
-                continue
-
-            # Multi-line comments
-            if "/*" in line:
-                count += 1
-                in_multiline_comment = True
-                if "*/" in line:
-                    in_multiline_comment = False
-                continue
-
-            if in_multiline_comment:
-                count += 1
-                if "*/" in line:
-                    in_multiline_comment = False
-
-        return count
+    def _detect_smart_pointers(self, content: str) -> list:
+        """Detect usage of smart pointers."""
+        smart_ptrs = ["unique_ptr", "shared_ptr", "weak_ptr"]
+        found = set()
+        for t in smart_ptrs:
+            if re.search(r"\bstd::" + t + r"\b", content):
+                found.add(t)
+        return list(found)

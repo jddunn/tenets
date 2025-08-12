@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,
@@ -168,9 +168,14 @@ class PhpAnalyzer(LanguageAnalyzer):
                     )
                     break
 
-            # Dynamic includes with variables
+            # Dynamic includes with variables or path expressions
             dynamic_include = re.search(r"(?:include|require)(?:_once)?\s*\(?\s*\$\w+", line)
-            if dynamic_include:
+            dynamic_dir_include = re.search(
+                r"(?:include|require)(?:_once)?\s*\(?\s*(?:__DIR__|dirname\s*\(\s*__FILE__\s*\))",
+                line,
+            )
+            concat_include = re.search(r"(?:include|require)(?:_once)?[^;]*\.[^;]*;", line)
+            if dynamic_include or dynamic_dir_include or concat_include:
                 imports.append(
                     ImportInfo(
                         module="<dynamic>",
@@ -194,7 +199,7 @@ class PhpAnalyzer(LanguageAnalyzer):
                 )
 
         # Check for composer.json dependencies
-        if file_path.name == "composer.json":
+        if file_path.name.lower() == "composer.json":
             imports.extend(self._extract_composer_dependencies(content))
 
         return imports
@@ -529,6 +534,11 @@ class PhpAnalyzer(LanguageAnalyzer):
 
         # Count arrow functions (PHP 7.4+)
         structure.arrow_function_count = len(re.findall(r"fn\s*\([^)]*\)\s*=>", content))
+
+        # Count anonymous classes
+        structure.anonymous_classes_count = len(
+            re.findall(r"new\s+class(?:\s*\([^)]*\))?\s*(?:extends\s+[\w\\]+)?\s*(?:implements\s+[\w\\,\s]+)?\s*\{", content)
+        )
 
         return structure
 
@@ -1109,23 +1119,7 @@ class PhpAnalyzer(LanguageAnalyzer):
         Returns:
             Framework name or None
         """
-        # Laravel indicators
-        laravel_indicators = [
-            r"namespace\s+App\\",
-            r"use\s+Illuminate\\",
-            r"extends\s+Controller",
-            r"extends\s+Model",
-            r"class\s+\w+\s+extends\s+Migration",
-            r"Route::",
-            r"Eloquent",
-            r"Blade",
-        ]
-
-        for pattern in laravel_indicators:
-            if re.search(pattern, content):
-                return "Laravel"
-
-        # Symfony indicators
+        # Symfony indicators (check first to avoid conflicts)
         symfony_indicators = [
             r"namespace\s+App\\Controller",
             r"use\s+Symfony\\",
@@ -1138,6 +1132,22 @@ class PhpAnalyzer(LanguageAnalyzer):
         for pattern in symfony_indicators:
             if re.search(pattern, content):
                 return "Symfony"
+
+        # Laravel indicators
+        laravel_indicators = [
+            r"namespace\s+App\\",
+            r"use\s+Illuminate\\",
+            r"extends\s+Controller(?!\\)",  # More specific to avoid AbstractController
+            r"extends\s+Model",
+            r"class\s+\w+\s+extends\s+Migration",
+            r"Route::",
+            r"Eloquent",
+            r"Blade",
+        ]
+
+        for pattern in laravel_indicators:
+            if re.search(pattern, content):
+                return "Laravel"
 
         # WordPress indicators
         wordpress_indicators = [

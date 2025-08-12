@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,
@@ -52,136 +52,64 @@ class RubyAnalyzer(LanguageAnalyzer):
         - gem 'gemname'
         - autoload :Module, 'file'
         - Bundler.require
-
-        Args:
-            content: Ruby source code
-            file_path: Path to the file being analyzed
-
-        Returns:
-            List of ImportInfo objects with import details
+        - conditional requires (require 'x' if ... / unless ...)
         """
-        imports = []
-        lines = content.split("\n")
+        imports: List[ImportInfo] = []
+        lines = content.splitlines()
 
-        # Require patterns
-        require_pattern = re.compile(r'^\s*require\s+[\'"]([^\'"]+)[\'"]')
-        require_relative_pattern = re.compile(r'^\s*require_relative\s+[\'"]([^\'"]+)[\'"]')
-        load_pattern = re.compile(r'^\s*load\s+[\'"]([^\'"]+)[\'"]')
-        gem_pattern = re.compile(r'^\s*gem\s+[\'"]([^\'"]+)[\'"](?:,\s*[\'"]([^\'"]+)[\'"])?')
-        autoload_pattern = re.compile(r'^\s*autoload\s+:(\w+),\s*[\'"]([^\'"]+)[\'"]')
-
-        # Conditional require patterns
-        require_if_pattern = re.compile(r'require\s+[\'"]([^\'"]+)[\'"]\s+if\s+')
+        require_pattern = re.compile(r'^\s*require\s+["\']([^"\']+)["\']')
+        require_relative_pattern = re.compile(r'^\s*require_relative\s+["\']([^"\']+)["\']')
+        load_pattern = re.compile(r'^\s*load\s+["\']([^"\']+)["\']')
+        gem_pattern = re.compile(r'^\s*gem\s+["\']([^"\']+)["\'](?:,\s*["\']([^"\']+)["\'])?')
+        autoload_pattern = re.compile(r'^\s*autoload\s+:(\w+),\s*["\']([^"\']+)["\']')
+        conditional_require_pattern = re.compile(r'^\s*require\s+["\']([^"\']+)["\']\s+(?:if|unless)\b')
 
         for i, line in enumerate(lines, 1):
-            # Skip comments
-            if line.strip().startswith("#"):
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
                 continue
 
-            # Standard require
-            match = require_pattern.match(line)
-            if match:
-                module_name = match.group(1)
-                imports.append(
-                    ImportInfo(
-                        module=module_name,
-                        line=i,
-                        type="require",
-                        is_relative=False,
-                        is_stdlib=self._is_stdlib_module(module_name),
-                        is_gem=not self._is_stdlib_module(module_name)
-                        and not module_name.startswith("."),
-                    )
-                )
+            # Conditional requires first (covers also standard require pattern)
+            m = conditional_require_pattern.match(line)
+            if m:
+                mod = m.group(1)
+                imports.append(ImportInfo(module=mod, line=i, type="conditional_require", conditional=True))
                 continue
 
-            # Require relative
-            match = require_relative_pattern.match(line)
-            if match:
-                imports.append(
-                    ImportInfo(
-                        module=match.group(1),
-                        line=i,
-                        type="require_relative",
-                        is_relative=True,
-                        is_project_file=True,
-                    )
-                )
+            m = require_pattern.match(line)
+            if m:
+                mod = m.group(1)
+                is_stdlib = self._is_stdlib_module(mod)
+                imports.append(ImportInfo(module=mod, line=i, type="require", is_stdlib=is_stdlib, is_gem=not is_stdlib and not mod.startswith('.')))
                 continue
 
-            # Load
-            match = load_pattern.match(line)
-            if match:
-                imports.append(
-                    ImportInfo(
-                        module=match.group(1),
-                        line=i,
-                        type="load",
-                        is_relative=match.group(1).startswith("."),
-                        reloads=True,  # load can reload files
-                    )
-                )
+            m = require_relative_pattern.match(line)
+            if m:
+                imports.append(ImportInfo(module=m.group(1), line=i, type="require_relative", is_relative=True, is_project_file=True))
                 continue
 
-            # Gem
-            match = gem_pattern.match(line)
-            if match:
-                gem_name = match.group(1)
-                version = match.group(2) if match.group(2) else None
-                imports.append(
-                    ImportInfo(
-                        module=gem_name,
-                        line=i,
-                        type="gem",
-                        is_relative=False,
-                        version=version,
-                        is_gem=True,
-                    )
-                )
+            m = load_pattern.match(line)
+            if m:
+                mod = m.group(1)
+                imports.append(ImportInfo(module=mod, line=i, type="load", is_relative=mod.startswith('.'), reloads=True))
                 continue
 
-            # Autoload
-            match = autoload_pattern.match(line)
-            if match:
-                imports.append(
-                    ImportInfo(
-                        module=match.group(2),
-                        alias=match.group(1),
-                        line=i,
-                        type="autoload",
-                        is_relative=match.group(2).startswith("."),
-                        lazy_load=True,
-                    )
-                )
+            m = gem_pattern.match(line)
+            if m:
+                gem_name = m.group(1)
+                version = m.group(2)
+                imports.append(ImportInfo(module=gem_name, line=i, type="gem", version=version, is_gem=True))
                 continue
 
-            # Conditional requires
-            match = require_if_pattern.search(line)
-            if match:
-                imports.append(
-                    ImportInfo(
-                        module=match.group(1),
-                        line=i,
-                        type="conditional_require",
-                        is_relative=False,
-                        conditional=True,
-                    )
-                )
+            m = autoload_pattern.match(line)
+            if m:
+                imports.append(ImportInfo(module=m.group(2), alias=m.group(1), line=i, type="autoload", is_relative=m.group(2).startswith('.'), lazy_load=True))
+                continue
 
-            # Bundler.require
-            if "Bundler.require" in line:
-                imports.append(
-                    ImportInfo(
-                        module="Bundler",
-                        line=i,
-                        type="bundler_require",
-                        is_relative=False,
-                        loads_all_gems=True,
-                    )
-                )
+            if 'Bundler.require' in line:
+                imports.append(ImportInfo(module='Bundler', line=i, type='bundler_require', loads_all_gems=True))
 
-        # Check for Gemfile dependencies if it's a Gemfile
-        if file_path.name == "Gemfile":
+        if file_path.name == 'Gemfile':
             imports.extend(self._extract_gemfile_dependencies(content))
 
         return imports
@@ -353,7 +281,7 @@ class RubyAnalyzer(LanguageAnalyzer):
                 attributes=attributes,
                 included_modules=included_modules,
                 extended_modules=extended_modules,
-                is_singleton=class_name.startswith("<<"),
+                is_singleton=False,
             )
 
             structure.classes.append(class_info)
@@ -418,8 +346,8 @@ class RubyAnalyzer(LanguageAnalyzer):
 
         # Check for test file
         structure.is_test_file = (
-            "_test.rb" in file_path.name
-            or "_spec.rb" in file_path.name
+            file_path.name.endswith("_test.rb")
+            or file_path.name.endswith("_spec.rb")
             or file_path.parts
             and "test" in file_path.parts
             or file_path.parts
@@ -427,7 +355,7 @@ class RubyAnalyzer(LanguageAnalyzer):
         )
 
         # Extract aliases
-        alias_pattern = r"^\s*alias(?:_method)?\s+:?(\w+)\s+:?(\w+)"
+        alias_pattern = r"^\s*alias\s+:?(\w+)\s+:?(\w+)"
         for match in re.finditer(alias_pattern, content, re.MULTILINE):
             structure.aliases.append(
                 {
@@ -436,6 +364,27 @@ class RubyAnalyzer(LanguageAnalyzer):
                     "line": content[: match.start()].count("\n") + 1,
                 }
             )
+        alias_method_pattern = r"^\s*alias_method\s+:?(\w+)\s*,\s+:?(\w+)"
+        for match in re.finditer(alias_method_pattern, content, re.MULTILINE):
+            structure.aliases.append(
+                {
+                    "new_name": match.group(1),
+                    "original_name": match.group(2),
+                    "line": content[: match.start()].count("\n") + 1,
+                }
+            )
+
+        # Detect singleton classes (class << self / class << obj)
+        if re.search(r"^\s*class\s*<<\s*(self|\w+)", content, re.MULTILINE):
+            # Mark any containing class as singleton if pattern appears inside it
+            for c in structure.classes:
+                # Rough check: if the singleton block appears after class start
+                singleton_pos = re.search(r"^\s*class\s*<<\s*(self|\w+)", content, re.MULTILINE)
+                if singleton_pos and content[:singleton_pos.start()].count("\n") + 1 >= c.line:
+                    try:
+                        setattr(c, "is_singleton", True)
+                    except Exception:
+                        pass
 
         return structure
 
@@ -535,7 +484,7 @@ class RubyAnalyzer(LanguageAnalyzer):
         metrics.conditions = abc_metrics["conditions"]
 
         # Count code elements
-        metrics.line_count = len(lines)
+        metrics.line_count = 0 if content == "" else len(lines)
         metrics.code_lines = self._count_code_lines(content)
         metrics.comment_lines = self._count_comment_lines(content)
         metrics.comment_ratio = (
@@ -575,9 +524,10 @@ class RubyAnalyzer(LanguageAnalyzer):
 
         # Test metrics
         if "_test.rb" in file_path.name or "_spec.rb" in file_path.name:
-            metrics.test_count = len(re.findall(r'\b(?:test|it|describe|context)\s+[\'"]', content))
-            metrics.assertion_count = len(re.findall(r"\bassert", content))
-            metrics.expectation_count = len(re.findall(r"\bexpect\b|\bshould\b", content))
+            metrics.test_count = len(re.findall(r'\b(?:test|it|describe|context)\s+[\'\"]', content))
+            metrics.assertion_count = len(re.findall(r"\bassert\b", content))
+            # Count RSpec expectations (expect/should) and include asserts as expectations for robustness
+            metrics.expectation_count = len(re.findall(r"\bexpect\b|\bshould\b", content)) + metrics.assertion_count
 
         # Calculate maintainability index
         import math

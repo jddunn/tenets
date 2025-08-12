@@ -13,17 +13,25 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Set, Callable, Union
 from datetime import datetime, timedelta
 
-# Replacement imports after directory move
-from .base import LanguageAnalyzer
-from .python_analyzer import PythonAnalyzer
-from .javascript_analyzer import JavaScriptAnalyzer
-from .go_analyzer import GoAnalyzer
-from .java_analyzer import JavaAnalyzer
-from .cpp_analyzer import CppAnalyzer
-from .ruby_analyzer import RubyAnalyzer
-from .php_analyzer import PhpAnalyzer
-from .rust_analyzer import RustAnalyzer
-from .generic_analyzer import GenericAnalyzer
+# Import analyzers (relocated under implementations/)
+from .implementations.python_analyzer import PythonAnalyzer
+from .implementations.javascript_analyzer import JavaScriptAnalyzer
+from .implementations.go_analyzer import GoAnalyzer
+from .implementations.java_analyzer import JavaAnalyzer
+from .implementations.cpp_analyzer import CppAnalyzer
+from .implementations.ruby_analyzer import RubyAnalyzer
+from .implementations.php_analyzer import PhpAnalyzer
+from .implementations.rust_analyzer import RustAnalyzer
+from .implementations.generic_analyzer import GenericAnalyzer
+# New analyzers
+from .implementations.html_analyzer import HTMLAnalyzer
+from .implementations.css_analyzer import CSSAnalyzer
+from .implementations.dart_analyzer import DartAnalyzer
+from .implementations.kotlin_analyzer import KotlinAnalyzer
+from .implementations.scala_analyzer import ScalaAnalyzer
+from .implementations.swift_analyzer import SwiftAnalyzer
+from .implementations.csharp_analyzer import CSharpAnalyzer
+from .implementations.gdscript_analyzer import GDScriptAnalyzer
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import (
@@ -37,6 +45,7 @@ from tenets.models.analysis import (
 )
 from tenets.storage.cache import AnalysisCache
 from tenets.utils.logger import get_logger
+from .base import LanguageAnalyzer
 
 
 class CodeAnalyzer:
@@ -98,41 +107,49 @@ class CodeAnalyzer:
         # Initialize each language analyzer
         language_analyzers = [
             PythonAnalyzer(),
-            JavaScriptAnalyzer(),
+            HTMLAnalyzer(),
+            CSSAnalyzer(),
             GoAnalyzer(),
             JavaAnalyzer(),
             CppAnalyzer(),
             RubyAnalyzer(),
             PhpAnalyzer(),
             RustAnalyzer(),
+            DartAnalyzer(),
+            KotlinAnalyzer(),
+            ScalaAnalyzer(),
+            SwiftAnalyzer(),
+            CSharpAnalyzer(),
+            GDScriptAnalyzer(),
+            # Ensure JS is last so it owns .jsx/.tsx if any overlap exists
+            JavaScriptAnalyzer(),
         ]
 
-        # Map extensions to analyzers
+        # Map extensions to analyzers (ensure JS owns .jsx/.tsx)
         for analyzer in language_analyzers:
             for ext in analyzer.file_extensions:
-                analyzers[ext.lower()] = analyzer
+                el = ext.lower()
+                if el in (".jsx", ".tsx") and not isinstance(analyzer, JavaScriptAnalyzer):
+                    continue
+                analyzers[el] = analyzer
 
-        # Add generic analyzer as fallback
+        # Add generic analyzer as fallback for common text/config formats
         generic = GenericAnalyzer()
-        for ext in [
-            ".txt",
-            ".md",
-            ".yml",
-            ".yaml",
-            ".json",
-            ".xml",
-            ".html",
-            ".css",
-            ".scss",
-            ".sql",
-            ".sh",
-            ".bash",
-            ".zsh",
-            ".fish",
-            ".dockerfile",
-            ".makefile",
-            ".cmake",
-        ]:
+        generic_exts = [
+            # Docs/markdown
+            ".md", ".markdown", ".mdown", ".mkd", ".mkdn", ".mdwn", ".mdx",
+            # Config/data files
+            ".toml", ".ini", ".cfg", ".conf", ".cnf", ".properties", ".props",
+            ".env", ".dotenv", ".config", ".rc", ".editorconfig",
+            ".yml", ".yaml", ".json", ".xml", ".sql",
+            # Shell and variants
+            ".sh", ".bash", ".zsh", ".fish",
+            # Build and misc text
+            ".dockerfile", ".makefile", ".cmake", ".lock",
+            # IaC/common config
+            ".tf", ".tfvars", ".hcl",
+        ]
+        for ext in generic_exts:
             if ext not in analyzers:
                 analyzers[ext] = generic
 
@@ -450,13 +467,20 @@ class CodeAnalyzer:
         if extension in self.analyzers:
             return self.analyzers[extension]
 
-        # Check alternative extensions
+        # Check alternative extensions / special filenames
         if file_path.name == "Dockerfile":
             return self.analyzers.get(".dockerfile")
         elif file_path.name == "Makefile":
             return self.analyzers.get(".makefile")
         elif file_path.name == "CMakeLists.txt":
             return self.analyzers.get(".cmake")
+        # Common dotfiles and env files (no extensions)
+        special_generic_names = {
+            ".env", ".env.local", ".env.dev", ".env.development", ".env.prod", ".env.production",
+            ".gitignore", ".gitattributes", ".editorconfig", ".npmrc", ".yarnrc", ".nvmrc",
+        }
+        if file_path.name in special_generic_names or file_path.name.lower().startswith(".env"):
+            return GenericAnalyzer()
 
         # Return generic analyzer as fallback for analysis
         return GenericAnalyzer()
@@ -484,26 +508,87 @@ class CodeAnalyzer:
             return self.analyzers.get(".makefile", GenericAnalyzer()).language_name
         elif file_path.name == "CMakeLists.txt":
             return self.analyzers.get(".cmake", GenericAnalyzer()).language_name
+        # Common dotfiles and env files
+        special_generic_names = {
+            ".env", ".env.local", ".env.dev", ".env.development", ".env.prod", ".env.production",
+            ".gitignore", ".gitattributes", ".editorconfig", ".npmrc", ".yarnrc", ".nvmrc",
+        }
+        if file_path.name in special_generic_names or file_path.name.lower().startswith(".env"):
+            return "generic"
 
         # Fallback to extension-based detection
         extension_map = {
             ".py": "python",
             ".js": "javascript",
+            ".jsx": "javascript",
             ".ts": "typescript",
+            ".tsx": "javascript",
+            ".mjs": "javascript",
+            ".cjs": "javascript",
+            ".html": "html",
+            ".htm": "html",
+            ".xhtml": "html",
+            ".vue": "html",
+            ".css": "css",
+            ".scss": "css",
+            ".sass": "css",
+            ".less": "css",
+            ".styl": "css",
+            ".stylus": "css",
+            ".pcss": "css",
+            ".postcss": "css",
             ".go": "go",
             ".java": "java",
             ".cpp": "cpp",
             ".c": "c",
+            ".h": "cpp",
+            ".hpp": "cpp",
             ".rb": "ruby",
             ".php": "php",
             ".rs": "rust",
             ".cs": "csharp",
+            ".csx": "csharp",
             ".swift": "swift",
             ".kt": "kotlin",
+            ".kts": "kotlin",
             ".scala": "scala",
-            ".r": "r",
-            ".sql": "sql",
+            ".sc": "scala",
+            ".dart": "dart",
+            ".gd": "gdscript",
+            ".tres": "gdscript",
+            ".tscn": "gdscript",
+            # Generic/config/markdown
+            ".md": "generic",
+            ".markdown": "generic",
+            ".mdown": "generic",
+            ".mkd": "generic",
+            ".mkdn": "generic",
+            ".mdwn": "generic",
+            ".mdx": "generic",
+            ".toml": "generic",
+            ".ini": "generic",
+            ".cfg": "generic",
+            ".conf": "generic",
+            ".cnf": "generic",
+            ".properties": "generic",
+            ".props": "generic",
+            ".env": "generic",
+            ".dotenv": "generic",
+            ".config": "generic",
+            ".rc": "generic",
+            ".yml": "generic",
+            ".yaml": "generic",
+            ".json": "generic",
+            ".xml": "generic",
+            ".sql": "generic",
             ".sh": "shell",
+            ".bash": "shell",
+            ".zsh": "shell",
+            ".fish": "shell",
+            ".lock": "generic",
+            ".tf": "generic",
+            ".tfvars": "generic",
+            ".hcl": "generic",
         }
 
         return extension_map.get(file_path.suffix.lower(), "unknown")

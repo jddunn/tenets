@@ -11,7 +11,7 @@ import math
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,

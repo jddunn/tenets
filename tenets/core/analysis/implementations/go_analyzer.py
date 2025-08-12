@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer  # updated path after relocation
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,

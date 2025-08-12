@@ -8,7 +8,7 @@ import tempfile
 import json
 
 from tenets.core.analysis.analyzer import CodeAnalyzer
-from tenets.core.analysis.python_analyzer import PythonAnalyzer
+from tenets.core.analysis.implementations.python_analyzer import PythonAnalyzer
 from tenets.models.analysis import (
     FileAnalysis,
     ProjectAnalysis,

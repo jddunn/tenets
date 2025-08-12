@@ -9,6 +9,7 @@
 [![PyPI version](https://badge.fury.io/py/tenets.svg)](https://pypi.org/project/tenets/)
 [![CI](https://github.com/jddunn/tenets/actions/workflows/ci.yml/badge.svg)](https://github.com/jddunn/tenets/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jddunn/tenets/branch/main/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
+[![Coverage Status](https://coveralls.io/repos/github/jddunn/tenets/badge.svg?branch=main)](https://coveralls.io/github/jddunn/tenets?branch=main)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://docs.tenets.dev)
 
 **tenets** automatically finds and builds the most relevant context from your codebase. Instead of manually copying files or searching for documentation, tenets intelligently aggregates exactly what you need - whether you're debugging, building features, or chatting with an AI assistant.
@@ -196,6 +197,70 @@ poetry shell
 | **all** | Everything above | You want all features |
 
 ### Troubleshooting Installation
+
+### Local Development / Editable Install
+
+If you want to hack on Tenets locally and immediately use the `tenets` CLI with your changes, install it in editable mode.
+
+```bash
+# (Windows) create & activate venv
+python -m venv .venv
+.venv\\Scripts\\activate
+
+# (macOS/Linux)
+python -m venv .venv
+source .venv/bin/activate
+
+# Upgrade tooling
+pip install --upgrade pip
+
+# Editable install (core + dev tooling)
+pip install -e ".[dev]"
+
+# Or everything (all optional feature groups + dev)
+pip install -e ".[all,dev]"
+
+# Verify CLI
+tenets --help
+```
+
+### Building Distribution Artifacts (sdist / wheel)
+
+You usually only need this when testing packaging or publishing. The project uses PEP 517/518 with `hatchling`.
+
+```bash
+# Ensure build deps installed (included in dev extras)
+pip install build
+
+# Build (creates dist/*.whl and dist/*.tar.gz)
+python -m build
+
+# (Optional) install the freshly built wheel
+pip install --force-reinstall dist/tenets-*.whl
+```
+
+After an editable install you don't need to rebuild for Python code changes— they are picked up immediately. Rebuild only when validating the packaging metadata or non-Python asset inclusion.
+
+#### Using Poetry (Alternative)
+If you prefer Poetry instead of pip + venv:
+```bash
+poetry install -E all -E dev   # or omit extras for core only
+poetry run tenets --help
+```
+To add a new extra later:
+```bash
+poetry add --optional SOME_PKG
+```
+
+#### Makefile Shortcuts
+Common tasks are wrapped in the Makefile:
+```bash
+make dev      # editable install with all + dev extras
+make install  # core editable install
+make test     # run full test suite with coverage
+make build    # build sdist + wheel
+```
+
 
 **numpy/scipy installation fails on Python 3.9?**
 
@@ -511,8 +576,7 @@ Core docs in `docs/`:
 - [CLI Reference](docs/CLI.md)
 - [Configuration Guide](docs/CONFIG.md)
 - [Architecture Overview](docs/ARCHITECTURE.md)
-- [Deep Dive](docs/DEEP-DIVE.md)
-- [Development Guide](docs/DEVELOPMENT.md)
+- [Deep Dive](docs/DEVELOPMENT.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 - [Testing Guide](docs/TESTING.md)
 
@@ -595,3 +659,51 @@ You can change the cache location via config or environment variables:
 Sessions are persisted to the main SQLite database by default when a `TenetsConfig` is provided. The `SessionManager` uses an in‑memory mirror for speed and will write session metadata and context snapshots to `${CACHE_DIR}/tenets.db`.
 
 No project code leaves your machine; all processing and storage are local.
+
+## Supported languages and formats
+
+The analyzer includes specialized parsers for many languages and formats. Files are routed based on extensions; HTML analyzer covers HTML and Vue SFCs. JSX/TSX are handled by the JavaScript analyzer.
+
+### Languages with dedicated analyzers
+
+| Language | Analyzer | Extensions |
+|---|---|---|
+| Python | PythonAnalyzer | .py, .pyw, .pyi |
+| JavaScript/TypeScript | JavaScriptAnalyzer | .js, .jsx, .ts, .tsx, .mjs, .cjs |
+| HTML + Vue SFC | HTMLAnalyzer | .html, .htm, .xhtml, .vue |
+| CSS/SCSS/Sass/Less | CSSAnalyzer | .css, .scss, .sass, .less, .styl, .stylus, .pcss, .postcss |
+| Go | GoAnalyzer | .go |
+| Java | JavaAnalyzer | .java |
+| C/C++ | CppAnalyzer | .c, .cc, .cpp, .cxx, .c++, .h, .hh, .hpp, .hxx, .h++ |
+| Ruby | RubyAnalyzer | .rb, .rake, .gemspec, .ru |
+| PHP | PhpAnalyzer | .php, .phtml, .inc, .php3, .php4, .php5, .phps |
+| Rust | RustAnalyzer | .rs |
+| Dart (Flutter aware) | DartAnalyzer | .dart |
+| Kotlin | KotlinAnalyzer | .kt, .kts |
+| Scala | ScalaAnalyzer | .scala, .sc |
+| Swift | SwiftAnalyzer | .swift |
+| C# | CSharpAnalyzer | .cs, .csx |
+| GDScript (Godot) | GDScriptAnalyzer | .gd, .tres, .tscn |
+
+### Configuration, docs, and structured text (GenericAnalyzer)
+
+These formats are analyzed with GenericAnalyzer. YAML files include heuristics for common ecosystems.
+
+| Category | Examples | Extensions / Filenames | Notes |
+|---|---|---|---|
+| YAML (Compose/K8s/etc.) | docker-compose.yml, deployment.yaml, chart.yaml, kustomization.yaml, .github/workflows/*.yml | .yaml, .yml | Detects Docker Compose (services, images), Kubernetes (apiVersion/kind, images, refs), hints Helm, Kustomize, GitHub Actions |
+| TOML | pyproject.toml, Cargo.toml | .toml | Extracts top-level keys |
+| INI/CFG/CONF | app.ini, settings.cfg, nginx.conf, my.cnf | .ini, .cfg, .conf, .cnf | Sections and keys parsed |
+| Properties | application.properties | .properties, .props | Key/value parsing |
+| ENV files | .env, .env.local, .env.production | .env, .env.* | Routed to Generic by filename |
+| JSON/XML | package.json, config.json, pom.xml | .json, .xml | JSON deps/keys detected |
+| Markdown | README.md, docs/*.mdx | .md, .markdown, .mdx, .mdown, .mkd, .mkdn, .mdwn | Sections and headings extracted |
+| SQL | schema.sql, queries.sql | .sql | Basic metrics only |
+| Lock/HashiCorp | yarn.lock, *.tf, *.tfvars, *.hcl | .lock, .tf, .tfvars, .hcl | Routed to Generic |
+| Shell scripts | build.sh, hooks/*.bash | .sh, .bash, .zsh, .fish | Routed to Generic |
+| Special files | Dockerfile, Makefile, CMakeLists.txt, .gitignore, .editorconfig, .npmrc, .yarnrc, .nvmrc | by name | Routed to Generic by special-name handling |
+
+Notes
+- JSX/TSX are owned by JavaScriptAnalyzer; HTMLAnalyzer focuses on HTML and Vue SFCs.
+- YAML heuristics set structure.framework (e.g., docker-compose, kubernetes) and populate modules with services/resources.
+- Generic analyzer extracts imports/references from config where possible (images, depends_on, ConfigMaps/Secrets, etc.).

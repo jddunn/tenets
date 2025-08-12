@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,
@@ -168,7 +168,7 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                         alias=match.group(1),
                         line=i,
                         type="es6_default",
-                        is_relative=module.startsWith("."),
+                        is_relative=module.startswith("."),
                     )
                 )
                 # Named imports
@@ -180,7 +180,7 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                             alias=name,
                             line=i,
                             type="es6_named",
-                            is_relative=module.startsWith("."),
+                            is_relative=module.startswith("."),
                         )
                     )
                 continue
@@ -250,7 +250,7 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                             alias=name,
                             line=i,
                             type="commonjs_destructured",
-                            is_relative=module.startsWith("."),
+                            is_relative=module.startswith("."),
                         )
                     )
 
@@ -291,7 +291,7 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
         # ES6 export patterns
         export_default = re.compile(r"^\s*export\s+default\s+(.+)")
         export_named_declaration = re.compile(
-            r"^\s*export\s+(?:const|let|var|function|class|interface|type|enum)\s+(\w+)"
+            r"^\s*export\s+(?:async\s+)?(?:const|let|var|function|class|interface|type|enum)\s+(\w+)"
         )
         export_list = re.compile(r"^\s*export\s*\{([^}]+)\}")
         export_from = re.compile(r'^\s*export\s*\{([^}]+)\}\s*from\s+[\'"`]([^\'"`]+)[\'"`]')
@@ -338,7 +338,7 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                 name = match.group(1)
                 export_type = (
                     "function"
-                    if "function" in line
+                    if ("function" in line or re.search(r"^\s*export\s+async\s+function", line))
                     else (
                         "class"
                         if "class" in line
@@ -488,8 +488,11 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
 
         # React patterns
         react_component = re.compile(
-            r"(?:export\s+)?(?:const|function)\s+([A-Z]\w+)\s*[=:].*?(?:React\.|jsx|tsx|<)"
+            r"(?:export\s+)?(?:(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>|function\s+([A-Z][A-Za-z0-9_]*)\s*\(|class\s+([A-Z][A-Za-z0-9_]*)\b)",
+            re.MULTILINE,
         )
+        # Additional JSX arrow inline handlers
+        jsx_arrow = re.compile(r"=>\s*\(")
 
         # Track current context
         current_class = None
@@ -554,17 +557,18 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
 
             # Methods (inside classes)
             if in_class and current_class:
-                match = method_pattern.match(line)
-                if match:
-                    method_name = match.group(1)
+                # Match methods including private, getters/setters, and static
+                method_match = re.match(r"^\s*(?:static\s+)?(?:async\s+)?(?:(get|set)\s+)?(#?\w+)\s*\(([^)]*)\)\s*\{", line)
+                if method_match:
+                    method_name = method_match.group(2)
                     if method_name not in ["if", "for", "while", "switch", "catch"]:
                         method_info = {
-                            "name": method_name,
+                            "name": method_name,  # preserve '#' for private
                             "line": i,
-                            "args": self._parse_js_params(match.group(2)),
+                            "args": self._parse_js_params(method_match.group(3)),
                             "is_async": "async" in line,
-                            "is_static": "static" in line,
-                            "is_private": method_name.startswith("_") or "#" in line,
+                            "is_static": line.lstrip().startswith("static "),
+                            "is_private": method_name.startswith("#"),
                             "is_constructor": method_name == "constructor",
                         }
                         current_class.methods.append(method_info)
@@ -577,7 +581,7 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                         {
                             "name": match.group(1),
                             "line": i,
-                            "extends": match.group(2).split(",") if match.group(2) else [],
+                            "extends": [e.strip() for e in match.group(2).split(",")] if match.group(2) else [],
                             "is_exported": "export" in line,
                         }
                     )
@@ -604,20 +608,34 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
                     )
                     continue
 
-            # React components
-            match = react_component.search(line)
-            if match:
-                component_name = match.group(1)
-                # Check if it's a component (starts with capital letter)
-                if component_name[0].isupper():
-                    structure.components.append(
-                        {
-                            "name": component_name,
-                            "type": "functional" if "const" in line or "=>" in line else "class",
-                            "line": i,
-                            "is_exported": "export" in line,
-                        }
-                    )
+            # React components: scan the whole content to catch multiline JSX and memo wrappers
+            if i == 1:
+                seen = set()
+                for m in react_component.finditer(content):
+                    comp = next((g for g in m.groups() if g), None)
+                    if comp and comp[0].isupper() and comp not in seen:
+                        frag = m.group(0).lstrip()
+                        comp_type = "class" if frag.startswith("class ") else "functional"
+                        line_no = content[: m.start()].count("\n") + 1
+                        structure.components.append(
+                            {
+                                "name": comp,
+                                "type": comp_type,
+                                "line": line_no,
+                                "is_exported": "export" in frag,
+                            }
+                        )
+                        seen.add(comp)
+            # Detect memoized components assigned from React.memo
+            memo_assign = re.compile(r"(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*=\s*React\.memo\s*\(")
+            # corrected pattern (no quote after parenthesis)
+            memo_assign = re.compile(r"(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*=\s*React\.memo\s*\(")
+            for m in memo_assign.finditer(content):
+                comp_name = m.group(1)
+                line_no = content[: m.start()].count("\n") + 1
+                structure.components.append(
+                    {"name": comp_name, "type": "functional", "line": line_no, "is_exported": False}
+                )
 
             # Constants
             match = const_pattern.search(line)
@@ -680,10 +698,10 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
             r"\bcase\b",
             r"\bcatch\b",
             r"\bfinally\b",
-            r"\b\?\s*[^:]+\s*:",
+            r"\?",  # Count ternary operators by '?'
             r"\|\|",
             r"&&",
-            r"\?\?",  # Ternary, logical, nullish
+            r"\?\?",  # Nullish coalescing
         ]
 
         for keyword in decision_keywords:

@@ -1,102 +1,161 @@
 # Development Guide
 
-This guide covers everything you need to contribute to **tenets**.
+This guide provides instructions for setting up your development environment, running tests, and contributing to the Tenets project.
 
-## Table of Contents
-
-- [Development Setup](#development-setup)
-- [Project Structure](#project-structure)
-- [Development Workflow](#development-workflow)
-- [Testing](#testing)
-- [Code Quality](#code-quality)
-- [Documentation](#documentation)
-- [Debugging](#debugging)
-- [Performance Profiling](#performance-profiling)
-- [Contributing Guidelines](#contributing-guidelines)
-
-## Development Setup
+## 1. Initial Setup
 
 ### Prerequisites
-
-- Python 3.9 or higher
+- Python 3.9+
 - Git
-- Make (optional but recommended)
-- Docker (optional, for container testing)
+- An activated Python virtual environment (e.g., `venv`, `conda`).
 
-### Initial Setup
-
-1. **Fork and clone the repository**:
+### Fork and Clone
+1. Fork the repository on GitHub.
+2. Clone your fork locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/tenets.git
+   git clone https://github.com/<your-username>/tenets.git
    cd tenets
    ```
 
-2. **Create a virtual environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install in development mode**:
-   ```bash
-   make dev  # Or: pip install -e ".[all,dev,test,docs]"
-   ```
-
-4. **Set up pre-commit hooks**:
-   ```bash
-   pre-commit install --install-hooks
-   pre-commit install --hook-type commit-msg
-   pre-commit install --hook-type push
-   ```
-
-5. **Verify installation**:
-   ```bash
-   tenets --version
-   make test-fast  # Run quick tests
-   ```
-
-## Project Structure
-
-```
-tenets/
-├── .github/workflows/    # CI/CD pipelines
-│   ├── ci.yml           # Continuous integration
-│   └── release.yml      # Release automation
-├── assets/logos/        # Brand assets
-├── docs/                # Documentation source
-│   ├── api.md          # API reference
-│   ├── architecture.md # System design
-│   ├── cli.md          # CLI documentation
-│   └── deep-dive.md    # Advanced topics
-├── tenets/             # Main package
-│   ├── __init__.py     # Package initialization
-│   ├── cli/            # CLI implementation
-│   │   └── main.py     # CLI entry point
-│   ├── core/           # Core functionality
-│   │   ├── analyzer.py # Code analysis
-│   │   ├── nlp.py      # NLP processing
-│   │   └── prompt_parser.py
-│   ├── models/         # Data models
-│   │   ├── analysis.py
-│   │   ├── context.py
-│   │   └── llm.py
-│   └── utils/          # Utilities
-│       └── file_scanner.py
-├── tests/              # Test suite
-├── pyproject.toml      # Project configuration
-├── Makefile           # Development tasks
-└── README.md          # Main documentation
-```
-
-## Development Workflow
-
-### 1. Creating a Feature Branch
+### Install Dependencies
+Install the project in "editable" mode along with all development dependencies. This allows you to modify the source code and have the changes immediately reflected.
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b feature/your-feature-name
+pip install -e ".[all,dev]"
 ```
+This command installs everything needed for development, including core dependencies, optional features (`all`), and development tools (`dev`).
+
+### Set up Pre-Commit Hooks
+This project uses `pre-commit` to automatically run linters and formatters before each commit.
+
+```bash
+pre-commit install
+
+### Alternative Installs
+
+If you only need core + dev tooling (faster):
+```bash
+pip install -e ".[dev]"
+```
+If you need a minimal footprint for quick iteration (no optional extras):
+```bash
+pip install -e .
+```
+
+### Verifying the CLI
+```bash
+tenets --version
+tenets --help | head
+```
+
+If the command is not found, ensure your virtualenv is activated and that the `scripts` (Windows) or `bin` (Unix) directory is on PATH.
+
+## 1.1 Building Distribution Artifacts (Optional)
+
+You typically do NOT need to build wheels / sdists for day‑to‑day development; the editable install auto-reflects code edits. Build only when testing packaging or release steps.
+
+```bash
+python -m build               # creates dist/*.whl and dist/*.tar.gz
+pip install --force-reinstall dist/tenets-*.whl  # sanity check install
+```
+
+To inspect what went into the wheel:
+```bash
+unzip -l dist/tenets-*.whl | grep analysis/implementations | head
+```
+
+## 1.2 Clean Environment Tasks
+
+```bash
+pip cache purge        # optional: clear wheel cache
+find . -name "__pycache__" -exec rm -rf {} +
+rm -rf .pytest_cache .ruff_cache .mypy_cache build dist *.egg-info
+```
+
+## 1.3 Using Poetry Instead of pip (Optional)
+
+Poetry can manage the virtual environment and extras if you prefer:
+```bash
+poetry install -E all -E dev   # full feature + dev toolchain
+poetry run pytest              # run tests
+poetry run tenets --help       # invoke CLI
+```
+Update dependencies:
+```bash
+poetry update
+```
+Add a new optional dependency (example):
+```bash
+poetry add --optional rich
+```
+```
+
+## 2. Running Tests
+
+The test suite uses `pytest`. We have a comprehensive configuration in `pytest.ini` that handles most settings automatically.
+
+### Running All Tests
+To run the entire test suite:
+```bash
+pytest
+```
+
+### Running Tests with Coverage
+To generate a test coverage report:
+```bash
+pytest --cov
+```
+This command is configured in `pytest.ini` to:
+- Measure coverage for the `tenets` package.
+- Generate reports in the terminal, as XML (`coverage.xml`), and as a detailed HTML report (`htmlcov/`).
+- Fail the build if coverage drops below 70%.
+
+To view the interactive HTML report:
+```bash
+# On macOS
+open htmlcov/index.html
+
+# On Windows
+start htmlcov/index.html
+
+# On Linux
+xdg-open htmlcov/index.html
+```
+
+## 3. Required API Keys and Secrets
+
+For CI/CD and releasing the package, you need to configure the following secrets in your GitHub repository under **Settings > Secrets and variables > Actions**.
+
+- **`PYPI_API_TOKEN`**: An API token from PyPI with permission to upload packages to the `tenets` project. This is required for the release workflow.
+- **`CODECOV_TOKEN`**: The repository upload token from Codecov. This is used by the CI workflow to upload coverage reports.
+
+## 4. Code Style and Linting
+
+We use `ruff` for linting and formatting. The pre-commit hook runs it automatically, but you can also run it manually:
+
+```bash
+# Check for linting errors
+ruff check .
+
+# Automatically fix linting errors
+ruff check . --fix
+
+# Format the code
+ruff format .
+```
+
+## 5. Building Documentation
+
+The documentation is built using `mkdocs`.
+
+```bash
+# Serve the documentation locally
+mkdocs serve
+
+# Build the static site
+mkdocs build
+```
+The site will be available at `http://127.0.0.1:8000`.
 
 ### 2. Making Changes
 

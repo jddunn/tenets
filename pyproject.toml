@@ -98,34 +98,34 @@ dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
-    "pytest-benchmark>=4.0.0",
     "pytest-mock>=3.12.0",
-    "pytest-timeout>=2.2.0",
-    "hypothesis>=6.92.0",
-    
-    # Code quality
-    "black>=23.0.0",
-    "isort>=5.13.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-xdist>=3.3.0",
+    "hypothesis>=6.82.0",
+    "faker>=19.0.0",
+    "freezegun>=1.2.0",
+    "coverage>=7.3.0",
+
+    # Linting and formatting
     "ruff>=0.1.0",
     "mypy>=1.5.0",
-    "bandit[toml]>=1.7.5",
-    "safety>=2.3.0",
-    "pydocstyle>=6.3.0",
-    
-    # Commit tools
-    "commitizen>=3.13.0",
-    "pre-commit>=3.5.0",
-    
+    "pre-commit>=3.4.0",
+
     # Documentation
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.4.0",
-    "mkdocstrings[python]>=0.23.0",
-    "mike>=2.0.0",
-    
-    # Build tools
+    "mkdocs-git-revision-date-localized-plugin>=1.2.0",
+    "mkdocs-git-authors-plugin>=0.7.0",
+    "mkdocs-awesome-pages-plugin>=2.9.0",
+    "mkdocs-section-index>=0.3.0",
+    "mkdocs-macros-plugin>=0.9.0",
+    "mkdocs-mermaid2-plugin>=1.1.0",
+    "mkdocs-jupyter>=0.24.0",
+
+    # Build and release
     "build>=1.0.0",
     "twine>=4.0.0",
-    "wheel>=0.42.0",
+    "wheel>=0.41.0",
 ]
 
 # Test-specific dependencies

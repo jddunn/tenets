@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,
@@ -487,7 +487,9 @@ class JavaAnalyzer(LanguageAnalyzer):
         metrics.try_blocks = len(re.findall(r"\btry\s*\{", content))
         metrics.catch_blocks = len(re.findall(r"\bcatch\s*\([^)]+\)", content))
         metrics.finally_blocks = len(re.findall(r"\bfinally\s*\{", content))
-        metrics.throws_declarations = len(re.findall(r"\bthrows\s+\w+", content))
+        # Count both method 'throws' declarations and explicit throw statements
+        metrics.throws_declarations = len(re.findall(r"\bthrows\s+[\w.,\s]+", content))
+        metrics.throws_declarations += len(re.findall(r"\bthrow\s+new\b", content))
 
         # Annotation metrics
         metrics.annotation_count = len(re.findall(r"@\w+", content))
@@ -498,6 +500,8 @@ class JavaAnalyzer(LanguageAnalyzer):
 
         # Lambda and stream metrics
         metrics.lambda_count = len(re.findall(r"\([^)]*\)\s*->", content))
+        # Also count single-arg lambdas without parentheses: x -> x + 1
+        metrics.lambda_count += len(re.findall(r"\b[A-Za-z_]\w*\s*->", content))
         metrics.stream_operations = len(
             re.findall(r"\.\s*(?:stream|filter|map|reduce|collect|forEach)\s*\(", content)
         )

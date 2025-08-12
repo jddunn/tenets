@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 
-from .base import LanguageAnalyzer
+from ..base import LanguageAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,
@@ -64,20 +64,41 @@ class RustAnalyzer(LanguageAnalyzer):
         imports = []
         lines = content.split("\n")
 
+        # Support multi-line `use` statements by accumulating until semicolon
+        use_acc: Optional[str] = None
+        brace_depth = 0
+
         for i, line in enumerate(lines, 1):
             # Skip comments
             if line.strip().startswith("//"):
                 continue
 
-            # Use statements
+            # Accumulate multi-line use
+            if use_acc is not None:
+                use_acc += " " + line.strip()
+                brace_depth += line.count("{") - line.count("}")
+                if ";" in line and brace_depth <= 0:
+                    # Completed statement
+                    use_path = use_acc.rstrip(";").strip()
+                    parsed_imports = self._parse_use_statement(use_path, i)
+                    imports.extend(parsed_imports)
+                    use_acc = None
+                continue
+
+            # Use statements (single-line start)
             use_pattern = re.compile(r"^\s*(?:pub\s+)?use\s+(.+);")
+            start_use_pattern = re.compile(r"^\s*(?:pub\s+)?use\s+(.+)")
             match = use_pattern.match(line)
             if match:
                 use_path = match.group(1).strip()
-
-                # Parse the use path
                 parsed_imports = self._parse_use_statement(use_path, i)
                 imports.extend(parsed_imports)
+                continue
+            # Start of multi-line use (no semicolon yet)
+            start_match = start_use_pattern.match(line)
+            if start_match and not line.strip().endswith(";"):
+                use_acc = start_match.group(1).strip()
+                brace_depth = line.count("{") - line.count("}")
                 continue
 
             # Extern crate
@@ -481,6 +502,17 @@ class RustAnalyzer(LanguageAnalyzer):
         # Count async functions
         structure.async_functions = len(re.findall(r"\basync\s+fn\b", content))
 
+        # Also include await points at structure-level
+        structure.await_points = len(re.findall(r"\.await", content))
+
+        # Unsafe functions count at structure-level
+        structure.unsafe_functions = len(re.findall(r"\bunsafe\s+fn\b", content))
+
+        # Detect closures (lambdas) of the form `|...|` possibly with move/async before
+        structure.lambda_count = len(
+            re.findall(r"\|[^|]*\|\s*(?:->\s*[^\s{]+)?", content)
+        )
+
         # Detect test functions
         structure.test_functions = len(re.findall(r"#\[test\]", content))
         structure.bench_functions = len(re.findall(r"#\[bench\]", content))
@@ -600,7 +632,24 @@ class RustAnalyzer(LanguageAnalyzer):
 
         # Unsafe metrics
         metrics.unsafe_blocks = len(re.findall(r"\bunsafe\s*\{", content))
-        metrics.unsafe_functions = len(re.findall(r"\bunsafe\s+fn\b", content))
+        # Count only free (non-trait/non-impl) unsafe functions
+        unsafe_fn_matches = list(re.finditer(r"\bunsafe\s+fn\b", content))
+        # Build trait/impl spans
+        spans: List[tuple[int, int]] = []
+        for m in re.finditer(r"\btrait\b", content):
+            span = self._find_block_span(content, m.end())
+            if span:
+                spans.append(span)
+        for m in re.finditer(r"\bimpl\b", content):
+            span = self._find_block_span(content, m.end())
+            if span:
+                spans.append(span)
+        def _in_spans(idx: int) -> bool:
+            for s, e in spans:
+                if s <= idx < e:
+                    return True
+            return False
+        metrics.unsafe_functions = sum(1 for m in unsafe_fn_matches if not _in_spans(m.start()))
         metrics.unsafe_traits = len(re.findall(r"\bunsafe\s+trait\b", content))
         metrics.unsafe_impl = len(re.findall(r"\bunsafe\s+impl\b", content))
         metrics.unsafe_score = (
@@ -837,6 +886,26 @@ class RustAnalyzer(LanguageAnalyzer):
 
         return None
 
+    def _find_block_span(self, content: str, start_pos: int) -> Optional[tuple[int, int]]:
+        """Find the span (start_index_of_open_brace, end_index_after_closing_brace) for a block starting after a keyword.
+
+        Looks for the next '{' after start_pos and returns the span covering the balanced block.
+        """
+        brace_pos = content.find("{", start_pos)
+        if brace_pos == -1:
+            return None
+        depth = 1
+        pos = brace_pos + 1
+        while pos < len(content) and depth > 0:
+            if content[pos] == "{":
+                depth += 1
+            elif content[pos] == "}":
+                depth -= 1
+            pos += 1
+        if depth == 0:
+            return (brace_pos, pos)
+        return None
+
     def _extract_struct_fields(self, struct_body: str) -> List[Dict[str, Any]]:
         """Extract fields from struct body.
 
@@ -878,8 +947,8 @@ class RustAnalyzer(LanguageAnalyzer):
         """
         variants = []
 
-        # Variant patterns
-        variant_pattern = r"^\s*(\w+)(?:\(([^)]*)\)|\{([^}]*)\})?(?:\s*=\s*(\d+))?"
+        # Variant patterns (allow whitespace before payload)
+        variant_pattern = r"^\s*(\w+)(?:\s*\(([^)]*)\)|\s*\{([^}]*)\})?(?:\s*=\s*(\d+))?"
 
         for match in re.finditer(variant_pattern, enum_body, re.MULTILINE):
             variant_name = match.group(1)
@@ -888,11 +957,14 @@ class RustAnalyzer(LanguageAnalyzer):
             discriminant = match.group(4)
 
             if variant_name:  # Filter out empty matches
-                variant_type = "unit"
-                if tuple_data:
+                # Determine type with robust fallback on the matched text
+                text = match.group(0)
+                if tuple_data is not None or ("(" in text and ")" in text):
                     variant_type = "tuple"
-                elif struct_data:
+                elif struct_data is not None or ("{" in text and "}" in text):
                     variant_type = "struct"
+                else:
+                    variant_type = "unit"
 
                 variants.append(
                     {

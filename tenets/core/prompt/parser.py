@@ -15,6 +15,7 @@ The parser identifies:
 
 import re
 import json
+import base64
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple, Set
 from dataclasses import dataclass, field
@@ -23,16 +24,24 @@ from datetime import datetime, timedelta
 from collections import Counter
 from enum import Enum
 import os
+import importlib
+import importlib.util
 
-try:
-    import requests
-except ImportError:
-    requests = None
+# Optional dependencies (loaded dynamically to avoid static import errors)
+requests = None
+if importlib.util.find_spec("requests"):
+    try:
+        requests = importlib.import_module("requests")
+    except Exception:
+        requests = None
 
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    BeautifulSoup = None
+BeautifulSoup = None
+if importlib.util.find_spec("bs4"):
+    try:
+        bs4_mod = importlib.import_module("bs4")
+        BeautifulSoup = getattr(bs4_mod, "BeautifulSoup", None)
+    except Exception:
+        BeautifulSoup = None
 
 from tenets.config import TenetsConfig
 from tenets.models.context import PromptContext, TaskType
@@ -247,10 +256,13 @@ class PromptParser:
     def _init_keyword_extractor(self):
         """Initialize keyword extraction system."""
         try:
-            # Try to use YAKE if available
-            import yake
+            # Try to use YAKE if available (dynamic import)
+            yake = None
+            if importlib.util.find_spec("yake"):
+                yake = importlib.import_module("yake")
 
-            self._keyword_extractor = yake.KeywordExtractor(
+            if yake:
+                self._keyword_extractor = yake.KeywordExtractor(
                 lan="en",
                 n=3,  # Max ngram size
                 dedupLim=0.7,
@@ -258,8 +270,10 @@ class PromptParser:
                 windowsSize=1,
                 top=20,
                 features=None,
-            )
-            self.logger.debug("YAKE keyword extractor initialized")
+                )
+                self.logger.debug("YAKE keyword extractor initialized")
+            else:
+                raise ImportError("yake not available")
         except ImportError:
             # Fallback to simple extraction
             self._keyword_extractor = None
@@ -781,8 +795,8 @@ class PromptParser:
             "delete",
         }
 
-        # Extract words
-        words = re.findall(r"\b[a-zA-Z][a-zA-Z0-9_]*\b", text)
+        # Extract words (allow leading alnum to keep tokens like 'oauth2')
+        words = re.findall(r"\b[a-zA-Z0-9][a-zA-Z0-9_]*\b", text)
 
         # Count frequencies
         word_freq = Counter(word.lower() for word in words)
@@ -809,7 +823,8 @@ class PromptParser:
 
         # Common programming concepts
         prog_patterns = {
-            "oauth": r"\boauth2?\b",
+            "oauth2": r"\boauth2\b",
+            "oauth": r"\boauth\b",
             "jwt": r"\bjwt\b",
             "api": r"\bapi\b",
             "rest": r"\brest(?:ful)?\b",

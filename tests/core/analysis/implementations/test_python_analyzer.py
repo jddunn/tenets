@@ -22,7 +22,7 @@ from datetime import datetime
 
 import pytest
 
-from tenets.core.analysis.python_analyzer import PythonAnalyzer
+from tenets.core.analysis.implementations.python_analyzer import PythonAnalyzer
 from tenets.models.analysis import (
     ImportInfo,
     CodeStructure,

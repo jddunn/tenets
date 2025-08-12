@@ -1,103 +1,53 @@
-# Deployment & Release Guide
+# Deployment Guide
 
-This guide covers releasing **tenets** and deploying it in various environments.
-
-## Table of Contents
-
-- [Release Process](#release-process)
-- [Deployment Options](#deployment-options)
-- [PyPI Publishing](#pypi-publishing)
-- [Docker Deployment](#docker-deployment)
-- [Binary Distribution](#binary-distribution)
-- [Documentation Deployment](#documentation-deployment)
-- [Security Considerations](#security-considerations)
-- [Monitoring & Maintenance](#monitoring--maintenance)
+This guide outlines the process for releasing new versions of Tenets to PyPI and deploying documentation.
 
 ## Release Process
 
-### Prerequisites
+We follow a manual, tag-based release process. Releases are not automatically created on every commit to `main`.
 
-- Maintainer access to the repository
-- PyPI account with project access
-- Docker Hub account (optional)
-- GPG key for signing (recommended)
+### 1. Pre-Release Checklist
 
-### Automated Release (Recommended)
+Before creating a new release, ensure the following are complete:
 
-1. **Prepare the release**:
-   ```bash
-   # Ensure you're on main
-   git checkout main
-   git pull origin main
-   
-   # Run all tests
-   make test
-   
-   # Check what will be released
-   cz bump --dry-run
-   ```
+- [ ] All relevant feature branches have been merged into `main`.
+- [ ] The `main` branch has passed all CI checks (tests, linting, etc.).
+- [ ] The `CHANGELOG.md` file has been updated with all notable changes for the new version.
+- [ ] The version number in `pyproject.toml` has been incremented according to [Semantic Versioning](https://semver.org/).
 
-2. **Create the release**:
-   ```bash
-   # Interactive release
-   make release
-   
-   # This will:
-   # 1. Run tests
-   # 2. Bump version (major/minor/patch)
-   # 3. Update CHANGELOG.md
-   # 4. Create git commit and tag
-   # 5. Push to GitHub
-   ```
+### 2. Creating a Release
 
-3. **Monitor the release**:
-   - Go to [GitHub Actions](https://github.com/jddunn/tenets/actions)
-   - Watch the "Release" workflow
-   - Verify all steps complete successfully
+1.  **Create a Git Tag**: Create a new Git tag that matches the version in `pyproject.toml`.
 
-### Manual Release Process
+    ```bash
+    # Example for version 1.2.3
+    git tag -a v1.2.3 -m "Release version 1.2.3"
+    ```
 
-1. **Update version**:
-   ```bash
-   # Choose version bump type
-   cz bump --increment PATCH  # 0.1.0 -> 0.1.1
-   cz bump --increment MINOR  # 0.1.0 -> 0.2.0
-   cz bump --increment MAJOR  # 0.1.0 -> 1.0.0
-   ```
+2.  **Push the Tag**: Push the new tag to the `origin` remote.
 
-2. **Review changes**:
-   ```bash
-   # Check CHANGELOG.md
-   cat CHANGELOG.md
-   
-   # Verify version files
-   grep version pyproject.toml
-   grep __version__ tenets/__init__.py
-   ```
+    ```bash
+    git push origin v1.2.3
+    ```
 
-3. **Create release**:
-   ```bash
-   # Push commits and tags
-   git push origin main
-   git push origin --tags
-   ```
+### 3. Automated Release Workflow
 
-### Release Checklist
+Pushing a new tag triggers the `release.yml` GitHub Actions workflow, which automates the following steps:
 
-- [ ] All tests pass
-- [ ] Documentation is updated
-- [ ] CHANGELOG.md reflects changes
-- [ ] Version numbers are consistent
-- [ ] Security scan passes
-- [ ] Performance benchmarks acceptable
+1.  **Builds the Package**: Builds the source distribution (`sdist`) and wheel (`bdist_wheel`) for the project.
+2.  **Publishes to PyPI**: Publishes the built package to the Python Package Index (PyPI) using the `PYPI_API_TOKEN` secret.
+3.  **Creates a GitHub Release**: Creates a new release on GitHub, using the tag and release notes from the `CHANGELOG.md`.
 
-## Deployment Options
+## Documentation Deployment
 
-### 1. PyPI Installation (Users)
+The documentation is automatically deployed to GitHub Pages whenever a commit is pushed to the `main` branch. This is handled by the `ci.yml` workflow.
 
-```bash
-# Basic installation
-pip install tenets
+## Required Secrets
+
+The following secrets must be configured in the GitHub repository settings under **Settings > Secrets and variables > Actions**:
+
+-   **`PYPI_API_TOKEN`**: An API token from PyPI with permission to upload packages to the `tenets` project.
+-   **`CODECOV_TOKEN`**: The repository upload token from Codecov, used to upload coverage reports.
 
 # With specific features
 pip install tenets[ml]  # ML features
