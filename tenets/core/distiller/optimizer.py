@@ -4,15 +4,15 @@ The optimizer ensures we make the best use of available tokens by
 intelligently selecting what to include and what to summarize.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
-from tenets.utils.tokens import count_tokens
 from tenets.models.llm import get_model_limits
 from tenets.utils.logger import get_logger
+from tenets.utils.tokens import count_tokens
 
 
 @dataclass

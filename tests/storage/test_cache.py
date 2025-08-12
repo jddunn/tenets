@@ -1,17 +1,18 @@
 """Tests for the caching system."""
 
-import pytest
-import tempfile
-import time
 import json
 import sqlite3
-from pathlib import Path
+import tempfile
+import time
 from datetime import datetime, timedelta
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from tenets.storage.cache import MemoryCache, DiskCache, AnalysisCache, CacheManager
-from tenets.models.analysis import FileAnalysis, ComplexityMetrics
+import pytest
+
 from tenets.config import TenetsConfig
+from tenets.models.analysis import ComplexityMetrics, FileAnalysis
+from tenets.storage.cache import AnalysisCache, CacheManager, DiskCache, MemoryCache
 
 
 @pytest.fixture

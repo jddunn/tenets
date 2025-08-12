@@ -5,20 +5,20 @@ understanding the prompt to delivering optimized context.
 """
 
 from pathlib import Path
-from typing import Optional, Union, List, Dict, Any
+from typing import Any, Dict, List, Optional, Union
 
 from tenets.config import TenetsConfig
-from tenets.models.context import ContextResult, PromptContext
-from tenets.models.analysis import FileAnalysis
-from tenets.core.distiller.aggregator import ContextAggregator
-from tenets.core.distiller.optimizer import TokenOptimizer
-from tenets.core.distiller.formatter import ContextFormatter
 from tenets.core.analysis import CodeAnalyzer
-from tenets.core.ranking import RelevanceRanker
-from tenets.core.prompt import PromptParser
+from tenets.core.distiller.aggregator import ContextAggregator
+from tenets.core.distiller.formatter import ContextFormatter
+from tenets.core.distiller.optimizer import TokenOptimizer
 from tenets.core.git import GitAnalyzer
-from tenets.utils.scanner import FileScanner
+from tenets.core.prompt import PromptParser
+from tenets.core.ranking import RelevanceRanker
+from tenets.models.analysis import FileAnalysis
+from tenets.models.context import ContextResult, PromptContext
 from tenets.utils.logger import get_logger
+from tenets.utils.scanner import FileScanner
 
 
 class Distiller:

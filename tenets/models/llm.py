@@ -7,7 +7,9 @@ best-effort and can be overridden at runtime.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, List, Dict as DictType
+from typing import Dict
+from typing import Dict as DictType
+from typing import List, Optional
 
 from tenets.utils.logger import get_logger
 

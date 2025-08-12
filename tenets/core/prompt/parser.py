@@ -13,19 +13,19 @@ The parser identifies:
 - Scope indicators (specific modules, areas)
 """
 
-import re
-import json
 import base64
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple, Set
-from dataclasses import dataclass, field
-from urllib.parse import urlparse, parse_qs
-from datetime import datetime, timedelta
-from collections import Counter
-from enum import Enum
-import os
 import importlib
 import importlib.util
+import json
+import os
+import re
+from collections import Counter
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
+from urllib.parse import parse_qs, urlparse
 
 # Optional dependencies (loaded dynamically to avoid static import errors)
 requests = None

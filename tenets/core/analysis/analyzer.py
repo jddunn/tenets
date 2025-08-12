@@ -5,48 +5,49 @@ interface for analyzing source code files. It handles analyzer selection,
 caching, parallel processing, and fallback strategies.
 """
 
-import os
+import concurrent.futures
 import hashlib
 import json
-import concurrent.futures
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Set, Callable, Union
+import os
 from datetime import datetime, timedelta
-
-# Import analyzers (relocated under implementations/)
-from .implementations.python_analyzer import PythonAnalyzer
-from .implementations.javascript_analyzer import JavaScriptAnalyzer
-from .implementations.go_analyzer import GoAnalyzer
-from .implementations.java_analyzer import JavaAnalyzer
-from .implementations.cpp_analyzer import CppAnalyzer
-from .implementations.ruby_analyzer import RubyAnalyzer
-from .implementations.php_analyzer import PhpAnalyzer
-from .implementations.rust_analyzer import RustAnalyzer
-from .implementations.generic_analyzer import GenericAnalyzer
-
-# New analyzers
-from .implementations.html_analyzer import HTMLAnalyzer
-from .implementations.css_analyzer import CSSAnalyzer
-from .implementations.dart_analyzer import DartAnalyzer
-from .implementations.kotlin_analyzer import KotlinAnalyzer
-from .implementations.scala_analyzer import ScalaAnalyzer
-from .implementations.swift_analyzer import SwiftAnalyzer
-from .implementations.csharp_analyzer import CSharpAnalyzer
-from .implementations.gdscript_analyzer import GDScriptAnalyzer
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import (
-    FileAnalysis,
-    ProjectAnalysis,
-    ComplexityMetrics,
-    CodeStructure,
-    ImportInfo,
-    DependencyGraph,
     AnalysisReport,
+    CodeStructure,
+    ComplexityMetrics,
+    DependencyGraph,
+    FileAnalysis,
+    ImportInfo,
+    ProjectAnalysis,
 )
 from tenets.storage.cache import AnalysisCache
 from tenets.utils.logger import get_logger
+
 from .base import LanguageAnalyzer
+from .implementations.cpp_analyzer import CppAnalyzer
+from .implementations.csharp_analyzer import CSharpAnalyzer
+from .implementations.css_analyzer import CSSAnalyzer
+from .implementations.dart_analyzer import DartAnalyzer
+from .implementations.gdscript_analyzer import GDScriptAnalyzer
+from .implementations.generic_analyzer import GenericAnalyzer
+from .implementations.go_analyzer import GoAnalyzer
+
+# New analyzers
+from .implementations.html_analyzer import HTMLAnalyzer
+from .implementations.java_analyzer import JavaAnalyzer
+from .implementations.javascript_analyzer import JavaScriptAnalyzer
+from .implementations.kotlin_analyzer import KotlinAnalyzer
+from .implementations.php_analyzer import PhpAnalyzer
+
+# Import analyzers (relocated under implementations/)
+from .implementations.python_analyzer import PythonAnalyzer
+from .implementations.ruby_analyzer import RubyAnalyzer
+from .implementations.rust_analyzer import RustAnalyzer
+from .implementations.scala_analyzer import ScalaAnalyzer
+from .implementations.swift_analyzer import SwiftAnalyzer
 
 
 class CodeAnalyzer:

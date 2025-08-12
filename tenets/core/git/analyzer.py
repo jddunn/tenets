@@ -6,11 +6,11 @@ Provides helpers to extract recent context, changed files, and authorship.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
-from git import Repo, InvalidGitRepositoryError, NoSuchPathError  # type: ignore
+from git import InvalidGitRepositoryError, NoSuchPathError, Repo  # type: ignore
 
 from tenets.utils.logger import get_logger
 

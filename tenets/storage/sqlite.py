@@ -13,11 +13,11 @@ be user- or project-local and writable.
 
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
-import sqlite3
-from datetime import datetime
 
 from tenets.config import TenetsConfig
 from tenets.utils.logger import get_logger

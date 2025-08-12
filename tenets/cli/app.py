@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 import typer
 from rich import print
@@ -10,16 +10,16 @@ from rich.console import Console
 
 from tenets import __version__
 from tenets.cli.commands import (
-    distill_command,
-    instill_command,
-    examine_command,
     chronicle_command,
+    distill_command,
+    examine_command,
+    instill_command,
     momentum_command,
 )
-from tenets.cli.commands.tenet import tenet_app
-from tenets.cli.commands.session import session_app
-from tenets.cli.commands.viz import viz_app
 from tenets.cli.commands.config import config_app
+from tenets.cli.commands.session import session_app
+from tenets.cli.commands.tenet import tenet_app
+from tenets.cli.commands.viz import viz_app
 from tenets.utils.logger import get_logger
 
 # Create main app

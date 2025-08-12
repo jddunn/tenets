@@ -15,23 +15,23 @@ Test Coverage:
     - Configuration saving and exporting
 """
 
-import os
 import json
-import yaml
-from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+import os
 from dataclasses import asdict
+from pathlib import Path
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
+import yaml
 
 from tenets.config import (
-    TenetsConfig,
-    ScannerConfig,
-    RankingConfig,
-    TenetConfig,
     CacheConfig,
-    OutputConfig,
     GitConfig,
+    OutputConfig,
+    RankingConfig,
+    ScannerConfig,
+    TenetConfig,
+    TenetsConfig,
 )
 
 

@@ -4,11 +4,11 @@ This module contains all data structures used by the code analysis subsystem,
 including file analysis results, project metrics, and dependency graphs.
 """
 
-from typing import List, Dict, Any, Optional, Set
-from dataclasses import dataclass, field, asdict
+import json
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-import json
+from typing import Any, Dict, List, Optional, Set
 
 
 @dataclass

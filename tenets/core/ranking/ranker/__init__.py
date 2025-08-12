@@ -20,12 +20,12 @@ except Exception:  # pragma: no cover
 
 # Import and re-export ranker classes/strategies
 from .ranker import (  # noqa: F401,E402
-    RelevanceRanker,
+    BalancedRankingStrategy,
+    FastRankingStrategy,
+    RankedFile,
     RankingAlgorithm,
     RankingFactors,
-    RankedFile,
-    FastRankingStrategy,
-    BalancedRankingStrategy,
-    ThoroughRankingStrategy,
+    RelevanceRanker,
     TFIDFCalculator,
+    ThoroughRankingStrategy,
 )

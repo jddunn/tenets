@@ -16,19 +16,19 @@ Test Coverage:
     - Error handling for invalid GDScript code
 """
 
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-from datetime import datetime
 
 import pytest
 
 from tenets.core.analysis.implementations.gdscript_analyzer import GDScriptAnalyzer
 from tenets.models.analysis import (
-    ImportInfo,
+    ClassInfo,
     CodeStructure,
     ComplexityMetrics,
     FunctionInfo,
-    ClassInfo,
+    ImportInfo,
 )
 
 
