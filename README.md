@@ -143,7 +143,7 @@ Works instantly with smart defaults, fully configurable when needed:
 ```yaml
 # .tenets.yml (optional)
 context:
-  ranking: balanced  # fast, balanced, thorough
+  ranking: balanced  # fast | balanced | thorough | ml
   include_git: true  # Use git signals for relevance (not shown in output)
   max_tokens: 100000
   # Transformations are enabled per-invocation (CLI flags):
@@ -219,7 +219,7 @@ poetry shell
 | Feature Set | Includes | Use When |
 |-------------|----------|----------|
 | **core** (default) | Basic file scanning, keyword matching, git integration | You want fast, lightweight context building |
-| **light** | + numpy, scikit-learn, YAKE keyword extraction, TF-IDF ranking | You want better ranking without heavy ML dependencies |
+| **light** | + numpy, scikit-learn, YAKE keyword extraction, TF-IDF ranking | Better keyword/TF‑IDF relevance without heavy ML |
 | **viz** | + matplotlib, networkx, dependency graphs, complexity charts | You want to visualize your codebase |
 | **ml** | + PyTorch, transformers, semantic search, embeddings | You want state-of-the-art ranking (slower, 2GB+ dependencies) |
 | **web** | + FastAPI, web UI (coming soon) | You want to run tenets as a service |
@@ -367,12 +367,14 @@ mkdocs gh-deploy
 ranking:
   algorithm: fast
   threshold: 0.05
+  use_tfidf: true
+  use_stopwords: false
 ```
 
 - Or set environment variables for one run:
 
 ```bash
-TENETS_RANKING_THRESHOLD=0.05 tenets distill "implement OAuth2" .
+TENETS_RANKING_THRESHOLD=0.05 TENETS_RANKING_ALGORITHM=fast tenets distill "implement OAuth2" .
 ```
 
 See the full guide: `docs/CONFIG.md`.

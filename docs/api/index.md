@@ -32,10 +32,12 @@ Code analysis and metrics
 from tenets.core.analysis import Analyzer
 ```
 
-#### [Ranker](ranker/)
-Relevance ranking algorithms
+#### [Ranking](ranking/)
+Relevance ranking algorithms (consolidated `RelevanceRanker`)
 ```python
-from tenets.core.ranking import Ranker
+from tenets.core.ranking import RelevanceRanker, RankingAlgorithm
+
+ranker = RelevanceRanker(config)
 ```
 
 #### [Session](session/)
@@ -209,7 +211,13 @@ tenets/
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `max_tokens` | int | 100,000 | Maximum tokens in generated context |
-| `ranking_algorithm` | str | "balanced" | Algorithm for ranking relevance ("fast", "balanced", "thorough") |
+| `ranking.algorithm` | str | "balanced" | Algorithm for ranking relevance ("fast", "balanced", "thorough", "ml") |
+| `ranking.threshold` | float | 0.10 | Minimum relevance score to include a file |
+| `ranking.use_tfidf` | bool | True | Enable TF‑IDF weighting for keyword relevance |
+| `ranking.use_stopwords` | bool | False | Filter common tokens during TF‑IDF tokenization |
+| `ranking.use_embeddings` | bool | False | Enable semantic similarity scoring (ML mode) |
+| `ranking.embedding_model` | str | "all-MiniLM-L6-v2" | Embedding model used when embeddings are enabled |
+| `ranking.workers` | int | 2 | Parallel workers for ranking (thread pool) |
 | `output_format` | str | "markdown" | Output format ("markdown", "json", "xml") |
 | `include_tests` | bool | False | Include test files in context |
 | `include_docs` | bool | True | Include documentation files |
