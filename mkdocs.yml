@@ -265,6 +265,6 @@ nav:
   - Contact: https://manic.agency/contact
 
 # Additional theme customization (if these templates exist)
-extra_templates:
-  - overrides/home.html
-  - overrides/main.html
+# extra_templates:
+#   - overrides/home.html
+#   - overrides/main.html
