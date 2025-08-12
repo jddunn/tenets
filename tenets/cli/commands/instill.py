@@ -23,6 +23,21 @@ def instill(
         False, "--dry-run", help="Show what would be instilled without applying"
     ),
     list_pending: bool = typer.Option(False, "--list-pending", help="List pending tenets and exit"),
+    add_file: Optional[list[str]] = typer.Option(
+        None,
+        "--add-file",
+        "-F",
+        help="Pin a file for future distill operations (can be passed multiple times)",
+    ),
+    add_folder: Optional[list[str]] = typer.Option(
+        None,
+        "--add-folder",
+        "-D",
+        help="Pin all files in a folder (respects .gitignore)",
+    ),
+    list_pinned: bool = typer.Option(
+        False, "--list-pinned", help="List pinned files for the session and exit"
+    ),
     ctx: typer.Context = typer.Context,
 ):
     """
@@ -60,6 +75,42 @@ def instill(
             console.print("[red]Error:[/red] Tenet system is not available.")
             console.print("This may be due to missing dependencies.")
             raise typer.Exit(1)
+
+        # List pinned files
+        if list_pinned:
+            pinned_map = tenets.config.custom.get("pinned_files", {})
+            sess_name = session or tenets._session or "default"
+            files = sorted(pinned_map.get(sess_name, [])) if pinned_map else []
+            if not files:
+                console.print("[yellow]No pinned files for this session.[/yellow]")
+            else:
+                console.print(
+                    Panel(
+                        "\n".join(files), title=f"Pinned Files ({sess_name})", border_style="green"
+                    )
+                )
+            return
+
+        # Add individual files
+        if add_file:
+            added = 0
+            for f in add_file:
+                if tenets.add_file_to_session(f, session=session):
+                    added += 1
+            console.print(f"[green]Pinned {added} file(s).[/green]")
+            # If only pinning files and nothing else requested, exit
+            if not (force or dry_run or list_pending or add_folder):
+                return
+
+        # Add folders
+        if add_folder:
+            total = 0
+            for d in add_folder:
+                count = tenets.add_folder_to_session(d, session=session)
+                total += count
+            console.print(f"[green]Pinned {total} file(s) from folder(s).[/green]")
+            if not (force or dry_run or list_pending):
+                return
 
         # List pending if requested
         if list_pending:

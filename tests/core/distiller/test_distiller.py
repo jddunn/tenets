@@ -367,3 +367,63 @@ class TestDistiller:
         assert result.metadata["prompt"] == "implement OAuth2 authentication for the API"
         assert result.metadata["session"] == "oauth-impl"
         assert result.metadata["mode"] == "thorough"
+
+    def test_full_mode_metadata(self, mock_components):
+        """Full mode flag should propagate to metadata."""
+        result = mock_components.distill("prompt", full=True)
+        assert result.metadata.get("full_mode") is True
+
+    def test_transform_flags_metadata(self, mock_components):
+        """condense/remove_comments flags reflected in metadata."""
+        result = mock_components.distill("prompt", condense=True, remove_comments=True)
+        assert result.metadata.get("condense") is True
+        assert result.metadata.get("remove_comments") is True
+
+    def test_pinned_files_order(self, config):
+        """Pinned files should be analyzed first."""
+        # Fresh distiller with real method mocks
+        with patch("tenets.core.distiller.distiller.FileScanner") as fs:
+            with patch("tenets.core.distiller.distiller.CodeAnalyzer"):
+                with patch("tenets.core.distiller.distiller.RelevanceRanker"):
+                    with patch("tenets.core.distiller.distiller.PromptParser"):
+                        with patch("tenets.core.distiller.distiller.GitAnalyzer"):
+                            with patch("tenets.core.distiller.distiller.ContextAggregator"):
+                                with patch("tenets.core.distiller.distiller.TokenOptimizer"):
+                                    with patch("tenets.core.distiller.distiller.ContextFormatter"):
+                                        dist = Distiller(config)
+                                        # Configure scanner order different from pinned order
+                                        fs.return_value.scan.return_value = [
+                                            Path("b.py"),
+                                            Path("a.py"),
+                                            Path("c.py"),
+                                        ]
+                                        # Analyzer returns simple FileAnalysis objects
+                                        inst_analyzer = dist.analyzer
+                                        call_order = []
+
+                                        def analyze_side_effect(path, **kwargs):
+                                            call_order.append(Path(path).name)
+                                            return FileAnalysis(path=str(path), content="x")
+
+                                        inst_analyzer.analyze_file.side_effect = analyze_side_effect
+                                        dist.ranker.rank_files.side_effect = (
+                                            lambda files, **k: files
+                                        )
+                                        dist.parser.parse.return_value = PromptContext(text="p")
+                                        dist.aggregator.aggregate.return_value = {
+                                            "included_files": [],
+                                            "total_tokens": 0,
+                                            "available_tokens": 1000,
+                                            "statistics": {
+                                                "files_analyzed": 3,
+                                                "files_included": 0,
+                                                "files_summarized": 0,
+                                                "files_skipped": 3,
+                                                "token_utilization": 0,
+                                            },
+                                        }
+                                        dist.formatter.format.return_value = "ctx"
+                                        # Distill with a.py pinned
+                                        result = dist.distill("p", pinned_files=[Path("a.py")])
+                                        assert call_order[0] == "a.py"
+                                        assert result.metadata.get("files_analyzed") == 3

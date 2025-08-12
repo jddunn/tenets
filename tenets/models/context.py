@@ -376,6 +376,8 @@ class SessionContext:
     metadata: Dict[str, Any] = field(default_factory=dict)
     ai_requests: List[Dict[str, Any]] = field(default_factory=list)
     branch: Optional[str] = None
+    # New: pinned files explicitly added via instill --add-file / --add-folder
+    pinned_files: Set[str] = field(default_factory=set)
 
     def add_shown_file(self, file_path: str) -> None:
         """Mark file as shown."""
@@ -403,6 +405,19 @@ class SessionContext:
             {"type": request_type, "data": request_data, "timestamp": datetime.now().isoformat()}
         )
         self.updated_at = datetime.now()
+
+    def add_pinned_file(self, file_path: str) -> None:
+        """Pin a file so it is always considered for future distill operations.
+
+        Args:
+            file_path: Absolute or project-relative path to the file.
+        """
+        self.pinned_files.add(file_path)
+        self.updated_at = datetime.now()
+
+    def list_pinned_files(self) -> List[str]:
+        """Return pinned file paths."""
+        return sorted(self.pinned_files)
 
     def get_latest_context(self) -> Optional[ContextResult]:
         """Get the most recent context."""

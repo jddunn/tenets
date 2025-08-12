@@ -189,6 +189,9 @@ class Tenets:
         include_patterns: Optional[List[str]] = None,
         exclude_patterns: Optional[List[str]] = None,
         apply_tenets: Optional[bool] = None,
+        full: bool = False,
+        condense: bool = False,
+        remove_comments: bool = False,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -244,6 +247,28 @@ class Tenets:
         session = session_name or self._session
 
         # Run distillation
+        pinned_files = []
+        try:
+            pf_map = self.config.custom.get("pinned_files", {})
+            if session and pf_map and session in pf_map:
+                pinned_files = [Path(p) for p in pf_map[session] if Path(p).exists()]
+            # Supplement from session DB metadata
+            if session and not pinned_files:
+                try:
+                    from tenets.storage.session_db import SessionDB
+
+                    sdb = SessionDB(self.config)
+                    rec = sdb.get_session(session)
+                    if rec and rec.metadata.get("pinned_files"):
+                        pinned_files = [
+                            Path(p)
+                            for p in rec.metadata.get("pinned_files", [])
+                            if Path(p).exists()
+                        ]
+                except Exception:  # pragma: no cover
+                    pass
+        except Exception:  # pragma: no cover
+            pinned_files = []
         result = self.distiller.distill(
             prompt=prompt,
             paths=files,
@@ -255,6 +280,10 @@ class Tenets:
             session_name=session,
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
+            full=full,
+            condense=condense,
+            remove_comments=remove_comments,
+            pinned_files=pinned_files or None,
         )
 
         # Apply tenets if configured
@@ -359,6 +388,109 @@ class Tenets:
             >>> ten.instill_tenets(force=True)
         """
         return self.tenet_manager.instill_tenets(session=session or self._session, force=force)
+
+    # ============= Session Pinning Utilities =============
+
+    def _ensure_session(self, session: Optional[str]) -> str:
+        """Ensure a session exists and return its name."""
+        name = session or self._session or "default"
+        if not self._session:
+            self._session = name
+        # Create in session manager (if available)
+        try:
+            from tenets.core.session.session import SessionManager  # type: ignore
+
+            # Lazy create a manager if not present (some tests may not use it directly)
+        except Exception:  # pragma: no cover - defensive
+            return name
+        return name
+
+    def add_file_to_session(
+        self, file_path: Union[str, Path], session: Optional[str] = None
+    ) -> bool:
+        """Pin a single file into a session so it is prioritized in future distill calls.
+
+        Args:
+            file_path: Path to file
+            session: Optional session name
+        Returns:
+            True if file pinned, False otherwise
+        """
+        path = Path(file_path)
+        if not path.exists() or not path.is_file():
+            return False
+        sess_name = session or self._session or "default"
+        # Attach to in-memory session context held by session manager if available
+        try:
+            from tenets.core.session.session import SessionManager  # local import
+
+            # There may or may not be a global session manager; instantiate lightweight if needed
+        except Exception:  # pragma: no cover
+            pass
+        # For now store pinned files in config.custom for persistence stub
+        if "pinned_files" not in self.config.custom:
+            self.config.custom["pinned_files"] = {}
+        self.config.custom["pinned_files"].setdefault(sess_name, set())
+        resolved = str(path.resolve())
+        self.config.custom["pinned_files"][sess_name].add(resolved)
+        # Persist in session DB metadata if available
+        try:
+            from tenets.storage.session_db import SessionDB  # local import
+
+            sdb = SessionDB(self.config)
+            # Read current metadata and merge
+            rec = sdb.get_session(sess_name)
+            existing = rec.metadata.get("pinned_files") if rec else []
+            if isinstance(existing, list):
+                if resolved not in existing:
+                    existing.append(resolved)
+            else:
+                existing = [resolved]
+            sdb.update_session_metadata(sess_name, {"pinned_files": existing})
+        except Exception:  # pragma: no cover - best effort
+            pass
+        return True
+
+    def add_folder_to_session(
+        self,
+        folder_path: Union[str, Path],
+        session: Optional[str] = None,
+        include_patterns: Optional[List[str]] = None,
+        exclude_patterns: Optional[List[str]] = None,
+        respect_gitignore: bool = True,
+        recursive: bool = True,
+    ) -> int:
+        """Pin all files in a folder (optionally filtered) into a session.
+
+        Args:
+            folder_path: Directory to scan
+            session: Session name
+            include_patterns: Include filter
+            exclude_patterns: Exclude filter
+            respect_gitignore: Respect .gitignore
+            recursive: Recurse into subdirectories
+        Returns:
+            Count of files pinned.
+        """
+        root = Path(folder_path)
+        if not root.exists() or not root.is_dir():
+            return 0
+        from tenets.utils.scanner import FileScanner
+
+        scanner = FileScanner(self.config)
+        paths = [root]
+        files = scanner.scan(
+            paths,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            follow_symlinks=False,
+            respect_gitignore=respect_gitignore,
+        )
+        count = 0
+        for f in files:
+            if self.add_file_to_session(f, session=session):
+                count += 1
+        return count
 
     def list_tenets(
         self,

@@ -22,13 +22,15 @@ Think of it as intelligent context aggregation. You give it a prompt or query, a
 - 🎯 **Ranks** them by importance using multiple factors
 - 📦 **Aggregates** them within your token budget
 - 📋 **Formats** perfectly for any use case
+- 📌 **Pins** critical files per session for guaranteed inclusion priority
+- 🧹 **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
 
 Plus powerful development intelligence:
 
-- 📊 **Visualize** dependencies and architecture
-- 📈 **Track** velocity and code evolution  
-- 🔥 **Identify** hotspots and technical debt
-- 👥 **Understand** team patterns and expertise
+- **Visualize** dependencies and architecture 
+- **Track** velocity and code evolution  
+- **Identify** hotspots and technical debt
+- **Understand** team patterns and expertise
 
 ```bash
 # Instead of manually finding and copying files...
@@ -41,19 +43,13 @@ tenets distill "implement OAuth2" ./src
 
 ## Why tenets?
 
-### The Problem
-
-When working with large codebases, you're constantly:
+When AI pair programming and working with large codebase, you usually have to do a lot of
 
 - Manually searching for relevant files
-- Copy-pasting code into ChatGPT/Claude
-- Missing important context and dependencies
-- Repeating the same searches over and over
-- Paying for AI to process irrelevant code
+- Copy-pasting code / docs over and over into multiple LLM prompts
+- Gathering important context and dependencies structure
 
-### The Solution
-
-tenets uses intelligent algorithms to solve this:
+**tenets** uses intelligent NLP-based algorithms to solve this (no LLM API calls required!):
 
 ```bash
 # Old way: Manual search and copy
@@ -87,6 +83,14 @@ tenets session create "new-feature"
 tenets distill "design database schema" --session new-feature --stats
 # 3) Narrow follow-up
 tenets distill "add user model" --session new-feature --stats
+
+# 4) Pin critical files to always include first
+tenets instill --session new-feature --add-file src/core/database.py --add-folder src/core/migrations
+tenets instill --session new-feature --list-pinned
+
+# 5) Force raw content (no summarization) or shrink tokens
+tenets distill "investigate slow queries" --session new-feature --full
+tenets distill "summarize public API" --session new-feature --remove-comments --condense
 ```
 
 ### 🧭 Guiding Principles (Tenets)
@@ -98,6 +102,7 @@ Add persistent instructions that guide AI interactions:
 tenets tenet add "Always use type hints in Python"
 tenets tenet add "Follow RESTful conventions"
 tenets tenet add "Include error handling"
+tenets instill # Apply tenets to the session
 ```
 
 ### 📊 Code Intelligence & Visualization
@@ -141,6 +146,8 @@ context:
   ranking: balanced  # fast, balanced, thorough
   include_git: true  # Use git signals for relevance (not shown in output)
   max_tokens: 100000
+  # Transformations are enabled per-invocation (CLI flags):
+  #   --full, --remove-comments, --condense
 
 ignore:
   - vendor/
@@ -150,9 +157,35 @@ output:
   format: markdown  # markdown, json, xml
 ```
 
+### Content Transformation Flags
+
+Optimize token usage or force raw context inclusion when needed:
+
+| Flag | Purpose | Notes |
+|------|---------|-------|
+| `--full` | Include full file contents (no summarization) until token budget exhausted | Good for audits; may reduce breadth |
+| `--remove-comments` | Strip line & block comments (language-aware heuristics) | Safety: aborts if >60% of non-empty lines would be removed |
+| `--condense` | Collapse 3+ blank lines to 1, trim trailing spaces | Lossless for logic; pairs well with `--remove-comments` |
+
+Order: comments removed first, whitespace condensed second. Both affect token counting and packing decisions.
+
+### Pinned Files (Session Persistence)
+
+Guarantee critical files are prioritized for a session:
+
+```bash
+tenets instill --session auth-refactor --add-file src/auth/service.py
+tenets instill --session auth-refactor --add-folder src/auth/controllers
+tenets instill --session auth-refactor --list-pinned
+tenets distill "add OAuth device flow" --session auth-refactor --remove-comments
+```
+
+Pinned files are stored in session metadata (SQLite) and automatically reloaded—no extra arguments needed on subsequent `distill` commands.
+
+
 ## Installation
 
-### Quick Install (pip)
+### Pip
 
 ```bash
 # Core features only - lightweight, no ML dependencies
@@ -167,7 +200,7 @@ pip install tenets[ml]     # Adds deep learning models (large dependencies)
 pip install tenets[all]
 ```
 
-### Install with Poetry (Recommended for Development)
+### Install with Poetry 
 
 ```bash
 # Clone the repository
@@ -176,10 +209,6 @@ cd tenets
 
 # Install with poetry
 poetry install           # Core only
-poetry install -E light  # With TF-IDF ranking
-poetry install -E viz    # With visualization
-poetry install -E ml     # With deep learning
-poetry install -E all    # Everything
 
 # Activate shell
 poetry shell
@@ -196,62 +225,6 @@ poetry shell
 | **web** | + FastAPI, web UI (coming soon) | You want to run tenets as a service |
 | **all** | Everything above | You want all features |
 
-### Troubleshooting Installation
-
-### Local Development / Editable Install
-
-If you want to hack on Tenets locally and immediately use the `tenets` CLI with your changes, install it in editable mode.
-
-```bash
-# (Windows) create & activate venv
-python -m venv .venv
-.venv\\Scripts\\activate
-
-# (macOS/Linux)
-python -m venv .venv
-source .venv/bin/activate
-
-# Upgrade tooling
-pip install --upgrade pip
-
-# Editable install (core + dev tooling)
-pip install -e ".[dev]"
-
-# Or everything (all optional feature groups + dev)
-pip install -e ".[all,dev]"
-
-# Verify CLI
-tenets --help
-```
-
-### Building Distribution Artifacts (sdist / wheel)
-
-You usually only need this when testing packaging or publishing. The project uses PEP 517/518 with `hatchling`.
-
-```bash
-# Ensure build deps installed (included in dev extras)
-pip install build
-
-# Build (creates dist/*.whl and dist/*.tar.gz)
-python -m build
-
-# (Optional) install the freshly built wheel
-pip install --force-reinstall dist/tenets-*.whl
-```
-
-After an editable install you don't need to rebuild for Python code changes— they are picked up immediately. Rebuild only when validating the packaging metadata or non-Python asset inclusion.
-
-#### Using Poetry (Alternative)
-If you prefer Poetry instead of pip + venv:
-```bash
-poetry install -E all -E dev   # or omit extras for core only
-poetry run tenets --help
-```
-To add a new extra later:
-```bash
-poetry add --optional SOME_PKG
-```
-
 #### Makefile Shortcuts
 Common tasks are wrapped in the Makefile:
 ```bash
@@ -260,48 +233,6 @@ make install  # core editable install
 make test     # run full test suite with coverage
 make build    # build sdist + wheel
 ```
-
-
-**numpy/scipy installation fails on Python 3.9?**
-
-```bash
-# Use compatible versions
-pip install "numpy<2.0" "scikit-learn<1.4"
-# Or upgrade to Python 3.10+
-```
-
-**Import errors after installation?**
-
-```bash
-# Ensure you have the right extras
-pip install tenets[light]  # For NLP features
-pip install tenets[ml]     # For deep learning
-```
-
-**Poetry dependency conflicts?**
-
-```bash
-# Clear cache and reinstall
-rm poetry.lock
-poetry cache clear pypi --all
-poetry install -E light
-```
-
-## Quick Start
-
-### Basic Context Building
-
-```bash
-# For debugging - finds error handling, logs, and recent changes (used for ranking)
-tenets distill "users getting 401 errors" --stats
-
-# For new features - finds related code, patterns, examples
-tenets distill "add caching layer" --stats
-
-# For code review - includes recent changes in ranking, tests, dependencies
-tenets distill "review payment refactor" --since yesterday --stats
-```
-
 ### Working with AI Assistants
 
 ```bash
@@ -389,185 +320,6 @@ When files exceed token budgets, tenets intelligently preserves:
 - Complex logic blocks
 - Recent changes
 - Documentation
-
-### Session Management
-
-Maintain context across multiple interactions:
-
-```python
-session = tenets.create_session("feature-x")
-session.distill("design API")         # Full context
-session.distill("implement auth")     # Builds on previous
-session.show_files(["api/auth.py"])   # Specific files
-session.ignore_files(["old/*.py"])    # Refine relevance
-```
-
-### Guiding Principles (Tenets)
-
-Maintain consistent coding principles across AI interactions:
-
-```bash
-# Add principles that should guide the AI
-tenets tenet add "Use dependency injection"
-tenets tenet add "Write tests for all new functions"
-tenets tenet add "Follow PEP 8 strictly"
-
-# List current tenets
-tenets tenet list
-
-# Apply them to your context
-tenets instill
-
-# Use them in a distillation
-tenets distill "implement OAuth2 with Google" --stats
-```
-
-## What Makes tenets Different
-
-| Feature | Other Tools | tenets |
-|---------|-------------|---------|
-| **File Selection** | Manual or basic search | Automatic multi-factor ranking |
-| **Context Building** | Simple concatenation | Intelligent aggregation |
-| **Token Management** | Hit limits or waste tokens | Smart budgeting & summaries |
-| **Git Integration** | Afterthought or none | First-class, automatic |
-| **Visualization** | Separate tools | Built-in graphs & analysis |
-| **Setup Required** | Config files everywhere | Zero config, just works |
-| **Persistent Instructions** | None | Tenets system for consistency |
-
-## Real-World Use Cases
-
-### 🐛 Debugging Production Issues
-
-```bash
-tenets distill "users can't login after deploy" --since "last-deploy"
-# Automatically includes: auth code, config changes, deployment files,
-# related error handlers (recent changes inform ranking)
-```
-
-### 🏗️ Building New Features
-
-```bash
-tenets distill "add PDF export" --examples
-# Finds: existing export code, similar features, file I/O patterns,
-# library usage examples, relevant tests
-```
-
-### 📚 Code Understanding
-
-```bash
-tenets distill "how does the payment system work?" --visualize
-# Includes: payment files, dependency graph, database models,
-# API endpoints, configuration, with visual architecture diagram
-```
-
-### 🤖 AI Pair Programming
-
-```bash
-# Create a session
-tenets session create "implement-oauth"
-
-# Add coding principles
-tenets tenet add "Use existing auth patterns"
-tenets tenet add "Include comprehensive error handling"
-# Apply them
-tenets instill
-
-# Initial context
-tenets distill "implement OAuth2 with Google" > context.md
-
-# As you work, update context
-# (Optionally attach artifacts to the session)
-# tenets session add implement-oauth context_result context.md
-
-tenets distill "add refresh token handling" --session implement-oauth > context_update.md
-```
-
-## Command Reference
-
-### Primary Commands
-
-```bash
-# Distill context from codebase
-tenets distill <prompt> [path] [options]
-
-# Examine codebase structure
-tenets examine [path] [options]
-
-# Chronicle git history
-tenets chronicle [options]
-
-# Track development momentum
-tenets momentum [options]
-
-# Instill guiding principles
-tenets instill [options]
-```
-
-### Tenet Management
-
-```bash
-# Add a guiding principle
-tenets tenet add <principle> [--priority high]
-
-# List all tenets
-tenets tenet list [--pending | --instilled]
-
-# Remove a tenet
-tenets tenet remove <id>
-
-# Export/import tenets
-tenets tenet export > my-tenets.yml
-tenets tenet import my-tenets.yml
-```
-
-### Session Commands
-
-```bash
-# Create a new session
-tenets session create <name>
-
-# Start a session (alias of create)
-tenets session start <name>
-
-# Resume the current active session (or specify a name)
-tenets session resume [<name>]
-
-# Exit the current active session (or specify a name)
-tenets session exit [<name>]
-
-# Show session details
-tenets session show <name>
-
-# List sessions (shows an Active column)
-tenets session list
-
-# Attach an artifact to a session (stored as text)
-# kind examples: note, context_result, summary
-tenets session add <name> <kind> <file>
-
-# Reset (delete & recreate) a session and purge its context
-tenets session reset <name>
-
-# Delete a session (optionally keep context)
-# Add --keep-context to retain stored artifacts
-tenets session delete <name> [--keep-context]
-
-# Clear ALL sessions (optionally keep context)
-tenets session clear [--keep-context]
-```
-
-### Visualization
-
-```bash
-# Visualize dependencies
-tenets viz deps [path] [options]
-
-# Show complexity heatmap
-tenets viz complexity [path] [options]
-
-# Contributor activity
-tenets viz contributors [path] [options]
-```
 
 ## 📚 Documentation
 

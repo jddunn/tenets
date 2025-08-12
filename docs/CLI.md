@@ -80,6 +80,9 @@ tenets distill <prompt> [path] [options]
 - `--session, -s`: Use a named session for stateful context
 - `--estimate-cost`: Show token usage and cost estimate
 - `--verbose, -v`: Show detailed analysis info
+- `--full`: Include full content for all ranked files (no summarization) until token budget reached
+- `--condense`: Condense whitespace (collapse large blank runs, trim trailing spaces) before token counting
+- `--remove-comments`: Strip comments (heuristic, language-aware) before token counting
 
 **Examples:**
 
@@ -104,7 +107,45 @@ tenets distill "refactor authentication system" --mode thorough
 
 # Session-based context (maintains state)
 tenets distill "build payment system" --session payment-feature
+
+# Full mode (force raw content inclusion)
+tenets distill "inspect performance code" --full --max-tokens 60000
+
+# Reduce token usage by stripping comments & whitespace
+tenets distill "understand API surface" --remove-comments --condense --stats
 ```
+
+#### Content Transformations
+
+You can optionally transform file content prior to aggregation/token counting:
+
+| Flag | Effect | Safety |
+|------|--------|--------|
+| `--full` | Disables summarization; includes raw file content until budget is hit | Budget only |
+| `--remove-comments` | Removes line & block comments (language-aware heuristics) | Aborts if >60% of non-empty lines would vanish |
+| `--condense` | Collapses 3+ blank lines to 1, trims trailing spaces, ensures final newline | Lossless for code logic |
+
+Transformations are applied in this order: comment stripping -> whitespace condensation. Statistics (e.g. removed comment lines) are tracked internally and may be surfaced in future `--stats` expansions.
+
+#### Pinned Files
+
+Pin critical files so they're always considered first in subsequent distill runs for the same session:
+
+```bash
+# Pin individual files
+tenets instill --session refactor-auth --add-file src/auth/service.py --add-file src/auth/models.py
+
+# Pin all files in a folder (respects .gitignore)
+tenets instill --session refactor-auth --add-folder src/auth
+
+# List pinned files
+tenets instill --session refactor-auth --list-pinned
+
+# Generate context (pinned files prioritized)
+tenets distill "add JWT refresh tokens" --session refactor-auth --remove-comments
+```
+
+Pinned files are stored in the session metadata (SQLite) and reloaded automatically—no extra flags needed when distilling.
 
 #### Ranking presets and thresholds
 
@@ -182,17 +223,17 @@ tenets examine ./src --ownership
 **Output Example (Table Format):**
 ```
 Codebase Analysis
-┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
-┃ Metric          ┃ Value    ┃
-┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩
-│ Total Files     │ 156      │
-│ Total Lines     │ 24,531   │
-│ Languages       │ Python,  │
+┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Metric          ┃ Value     ┃
+┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ Total Files     │ 156       │
+│ Total Lines     │ 24,531    │
+│ Languages       │ Python,   │
 │                 │ JavaScript│
-│ Avg Complexity  │ 4.32     │
-│ Git Branch      │ main     │
-│ Contributors    │ 8        │
-└─────────────────┴──────────┘
+│ Avg Complexity  │ 4.32      │
+│ Git Branch      │ main      │
+│ Contributors    │ 8         │
+└─────────────────┴───────────┘
 ```
 
 ### chronicle

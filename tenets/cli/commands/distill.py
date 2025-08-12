@@ -54,6 +54,21 @@ def distill(
     use_stopwords: bool = typer.Option(
         False, "--use-stopwords", help="Enable stopword filtering for keyword analysis"
     ),
+    full: bool = typer.Option(
+        False,
+        "--full",
+        help="Include full content for all ranked files within token budget (no summarization)",
+    ),
+    condense: bool = typer.Option(
+        False,
+        "--condense",
+        help="Condense whitespace (collapse large blank runs, trim trailing spaces) before counting tokens",
+    ),
+    remove_comments: bool = typer.Option(
+        False,
+        "--remove-comments",
+        help="Strip comments (heuristic, language-aware) before counting tokens",
+    ),
     session: Optional[str] = typer.Option(
         None, "--session", "-s", help="Use session for stateful context building"
     ),
@@ -125,6 +140,9 @@ def distill(
                     session_name=session,
                     include_patterns=include_patterns,
                     exclude_patterns=exclude_patterns,
+                    full=full,
+                    condense=condense,
+                    remove_comments=remove_comments,
                 )
         else:
             # No progress bar in quiet mode
@@ -140,6 +158,9 @@ def distill(
                 session_name=session,
                 include_patterns=include_patterns,
                 exclude_patterns=exclude_patterns,
+                full=full,
+                condense=condense,
+                remove_comments=remove_comments,
             )
 
         # Prepare metadata and interactivity flags
@@ -169,6 +190,7 @@ def distill(
                     f"[bold]Prompt[/bold]: {str(prompt)[:80]}\n"
                     f"Path: {str(path)}\n"
                     f"Mode: {metadata.get('mode', 'unknown')}  •  Format: {format}\n"
+                    f"Full: {metadata.get('full_mode', full)}  •  Condense: {metadata.get('condense', condense)}  •  Remove Comments: {metadata.get('remove_comments', remove_comments)}\n"
                     f"Files: {files_included}/{files_analyzed}  •  Tokens: {token_count:,} / {max_tokens_display}\n"
                     f"Include: {include_display}\n"
                     f"Exclude: {exclude_display}\n"

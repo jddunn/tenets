@@ -1,6 +1,20 @@
-"""Ranking package.
+"""Ranking API (clean minimal surface).
 
-Re-exports the main RelevanceRanker after directory reorganization.
+Public imports:
+        RelevanceRanker, RankingAlgorithm
+Internal helpers (still importable if needed):
+        RankingFactors, RankedFile, TFIDFCalculator, strategies
 """
 
-from .ranker import RelevanceRanker  # noqa: F401
+from .ranker import (
+    RelevanceRanker,
+    RankingAlgorithm,
+    RankingFactors,
+    RankedFile,
+    TFIDFCalculator,
+    FastRankingStrategy,
+    BalancedRankingStrategy,
+    ThoroughRankingStrategy,
+)
+
+__all__ = ["RelevanceRanker", "RankingAlgorithm"]

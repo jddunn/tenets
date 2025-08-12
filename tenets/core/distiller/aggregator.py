@@ -61,6 +61,9 @@ class ContextAggregator:
         model: Optional[str] = None,
         git_context: Optional[Dict[str, Any]] = None,
         strategy: str = "balanced",
+        full: bool = False,
+        condense: bool = False,
+        remove_comments: bool = False,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget.
 
@@ -89,6 +92,7 @@ class ContextAggregator:
         summarized_files = []
         total_tokens = 0
 
+        # Full mode: attempt to include full content for all files (still respecting token budget)
         for i, file in enumerate(files):
             # Skip files below minimum relevance
             if file.relevance_score < strat.min_relevance:
@@ -98,9 +102,47 @@ class ContextAggregator:
                 continue
 
             # Estimate tokens for this file
+            original_content = file.content
+            transformed_stats = {}
+            if remove_comments or condense:
+                try:
+                    from .transform import (
+                        detect_language_from_extension,
+                        apply_transformations,
+                    )  # local import
+
+                    lang = detect_language_from_extension(str(file.path))
+                    transformed, transformed_stats = apply_transformations(
+                        original_content,
+                        lang,
+                        remove_comments=remove_comments,
+                        condense=condense,
+                    )
+                    if transformed_stats.get("changed"):
+                        file.content = transformed
+                except Exception as e:  # pragma: no cover - defensive
+                    self.logger.debug(f"Transformation failed for {file.path}: {e}")
             file_tokens = count_tokens(file.content, model)
 
             # Decide whether to include full or summarized
+            if full:
+                if total_tokens + file_tokens <= available_tokens:
+                    included_files.append(
+                        {
+                            "file": file,
+                            "content": file.content,
+                            "tokens": file_tokens,
+                            "summarized": False,
+                            "transformations": transformed_stats,
+                        }
+                    )
+                    total_tokens += file_tokens
+                else:
+                    self.logger.debug(
+                        f"Skipping {file.path} (token budget exceeded in full mode: {total_tokens + file_tokens} > {available_tokens})"
+                    )
+                continue
+
             if (
                 i < strat.max_full_files
                 and file.relevance_score >= strat.summarize_threshold
@@ -113,6 +155,7 @@ class ContextAggregator:
                         "content": file.content,
                         "tokens": file_tokens,
                         "summarized": False,
+                        "transformations": transformed_stats,
                     }
                 )
                 total_tokens += file_tokens
@@ -139,6 +182,7 @@ class ContextAggregator:
                             "tokens": summary.summary_tokens,
                             "summarized": True,
                             "summary": summary,
+                            "transformations": transformed_stats,
                         }
                     )
                     total_tokens += summary.summary_tokens

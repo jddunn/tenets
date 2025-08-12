@@ -61,6 +61,10 @@ class Distiller:
         session_name: Optional[str] = None,
         include_patterns: Optional[List[str]] = None,
         exclude_patterns: Optional[List[str]] = None,
+        full: bool = False,
+        condense: bool = False,
+        remove_comments: bool = False,
+        pinned_files: Optional[List[Path]] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -109,6 +113,29 @@ class Distiller:
         )
 
         # 4. Analyze files for structure and content
+        # Prepend pinned files (avoid duplicates) while preserving original discovery order
+        if pinned_files:
+            # Preserve the explicit order given by the caller (tests rely on this)
+            # Do NOT filter by existence – tests pass synthetic Paths.
+            pinned_strs = [str(p) for p in pinned_files]
+            pinned_set = set(pinned_strs)
+            ordered: List[Path] = []
+            # First, add pinned files (re-using the discovered Path object if present
+            # so downstream identity / patch assertions still work).
+            discovered_map = {str(f): f for f in files}
+            for p_str, p_obj in zip(pinned_strs, pinned_files):
+                if p_str in discovered_map:
+                    f = discovered_map[p_str]
+                else:
+                    f = p_obj  # fallback to provided Path
+                if f not in ordered:
+                    ordered.append(f)
+            # Then append remaining discovered files preserving original discovery order.
+            for f in files:
+                if str(f) not in pinned_set and f not in ordered:
+                    ordered.append(f)
+            files = ordered
+
         analyzed_files = self._analyze_files(files=files, mode=mode, prompt_context=prompt_context)
 
         # 5. Rank files by relevance
@@ -130,6 +157,9 @@ class Distiller:
             max_tokens=max_tokens or self.config.max_tokens,
             model=model,
             git_context=git_context,
+            full=full,
+            condense=condense,
+            remove_comments=remove_comments,
         )
 
         # 8. Format the output
@@ -150,6 +180,9 @@ class Distiller:
                 "model": model,
                 "session": session_name,
                 "prompt": prompt,
+                "full_mode": full,
+                "condense": condense,
+                "remove_comments": remove_comments,
             },
         )
 
@@ -204,8 +237,10 @@ class Distiller:
         analyzed = []
         for file in files:
             try:
+                # Use positional path argument for compatibility with tests that
+                # patch analyze_file expecting a first positional parameter named 'path'.
                 analysis = self.analyzer.analyze_file(
-                    file_path=file, deep=deep_analysis, extract_keywords=True
+                    file, deep=deep_analysis, extract_keywords=True
                 )
                 analyzed.append(analysis)
             except Exception as e:
@@ -261,6 +296,9 @@ class Distiller:
         max_tokens: int,
         model: Optional[str],
         git_context: Optional[Dict[str, Any]],
+        full: bool = False,
+        condense: bool = False,
+        remove_comments: bool = False,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget."""
         return self.aggregator.aggregate(
@@ -269,6 +307,9 @@ class Distiller:
             max_tokens=max_tokens,
             model=model,
             git_context=git_context,
+            full=full,
+            condense=condense,
+            remove_comments=remove_comments,
         )
 
     def _format_output(
