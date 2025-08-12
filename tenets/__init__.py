@@ -90,7 +90,7 @@ class Tenets:
         >>> ten.instill_tenets()
     """
 
-    def __init__(self, config: Optional[Union[TenetsConfig, Dict[str, Any], Path]] = None):
+    def __init__(self, config: Optional[Union[TenetsConfig, dict[str, Any], Path]] = None):
         """Initialize Tenets with configuration.
 
         Args:
@@ -178,7 +178,7 @@ class Tenets:
     def distill(
         self,
         prompt: str,
-        files: Optional[Union[str, Path, List[Path]]] = None,
+        files: Optional[Union[str, Path, list[Path]]] = None,
         *,  # Force keyword-only arguments
         format: str = "markdown",
         model: Optional[str] = None,
@@ -186,8 +186,8 @@ class Tenets:
         mode: str = "balanced",
         include_git: bool = True,
         session_name: Optional[str] = None,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+    include_patterns: Optional[list[str]] = None,
+    exclude_patterns: Optional[list[str]] = None,
         apply_tenets: Optional[bool] = None,
         full: bool = False,
         condense: bool = False,
@@ -455,8 +455,8 @@ class Tenets:
         self,
         folder_path: Union[str, Path],
         session: Optional[str] = None,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+    include_patterns: Optional[list[str]] = None,
+    exclude_patterns: Optional[list[str]] = None,
         respect_gitignore: bool = True,
         recursive: bool = True,
     ) -> int:
@@ -498,7 +498,7 @@ class Tenets:
         instilled_only: bool = False,
         session: Optional[str] = None,
         category: Optional[Union[str, TenetCategory]] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """List tenets with optional filtering.
 
         Args:
