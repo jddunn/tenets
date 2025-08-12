@@ -199,6 +199,7 @@ class OutputConfig:
     include_metadata: bool = True
     compression_threshold: int = 10_000  # Characters
     summary_ratio: float = 0.25  # Target 25% of original size
+    copy_on_distill: bool = False  # Automatically copy distill output to clipboard when true
 
 
 @dataclass

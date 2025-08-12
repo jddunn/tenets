@@ -32,6 +32,39 @@ Plus powerful development intelligence:
 - **Identify** hotspots and technical debt
 - **Understand** team patterns and expertise
 
+## Installation / Quick Start
+
+### Pip
+
+```bash
+# Core features only - lightweight, no ML dependencies
+pip install tenets
+
+# Add specific features
+pip install tenets[light]  # Adds numpy, scikit-learn for TF-IDF ranking
+pip install tenets[viz]    # Adds visualization capabilities
+pip install tenets[ml]     # Adds deep learning models (large dependencies)
+
+# Everything
+pip install tenets[all]
+```
+
+### Install with Poetry 
+
+```bash
+# Clone the repository
+git clone https://github.com/jddunn/tenets.git
+cd tenets
+
+# Install with poetry
+poetry install           # Core only
+
+# Activate shell
+poetry shell
+```
+
+### Getting Started
+
 ```bash
 # Instead of manually finding and copying files...
 tenets distill "implement OAuth2" ./src
@@ -39,6 +72,16 @@ tenets distill "implement OAuth2" ./src
 # It automatically finds auth.py, user.py, config.yaml,
 # related tests, dependency files — everything you actually need.
 # (Git activity is used for relevance only; not shown in the output.)
+
+# Copy result straight to your clipboard
+tenets distill "implement OAuth2" ./src --copy
+
+# Or write it to a file for inspection / sharing
+tenets distill "implement OAuth2" ./src > context.md
+# (equivalent: tenets distill "implement OAuth2" ./src -o context.md)
+
+# Make copying the default (in .tenets.yml)
+# output:\n#   copy_on_distill: true
 ```
 
 ## Why tenets?
@@ -198,38 +241,6 @@ tenets distill "add OAuth device flow" --session auth-refactor --remove-comments
 
 Pinned files are stored in session metadata (SQLite) and automatically reloaded—no extra arguments needed on subsequent `distill` commands.
 
-
-## Installation
-
-### Pip
-
-```bash
-# Core features only - lightweight, no ML dependencies
-pip install tenets
-
-# Add specific features
-pip install tenets[light]  # Adds numpy, scikit-learn for TF-IDF ranking
-pip install tenets[viz]    # Adds visualization capabilities
-pip install tenets[ml]     # Adds deep learning models (large dependencies)
-
-# Everything
-pip install tenets[all]
-```
-
-### Install with Poetry 
-
-```bash
-# Clone the repository
-git clone https://github.com/jddunn/tenets.git
-cd tenets
-
-# Install with poetry
-poetry install           # Core only
-
-# Activate shell
-poetry shell
-```
-
 ### Feature Sets Explained
 
 | Feature Set | Includes | Use When |
@@ -254,6 +265,8 @@ make build    # build sdist + wheel
 ```bash
 # Generate context for ChatGPT/Claude
 tenets distill "explain authentication flow" > context.md
+# Or copy straight to clipboard
+tenets distill "explain authentication flow" --copy
 # Paste context.md into your AI chat
 
 # Add guiding principles
@@ -324,9 +337,6 @@ Full documentation is available at https://docs.tenets.dev.
 ### Building Documentation Locally
 
 ```bash
-# Install docs dependencies
-pip install mkdocs mkdocs-material pymdown-extensions
-
 # Serve locally with live reload
 make docs
 # Or directly:
@@ -353,12 +363,21 @@ ranking:
   threshold: 0.05
   use_tfidf: true
   use_stopwords: false
+output:
+  copy_on_distill: false  # set true to always copy distilled context to clipboard
 ```
 
 - Or set environment variables for one run:
 
 ```bash
 TENETS_RANKING_THRESHOLD=0.05 TENETS_RANKING_ALGORITHM=fast tenets distill "implement OAuth2" .
+
+# Copy directly (one-off)
+tenets distill "implement OAuth2" --copy
+
+# Or enable globally in config (.tenets.yml)
+output:
+  copy_on_distill: true
 ```
 
 See the full guide: `docs/CONFIG.md`.
@@ -434,7 +453,7 @@ Notes
 
 ## Contributing
 
-We love contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
