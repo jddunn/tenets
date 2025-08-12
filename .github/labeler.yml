@@ -1,29 +1,122 @@
-# Automatic label rules for PRs / issues
-# Requires github actions workflow using actions/labeler
+# Labeler Configuration for actions/labeler@v5
+# Automatically labels PRs based on changed file paths
+# Location: .github/labeler.yml (NOT in workflows/)
+# Used by: .github/workflows/auto-label.yml
+#
+# IMPORTANT: actions/labeler@v5 uses simple glob patterns
+# Just list the file patterns - no complex nested structures!
 
-'area: ranking':
-  - 'tenets/core/ranking/**'
-
-'area: analysis':
-  - 'tenets/core/analysis/**'
-
-'area: cli':
-  - 'tenets/cli/**'
-
+# Documentation changes
 'area: docs':
   - 'docs/**'
+  - '**/*.md'
+  - 'mkdocs.yml'
   - 'README.md'
+  - 'CHANGELOG.md'
+  - 'CONTRIBUTING.md'
 
+# Core ranking functionality
+'area: ranking':
+  - 'tenets/core/ranking/**'
+  - 'tenets/ranking/**'
+
+# Analysis modules
+'area: analysis':
+  - 'tenets/core/analysis/**'
+  - 'tenets/analysis/**'
+
+# CLI changes
+'area: cli':
+  - 'tenets/cli/**'
+  - 'tenets/__main__.py'
+
+# Configuration changes
 'area: config':
   - 'tenets/config.py'
-  - '**/pyproject.toml'
+  - 'tenets/config/**'
+  - 'pyproject.toml'
+  - 'setup.py'
+  - 'setup.cfg'
+  - '.env*'
 
+# Test changes
 'area: tests':
   - 'tests/**'
+  - 'test_*.py'
+  - '*_test.py'
+  - 'pytest.ini'
+  - '.coveragerc'
+  - 'conftest.py'
 
-'type: security':
+# API changes
+'area: api':
+  - 'tenets/api/**'
+  - 'tenets/web/**'
+  - 'tenets/server/**'
+
+# Machine Learning
+'area: ml':
+  - 'tenets/ml/**'
+  - 'tenets/models/**'
+  - 'tenets/embeddings/**'
+
+# Build and CI/CD
+'area: ci/cd':
+  - '.github/workflows/**'
+  - '.github/actions/**'
+  - 'Dockerfile*'
+  - '.dockerignore'
+  - 'docker-compose*.yml'
+  - '.pre-commit-config.yaml'
+
+# Dependencies
+'dependencies':
+  - 'pyproject.toml'
+  - 'requirements*.txt'
+  - 'Pipfile*'
+  - 'poetry.lock'
+  - 'environment*.yml'
+
+# Security-related changes
+'security':
   - 'SECURITY.md'
-  - 'tenets/**/security*'
+  - 'tenets/security/**'
+  - 'tenets/auth/**'
 
-'type: performance':
-  - '**/*perf*'
+# Performance-related changes
+'performance':
+  - 'tenets/performance/**'
+  - 'tenets/cache/**'
+  - 'tenets/optimization/**'
+
+# Frontend/UI changes
+'area: frontend':
+  - 'frontend/**'
+  - 'static/**'
+  - 'templates/**'
+  - '**/*.html'
+  - '**/*.css'
+  - '**/*.js'
+  - '**/*.jsx'
+  - '**/*.ts'
+  - '**/*.tsx'
+
+# Database changes
+'area: database':
+  - 'migrations/**'
+  - 'alembic/**'
+  - 'tenets/db/**'
+  - 'tenets/database/**'
+  - 'tenets/models/**'
+  - '**/*.sql'
+
+# Docker-related
+'docker':
+  - 'Dockerfile*'
+  - 'docker-compose*.yml'
+  - '.dockerignore'
+  - 'docker/**'
+
+# GitHub-related
+'github':
+  - '.github/**'

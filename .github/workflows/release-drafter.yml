@@ -1,23 +1,155 @@
+# Release Drafter Workflow
+# Maintains a draft release with auto-generated release notes
+# Location: .github/workflows/release-drafter.yml
+# Uses config from: .github/release-drafter.yml
+
 name: Release Drafter
 
 on:
+  # Update draft release when PRs are merged to master
   push:
     branches:
       - master
+      - main
+  
+  # Also update when PRs are labeled/unlabeled
   pull_request:
     types: [opened, reopened, synchronize, labeled, unlabeled, closed]
+    branches:
+      - master
+      - main
+  
+  # Allow manual trigger to refresh the draft
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the draft release? (true/false)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
+# Minimal permissions
 permissions:
-  contents: read
-  pull-requests: write
+  contents: write        # Need to create/update releases
+  pull-requests: write   # Need to read PR information
+  issues: read          # Need to read linked issues
 
 jobs:
   update_release_draft:
+    name: Update Release Draft
     runs-on: ubuntu-latest
+    # Only run on master branch or when PR targets master
+    if: |
+      github.ref == 'refs/heads/master' || 
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'master') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main')
+    
+    outputs:
+      release_id: ${{ steps.drafter.outputs.id }}
+      release_name: ${{ steps.drafter.outputs.name }}
+      release_tag: ${{ steps.drafter.outputs.tag_name }}
+      release_url: ${{ steps.drafter.outputs.html_url }}
+    
     steps:
-      - name: Release Drafter
+      # Simple checkout - no full history needed
+      - name: Checkout code
+        uses: actions/checkout@v4
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'
+      
+      # Main release drafter action
+      - name: Update release draft
+        id: drafter
+        uses: release-drafter/release-drafter@v6
+        with:
+          # Use our config file
+          config-name: release-drafter.yml
+          
+          # Disable auto-publishing except on manual trigger
+          publish: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true' }}
+          
+          # Prerelease if version contains alpha/beta/rc
+          prerelease: false
+          
+          # Use commitish for better accuracy
+          commitish: ${{ github.ref }}
+          
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Output draft release information
+      - name: Output release info
+        if: success()
+        run: |
+          echo "📝 Release Draft Updated!"
+          echo "Name: ${{ steps.drafter.outputs.name }}"
+          echo "Tag: ${{ steps.drafter.outputs.tag_name }}"
+          echo "Draft: ${{ steps.drafter.outputs.draft }}"
+          echo "URL: ${{ steps.drafter.outputs.html_url }}"
+          
+          # Add to job summary
+          echo "## 📝 Release Draft Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Name**: ${{ steps.drafter.outputs.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: ${{ steps.drafter.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: Draft" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: [View Draft](${{ steps.drafter.outputs.html_url }})" >> $GITHUB_STEP_SUMMARY
+      
+      # If manually published, trigger release workflow
+      - name: Trigger release workflow
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'
+        run: |
+          echo "🚀 Release published! Tag: ${{ steps.drafter.outputs.tag_name }}"
+          echo "The release workflow will be triggered automatically by the new tag."
+      
+      # Comment on merged PRs that they're included in draft
+      - name: Comment on merged PR
+        if: |
+          github.event_name == 'pull_request' && 
+          github.event.action == 'closed' && 
+          github.event.pull_request.merged == true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const draftUrl = '${{ steps.drafter.outputs.html_url }}';
+            const tagName = '${{ steps.drafter.outputs.tag_name }}';
+            
+            if (draftUrl && tagName) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `🎉 **This PR has been included in the [draft release ${tagName}](${draftUrl})**\n\n` +
+                      `The release notes have been automatically updated.`
+              });
+            }
+        continue-on-error: true
+
+  # Optional: Auto-publish releases on schedule (e.g., weekly)
+  scheduled_publish:
+    name: Scheduled Release Publishing
+    runs-on: ubuntu-latest
+    # Only run on schedule and if there are changes
+    if: github.event_name == 'schedule'
+    needs: update_release_draft
+    
+    steps:
+      - name: Check if release should be published
+        id: check
+        run: |
+          # This is where you could add logic to determine if
+          # enough changes have accumulated to warrant a release
+          echo "Scheduled publishing is currently disabled"
+          echo "publish=false" >> $GITHUB_OUTPUT
+      
+      - name: Publish release
+        if: steps.check.outputs.publish == 'true'
         uses: release-drafter/release-drafter@v6
         with:
           config-name: release-drafter.yml
+          publish: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
