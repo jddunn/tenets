@@ -260,7 +260,7 @@ nav:
   - Documentation:
     - CLI Reference: CLI.md
     - Configuration: CONFIG.md
-    - Architecture: DEEP-DIVE.md
+    - Architecture: ARCHITECTURE.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
 
