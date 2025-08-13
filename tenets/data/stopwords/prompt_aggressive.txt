@@ -1,0 +1,369 @@
+# Comprehensive stopwords for code search - minimal but thorough
+# These are filtered when ranking code files against user prompts
+# Philosophy: Only filter words that are truly meaningless in code contexts
+# Preserve ALL programming keywords, technical terms, and action words
+
+# ARTICLES - Always meaningless in code search
+the
+a
+an
+
+# BASIC CONJUNCTIONS - Simple logical connectors with no semantic value
+and
+or  
+but
+nor
+yet
+so
+
+# BASIC PREPOSITIONS - Only the most common positional words with no code meaning
+in
+on
+at
+by
+to
+of
+for
+with
+from
+into
+onto
+upon
+about
+through
+during
+before
+after
+within
+without
+beneath
+beside
+between
+among
+across
+around
+against
+along
+amid
+underneath
+
+# BE VERBS - State verbs that add no meaning to code search
+is
+are
+was
+were
+be
+been
+being
+am
+
+# BASIC PRONOUNS - Personal/demonstrative pronouns with no code relevance
+it
+this
+that
+these
+those
+they
+them
+their
+theirs
+he
+him
+his
+she
+her
+hers
+we
+us
+our
+ours
+you
+your
+yours
+myself
+yourself
+himself
+herself
+itself
+ourselves
+yourselves
+themselves
+
+# MODAL VERBS - Auxiliary verbs for possibility/necessity
+will
+would
+can
+could
+should
+shall
+may
+might
+must
+ought
+
+# BASIC AUXILIARY VERBS - Helper verbs with no semantic content
+have
+has
+had
+having
+do
+does
+did
+doing
+done
+
+# QUESTION WORDS - Most interrogatives (keep "how" and "which" - often meaningful)
+what
+when
+where
+why
+who
+whose
+
+# QUANTIFIERS - Basic amount words that rarely help in code search
+some
+any
+all
+many
+much
+few
+little
+most
+more
+less
+several
+enough
+quite
+rather
+very
+too
+such
+
+# BASIC ADVERBS - Simple modifiers with no code meaning
+here
+there
+now
+then
+just
+only
+also
+even
+still
+yet
+already
+always
+never
+often
+sometimes
+usually
+perhaps
+maybe
+probably
+definitely
+certainly
+really
+truly
+actually
+
+# TIME REFERENCES - Generic temporal words
+today
+yesterday
+tomorrow
+ago
+later
+soon
+early
+late
+recently
+currently
+previously
+formerly
+
+# COMMON VERBS - Only the most basic action verbs with no code relevance
+# NOTE: We deliberately EXCLUDE most verbs as they often appear in function names
+said
+say
+says
+saying
+tell
+told
+telling
+ask
+asked
+asking
+seem
+seems
+seemed
+seeming
+become
+becomes
+became
+becoming
+remain
+remains
+remained
+remaining
+appear
+appears
+appeared
+appearing
+
+# BASIC ADJECTIVES - Only the most generic descriptive words
+good
+bad
+big
+small
+old
+new
+young
+long
+short
+high
+low
+large
+great
+little
+right
+wrong
+same
+different
+other
+another
+each
+every
+certain
+sure
+true
+false
+
+# BASIC INTERJECTIONS AND DISCOURSE MARKERS
+yes
+no
+ok
+okay
+well
+oh
+ah
+hmm
+um
+uh
+
+# COMMON ABBREVIATIONS - Only truly meaningless ones
+etc
+ie
+eg
+vs
+
+# ARTICLES AND DETERMINERS - Extended list
+one
+two
+both
+either
+neither
+first
+last
+next
+previous
+other
+another
+each
+every
+any
+some
+no
+
+# BASIC TRANSITIONS - Simple connective words
+however
+therefore
+thus
+hence
+moreover
+furthermore
+nevertheless
+nonetheless
+meanwhile
+otherwise
+instead
+besides
+indeed
+certainly
+obviously
+clearly
+
+# FILLER WORDS - Common meaningless additions
+kind
+sort
+type
+thing
+stuff
+way
+part
+side
+end
+use
+make
+take
+get
+go
+come
+know
+think
+see
+look
+find
+give
+put
+keep
+let
+turn
+move
+try
+want
+need
+feel
+work
+show
+play
+run
+help
+call
+leave
+follow
+start
+begin
+stop
+end
+
+# BASIC NEGATIONS AND AFFIRMATIONS
+not
+dont
+doesn
+didnt
+wont
+wouldn
+cant
+cannot
+couldn
+shouldn
+wouldn
+mustn
+needn
+daren
+
+# Note: Words deliberately EXCLUDED from stopwords (keep for code search):
+# - Programming keywords: function, class, method, variable, return, import, export, etc.
+# - Action verbs: create, build, parse, compile, execute, render, validate, etc.  
+# - Technical terms: server, client, database, api, config, cache, etc.
+# - Descriptive terms: async, static, public, private, final, abstract, etc.
+# - Domain terms: user, data, file, error, test, mock, etc.
+# - Directional terms: up, down, left, right, top, bottom, etc.
+# - Size terms: min, max, size, length, width, height, etc.
+# - State terms: active, enabled, disabled, visible, hidden, etc.
+# - Format terms: json, xml, html, csv, etc.
+# - Common abbreviations: id, url, uri, uuid, etc.
+# - Single letters: i, j, k, x, y, z (common variable names)
+# - Numbers and numeric terms
+# - Boolean values: true, false (unless in basic adjectives context)
+# - Comparison terms: equal, greater, less, compare, match, etc.
+# - Time/date terms: time, date, year, month, day, hour, minute, etc.
+# - File/path terms: path, file, folder, directory, etc.

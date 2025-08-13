@@ -1,0 +1,70 @@
+{
+  "concepts": {
+    "authentication": [
+      "auth", "authentication", "authorization", "login", "logout",
+      "session", "token", "jwt", "oauth", "oauth2", "sso", "saml",
+      "credential", "password", "permission", "role", "access"
+    ],
+    "api": [
+      "api", "rest", "restful", "graphql", "endpoint", "route",
+      "controller", "handler", "middleware", "request", "response",
+      "http", "https", "webhook", "websocket", "grpc", "rpc"
+    ],
+    "database": [
+      "database", "db", "sql", "nosql", "query", "model", "schema",
+      "migration", "orm", "odm", "table", "collection", "index",
+      "postgres", "mysql", "mongodb", "redis", "elasticsearch"
+    ],
+    "frontend": [
+      "ui", "ux", "frontend", "component", "view", "template",
+      "react", "vue", "angular", "svelte", "layout", "style",
+      "css", "sass", "scss", "responsive", "mobile", "desktop"
+    ],
+    "backend": [
+      "backend", "server", "service", "microservice", "api",
+      "business logic", "domain", "repository", "use case",
+      "controller", "model", "django", "flask", "fastapi",
+      "express", "spring", "rails"
+    ],
+    "testing": [
+      "test", "testing", "unit test", "integration test", "e2e",
+      "spec", "suite", "coverage", "mock", "stub", "fixture",
+      "jest", "pytest", "mocha", "jasmine", "cypress", "selenium"
+    ],
+    "devops": [
+      "deploy", "deployment", "ci", "cd", "pipeline", "docker",
+      "kubernetes", "k8s", "container", "orchestration", "aws",
+      "azure", "gcp", "terraform", "ansible", "jenkins", "github actions"
+    ],
+    "performance": [
+      "performance", "optimization", "speed", "latency", "throughput",
+      "cache", "caching", "cdn", "load balancing", "scaling",
+      "profiling", "benchmark", "memory", "cpu", "async", "parallel"
+    ],
+    "security": [
+      "security", "vulnerability", "encryption", "cryptography",
+      "ssl", "tls", "https", "cors", "csrf", "xss", "sql injection",
+      "penetration testing", "audit", "compliance", "gdpr", "pci"
+    ]
+  },
+  "frameworks": [
+    "react", "vue", "angular", "svelte", "next", "nuxt", "gatsby",
+    "django", "flask", "fastapi", "express", "koa", "nest",
+    "spring", "rails", "laravel", "symfony", "asp.net",
+    "tensorflow", "pytorch", "scikit-learn", "keras", "pandas", "numpy"
+  ],
+  "languages": {
+    "python": [".py", ".pyw", ".pyi"],
+    "javascript": [".js", ".jsx", ".mjs", ".cjs"],
+    "typescript": [".ts", ".tsx", ".d.ts"],
+    "java": [".java"],
+    "go": [".go"],
+    "rust": [".rs"],
+    "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".h"],
+    "csharp": [".cs"],
+    "ruby": [".rb"],
+    "php": [".php"],
+    "swift": [".swift"],
+    "kotlin": [".kt", ".kts"]
+  }
+}

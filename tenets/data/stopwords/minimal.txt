@@ -1,0 +1,48 @@
+# Minimal stopwords for code search - only truly meaningless words
+# These are filtered when ranking code files
+# Keep this list VERY small to preserve search accuracy
+
+# Articles
+the
+a
+an
+
+# Conjunctions
+and
+or
+but
+
+# Prepositions
+in
+on
+at
+by
+to
+of
+for
+with
+from
+into
+onto
+upon
+about
+through
+during
+before
+after
+
+# Be verbs
+is
+are
+was
+were
+be
+been
+being
+
+# Pronouns
+it
+this
+that
+these
+those
