@@ -18,11 +18,10 @@ Test Coverage:
 
 import math
 from concurrent.futures import TimeoutError as FutureTimeoutError
+from datetime import datetime, timedelta
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
-from datetime import datetime, timedelta
-from tenets.models.analysis import ClassInfo, CodeStructure, FunctionInfo
 
 from tenets.core.ranking.ranker import (
     BalancedRankingStrategy,
@@ -34,7 +33,13 @@ from tenets.core.ranking.ranker import (
     TFIDFCalculator,
     ThoroughRankingStrategy,
 )
-from tenets.models.analysis import ComplexityMetrics, FileAnalysis
+from tenets.models.analysis import (
+    ClassInfo,
+    CodeStructure,
+    ComplexityMetrics,
+    FileAnalysis,
+    FunctionInfo,
+)
 from tenets.models.context import PromptContext
 
 
@@ -55,8 +60,9 @@ class TestTFIDFCalculator:
         # Mock the stopwords file
         stopwords_content = "the\na\nan\nand\nis\n"
 
-        with patch("builtins.open", mock_open(read_data=stopwords_content)), patch(
-            "pathlib.Path.exists", return_value=True
+        with (
+            patch("builtins.open", mock_open(read_data=stopwords_content)),
+            patch("pathlib.Path.exists", return_value=True),
         ):
             calc = TFIDFCalculator(use_stopwords=True)
 
@@ -771,6 +777,7 @@ class TestMainRankingPipeline:
                 if "special" in rf.analysis.path:
                     rf.score *= 2
             return ranked_files
+
         ranker.register_custom_ranker(custom_ranker)
         assert len(ranker._custom_rankers) == 1
         files = [

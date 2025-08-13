@@ -201,7 +201,7 @@ def get_model_max_tokens(model: Optional[str]) -> int:
         "gpt-4.1": 128_000,
         "gpt-4o": 128_000,
         "gpt-4o-mini": 128_000,
-    # "gpt-3.5-turbo": 16_385,  # legacy
+        # "gpt-3.5-turbo": 16_385,  # legacy
         "claude-3-opus": 200_000,
         "claude-3-5-sonnet": 200_000,
         "claude-3-haiku": 200_000,

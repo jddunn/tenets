@@ -16,47 +16,47 @@ edit_uri: edit/main/docs/
 
 # Copyright
 copyright: >
-  Copyright &copy; 2024 <a href="https://manic.agency" target="_blank">manic.agency</a>
+  Copyright &copy; 2024 <a href="https://jddunn.github.io" target="_blank">Johnny Dunn</a>
 
 # Theme configuration
 theme:
   name: material
   custom_dir: docs/overrides
-  
+
   # Logo and favicon
   logo: logos/tenets_dark_icon_transparent_cropped.png
   favicon: favicon/favicon.ico
-  
+
   # Fonts
   font:
     text: Inter
     code: JetBrains Mono
-    
+
   # Icons
   icon:
     repo: fontawesome/brands/github
     edit: material/file-edit-outline
-    
+
   # Color schemes
   palette:
     # Light mode
     - scheme: default
-      media: "(prefers-color-scheme: light)"
+      media: '(prefers-color-scheme: light)'
       primary: custom
       accent: amber
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-    
-    # Dark mode  
+
+    # Dark mode
     - scheme: slate
-      media: "(prefers-color-scheme: dark)"
+      media: '(prefers-color-scheme: dark)'
       primary: custom
       accent: amber
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-  
+
   # Features
   features:
     # Navigation
@@ -73,20 +73,20 @@ theme:
     - navigation.indexes
     - navigation.top
     - navigation.footer
-    - header.autohide
-    
+    # Removed header.autohide to keep header/nav always visible
+
     # Search
     - search.suggest
     - search.highlight
     - search.share
-    
+
     # Content
     - content.code.copy
     - content.code.select
     - content.code.annotate
     - content.tabs.link
     - content.tooltips
-    
+
     # Table of contents
     - toc.follow
     - toc.integrate
@@ -98,7 +98,7 @@ plugins:
       lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
       # REMOVED: prebuild_index and min_search_length (not supported)
-  
+
   # Minify plugin for optimization
   - minify:
       minify_html: true
@@ -122,7 +122,7 @@ markdown_extensions:
   - toc:
       permalink: true
       permalink_title: Link to this section
-  
+
   # PyMdown Extensions
   - pymdownx.arithmatex:
       generic: true
@@ -153,7 +153,7 @@ markdown_extensions:
 extra:
   # Disable generator meta tag
   generator: false
-  
+
   # Social links
   social:
     - icon: fontawesome/brands/github
@@ -174,7 +174,7 @@ extra:
     - icon: fontawesome/solid/envelope
       link: mailto:team@manic.agency
       name: Contact us
-      
+
   # SEO meta tags
   meta:
     - name: keywords
@@ -198,9 +198,9 @@ extra:
     - property: twitter:card
       content: summary_large_image
     - property: twitter:site
-      content: "@manicagency"
+      content: '@manicagency'
     - property: twitter:creator
-      content: "@manicagency"
+      content: '@manicagency'
     - property: twitter:title
       content: tenets - Intelligent Code Context for AI
     - property: twitter:description
@@ -211,7 +211,8 @@ extra_css:
   # Base styles
   - styles/variables.css
   - styles/main.css
-  
+  - styles/nav-fixes.css
+
   # Component styles
   - styles/header.css
   - styles/footer.css
@@ -220,50 +221,51 @@ extra_css:
   - styles/hero.css
   - styles/terminal.css
   - styles/search.css
-  
+
   # Theme styles
   - styles/victorian.css
   - styles/neumorphic.css
-  
+
   # Responsive
   - styles/mobile.css
-  
+
   # Animations
   - styles/animations.css
+  # Final overrides (must be last)
+  - styles/overrides.css
 
 extra_javascript:
   # Core functionality
-  - js/nav-injection.js
+  # - js/nav-injection.js  # disabled: reverting to native nav from config
   - js/main.js
   - js/utils.js
-  
+
   # Components
   - js/theme-toggle.js
   - js/terminal.js
   - js/mobile-menu.js
+  - js/mobile-search-drawer.js
   - js/search-enhancements.js
   - js/copy-buttons.js
-  
+
   # Homepage specific
   - js/home-animations.js
   - js/architecture-diagram.js
-  
+
   # External libraries (if needed)
   - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
 
 # Navigation structure
 nav:
-  - Home: index.md
   - Quick Start: quickstart.md
   - Features: features.md
   - Supported Languages: supported-languages.md
   - Documentation:
-    - CLI Reference: CLI.md
-    - Configuration: CONFIG.md
-    - Architecture: ARCHITECTURE.md
+      - CLI Reference: CLI.md
+      - Configuration: CONFIG.md
+      - Architecture: ARCHITECTURE.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
-
 # Additional theme customization (if these templates exist)
 # extra_templates:
 #   - overrides/home.html

@@ -1,0 +1,78 @@
+:root{
+  --back-to-top-size: 44px;
+  --back-to-top-bg: rgba(17, 24, 39, 0.9);
+  --back-to-top-bg-light: rgba(255, 255, 255, 0.95);
+  --back-to-top-color: #f59e0b; /* amber-500 */
+  --back-to-top-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+  --back-to-top-border: rgba(255, 255, 255, 0.2);
+}
+
+/* Button base */
+.back-to-top {
+  position: fixed;
+  right: 16px;
+  bottom: 24px;
+  width: var(--back-to-top-size);
+  height: var(--back-to-top-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--back-to-top-bg);
+  color: var(--back-to-top-color);
+  border: 1px solid var(--back-to-top-border);
+  box-shadow: var(--back-to-top-shadow);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.98);
+  transition: opacity .2s ease, transform .2s ease, visibility .2s ease, background .2s ease, color .2s ease;
+  z-index: 9999;
+}
+
+/* Visible state */
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+/* Icon */
+.back-to-top svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+/* Hover/active */
+.back-to-top:hover {
+  background: rgba(31, 41, 55, 0.95);
+}
+.back-to-top:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Focus ring */
+.back-to-top:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35), var(--back-to-top-shadow);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top {
+    transition: none;
+  }
+}
+
+/* Light/Dark scheme awareness via Material attribute */
+html[data-md-color-scheme="default"] .back-to-top {
+  background: var(--back-to-top-bg-light);
+  color: var(--back-to-top-color);
+  border-color: rgba(17, 24, 39, 0.08);
+}
+
+html[data-md-color-scheme="slate"] .back-to-top {
+  background: var(--back-to-top-bg);
+  color: var(--back-to-top-color);
+  border-color: rgba(255, 255, 255, 0.12);
+}

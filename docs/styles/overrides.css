@@ -1,0 +1,40 @@
+/* Strong override to color search icons using the site accent (amber)
+   Covers header button, drawer button, and input-leading icon across theme versions. */
+
+/* Header/drawer search button (label toggles search dialog) */
+label.md-header__button.md-icon[for="__search"],
+label.md-header__button[for="__search"].md-icon,
+label.md-header__button[for="__search"] .md-icon {
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Input-leading icon inside the search form */
+.md-search .md-search__icon,
+.md-search .md-search__icon.md-icon,
+.md-search .md-search__icon .md-icon {
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Force inline SVGs to adopt the accent */
+label.md-header__button[for="__search"] svg,
+label.md-header__button[for="__search"] svg path,
+.md-search .md-search__icon svg,
+.md-search .md-search__icon svg path,
+.md-search .md-search__icon .md-icon svg,
+.md-search .md-search__icon .md-icon svg path {
+  fill: var(--md-accent-fg-color) !important;
+  stroke: var(--md-accent-fg-color) !important;
+}
+
+/* When theme uses currentColor in icons, ensure it flows */
+.md-search .md-search__icon .md-icon,
+label.md-header__button[for="__search"] .md-icon {
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Pseudo-element fallback (older/newer variants using mask images) */
+.md-search .md-search__icon::before,
+label.md-header__button[for="__search"] .md-icon::before,
+label.md-header__button[for="__search"]::before {
+  background-color: var(--md-accent-fg-color) !important;
+}
