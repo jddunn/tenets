@@ -6,15 +6,15 @@ caching, parallel processing, and fallback strategies.
 """
 
 import concurrent.futures
-import fnmatch
 import csv
-import io
+import fnmatch
 import hashlib
+import io
 import json
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Optional, Union, List, Dict  # Legacy types still referenced below
+from typing import Any, Callable, Dict, List, Optional, Union  # Legacy types still referenced below
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import (

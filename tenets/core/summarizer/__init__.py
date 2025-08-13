@@ -29,12 +29,13 @@ from typing import Optional, Union
 
 from tenets.config import TenetsConfig
 
-# Import main classes
-from .summarizer import (
-    BatchSummarizationResult,
-    SummarizationMode,
-    SummarizationResult,
-    Summarizer,
+# Import LLM support
+from .llm import (
+    LLMConfig,
+    LLMProvider,
+    LLMSummarizer,
+    LLMSummaryStrategy,
+    create_llm_summarizer,
 )
 
 # Import strategies
@@ -46,13 +47,12 @@ from .strategies import (
     TransformerStrategy,
 )
 
-# Import LLM support
-from .llm import (
-    LLMConfig,
-    LLMProvider,
-    LLMSummarizer,
-    LLMSummaryStrategy,
-    create_llm_summarizer,
+# Import main classes
+from .summarizer import (
+    BatchSummarizationResult,
+    SummarizationMode,
+    SummarizationResult,
+    Summarizer,
 )
 
 # Version info

@@ -18,11 +18,10 @@ Test Coverage:
 
 import math
 from concurrent.futures import TimeoutError as FutureTimeoutError
+from datetime import datetime, timedelta
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
-from datetime import datetime, timedelta
-from tenets.models.analysis import ClassInfo, CodeStructure, FunctionInfo
 
 from tenets.core.ranking.ranker import (
     BalancedRankingStrategy,
@@ -34,7 +33,13 @@ from tenets.core.ranking.ranker import (
     TFIDFCalculator,
     ThoroughRankingStrategy,
 )
-from tenets.models.analysis import ComplexityMetrics, FileAnalysis
+from tenets.models.analysis import (
+    ClassInfo,
+    CodeStructure,
+    ComplexityMetrics,
+    FileAnalysis,
+    FunctionInfo,
+)
 from tenets.models.context import PromptContext
 
 
