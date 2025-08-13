@@ -117,6 +117,41 @@ class RankingConfig:
 
 
 @dataclass
+class SummarizerConfig:
+    """Configuration for content summarization system.
+
+    Controls how text and code are compressed to fit within token limits.
+
+    Attributes:
+        default_mode: Default summarization mode (extractive, compressive, textrank, transformer, llm, auto)
+        target_ratio: Default target compression ratio (0.3 = 30% of original)
+        enable_cache: Whether to cache summaries
+        preserve_code_structure: Whether to preserve imports/signatures in code
+        max_cache_size: Maximum number of cached summaries
+        llm_provider: LLM provider for LLM mode (openai, anthropic, openrouter)
+        llm_model: LLM model to use
+        llm_temperature: LLM sampling temperature
+        llm_max_tokens: Maximum tokens for LLM response
+        enable_ml_strategies: Whether to enable ML-based strategies
+        quality_threshold: Quality threshold for auto mode selection
+        batch_size: Batch size for parallel processing
+    """
+
+    default_mode: str = "auto"
+    target_ratio: float = 0.3
+    enable_cache: bool = True
+    preserve_code_structure: bool = True
+    max_cache_size: int = 100
+    llm_provider: str = "openai"
+    llm_model: str = "gpt-3.5-turbo"
+    llm_temperature: float = 0.3
+    llm_max_tokens: int = 500
+    enable_ml_strategies: bool = True
+    quality_threshold: str = "medium"  # low, medium, high
+    batch_size: int = 10
+
+
+@dataclass
 class TenetConfig:
     """Configuration for the tenet (guiding principles) system.
 
@@ -191,6 +226,7 @@ class OutputConfig:
         include_metadata: Whether to include metadata in output
         compression_threshold: File size threshold for summarization
         summary_ratio: Target compression ratio for summaries
+        copy_on_distill: Automatically copy distill output to clipboard when true
     """
 
     default_format: str = "markdown"
@@ -247,6 +283,7 @@ class TenetsConfig:
         quiet: Suppress non-essential output
         scanner: Scanner subsystem configuration
         ranking: Ranking subsystem configuration
+        summarizer: Summarizer subsystem configuration
         tenet: Tenet subsystem configuration
         cache: Cache subsystem configuration
         output: Output formatting configuration
@@ -265,6 +302,7 @@ class TenetsConfig:
     # Subsystem configurations
     scanner: ScannerConfig = field(default_factory=ScannerConfig)
     ranking: RankingConfig = field(default_factory=RankingConfig)
+    summarizer: SummarizerConfig = field(default_factory=SummarizerConfig)
     tenet: TenetConfig = field(default_factory=TenetConfig)
     cache: CacheConfig = field(default_factory=CacheConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
@@ -411,6 +449,8 @@ class TenetsConfig:
                 self.scanner = ScannerConfig(**value)
             elif key == "ranking" and isinstance(value, dict):
                 self.ranking = RankingConfig(**value)
+            elif key == "summarizer" and isinstance(value, dict):
+                self.summarizer = SummarizerConfig(**value)
             elif key == "tenet" and isinstance(value, dict):
                 self.tenet = TenetConfig(**value)
             elif key == "cache" and isinstance(value, dict):
@@ -438,6 +478,7 @@ class TenetsConfig:
             TENETS_MAX_TOKENS=150000
             TENETS_SCANNER_MAX_FILE_SIZE=10000000
             TENETS_RANKING_ALGORITHM=thorough
+            TENETS_SUMMARIZER_DEFAULT_MODE=extractive
         """
         for env_key, env_value in os.environ.items():
             if not env_key.startswith("TENETS_"):
@@ -558,6 +599,17 @@ class TenetsConfig:
                 f"Ranking threshold must be between 0 and 1, got {self.ranking.threshold}"
             )
 
+        # Validate summarizer mode
+        valid_modes = ["extractive", "compressive", "textrank", "transformer", "llm", "auto"]
+        if self.summarizer.default_mode not in valid_modes:
+            raise ValueError(f"Invalid summarizer mode: {self.summarizer.default_mode}")
+
+        # Validate summarizer target ratio
+        if not 0 < self.summarizer.target_ratio <= 1:
+            raise ValueError(
+                f"Summarizer target ratio must be between 0 and 1, got {self.summarizer.target_ratio}"
+            )
+
         # Validate cache TTL
         if self.cache.ttl_days < 0:
             raise ValueError(f"Cache TTL cannot be negative, got {self.cache.ttl_days}")
@@ -590,6 +642,7 @@ class TenetsConfig:
             "quiet": self.quiet,
             "scanner": asdict(self.scanner),
             "ranking": asdict(self.ranking),
+            "summarizer": asdict(self.summarizer),
             "tenet": asdict(self.tenet),
             "cache": asdict(self.cache),
             "output": asdict(self.output),
@@ -625,18 +678,14 @@ class TenetsConfig:
 
         self._logger.info(f"Configuration saved to {save_path}")
 
+    # Properties for compatibility
     @property
     def cache_dir(self) -> Path:
-        """Get the cache directory path.
-
-        Returns:
-            Resolved cache directory path
-        """
+        """Get the cache directory path."""
         return self._resolved_paths.get("cache", self.cache.directory)
 
     @cache_dir.setter
     def cache_dir(self, value: Union[str, Path]) -> None:
-        # Update underlying cache config and resolved path
         path = Path(value).resolve()
         self.cache.directory = path
         path.mkdir(parents=True, exist_ok=True)
@@ -644,38 +693,32 @@ class TenetsConfig:
 
     @property
     def scanner_workers(self) -> int:
-        """Get number of scanner workers.
-
-        Returns:
-            Number of parallel workers for scanning
-        """
+        """Get number of scanner workers."""
         return self.scanner.workers
 
     @property
     def ranking_workers(self) -> int:
-        """Get number of ranking workers.
-
-        Returns:
-            Number of parallel workers for ranking
-        """
+        """Get number of ranking workers."""
         return self.ranking.workers
 
     @property
     def ranking_algorithm(self) -> str:
-        """Get the ranking algorithm.
-
-        Returns:
-            Name of ranking algorithm to use
-        """
+        """Get the ranking algorithm."""
         return self.ranking.algorithm
 
     @property
-    def respect_gitignore(self) -> bool:
-        """Whether to respect .gitignore files.
+    def summarizer_mode(self) -> str:
+        """Get the default summarizer mode."""
+        return self.summarizer.default_mode
 
-        Returns:
-            True if .gitignore should be respected
-        """
+    @property
+    def summarizer_ratio(self) -> float:
+        """Get the default summarization target ratio."""
+        return self.summarizer.target_ratio
+
+    @property
+    def respect_gitignore(self) -> bool:
+        """Whether to respect .gitignore files."""
         return self.scanner.respect_gitignore
 
     @respect_gitignore.setter
@@ -684,11 +727,7 @@ class TenetsConfig:
 
     @property
     def follow_symlinks(self) -> bool:
-        """Whether to follow symbolic links.
-
-        Returns:
-            True if symlinks should be followed
-        """
+        """Whether to follow symbolic links."""
         return self.scanner.follow_symlinks
 
     @follow_symlinks.setter
@@ -697,20 +736,16 @@ class TenetsConfig:
 
     @property
     def additional_ignore_patterns(self) -> List[str]:
-        """Get additional ignore patterns.
-
-        Returns:
-            List of patterns to ignore
-        """
+        """Get additional ignore patterns."""
         return self.scanner.additional_ignore_patterns
+
+    @additional_ignore_patterns.setter
+    def additional_ignore_patterns(self, patterns: List[str]) -> None:
+        self.scanner.additional_ignore_patterns = list(patterns)
 
     @property
     def auto_instill_tenets(self) -> bool:
-        """Whether to automatically instill tenets.
-
-        Returns:
-            True if tenets should be auto-instilled
-        """
+        """Whether to automatically instill tenets."""
         return self.tenet.auto_instill
 
     @auto_instill_tenets.setter
@@ -719,11 +754,7 @@ class TenetsConfig:
 
     @property
     def max_tenets_per_context(self) -> int:
-        """Maximum tenets to inject per context.
-
-        Returns:
-            Maximum number of tenets
-        """
+        """Maximum tenets to inject per context."""
         return self.tenet.max_per_context
 
     @max_tenets_per_context.setter
@@ -732,11 +763,7 @@ class TenetsConfig:
 
     @property
     def tenet_injection_config(self) -> Dict[str, Any]:
-        """Get tenet injection configuration.
-
-        Returns:
-            Dictionary of injection settings
-        """
+        """Get tenet injection configuration."""
         return {
             "strategy": self.tenet.injection_strategy,
             "min_distance_between": self.tenet.min_distance_between,
@@ -746,11 +773,7 @@ class TenetsConfig:
 
     @property
     def cache_ttl_days(self) -> int:
-        """Cache time-to-live in days.
-
-        Returns:
-            Number of days before cache expires
-        """
+        """Cache time-to-live in days."""
         return self.cache.ttl_days
 
     @cache_ttl_days.setter
@@ -759,26 +782,9 @@ class TenetsConfig:
 
     @property
     def max_cache_size_mb(self) -> int:
-        """Maximum cache size in megabytes.
-
-        Returns:
-            Maximum cache size
-        """
+        """Maximum cache size in megabytes."""
         return self.cache.max_size_mb
 
     @max_cache_size_mb.setter
     def max_cache_size_mb(self, value: int) -> None:
         self.cache.max_size_mb = int(value)
-
-    @property
-    def additional_ignore_patterns(self) -> List[str]:
-        """Get additional ignore patterns.
-
-        Returns:
-            List of patterns to ignore
-        """
-        return self.scanner.additional_ignore_patterns
-
-    @additional_ignore_patterns.setter
-    def additional_ignore_patterns(self, patterns: List[str]) -> None:
-        self.scanner.additional_ignore_patterns = list(patterns)

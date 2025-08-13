@@ -33,7 +33,8 @@ _PRICING: dict[str, ModelPricing] = {
     "gpt-4o-mini": ModelPricing(input_per_1k=0.00015, output_per_1k=0.0006),
     "gpt-4.1": ModelPricing(input_per_1k=0.005, output_per_1k=0.015),
     "gpt-4": ModelPricing(input_per_1k=0.03, output_per_1k=0.06),
-    "gpt-3.5-turbo": ModelPricing(input_per_1k=0.001, output_per_1k=0.002),
+    # Deprecated legacy model replaced by gpt-4o-mini
+    # "gpt-3.5-turbo": ModelPricing(input_per_1k=0.001, output_per_1k=0.002),
     # Anthropic
     "claude-3-opus": ModelPricing(input_per_1k=0.015, output_per_1k=0.075),
     "claude-3-5-sonnet": ModelPricing(input_per_1k=0.003, output_per_1k=0.015),
@@ -45,7 +46,7 @@ _LIMITS: dict[str, ModelLimits] = {
     "gpt-4o-mini": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4.1": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4": ModelLimits(max_context=8_192, max_output=2_048),
-    "gpt-3.5-turbo": ModelLimits(max_context=16_385, max_output=1_024),
+    # "gpt-3.5-turbo": ModelLimits(max_context=16_385, max_output=1_024),  # legacy
     "claude-3-opus": ModelLimits(max_context=200_000, max_output=4_096),
     "claude-3-5-sonnet": ModelLimits(max_context=200_000, max_output=4_096),
     "claude-3-haiku": ModelLimits(max_context=200_000, max_output=4_096),
