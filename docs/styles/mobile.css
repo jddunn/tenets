@@ -50,13 +50,16 @@
   
   /* Hamburger menu button - Neumorphic */
   .md-header__button[for="__drawer"] {
-    display: flex !important;
-    width: 2.5rem;
-    height: 2.5rem;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    z-index: 10001;
+  display: flex !important;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  position: fixed; /* always pin to viewport */
+  top: 8px;
+  right: 8px;
+  left: auto;
+  z-index: 15000;
     background: linear-gradient(145deg, #ffffff, #f0ede8);
     border-radius: 8px;
     box-shadow: 
@@ -91,7 +94,7 @@
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.2) !important;
     transform: translateX(-100%) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    z-index: 10000 !important;
+  z-index: 16000 !important; /* above fixed header */
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
@@ -113,20 +116,20 @@
   /* Mobile nav header with logo */
   .md-nav--primary .md-nav__title,
   .md-sidebar--primary .md-nav__title {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    color: #1a2332;
-    padding: 1.25rem 1rem;
-    font-family: 'Playfair Display', serif;
-    font-weight: 900;
-    font-size: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    border-bottom: 2px solid rgba(26, 35, 50, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    text-transform: lowercase;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  padding: 1rem 1rem;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; /* lighter to reduce "fat" look */
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(26, 35, 50, 0.1);
+  position: relative; /* prevent covering first item */
+  top: auto;
+  z-index: auto;
+  text-transform: lowercase;
   }
   
   /* Logo in drawer header - non-cropped version */
@@ -136,16 +139,38 @@
     display: inline-block;
     width: 40px;
     height: 40px;
-    background: url('../logos/tenets_dark_icon_transparent.png') no-repeat center;
+    background: url('../logos/tenets_light_icon_transparent.png') no-repeat center;
     background-size: contain;
+  }
+
+  /* Swap to dark logo in dark mode */
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title::before,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title::before {
+    background-image: url('../logos/tenets_dark_icon_transparent.png');
   }
   
   /* Navigation list container */
   .md-nav--primary .md-nav__list,
   .md-sidebar--primary .md-nav__list {
-    padding: 0;
+    /* Ensure list starts below title and is fully clickable */
+    padding: 0.75rem 0 0 !important; /* extra space below header */
     margin: 0;
     list-style: none;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+  }
+
+  /* Lower the title in the stacking context to avoid covering first item */
+  .md-nav--primary .md-nav__title,
+  .md-sidebar--primary .md-nav__title {
+    z-index: 0;
+  }
+
+  /* Small top margin for very first item to avoid accidental overlap */
+  .md-nav--primary .md-nav__item:first-child,
+  .md-sidebar--primary .md-nav__item:first-child {
+    margin-top: 0.125rem;
   }
   
   /* Navigation items */
@@ -156,9 +181,9 @@
   
   .md-nav--primary .md-nav__link,
   .md-sidebar--primary .md-nav__link {
-    padding: 1rem 1.25rem !important;
-    font-size: 0.95rem;
-    font-weight: 600;
+  padding: 0.9rem 1.25rem !important;
+  font-size: 0.95rem;
+  font-weight: 600;
     color: #3e342a;
     display: block;
     transition: all 0.2s ease;
@@ -182,10 +207,10 @@
   
   .md-nav--primary .md-nav__link--active,
   .md-sidebar--primary .md-nav__link--active {
-    background: rgba(245, 158, 11, 0.12);
-    color: #f59e0b;
-    font-weight: 700;
-    border-left: 3px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  font-weight: 600; /* match regular weight to avoid fat look */
+  border-left: 3px solid #f59e0b;
   }
   
   /* Ornate decoration on hover */
@@ -231,7 +256,7 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: 9999;
+  z-index: 15950; /* just under drawer, above page/header */
     backdrop-filter: blur(5px);
     pointer-events: none;
   }

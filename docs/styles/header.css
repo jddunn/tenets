@@ -61,19 +61,28 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Provide two img tags (dark + light) in template or fallback: hide/show via classes */
-.md-logo img.light-logo { display:none; }
-[data-md-color-scheme="slate"] .md-logo img.dark-logo { display:none; }
-[data-md-color-scheme="slate"] .md-logo img.light-logo { display:inline-block; filter: drop-shadow(0 3px 12px rgba(251, 191, 36, 0.4)); }
+/* Provide two img tags (dark + light) and toggle per scheme */
+.md-header__button.md-logo img.light-logo,
+.md-header__button.md-logo img.dark-logo { display:none !important; }
+/* Default (light) scheme: show light logo */
+[data-md-color-scheme="default"] .md-header__button.md-logo img.light-logo { display:inline-block !important; }
+/* Dark (slate) scheme: show dark logo */
+[data-md-color-scheme="slate"] .md-header__button.md-logo img.dark-logo { display:inline-block !important; }
+/* If theme injects a default <img> without our classes and our dual logos exist, hide the default */
+.md-header__button.md-logo img.dark-logo ~ img:not(.dark-logo):not(.light-logo),
+.md-header__button.md-logo img.light-logo ~ img:not(.dark-logo):not(.light-logo),
+.md-header__button.md-logo > img:not(.dark-logo):not(.light-logo):not(:only-child) {
+  display: none !important;
+}
 
 /* If only one img present, fallback to content swap */
-.md-logo img:not(.dark-logo):not(.light-logo) { content: url('../logos/tenets_dark_icon_transparent.png'); }
-[data-md-color-scheme="slate"] .md-logo img:not(.dark-logo):not(.light-logo) { content: url('../logos/tenets_light_icon_transparent.png'); filter: drop-shadow(0 3px 12px rgba(251, 191, 36, 0.4)); }
+.md-logo img:not(.dark-logo):not(.light-logo) { content: url('../logos/tenets_light_icon_transparent.png'); }
+[data-md-color-scheme="slate"] .md-logo img:not(.dark-logo):not(.light-logo) { content: url('../logos/tenets_dark_icon_transparent.png'); filter: drop-shadow(0 3px 12px rgba(251, 191, 36, 0.4)); }
 
-/* Fallback for prefers-color-scheme: dark before JS attribute is applied */
+/* Fallback for prefers-color-scheme before JS attribute is applied */
 @media (prefers-color-scheme: dark) {
   html:not([data-md-color-scheme]) .md-header__button.md-logo img,
-  html:not([data-md-color-scheme]) .md-logo img { content: url('../logos/tenets_light_icon_transparent_cropped.png') !important; }
+  html:not([data-md-color-scheme]) .md-logo img { content: url('../logos/tenets_dark_icon_transparent.png') !important; }
 }
 
 .md-header__button.md-logo:hover img {
@@ -235,6 +244,17 @@
   border-color:rgba(251,191,36,0.6);
 }
 
+/* Light mode: make active link/tabs amber (torch) for strong visibility */
+[data-md-color-scheme="default"] .md-header-nav__link--active,
+[data-md-color-scheme="default"] .md-tabs__link--active {
+  background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important; /* amber-300 -> amber-400 -> amber-500 */
+  color: #1a2332 !important; /* navy-900 for readable text */
+  border: 1px solid rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.22),
+              inset 0 1px 0 rgba(255, 255, 255, 0.55),
+              inset 0 -1px 0 rgba(209, 134, 6, 0.25) !important;
+}
+
 /* Blog & Contact - Special CTA Buttons */
 .md-header-nav__link[href*="blog"],
 .md-header-nav__link[href*="contact"],
@@ -249,6 +269,12 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(209, 134, 6, 0.2);
   position: relative;
+}
+
+/* Ensure grouped nav headers match regular link weight in tabs if generated */
+.md-tabs__link[aria-haspopup="true"],
+.md-tabs__link[role="button"] {
+  font-weight: 600 !important;
 }
 
 .md-header-nav__link[href*="blog"]::after,
@@ -395,6 +421,15 @@
 }
 
 .md-source:hover::after { opacity: 1; }
+
+/* Ensure hamburger stays top-right whenever it’s visible (desktop or mobile) */
+.md-header__button[for="__drawer"] {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  left: auto;
+  z-index: 15000;
+}
 
 /* Lamp-style gentle irregular flicker */
 @keyframes githubLampFlicker {
@@ -608,9 +643,9 @@ label.md-header__button[for^="__palette_"] { order:3; }
     display: none !important;
   }
 
-  /* Logo on mobile - smaller, still with text */
+  /* Logo on mobile - larger text variant */
   .md-header__button.md-logo img {
-    height: 36px !important;
+    height: 52px !important;
   }
 
   /* Hide header search on mobile (unless moved into drawer) */

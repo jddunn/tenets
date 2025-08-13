@@ -1,5 +1,5 @@
-{# Dual-logo: dark (for light scheme) and light (for dark scheme) #}
+{# Dual-logo: dark (for light scheme) and light (for dark scheme). Use non-cropped text variants and proper URL filter. #}
 <a href="{{ base_url }}" title="{{ config.site_name }}" class="md-header__button md-logo" aria-label="Home">
-  <img src="{{ 'logos/tenets_dark_icon_transparent_cropped.png' }}" alt="{{ config.site_name }}" class="dark-logo" loading="lazy">
-  <img src="{{ 'logos/tenets_light_icon_transparent_cropped.png' }}" alt="{{ config.site_name }}" class="light-logo" loading="lazy">
-</a>
+  <img src="{{ 'logos/tenets_dark_icon_transparent.png' | url }}" alt="{{ config.site_name }}" class="dark-logo" loading="lazy">
+  <img src="{{ 'logos/tenets_light_icon_transparent.png' | url }}" alt="{{ config.site_name }}" class="light-logo" loading="lazy">
+ </a>

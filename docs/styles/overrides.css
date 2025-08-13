@@ -38,3 +38,45 @@ label.md-header__button[for="__search"] .md-icon::before,
 label.md-header__button[for="__search"]::before {
   background-color: var(--md-accent-fg-color) !important;
 }
+
+/* Toast notifications for copy actions */
+#tenets-toast-container{
+  position: fixed;
+  left: 50%;
+  bottom: calc(76px + env(safe-area-inset-bottom)); /* above footer/back-to-top */
+  transform: translateX(-50%);
+  z-index: 13005; /* above back-to-top */
+  pointer-events: none;
+}
+
+.tenets-toast{
+  min-width: 180px;
+  max-width: 360px;
+  margin: 6px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-align: center;
+  color: #1a2332;
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.65);
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+}
+
+[data-md-color-scheme="slate"] .tenets-toast{
+  color: #0d1117;
+}
+
+.tenets-toast.visible{
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.tenets-toast.tenets-toast--error{
+  background: linear-gradient(135deg, #fca5a5, #ef4444);
+  color: #0d1117;
+}
