@@ -1,541 +1,459 @@
-"""File coupling visualization.
+"""Coupling visualization module.
 
-This module visualizes files that frequently change together, helping identify
-tight coupling and areas that should potentially be refactored together.
+This module provides visualization capabilities for code coupling metrics,
+including afferent/efferent coupling, instability, and coupling networks.
 """
 
-import math
-from collections import defaultdict
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional
 
-from tenets.utils.logger import get_logger
-
-from .base import (
-    ColorScheme,
-    VisualizationBase,
-    VisualizationFormat,
-    create_graph_layout,
-    truncate_text,
-    MATPLOTLIB_AVAILABLE,
-    NETWORKX_AVAILABLE,
-    PLOTLY_AVAILABLE,
-)
+from .base import BaseVisualizer, ChartConfig, ChartType, ColorPalette, DisplayConfig
+from .displays import TerminalDisplay
 
 
-@dataclass
-class FileCoupling:
-    """Coupling information between two files.
-    
-    Attributes:
-        file1: First file path
-        file2: Second file path
-        change_count: Number of times changed together
-        confidence: Confidence score (0-1)
-        commits: List of commit hashes where both changed
-        temporal_distance: Average time between changes
+class CouplingVisualizer(BaseVisualizer):
+    """Visualizer for coupling metrics.
+
+    Creates visualizations for coupling analysis including dependency
+    graphs, coupling matrices, and stability charts.
     """
-    
-    file1: str
-    file2: str
-    change_count: int = 0
-    confidence: float = 0.0
-    commits: List[str] = None
-    temporal_distance: float = 0.0
-    
-    def __post_init__(self):
-        if self.commits is None:
-            self.commits = []
-            
-    @property
-    def strength(self) -> float:
-        """Get coupling strength combining count and confidence."""
-        return self.change_count * self.confidence
-        
-    @property
-    def coupling_type(self) -> str:
-        """Categorize coupling type."""
-        if self.change_count >= 10 and self.confidence >= 0.8:
-            return "strong"
-        elif self.change_count >= 5 and self.confidence >= 0.5:
-            return "moderate"
-        elif self.change_count >= 2:
-            return "weak"
-        else:
-            return "minimal"
 
-
-@dataclass
-class FileChangeHistory:
-    """Change history for a file.
-    
-    Attributes:
-        path: File path
-        total_changes: Total number of changes
-        commits: List of commits
-        authors: Set of authors who changed the file
-        first_change: First change timestamp
-        last_change: Last change timestamp
-        coupled_files: Files frequently changed with this one
-    """
-    
-    path: str
-    total_changes: int = 0
-    commits: List[Dict[str, Any]] = None
-    authors: Set[str] = None
-    first_change: Optional[datetime] = None
-    last_change: Optional[datetime] = None
-    coupled_files: Dict[str, int] = None
-    
-    def __post_init__(self):
-        if self.commits is None:
-            self.commits = []
-        if self.authors is None:
-            self.authors = set()
-        if self.coupled_files is None:
-            self.coupled_files = {}
-            
-    @property
-    def change_frequency(self) -> float:
-        """Get average changes per day."""
-        if not self.first_change or not self.last_change:
-            return 0.0
-            
-        days = (self.last_change - self.first_change).days
-        if days == 0:
-            return self.total_changes
-            
-        return self.total_changes / days
-
-
-class CouplingGraph(VisualizationBase):
-    """Visualize file coupling patterns.
-    
-    Creates visualizations showing which files frequently change together,
-    helping identify:
-    - Tightly coupled modules
-    - Hidden dependencies
-    - Refactoring candidates
-    - Team boundaries
-    """
-    
     def __init__(
         self,
-        title: str = "File Coupling Graph",
-        color_scheme: Optional[ColorScheme] = None,
-        format: VisualizationFormat = VisualizationFormat.AUTO,
-        min_coupling: int = 2
+        chart_config: Optional[ChartConfig] = None,
+        display_config: Optional[DisplayConfig] = None,
     ):
-        """Initialize coupling graph.
-        
+        """Initialize coupling visualizer.
+
         Args:
-            title: Graph title
-            color_scheme: Color scheme
-            format: Output format
-            min_coupling: Minimum changes together to show coupling
+            chart_config: Chart configuration
+            display_config: Display configuration
         """
-        super().__init__(title, color_scheme, format)
-        self.logger = get_logger(__name__)
-        self.min_coupling = min_coupling
-        self.file_history: Dict[str, FileChangeHistory] = {}
-        self.couplings: List[FileCoupling] = []
-        self.commit_data: List[Dict[str, Any]] = []
-        
-    def add_commit(
-        self,
-        commit_hash: str,
-        files: List[str],
-        author: str,
-        timestamp: datetime,
-        message: str = ""
-    ):
-        """Add a commit to the coupling analysis.
-        
+        super().__init__(chart_config, display_config)
+        self.terminal_display = TerminalDisplay(display_config)
+
+    def create_coupling_network(
+        self, coupling_data: Dict[str, Dict[str, int]], min_coupling: int = 1, max_nodes: int = 50
+    ) -> Dict[str, Any]:
+        """Create coupling network graph.
+
         Args:
-            commit_hash: Commit hash
-            files: Files changed in commit
-            author: Commit author
-            timestamp: Commit timestamp
-            message: Commit message
-        """
-        commit_data = {
-            'hash': commit_hash,
-            'files': files,
-            'author': author,
-            'timestamp': timestamp,
-            'message': message
-        }
-        self.commit_data.append(commit_data)
-        
-        # Update file histories
-        for file_path in files:
-            if file_path not in self.file_history:
-                self.file_history[file_path] = FileChangeHistory(path=file_path)
-                
-            history = self.file_history[file_path]
-            history.total_changes += 1
-            history.commits.append(commit_data)
-            history.authors.add(author)
-            
-            # Update timestamps
-            if not history.first_change or timestamp < history.first_change:
-                history.first_change = timestamp
-            if not history.last_change or timestamp > history.last_change:
-                history.last_change = timestamp
-                
-            # Track coupled files
-            for other_file in files:
-                if other_file != file_path:
-                    if other_file not in history.coupled_files:
-                        history.coupled_files[other_file] = 0
-                    history.coupled_files[other_file] += 1
-                    
-    def analyze_coupling(self):
-        """Analyze coupling patterns from commit data."""
-        # Find file pairs that change together
-        pair_counts = defaultdict(int)
-        pair_commits = defaultdict(list)
-        
-        for commit in self.commit_data:
-            files = commit['files']
-            # Generate all pairs
-            for i, file1 in enumerate(files):
-                for file2 in files[i + 1:]:
-                    pair = tuple(sorted([file1, file2]))
-                    pair_counts[pair] += 1
-                    pair_commits[pair].append(commit['hash'])
-                    
-        # Create coupling objects
-        self.couplings = []
-        
-        for (file1, file2), count in pair_counts.items():
-            if count >= self.min_coupling:
-                # Calculate confidence
-                total1 = self.file_history[file1].total_changes
-                total2 = self.file_history[file2].total_changes
-                confidence = count / min(total1, total2)
-                
-                coupling = FileCoupling(
-                    file1=file1,
-                    file2=file2,
-                    change_count=count,
-                    confidence=confidence,
-                    commits=pair_commits[(file1, file2)]
-                )
-                
-                self.couplings.append(coupling)
-                
-        # Sort by strength
-        self.couplings.sort(key=lambda c: c.strength, reverse=True)
-        
-    def find_clusters(self) -> List[Set[str]]:
-        """Find clusters of tightly coupled files.
-        
+            coupling_data: Dictionary of module -> {coupled_module: strength}
+            min_coupling: Minimum coupling strength to show
+            max_nodes: Maximum nodes to display
+
         Returns:
-            List of file clusters
+            Dict[str, Any]: Network graph configuration
         """
-        if not NETWORKX_AVAILABLE:
-            return []
-            
-        import networkx as nx
-        
-        # Build graph
-        G = nx.Graph()
-        
-        for coupling in self.couplings:
-            if coupling.coupling_type in ["strong", "moderate"]:
-                G.add_edge(
-                    coupling.file1,
-                    coupling.file2,
-                    weight=coupling.strength
-                )
-                
-        # Find connected components
-        clusters = []
-        for component in nx.connected_components(G):
-            if len(component) > 1:
-                clusters.append(component)
-                
-        return clusters
-        
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get coupling statistics.
-        
-        Returns:
-            Dictionary of statistics
-        """
-        if not self.couplings:
-            return {}
-            
-        strong_couplings = [c for c in self.couplings if c.coupling_type == "strong"]
-        moderate_couplings = [c for c in self.couplings if c.coupling_type == "moderate"]
-        
-        # Find most coupled file
-        file_coupling_counts = defaultdict(int)
-        for coupling in self.couplings:
-            file_coupling_counts[coupling.file1] += coupling.change_count
-            file_coupling_counts[coupling.file2] += coupling.change_count
-            
-        most_coupled = max(file_coupling_counts.items(), key=lambda x: x[1]) if file_coupling_counts else (None, 0)
-        
-        # Find most active author
-        author_counts = defaultdict(int)
-        for commit in self.commit_data:
-            author_counts[commit['author']] += len(commit['files'])
-            
-        most_active = max(author_counts.items(), key=lambda x: x[1]) if author_counts else (None, 0)
-        
-        return {
-            'total_files': len(self.file_history),
-            'total_commits': len(self.commit_data),
-            'total_couplings': len(self.couplings),
-            'strong_couplings': len(strong_couplings),
-            'moderate_couplings': len(moderate_couplings),
-            'avg_coupling_strength': sum(c.strength for c in self.couplings) / len(self.couplings),
-            'most_coupled_file': most_coupled[0],
-            'most_coupled_count': most_coupled[1],
-            'most_active_author': most_active[0],
-            'clusters_found': len(self.find_clusters())
-        }
-        
-    def _render_ascii(self) -> str:
-        """Render coupling as ASCII."""
-        lines = []
-        lines.append("=" * 80)
-        lines.append(f" {self.title} ".center(80))
-        lines.append("=" * 80)
-        lines.append("")
-        
-        # Statistics
-        stats = self.get_statistics()
-        lines.append(f"Files tracked: {stats.get('total_files', 0)}")
-        lines.append(f"Commits analyzed: {stats.get('total_commits', 0)}")
-        lines.append(f"Couplings found: {stats.get('total_couplings', 0)}")
-        lines.append(f"  Strong: {stats.get('strong_couplings', 0)}")
-        lines.append(f"  Moderate: {stats.get('moderate_couplings', 0)}")
-        lines.append("")
-        
-        # Top couplings
-        lines.append("Strongest File Couplings:")
-        lines.append("-" * 80)
-        lines.append(f"{'File 1':<30} {'File 2':<30} {'Changes':<10} {'Confidence':<10}")
-        lines.append("-" * 80)
-        
-        for coupling in self.couplings[:10]:
-            file1 = Path(coupling.file1).name
-            file2 = Path(coupling.file2).name
-            lines.append(
-                f"{truncate_text(file1, 30):<30} "
-                f"{truncate_text(file2, 30):<30} "
-                f"{coupling.change_count:<10d} "
-                f"{coupling.confidence:<10.2f}"
+        # Build nodes and edges
+        nodes_set = set()
+        edges = []
+        node_coupling = {}
+
+        for module, coupled_modules in coupling_data.items():
+            for coupled_module, strength in coupled_modules.items():
+                if strength >= min_coupling:
+                    nodes_set.add(module)
+                    nodes_set.add(coupled_module)
+                    edges.append({"source": module, "target": coupled_module, "weight": strength})
+
+                    # Track total coupling per node
+                    node_coupling[module] = node_coupling.get(module, 0) + strength
+                    node_coupling[coupled_module] = node_coupling.get(coupled_module, 0) + strength
+
+        # Limit nodes if necessary
+        if len(nodes_set) > max_nodes:
+            # Keep nodes with highest coupling
+            sorted_nodes = sorted(nodes_set, key=lambda n: node_coupling.get(n, 0), reverse=True)[
+                :max_nodes
+            ]
+            nodes_set = set(sorted_nodes)
+
+            # Filter edges
+            edges = [e for e in edges if e["source"] in nodes_set and e["target"] in nodes_set]
+
+        # Create node list with sizing and coloring
+        nodes = []
+        for node_id in nodes_set:
+            coupling_strength = node_coupling.get(node_id, 0)
+
+            # Size based on coupling
+            size = min(50, 10 + coupling_strength)
+
+            # Color based on coupling level
+            if coupling_strength > 20:
+                color = ColorPalette.SEVERITY["critical"]
+            elif coupling_strength > 10:
+                color = ColorPalette.SEVERITY["high"]
+            elif coupling_strength > 5:
+                color = ColorPalette.SEVERITY["medium"]
+            else:
+                color = ColorPalette.HEALTH["good"]
+
+            nodes.append(
+                {
+                    "id": node_id,
+                    "label": self._truncate_module_name(node_id),
+                    "size": size,
+                    "color": color,
+                }
             )
-            
-        lines.append("")
-        
-        # File clusters
-        clusters = self.find_clusters()
-        if clusters:
-            lines.append("Coupled File Clusters:")
-            lines.append("-" * 40)
-            
-            for i, cluster in enumerate(clusters[:5], 1):
-                lines.append(f"\nCluster {i} ({len(cluster)} files):")
-                for file_path in sorted(cluster)[:5]:
-                    lines.append(f"  - {Path(file_path).name}")
-                if len(cluster) > 5:
-                    lines.append(f"  ... and {len(cluster) - 5} more")
-                    
-        # Most coupled files
-        lines.append("")
-        lines.append("Most Coupled Files:")
-        lines.append("-" * 40)
-        
-        file_coupling_counts = defaultdict(int)
-        for coupling in self.couplings:
-            file_coupling_counts[coupling.file1] += coupling.change_count
-            file_coupling_counts[coupling.file2] += coupling.change_count
-            
-        sorted_files = sorted(file_coupling_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-        
-        for file_path, count in sorted_files:
-            lines.append(f"  {Path(file_path).name:<40} {count:3d} couplings")
-            
-        return "\n".join(lines)
-        
-    def _render_html(self, width: int, height: int) -> str:
-        """Render as interactive HTML graph."""
-        if not PLOTLY_AVAILABLE:
-            return super()._render_html(width, height)
-            
-        import plotly.graph_objs as go
-        import plotly.offline as offline
-        
-        # Create nodes and edges
-        nodes = list(self.file_history.keys())
-        edges = [(c.file1, c.file2) for c in self.couplings if c.coupling_type in ["strong", "moderate"]]
-        
-        if not nodes:
-            return "<div>No coupling data to visualize</div>"
-            
-        # Get layout
-        positions = create_graph_layout(nodes, edges, "spring")
-        
-        # Prepare node data
-        node_x = []
-        node_y = []
-        node_text = []
-        node_size = []
-        node_color = []
-        
-        for node in nodes:
-            x, y = positions.get(node, (0, 0))
-            node_x.append(x)
-            node_y.append(y)
-            
-            history = self.file_history[node]
-            
-            # Hover text
-            hover = f"{Path(node).name}<br>"
-            hover += f"Changes: {history.total_changes}<br>"
-            hover += f"Authors: {len(history.authors)}<br>"
-            hover += f"Coupled files: {len(history.coupled_files)}"
-            node_text.append(hover)
-            
-            # Size by change count
-            node_size.append(10 + math.log(1 + history.total_changes) * 5)
-            
-            # Color by coupling count
-            node_color.append(len(history.coupled_files))
-            
-        # Prepare edge data
-        edge_x = []
-        edge_y = []
-        edge_text = []
-        
-        for coupling in self.couplings:
-            if coupling.coupling_type in ["strong", "moderate"]:
-                x0, y0 = positions.get(coupling.file1, (0, 0))
-                x1, y1 = positions.get(coupling.file2, (0, 0))
-                
-                edge_x.extend([x0, x1, None])
-                edge_y.extend([y0, y1, None])
-                
-        # Create traces
-        edge_trace = go.Scatter(
-            x=edge_x, y=edge_y,
-            line=dict(width=0.5, color='#888'),
-            hoverinfo='none',
-            mode='lines'
+
+        config = ChartConfig(type=ChartType.NETWORK, title="Module Coupling Network")
+
+        return self.create_chart(
+            ChartType.NETWORK, {"nodes": nodes, "edges": edges, "layout": "force"}, config
         )
-        
-        node_trace = go.Scatter(
-            x=node_x, y=node_y,
-            mode='markers',
-            hoverinfo='text',
-            marker=dict(
-                showscale=True,
-                colorscale='YlOrRd',
-                size=node_size,
-                color=node_color,
-                colorbar=dict(
-                    thickness=15,
-                    title='Couplings',
-                    xanchor='left',
-                    titleside='right'
-                ),
-                line_width=2
+
+    def create_coupling_matrix(
+        self, modules: List[str], coupling_matrix: List[List[int]]
+    ) -> Dict[str, Any]:
+        """Create coupling matrix heatmap.
+
+        Args:
+            modules: List of module names
+            coupling_matrix: 2D matrix of coupling values
+
+        Returns:
+            Dict[str, Any]: Heatmap configuration
+        """
+        # Truncate module names for display
+        labels = [self._truncate_module_name(m) for m in modules]
+
+        config = ChartConfig(type=ChartType.HEATMAP, title="Module Coupling Matrix")
+
+        return self.create_chart(
+            ChartType.HEATMAP,
+            {"matrix": coupling_matrix, "x_labels": labels, "y_labels": labels},
+            config,
+        )
+
+    def create_instability_chart(
+        self, instability_data: List[Dict[str, Any]], limit: int = 20
+    ) -> Dict[str, Any]:
+        """Create instability chart for modules.
+
+        Args:
+            instability_data: List of modules with instability metrics
+            limit: Maximum modules to show
+
+        Returns:
+            Dict[str, Any]: Scatter plot configuration
+        """
+        # Sort by instability
+        sorted_data = sorted(instability_data, key=lambda x: x.get("instability", 0), reverse=True)[
+            :limit
+        ]
+
+        points = []
+        labels = []
+
+        for module in sorted_data:
+            efferent = module.get("efferent_coupling", 0)
+            afferent = module.get("afferent_coupling", 0)
+            points.append((efferent, afferent))
+            labels.append(self._truncate_module_name(module.get("name", "")))
+
+        # Add ideal line (main sequence)
+        max_coupling = max(
+            max(p[0] for p in points) if points else 10, max(p[1] for p in points) if points else 10
+        )
+
+        config = ChartConfig(type=ChartType.SCATTER, title="Instability vs Abstractness")
+
+        chart_config = self.create_chart(ChartType.SCATTER, {"points": points}, config)
+
+        # Add main sequence line
+        chart_config["data"]["datasets"].append(
+            {
+                "type": "line",
+                "label": "Main Sequence",
+                "data": [{"x": 0, "y": max_coupling}, {"x": max_coupling, "y": 0}],
+                "borderColor": "rgba(128, 128, 128, 0.5)",
+                "borderDash": [5, 5],
+                "fill": False,
+                "pointRadius": 0,
+            }
+        )
+
+        # Add labels to points
+        if labels:
+            chart_config["options"]["plugins"]["tooltip"] = {
+                "callbacks": {
+                    "label": f"function(context) {{ "
+                    f"var labels = {labels}; "
+                    f"return labels[context.dataIndex] + "
+                    f'": (" + context.parsed.x + ", " + context.parsed.y + ")"; }}'
+                }
+            }
+
+        return chart_config
+
+    def create_coupling_trend(self, trend_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create coupling trend chart over time.
+
+        Args:
+            trend_data: List of data points with date and metrics
+
+        Returns:
+            Dict[str, Any]: Line chart configuration
+        """
+        labels = []
+        avg_coupling = []
+        max_coupling = []
+        highly_coupled = []
+
+        for point in trend_data:
+            labels.append(point.get("date", ""))
+            avg_coupling.append(point.get("avg_coupling", 0))
+            max_coupling.append(point.get("max_coupling", 0))
+            highly_coupled.append(point.get("highly_coupled_modules", 0))
+
+        datasets = [
+            {
+                "label": "Average Coupling",
+                "data": avg_coupling,
+                "borderColor": ColorPalette.DEFAULT[0],
+                "fill": False,
+            },
+            {
+                "label": "Max Coupling",
+                "data": max_coupling,
+                "borderColor": ColorPalette.SEVERITY["high"],
+                "fill": False,
+            },
+            {
+                "label": "Highly Coupled Modules",
+                "data": highly_coupled,
+                "borderColor": ColorPalette.SEVERITY["medium"],
+                "fill": False,
+                "yAxisID": "y1",
+            },
+        ]
+
+        config = ChartConfig(type=ChartType.LINE, title="Coupling Trend Over Time")
+
+        chart_config = self.create_chart(
+            ChartType.LINE, {"labels": labels, "datasets": datasets}, config
+        )
+
+        # Add dual y-axis
+        chart_config["options"]["scales"] = {
+            "y": {
+                "type": "linear",
+                "display": True,
+                "position": "left",
+                "title": {"display": True, "text": "Coupling Value"},
+            },
+            "y1": {
+                "type": "linear",
+                "display": True,
+                "position": "right",
+                "title": {"display": True, "text": "Module Count"},
+                "grid": {"drawOnChartArea": False},
+            },
+        }
+
+        return chart_config
+
+    def create_dependency_sunburst(self, hierarchy_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create dependency sunburst chart.
+
+        Args:
+            hierarchy_data: Hierarchical dependency data
+
+        Returns:
+            Dict[str, Any]: Sunburst/treemap configuration
+        """
+        # Flatten hierarchy for treemap
+        flat_data = self._flatten_hierarchy(hierarchy_data)
+
+        config = ChartConfig(type=ChartType.TREEMAP, title="Dependency Structure")
+
+        return self.create_chart(ChartType.TREEMAP, {"tree": flat_data}, config)
+
+    def display_terminal(self, coupling_data: Dict[str, Any], show_details: bool = True) -> None:
+        """Display coupling analysis in terminal.
+
+        Args:
+            coupling_data: Coupling analysis data
+            show_details: Whether to show detailed breakdown
+        """
+        # Display header
+        self.terminal_display.display_header("Coupling Analysis", style="double")
+
+        # Display summary metrics
+        summary_data = {
+            "Average Coupling": self.format_number(
+                coupling_data.get("avg_coupling", 0), precision=2
             ),
-            text=[Path(n).name for n in nodes],
-            textposition="top center",
-            hovertext=node_text
-        )
-        
-        # Create figure
-        fig = go.Figure(
-            data=[edge_trace, node_trace],
-            layout=go.Layout(
-                title=self.title,
-                showlegend=False,
-                hovermode='closest',
-                margin=dict(b=20, l=5, r=5, t=40),
-                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                width=width,
-                height=height
+            "Max Coupling": coupling_data.get("max_coupling", 0),
+            "Highly Coupled": coupling_data.get("highly_coupled_count", 0),
+            "Total Modules": coupling_data.get("total_modules", 0),
+        }
+
+        self.terminal_display.display_metrics(summary_data, title="Summary")
+
+        # Display highly coupled modules
+        if show_details and "highly_coupled" in coupling_data:
+            headers = ["Module", "Afferent", "Efferent", "Instability", "Risk"]
+            rows = []
+
+            for module in coupling_data["highly_coupled"][:10]:
+                instability = module.get("instability", 0)
+                risk = self._get_coupling_risk(instability)
+
+                rows.append(
+                    [
+                        self._truncate_module_name(module.get("name", "")),
+                        str(module.get("afferent_coupling", 0)),
+                        str(module.get("efferent_coupling", 0)),
+                        self.format_number(instability, precision=2),
+                        self.terminal_display.colorize(risk, self._get_risk_color(risk)),
+                    ]
+                )
+
+            self.terminal_display.display_table(headers, rows, title="Highly Coupled Modules")
+
+        # Display coupling distribution
+        if "distribution" in coupling_data:
+            self.terminal_display.display_distribution(
+                coupling_data["distribution"],
+                title="Coupling Distribution",
+                labels=["Low (0-2)", "Medium (3-5)", "High (6-10)", "Very High (>10)"],
             )
-        )
-        
-        # Generate HTML
-        return offline.plot(fig, output_type='div', include_plotlyjs='cdn')
-        
-    def _render_svg(self, width: int, height: int, dpi: int) -> str:
-        """Render as SVG graph."""
-        if not MATPLOTLIB_AVAILABLE:
-            return super()._render_svg(width, height, dpi)
-            
-        import matplotlib.pyplot as plt
-        from io import StringIO
-        
-        # Create figure
-        fig, ax = plt.subplots(figsize=(width/dpi, height/dpi), dpi=dpi)
-        
-        # Create simple coupling matrix heatmap
-        files = list(self.file_history.keys())[:20]  # Limit to 20 files
-        matrix = [[0] * len(files) for _ in range(len(files))]
-        
-        # Fill matrix
-        for coupling in self.couplings:
-            if coupling.file1 in files and coupling.file2 in files:
-                i = files.index(coupling.file1)
-                j = files.index(coupling.file2)
-                matrix[i][j] = coupling.change_count
-                matrix[j][i] = coupling.change_count
-                
-        # Plot heatmap
-        im = ax.imshow(matrix, cmap='YlOrRd', aspect='auto')
-        
-        # Set ticks
-        ax.set_xticks(range(len(files)))
-        ax.set_yticks(range(len(files)))
-        ax.set_xticklabels([Path(f).name for f in files], rotation=45, ha='right')
-        ax.set_yticklabels([Path(f).name for f in files])
-        
-        # Add colorbar
-        plt.colorbar(im, ax=ax, label='Changes Together')
-        
-        ax.set_title(self.title)
-        
-        # Convert to SVG
-        buffer = StringIO()
-        plt.tight_layout()
-        plt.savefig(buffer, format='svg', bbox_inches='tight')
-        plt.close(fig)
-        
-        buffer.seek(0)
-        return buffer.read()
 
+        # Display recommendations
+        if "recommendations" in coupling_data:
+            self.terminal_display.display_list(
+                coupling_data["recommendations"], title="Recommendations", style="numbered"
+            )
 
-def analyze_coupling_from_git(
-    repo_path: Path,
-    since: Optional[datetime] = None,
-    min_coupling: int = 2
-) -> CouplingGraph:
-    """Analyze file coupling from git history.
-    
-    Args:
-        repo_path: Path to git repository
-        since: Analyze commits since this date
-        min_coupling: Minimum changes together
-        
-    Returns:
-        CouplingGraph instance
-    """
-    graph = CouplingGraph(min_coupling=min_coupling)
-    
-    # This would integrate with git module to get commit history
-    # Placeholder for demonstration
-    
-    return graph
+    def create_afferent_efferent_chart(
+        self, modules: List[Dict[str, Any]], limit: int = 15
+    ) -> Dict[str, Any]:
+        """Create afferent vs efferent coupling chart.
+
+        Args:
+            modules: List of modules with coupling metrics
+            limit: Maximum modules to show
+
+        Returns:
+            Dict[str, Any]: Grouped bar chart configuration
+        """
+        # Sort by total coupling
+        sorted_modules = sorted(
+            modules,
+            key=lambda m: m.get("afferent_coupling", 0) + m.get("efferent_coupling", 0),
+            reverse=True,
+        )[:limit]
+
+        labels = []
+        afferent = []
+        efferent = []
+
+        for module in sorted_modules:
+            labels.append(self._truncate_module_name(module.get("name", "")))
+            afferent.append(module.get("afferent_coupling", 0))
+            efferent.append(module.get("efferent_coupling", 0))
+
+        datasets = [
+            {
+                "label": "Afferent (Incoming)",
+                "data": afferent,
+                "backgroundColor": ColorPalette.DEFAULT[0],
+            },
+            {
+                "label": "Efferent (Outgoing)",
+                "data": efferent,
+                "backgroundColor": ColorPalette.DEFAULT[1],
+            },
+        ]
+
+        config = ChartConfig(type=ChartType.BAR, title="Afferent vs Efferent Coupling")
+
+        return {
+            "type": "bar",
+            "data": {"labels": labels, "datasets": datasets},
+            "options": self._get_chart_options(config),
+        }
+
+    def _truncate_module_name(self, name: str, max_length: int = 25) -> str:
+        """Truncate module name for display.
+
+        Args:
+            name: Module name
+            max_length: Maximum length
+
+        Returns:
+            str: Truncated name
+        """
+        if len(name) <= max_length:
+            return name
+
+        # Try to keep the most important parts
+        parts = name.split(".")
+        if len(parts) > 1:
+            # Keep first and last parts
+            first = parts[0]
+            last = parts[-1]
+            if len(first) + len(last) + 3 < max_length:
+                return f"{first}...{last}"
+
+        return name[: max_length - 3] + "..."
+
+    def _get_coupling_risk(self, instability: float) -> str:
+        """Get risk level for instability value.
+
+        Args:
+            instability: Instability value (0-1)
+
+        Returns:
+            str: Risk level
+        """
+        if instability > 0.8:
+            return "Critical"
+        elif instability > 0.6:
+            return "High"
+        elif instability > 0.4:
+            return "Medium"
+        else:
+            return "Low"
+
+    def _get_risk_color(self, risk: str) -> str:
+        """Get color for risk level.
+
+        Args:
+            risk: Risk level
+
+        Returns:
+            str: Color name
+        """
+        colors = {"Critical": "red", "High": "yellow", "Medium": "cyan", "Low": "green"}
+        return colors.get(risk, "white")
+
+    def _flatten_hierarchy(
+        self, data: Dict[str, Any], parent: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Flatten hierarchical data for treemap.
+
+        Args:
+            data: Hierarchical data
+            parent: Parent name
+
+        Returns:
+            List[Dict[str, Any]]: Flattened data
+        """
+        result = []
+
+        current = {
+            "parent": parent,
+            "name": data.get("name", "Unknown"),
+            "value": data.get("value", 1),
+        }
+        result.append(current)
+
+        if "children" in data:
+            for child in data["children"]:
+                result.extend(self._flatten_hierarchy(child, current["name"]))
+
+        return result

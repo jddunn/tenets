@@ -1,539 +1,528 @@
-"""Dependency graph visualization for codebases.
+"""Dependencies visualization module.
 
-This module creates visual representations of import dependencies and
-module relationships within a codebase, helping identify architecture
-patterns, circular dependencies, and coupling issues.
+This module provides visualization capabilities for dependency analysis,
+including dependency graphs, circular dependencies, and package structure.
 """
 
-import json
-from collections import defaultdict
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from tenets.utils.logger import get_logger
-
-from .base import (
-    ColorScheme,
-    VisualizationBase,
-    VisualizationFormat,
-    create_graph_layout,
-    format_size,
-    truncate_text,
-    MATPLOTLIB_AVAILABLE,
-    NETWORKX_AVAILABLE,
-    PLOTLY_AVAILABLE,
-)
+from .base import BaseVisualizer, ChartConfig, ChartType, ColorPalette, DisplayConfig
+from .displays import TerminalDisplay
 
 
-@dataclass
-class DependencyNode:
-    """A node in the dependency graph.
-    
-    Attributes:
-        path: File path
-        name: Display name
-        imports: Set of imported modules
-        imported_by: Set of modules that import this
-        size: File size in bytes
-        language: Programming language
-        metadata: Additional metadata
+class DependencyVisualizer(BaseVisualizer):
+    """Visualizer for dependency metrics.
+
+    Creates visualizations for dependency analysis including dependency
+    trees, circular dependency detection, and package relationships.
     """
-    
-    path: str
-    name: str
-    imports: Set[str] = None
-    imported_by: Set[str] = None
-    size: int = 0
-    language: str = ""
-    metadata: Dict[str, Any] = None
-    
-    def __post_init__(self):
-        if self.imports is None:
-            self.imports = set()
-        if self.imported_by is None:
-            self.imported_by = set()
-        if self.metadata is None:
-            self.metadata = {}
-            
-    @property
-    def in_degree(self) -> int:
-        """Number of modules that import this one."""
-        return len(self.imported_by)
-        
-    @property
-    def out_degree(self) -> int:
-        """Number of modules this one imports."""
-        return len(self.imports)
-        
-    @property
-    def coupling(self) -> int:
-        """Total coupling (in + out degree)."""
-        return self.in_degree + self.out_degree
 
-
-class DependencyGraph(VisualizationBase):
-    """Visualize code dependencies as a graph.
-    
-    Creates various visualizations of import relationships including:
-    - Full dependency graph
-    - Circular dependencies
-    - Module clusters
-    - Dependency layers
-    - Import hotspots
-    """
-    
     def __init__(
         self,
-        title: str = "Dependency Graph",
-        color_scheme: Optional[ColorScheme] = None,
-        format: VisualizationFormat = VisualizationFormat.AUTO
+        chart_config: Optional[ChartConfig] = None,
+        display_config: Optional[DisplayConfig] = None,
     ):
-        """Initialize dependency graph.
-        
+        """Initialize dependency visualizer.
+
         Args:
-            title: Graph title
-            color_scheme: Color scheme
-            format: Output format
+            chart_config: Chart configuration
+            display_config: Display configuration
         """
-        super().__init__(title, color_scheme, format)
-        self.logger = get_logger(__name__)
-        self.nodes: Dict[str, DependencyNode] = {}
-        self.circular_deps: List[List[str]] = []
-        self.clusters: Dict[str, Set[str]] = {}
-        
-    def add_file(
+        super().__init__(chart_config, display_config)
+        self.terminal_display = TerminalDisplay(display_config)
+
+    def create_dependency_graph(
         self,
-        file_path: str,
-        imports: List[str],
-        size: int = 0,
-        language: str = "",
-        metadata: Optional[Dict] = None
-    ):
-        """Add a file to the dependency graph.
-        
+        dependencies: Dict[str, List[str]],
+        highlight_circular: bool = True,
+        max_nodes: int = 100,
+    ) -> Dict[str, Any]:
+        """Create dependency graph visualization.
+
         Args:
-            file_path: Path to file
-            imports: List of imported modules
-            size: File size
-            language: Programming language
-            metadata: Additional metadata
-        """
-        # Normalize path
-        file_path = str(Path(file_path))
-        name = Path(file_path).stem
-        
-        # Create or update node
-        if file_path not in self.nodes:
-            self.nodes[file_path] = DependencyNode(
-                path=file_path,
-                name=name,
-                size=size,
-                language=language,
-                metadata=metadata or {}
-            )
-            
-        # Add imports
-        for imp in imports:
-            # Try to resolve import to file in graph
-            resolved = self._resolve_import(imp, file_path)
-            if resolved and resolved in self.nodes:
-                self.nodes[file_path].imports.add(resolved)
-                self.nodes[resolved].imported_by.add(file_path)
-                
-    def _resolve_import(self, import_name: str, from_file: str) -> Optional[str]:
-        """Resolve import name to file path.
-        
-        Args:
-            import_name: Import module name
-            from_file: File doing the importing
-            
+            dependencies: Dictionary of module -> [dependencies]
+            highlight_circular: Whether to highlight circular dependencies
+            max_nodes: Maximum nodes to display
+
         Returns:
-            Resolved file path or None
+            Dict[str, Any]: Network graph configuration
         """
-        # Simple resolution - look for matching file names
-        for node_path in self.nodes:
-            node_name = Path(node_path).stem
-            
-            # Direct match
-            if node_name == import_name:
-                return node_path
-                
-            # Match last part of import path
-            import_parts = import_name.split('.')
-            if import_parts[-1] == node_name:
-                return node_path
-                
-        return None
-        
-    def analyze(self):
-        """Analyze the dependency graph.
-        
-        Identifies patterns like circular dependencies, clusters, and layers.
-        """
-        self._find_circular_dependencies()
-        self._identify_clusters()
-        self._calculate_layers()
-        
-    def _find_circular_dependencies(self):
-        """Find circular dependencies using DFS."""
-        visited = set()
-        rec_stack = set()
-        self.circular_deps = []
-        
-        def dfs(node: str, path: List[str]):
-            visited.add(node)
-            rec_stack.add(node)
-            path.append(node)
-            
-            for neighbor in self.nodes[node].imports:
-                if neighbor not in visited:
-                    dfs(neighbor, path.copy())
-                elif neighbor in rec_stack:
-                    # Found cycle
-                    cycle_start = path.index(neighbor)
-                    cycle = path[cycle_start:] + [neighbor]
-                    self.circular_deps.append(cycle)
-                    
-            path.pop()
-            rec_stack.remove(node)
-            
-        for node in self.nodes:
-            if node not in visited:
-                dfs(node, [])
-                
-    def _identify_clusters(self):
-        """Identify module clusters based on directory structure."""
-        self.clusters = defaultdict(set)
-        
-        for node_path in self.nodes:
-            # Use parent directory as cluster
-            parent = str(Path(node_path).parent)
-            self.clusters[parent].add(node_path)
-            
-    def _calculate_layers(self):
-        """Calculate dependency layers (topological levels)."""
-        # Find nodes with no dependencies (layer 0)
-        layer = 0
-        remaining = set(self.nodes.keys())
-        
-        while remaining:
-            # Find nodes that only depend on already-layered nodes
-            current_layer = []
-            
-            for node in remaining:
-                deps = self.nodes[node].imports & remaining
-                if not deps:
-                    current_layer.append(node)
-                    
-            if not current_layer:
-                # Remaining nodes have circular dependencies
-                for node in remaining:
-                    self.nodes[node].metadata['layer'] = -1
-                break
-                
-            for node in current_layer:
-                self.nodes[node].metadata['layer'] = layer
-                remaining.remove(node)
-                
-            layer += 1
-            
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get graph statistics.
-        
-        Returns:
-            Dictionary of statistics
-        """
-        if not self.nodes:
-            return {}
-            
-        total_imports = sum(len(n.imports) for n in self.nodes.values())
-        max_in = max((n.in_degree for n in self.nodes.values()), default=0)
-        max_out = max((n.out_degree for n in self.nodes.values()), default=0)
-        
-        # Find most imported/importing
-        most_imported = max(
-            self.nodes.values(),
-            key=lambda n: n.in_degree,
-            default=None
-        )
-        most_importing = max(
-            self.nodes.values(),
-            key=lambda n: n.out_degree,
-            default=None
-        )
-        
-        return {
-            'total_files': len(self.nodes),
-            'total_dependencies': total_imports,
-            'circular_dependencies': len(self.circular_deps),
-            'clusters': len(self.clusters),
-            'max_in_degree': max_in,
-            'max_out_degree': max_out,
-            'most_imported': most_imported.name if most_imported else None,
-            'most_importing': most_importing.name if most_importing else None,
-            'avg_coupling': sum(n.coupling for n in self.nodes.values()) / len(self.nodes)
-        }
-        
-    def _render_ascii(self) -> str:
-        """Render dependency graph as ASCII."""
-        lines = []
-        lines.append("=" * 80)
-        lines.append(f" {self.title} ".center(80))
-        lines.append("=" * 80)
-        lines.append("")
-        
-        # Statistics
-        stats = self.get_statistics()
-        lines.append(f"Files: {stats.get('total_files', 0)}")
-        lines.append(f"Dependencies: {stats.get('total_dependencies', 0)}")
-        lines.append(f"Circular deps: {stats.get('circular_dependencies', 0)}")
-        lines.append("")
-        
-        # Top imported modules
-        lines.append("Most Imported Modules:")
-        lines.append("-" * 40)
-        
-        sorted_nodes = sorted(
-            self.nodes.values(),
-            key=lambda n: n.in_degree,
-            reverse=True
-        )[:10]
-        
-        for node in sorted_nodes:
-            if node.in_degree > 0:
-                lines.append(f"  {node.name:30s} <- {node.in_degree:3d} imports")
-                
-        lines.append("")
-        
-        # Top importing modules
-        lines.append("Most Importing Modules:")
-        lines.append("-" * 40)
-        
-        sorted_nodes = sorted(
-            self.nodes.values(),
-            key=lambda n: n.out_degree,
-            reverse=True
-        )[:10]
-        
-        for node in sorted_nodes:
-            if node.out_degree > 0:
-                lines.append(f"  {node.name:30s} -> {node.out_degree:3d} imports")
-                
-        # Circular dependencies
-        if self.circular_deps:
-            lines.append("")
-            lines.append("Circular Dependencies Detected:")
-            lines.append("-" * 40)
-            
-            for i, cycle in enumerate(self.circular_deps[:5], 1):
-                cycle_str = " -> ".join(Path(p).stem for p in cycle)
-                lines.append(f"  {i}. {cycle_str}")
-                
-        return "\n".join(lines)
-        
-    def _render_html(self, width: int, height: int) -> str:
-        """Render as interactive HTML using Plotly or D3."""
-        if not PLOTLY_AVAILABLE:
-            return super()._render_html(width, height)
-            
-        import plotly.graph_objs as go
-        import plotly.offline as offline
-        
-        # Create nodes and edges
-        node_x = []
-        node_y = []
-        node_text = []
-        node_size = []
-        node_color = []
-        
-        edge_x = []
-        edge_y = []
-        
-        # Get layout
-        nodes = list(self.nodes.keys())
+        # Build nodes and edges
+        nodes_set = set()
         edges = []
-        for node in self.nodes.values():
-            for imp in node.imports:
-                edges.append((node.path, imp))
-                
-        positions = create_graph_layout(nodes, edges, "spring")
-        
-        # Add nodes
-        for node_path, (x, y) in positions.items():
-            node = self.nodes[node_path]
-            node_x.append(x)
-            node_y.append(y)
-            
-            # Create hover text
-            hover = f"{node.name}<br>"
-            hover += f"Imports: {node.out_degree}<br>"
-            hover += f"Imported by: {node.in_degree}<br>"
-            hover += f"Size: {format_size(node.size)}"
-            node_text.append(hover)
-            
-            # Size based on coupling
-            node_size.append(10 + node.coupling * 2)
-            
-            # Color based on layer or in-degree
-            layer = node.metadata.get('layer', 0)
-            node_color.append(layer if layer >= 0 else -1)
-            
-        # Add edges
-        for source, target in edges:
-            if source in positions and target in positions:
-                x0, y0 = positions[source]
-                x1, y1 = positions[target]
-                edge_x.extend([x0, x1, None])
-                edge_y.extend([y0, y1, None])
-                
-        # Create traces
-        edge_trace = go.Scatter(
-            x=edge_x, y=edge_y,
-            line=dict(width=0.5, color='#888'),
-            hoverinfo='none',
-            mode='lines'
-        )
-        
-        node_trace = go.Scatter(
-            x=node_x, y=node_y,
-            mode='markers+text',
-            hoverinfo='text',
-            text=[Path(n).stem for n in nodes],
-            textposition="top center",
-            marker=dict(
-                showscale=True,
-                colorscale='YlOrRd',
-                size=node_size,
-                color=node_color,
-                colorbar=dict(
-                    thickness=15,
-                    title='Layer',
-                    xanchor='left',
-                    titleside='right'
-                ),
-                line_width=2
-            ),
-            hovertext=node_text
-        )
-        
-        # Create figure
-        fig = go.Figure(
-            data=[edge_trace, node_trace],
-            layout=go.Layout(
-                title=self.title,
-                showlegend=False,
-                hovermode='closest',
-                margin=dict(b=20, l=5, r=5, t=40),
-                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                width=width,
-                height=height
-            )
-        )
-        
-        # Generate HTML
-        return offline.plot(fig, output_type='div', include_plotlyjs='cdn')
-        
-    def _render_svg(self, width: int, height: int, dpi: int) -> str:
-        """Render as SVG using matplotlib."""
-        if not MATPLOTLIB_AVAILABLE:
-            return super()._render_svg(width, height, dpi)
-            
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as mpatches
-        from io import StringIO
-        
-        # Create figure
-        fig, ax = plt.subplots(figsize=(width/dpi, height/dpi), dpi=dpi)
-        
-        # Get layout
-        nodes = list(self.nodes.keys())
-        edges = []
-        for node in self.nodes.values():
-            for imp in node.imports:
-                edges.append((node.path, imp))
-                
-        positions = create_graph_layout(nodes, edges, "spring")
-        
-        # Draw edges
-        for source, target in edges:
-            if source in positions and target in positions:
-                x0, y0 = positions[source]
-                x1, y1 = positions[target]
-                ax.plot([x0, x1], [y0, y1], 'k-', alpha=0.3, linewidth=0.5)
-                
-        # Draw nodes
-        for node_path, (x, y) in positions.items():
-            node = self.nodes[node_path]
-            
-            # Size based on coupling
-            size = 100 + node.coupling * 50
-            
-            # Color based on in-degree
-            color_intensity = min(1.0, node.in_degree / 10)
-            color = plt.cm.YlOrRd(color_intensity)
-            
-            ax.scatter(x, y, s=size, c=[color], alpha=0.8, edgecolors='black')
-            
-            # Add label for important nodes
-            if node.coupling > 5:
-                ax.annotate(
-                    node.name,
-                    (x, y),
-                    fontsize=8,
-                    ha='center',
-                    va='bottom'
+
+        # Track circular dependencies
+        circular_pairs = set()
+        if highlight_circular:
+            circular_pairs = self._find_circular_dependencies(dependencies)
+
+        for module, deps in dependencies.items():
+            nodes_set.add(module)
+            for dep in deps:
+                nodes_set.add(dep)
+
+                # Check if this is a circular dependency
+                is_circular = (module, dep) in circular_pairs or (dep, module) in circular_pairs
+
+                edges.append(
+                    {
+                        "source": module,
+                        "target": dep,
+                        "color": ColorPalette.SEVERITY["critical"] if is_circular else None,
+                        "style": "dashed" if is_circular else "solid",
+                    }
                 )
-                
-        ax.set_title(self.title, fontsize=14, fontweight='bold')
-        ax.axis('off')
-        
-        # Convert to SVG
-        buffer = StringIO()
-        plt.savefig(buffer, format='svg', bbox_inches='tight')
-        plt.close(fig)
-        
-        buffer.seek(0)
-        return buffer.read()
 
+        # Limit nodes if necessary
+        if len(nodes_set) > max_nodes:
+            # Keep nodes with most connections
+            node_connections = {}
+            for module, deps in dependencies.items():
+                node_connections[module] = node_connections.get(module, 0) + len(deps)
+                for dep in deps:
+                    node_connections[dep] = node_connections.get(dep, 0) + 1
 
-def create_dependency_graph(
-    files: List[Any],
-    title: str = "Dependency Graph",
-    max_nodes: int = 100,
-    format: str = "auto"
-) -> DependencyGraph:
-    """Create a dependency graph from files.
-    
-    Args:
-        files: List of FileAnalysis objects
-        title: Graph title
-        max_nodes: Maximum nodes to display
-        format: Output format
-        
-    Returns:
-        DependencyGraph instance
-    """
-    graph = DependencyGraph(title=title, format=VisualizationFormat(format))
-    
-    # Add files to graph
-    for file in files[:max_nodes]:
-        imports = []
-        
-        # Extract imports based on file type
-        if hasattr(file, 'imports'):
-            imports = [str(imp.module) if hasattr(imp, 'module') else str(imp) 
-                      for imp in file.imports]
-                      
-        graph.add_file(
-            file_path=file.path,
-            imports=imports,
-            size=file.size,
-            language=file.language
+            sorted_nodes = sorted(
+                nodes_set, key=lambda n: node_connections.get(n, 0), reverse=True
+            )[:max_nodes]
+            nodes_set = set(sorted_nodes)
+
+            # Filter edges
+            edges = [e for e in edges if e["source"] in nodes_set and e["target"] in nodes_set]
+
+        # Create node list
+        nodes = []
+        for node_id in nodes_set:
+            # Determine node type and color
+            is_external = self._is_external_dependency(node_id)
+            has_circular = any(node_id in pair for pair in circular_pairs)
+
+            if has_circular:
+                color = ColorPalette.SEVERITY["critical"]
+            elif is_external:
+                color = ColorPalette.DEFAULT[2]  # Green for external
+            else:
+                color = ColorPalette.DEFAULT[0]  # Blue for internal
+
+            nodes.append(
+                {
+                    "id": node_id,
+                    "label": self._truncate_package_name(node_id),
+                    "color": color,
+                    "shape": "box" if is_external else "circle",
+                }
+            )
+
+        config = ChartConfig(type=ChartType.NETWORK, title="Dependency Graph")
+
+        return self.create_chart(
+            ChartType.NETWORK, {"nodes": nodes, "edges": edges, "layout": "hierarchical"}, config
         )
-        
-    # Analyze graph
-    graph.analyze()
-    
-    return graph
+
+    def create_dependency_tree(
+        self, tree_data: Dict[str, Any], max_depth: int = 5
+    ) -> Dict[str, Any]:
+        """Create dependency tree visualization.
+
+        Args:
+            tree_data: Hierarchical dependency data
+            max_depth: Maximum tree depth to display
+
+        Returns:
+            Dict[str, Any]: Treemap configuration
+        """
+        # Flatten tree to specified depth
+        flat_data = self._flatten_tree(tree_data, max_depth)
+
+        config = ChartConfig(type=ChartType.TREEMAP, title="Dependency Tree")
+
+        return self.create_chart(ChartType.TREEMAP, {"tree": flat_data}, config)
+
+    def create_package_sunburst(self, package_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create package structure sunburst chart.
+
+        Args:
+            package_data: Hierarchical package data
+
+        Returns:
+            Dict[str, Any]: Sunburst/treemap configuration
+        """
+        flat_data = self._flatten_tree(package_data)
+
+        # Color by depth level
+        for i, item in enumerate(flat_data):
+            depth = item.get("depth", 0)
+            item["color"] = ColorPalette.DEFAULT[depth % len(ColorPalette.DEFAULT)]
+
+        config = ChartConfig(type=ChartType.TREEMAP, title="Package Structure")
+
+        return self.create_chart(ChartType.TREEMAP, {"tree": flat_data}, config)
+
+    def create_circular_dependencies_chart(self, circular_deps: List[List[str]]) -> Dict[str, Any]:
+        """Create circular dependencies visualization.
+
+        Args:
+            circular_deps: List of circular dependency chains
+
+        Returns:
+            Dict[str, Any]: Network graph configuration
+        """
+        # Build graph from circular chains
+        nodes_set = set()
+        edges = []
+
+        for chain in circular_deps:
+            for i, module in enumerate(chain):
+                nodes_set.add(module)
+                if i < len(chain) - 1:
+                    edges.append(
+                        {
+                            "source": module,
+                            "target": chain[i + 1],
+                            "color": ColorPalette.SEVERITY["critical"],
+                            "style": "solid",
+                            "arrows": "to",
+                        }
+                    )
+
+        # Create nodes with critical coloring
+        nodes = [
+            {
+                "id": node,
+                "label": self._truncate_package_name(node),
+                "color": ColorPalette.SEVERITY["critical"],
+                "shape": "circle",
+            }
+            for node in nodes_set
+        ]
+
+        config = ChartConfig(type=ChartType.NETWORK, title="Circular Dependencies")
+
+        return self.create_chart(
+            ChartType.NETWORK, {"nodes": nodes, "edges": edges, "layout": "circular"}, config
+        )
+
+    def create_dependency_matrix(
+        self, modules: List[str], dependency_matrix: List[List[bool]]
+    ) -> Dict[str, Any]:
+        """Create dependency matrix visualization.
+
+        Args:
+            modules: List of module names
+            dependency_matrix: Boolean matrix of dependencies
+
+        Returns:
+            Dict[str, Any]: Heatmap configuration
+        """
+        # Convert boolean to numeric
+        numeric_matrix = [[1 if dep else 0 for dep in row] for row in dependency_matrix]
+
+        labels = [self._truncate_package_name(m) for m in modules]
+
+        config = ChartConfig(type=ChartType.HEATMAP, title="Dependency Matrix")
+
+        return self.create_chart(
+            ChartType.HEATMAP,
+            {"matrix": numeric_matrix, "x_labels": labels, "y_labels": labels},
+            config,
+        )
+
+    def create_layer_violations_chart(self, violations: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create layer violation visualization.
+
+        Args:
+            violations: List of layer violations
+
+        Returns:
+            Dict[str, Any]: Chart configuration
+        """
+        # Group violations by type
+        violation_types = {}
+        for violation in violations:
+            vtype = violation.get("type", "Unknown")
+            violation_types[vtype] = violation_types.get(vtype, 0) + 1
+
+        labels = list(violation_types.keys())
+        values = list(violation_types.values())
+
+        # Color based on severity
+        colors = []
+        for label in labels:
+            if "critical" in label.lower():
+                colors.append(ColorPalette.SEVERITY["critical"])
+            elif "high" in label.lower():
+                colors.append(ColorPalette.SEVERITY["high"])
+            else:
+                colors.append(ColorPalette.SEVERITY["medium"])
+
+        config = ChartConfig(
+            type=ChartType.BAR, title="Architecture Layer Violations", colors=colors
+        )
+
+        return self.create_chart(ChartType.BAR, {"labels": labels, "values": values}, config)
+
+    def display_terminal(self, dependency_data: Dict[str, Any], show_details: bool = True) -> None:
+        """Display dependency analysis in terminal.
+
+        Args:
+            dependency_data: Dependency analysis data
+            show_details: Whether to show detailed breakdown
+        """
+        # Display header
+        self.terminal_display.display_header("Dependency Analysis", style="double")
+
+        # Display summary metrics
+        summary_data = {
+            "Total Modules": dependency_data.get("total_modules", 0),
+            "Total Dependencies": dependency_data.get("total_dependencies", 0),
+            "External Dependencies": dependency_data.get("external_dependencies", 0),
+            "Circular Dependencies": dependency_data.get("circular_count", 0),
+        }
+
+        self.terminal_display.display_metrics(summary_data, title="Summary")
+
+        # Display circular dependencies warning
+        if dependency_data.get("circular_count", 0) > 0:
+            self.terminal_display.display_warning(
+                f"⚠️  Found {dependency_data['circular_count']} circular dependencies!"
+            )
+
+            if show_details and "circular_chains" in dependency_data:
+                for i, chain in enumerate(dependency_data["circular_chains"][:5], 1):
+                    chain_str = " → ".join(chain[:5])
+                    if len(chain) > 5:
+                        chain_str += f" → ... ({len(chain) - 5} more)"
+                    print(f"  {i}. {chain_str}")
+
+        # Display most dependent modules
+        if show_details and "most_dependent" in dependency_data:
+            headers = ["Module", "Dependencies", "Dependents", "Coupling"]
+            rows = []
+
+            for module in dependency_data["most_dependent"][:10]:
+                coupling = module.get("dependencies", 0) + module.get("dependents", 0)
+                rows.append(
+                    [
+                        self._truncate_package_name(module.get("name", "")),
+                        str(module.get("dependencies", 0)),
+                        str(module.get("dependents", 0)),
+                        str(coupling),
+                    ]
+                )
+
+            self.terminal_display.display_table(headers, rows, title="Most Dependent Modules")
+
+        # Display external dependencies
+        if "external" in dependency_data:
+            self._display_external_dependencies(dependency_data["external"])
+
+        # Display recommendations
+        if "recommendations" in dependency_data:
+            self.terminal_display.display_list(
+                dependency_data["recommendations"], title="Recommendations", style="numbered"
+            )
+
+    def create_dependency_trend(self, trend_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create dependency trend chart over time.
+
+        Args:
+            trend_data: List of data points with date and metrics
+
+        Returns:
+            Dict[str, Any]: Line chart configuration
+        """
+        labels = []
+        total_deps = []
+        external_deps = []
+        circular_deps = []
+
+        for point in trend_data:
+            labels.append(point.get("date", ""))
+            total_deps.append(point.get("total_dependencies", 0))
+            external_deps.append(point.get("external_dependencies", 0))
+            circular_deps.append(point.get("circular_dependencies", 0))
+
+        datasets = [
+            {
+                "label": "Total Dependencies",
+                "data": total_deps,
+                "borderColor": ColorPalette.DEFAULT[0],
+                "fill": False,
+            },
+            {
+                "label": "External Dependencies",
+                "data": external_deps,
+                "borderColor": ColorPalette.DEFAULT[1],
+                "fill": False,
+            },
+            {
+                "label": "Circular Dependencies",
+                "data": circular_deps,
+                "borderColor": ColorPalette.SEVERITY["critical"],
+                "fill": False,
+                "yAxisID": "y1",
+            },
+        ]
+
+        config = ChartConfig(type=ChartType.LINE, title="Dependency Trends")
+
+        chart_config = self.create_chart(
+            ChartType.LINE, {"labels": labels, "datasets": datasets}, config
+        )
+
+        # Add dual y-axis
+        chart_config["options"]["scales"] = {
+            "y": {"type": "linear", "display": True, "position": "left"},
+            "y1": {
+                "type": "linear",
+                "display": True,
+                "position": "right",
+                "grid": {"drawOnChartArea": False},
+            },
+        }
+
+        return chart_config
+
+    def _find_circular_dependencies(
+        self, dependencies: Dict[str, List[str]]
+    ) -> Set[Tuple[str, str]]:
+        """Find circular dependencies in dependency graph.
+
+        Args:
+            dependencies: Dependency dictionary
+
+        Returns:
+            Set[Tuple[str, str]]: Set of circular dependency pairs
+        """
+        circular_pairs = set()
+
+        def dfs(module: str, path: List[str], visited: Set[str]):
+            if module in path:
+                # Found a cycle
+                cycle_start = path.index(module)
+                for i in range(cycle_start, len(path)):
+                    j = (i + 1) % (len(path) - cycle_start + 1) + cycle_start - 1
+                    if j < len(path):
+                        circular_pairs.add(tuple(sorted([path[i], path[j]])))
+                return
+
+            if module in visited:
+                return
+
+            visited.add(module)
+            path.append(module)
+
+            for dep in dependencies.get(module, []):
+                dfs(dep, path.copy(), visited.copy())
+
+            path.pop()
+
+        for module in dependencies:
+            dfs(module, [], set())
+
+        return circular_pairs
+
+    def _is_external_dependency(self, package: str) -> bool:
+        """Check if package is external dependency.
+
+        Args:
+            package: Package name
+
+        Returns:
+            bool: True if external
+        """
+        # Simple heuristic - no dots or starts with common external prefixes
+        external_prefixes = ["numpy", "pandas", "scipy", "django", "flask"]
+
+        if "." not in package:
+            return True
+
+        for prefix in external_prefixes:
+            if package.startswith(prefix):
+                return True
+
+        return False
+
+    def _truncate_package_name(self, name: str, max_length: int = 30) -> str:
+        """Truncate package name for display.
+
+        Args:
+            name: Package name
+            max_length: Maximum length
+
+        Returns:
+            str: Truncated name
+        """
+        if len(name) <= max_length:
+            return name
+
+        # Try to keep important parts
+        parts = name.split(".")
+        if len(parts) > 2:
+            # Keep first and last parts
+            return f"{parts[0]}...{parts[-1]}"
+
+        return name[: max_length - 3] + "..."
+
+    def _flatten_tree(
+        self,
+        tree: Dict[str, Any],
+        max_depth: int = -1,
+        current_depth: int = 0,
+        parent: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Flatten tree structure for visualization.
+
+        Args:
+            tree: Tree structure
+            max_depth: Maximum depth (-1 for unlimited)
+            current_depth: Current depth
+            parent: Parent name
+
+        Returns:
+            List[Dict[str, Any]]: Flattened tree
+        """
+        if max_depth != -1 and current_depth >= max_depth:
+            return []
+
+        result = []
+
+        current = {
+            "parent": parent,
+            "name": tree.get("name", "Unknown"),
+            "value": tree.get("value", 1),
+            "depth": current_depth,
+        }
+        result.append(current)
+
+        if "children" in tree:
+            for child in tree["children"]:
+                result.extend(
+                    self._flatten_tree(child, max_depth, current_depth + 1, current["name"])
+                )
+
+        return result
+
+    def _display_external_dependencies(self, external_deps: List[Dict[str, Any]]) -> None:
+        """Display external dependencies in terminal.
+
+        Args:
+            external_deps: List of external dependencies
+        """
+        if not external_deps:
+            return
+
+        headers = ["Package", "Version", "License", "Usage"]
+        rows = []
+
+        for dep in external_deps[:15]:
+            rows.append(
+                [
+                    dep.get("name", "Unknown"),
+                    dep.get("version", "-"),
+                    dep.get("license", "-"),
+                    str(dep.get("usage_count", 0)),
+                ]
+            )
+
+        self.terminal_display.display_table(headers, rows, title="External Dependencies")

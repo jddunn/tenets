@@ -1,4 +1,4 @@
-"""Configuration management for Tenets.
+"""Configuration management for Tenets with enhanced LLM support.
 
 This module handles all configuration for the Tenets system, including loading
 from files, environment variables, and providing defaults. Configuration can
@@ -13,18 +13,266 @@ Configuration precedence (highest to lowest):
 
 The configuration system is designed to work with zero configuration (sensible
 defaults) while allowing full customization when needed.
+
+Enhanced with comprehensive LLM provider support for optional AI-powered features
+like intelligent summarization, semantic search, and code understanding.
 """
 
 import json
 import os
 from dataclasses import asdict, dataclass, field
-from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
 
 from tenets.utils.logger import get_logger
+
+
+@dataclass
+class LLMConfig:
+    """Configuration for LLM (Large Language Model) integration.
+
+    Supports multiple providers and models with comprehensive cost controls,
+    rate limiting, and fallback strategies. All LLM features are optional
+    and disabled by default.
+
+    Attributes:
+        enabled: Whether LLM features are enabled globally
+        provider: Primary LLM provider (openai, anthropic, openrouter, litellm, ollama)
+        fallback_providers: Ordered list of fallback providers if primary fails
+        api_keys: Dictionary of provider -> API key (can use env vars)
+        api_base_urls: Custom API endpoints for providers (e.g., for proxies)
+        models: Model selection for different tasks
+        max_cost_per_run: Maximum cost in USD per execution run
+        max_cost_per_day: Maximum cost in USD per day
+        max_tokens_per_request: Maximum tokens per single request
+        max_context_length: Maximum context window to use
+        temperature: Sampling temperature (0.0-2.0, lower = more deterministic)
+        top_p: Nucleus sampling parameter
+        frequency_penalty: Frequency penalty for token repetition
+        presence_penalty: Presence penalty for topic repetition
+        requests_per_minute: Rate limit for API requests
+        retry_on_error: Whether to retry failed requests
+        max_retries: Maximum number of retry attempts
+        retry_delay: Initial delay between retries in seconds
+        retry_backoff: Backoff multiplier for retry delays
+        timeout: Request timeout in seconds
+        stream: Whether to stream responses
+        cache_responses: Whether to cache LLM responses
+        cache_ttl_hours: Cache time-to-live in hours
+        log_requests: Whether to log all LLM requests
+        log_responses: Whether to log all LLM responses
+        custom_headers: Additional headers for API requests
+        organization_id: Organization ID for providers that support it
+        project_id: Project ID for providers that support it
+    """
+
+    # Core settings
+    enabled: bool = False
+    provider: str = "openai"
+    fallback_providers: List[str] = field(default_factory=lambda: ["anthropic", "openrouter"])
+
+    # API Keys - can use environment variables with ${VAR_NAME} syntax
+    api_keys: Dict[str, str] = field(
+        default_factory=lambda: {
+            "openai": "${OPENAI_API_KEY}",
+            "anthropic": "${ANTHROPIC_API_KEY}",
+            "openrouter": "${OPENROUTER_API_KEY}",
+            "cohere": "${COHERE_API_KEY}",
+            "together": "${TOGETHER_API_KEY}",
+            "huggingface": "${HUGGINGFACE_API_KEY}",
+            "replicate": "${REPLICATE_API_KEY}",
+            "ollama": "",  # Local, no key needed
+        }
+    )
+
+    # Custom API endpoints (for proxies, self-hosted, etc.)
+    api_base_urls: Dict[str, str] = field(
+        default_factory=lambda: {
+            "openai": "https://api.openai.com/v1",
+            "anthropic": "https://api.anthropic.com/v1",
+            "openrouter": "https://openrouter.ai/api/v1",
+            "ollama": "http://localhost:11434",
+        }
+    )
+
+    # Model selection for different tasks
+    models: Dict[str, str] = field(
+        default_factory=lambda: {
+            "default": "gpt-4o-mini",
+            "summarization": "gpt-3.5-turbo",
+            "analysis": "gpt-4o",
+            "embeddings": "text-embedding-3-small",
+            "code_generation": "gpt-4o",
+            "semantic_search": "text-embedding-3-small",
+            # Anthropic models
+            "anthropic_default": "claude-3-haiku-20240307",
+            "anthropic_analysis": "claude-3-sonnet-20240229",
+            "anthropic_code": "claude-3-opus-20240229",
+            # Open source via Ollama
+            "ollama_default": "llama2",
+            "ollama_code": "codellama",
+            "ollama_embeddings": "nomic-embed-text",
+        }
+    )
+
+    # Cost controls
+    max_cost_per_run: float = 0.10  # $0.10 per run
+    max_cost_per_day: float = 10.00  # $10.00 per day
+    max_tokens_per_request: int = 4000
+    max_context_length: int = 100000  # Use model's max if not specified
+
+    # Generation parameters
+    temperature: float = 0.3  # Lower = more deterministic
+    top_p: float = 0.95
+    frequency_penalty: float = 0.0
+    presence_penalty: float = 0.0
+
+    # Rate limiting and retries
+    requests_per_minute: int = 60
+    retry_on_error: bool = True
+    max_retries: int = 3
+    retry_delay: float = 1.0  # Initial delay in seconds
+    retry_backoff: float = 2.0  # Exponential backoff multiplier
+    timeout: int = 30  # Request timeout in seconds
+
+    # Response handling
+    stream: bool = False  # Stream responses for better UX
+    cache_responses: bool = True
+    cache_ttl_hours: int = 24
+
+    # Logging and debugging
+    log_requests: bool = False
+    log_responses: bool = False
+
+    # Provider-specific settings
+    custom_headers: Dict[str, str] = field(default_factory=dict)
+    organization_id: Optional[str] = None  # For OpenAI
+    project_id: Optional[str] = None  # For various providers
+
+    def __post_init__(self):
+        """Validate and process configuration after initialization."""
+        # Resolve environment variables in API keys
+        self._resolve_api_keys()
+
+        # Validate provider
+        valid_providers = [
+            "openai",
+            "anthropic",
+            "openrouter",
+            "cohere",
+            "together",
+            "huggingface",
+            "replicate",
+            "ollama",
+            "litellm",
+        ]
+        if self.provider not in valid_providers:
+            raise ValueError(
+                f"Invalid LLM provider: {self.provider}. Must be one of {valid_providers}"
+            )
+
+        # Validate temperature
+        if not 0.0 <= self.temperature <= 2.0:
+            raise ValueError(f"Temperature must be between 0.0 and 2.0, got {self.temperature}")
+
+        # Validate costs
+        if self.max_cost_per_run < 0:
+            raise ValueError(f"max_cost_per_run must be non-negative, got {self.max_cost_per_run}")
+        if self.max_cost_per_day < 0:
+            raise ValueError(f"max_cost_per_day must be non-negative, got {self.max_cost_per_day}")
+
+        # Ensure cost per run doesn't exceed daily limit
+        self.max_cost_per_run = min(self.max_cost_per_run, self.max_cost_per_day)
+
+    def _resolve_api_keys(self):
+        """Resolve environment variables in API keys.
+
+        Supports ${VAR_NAME} syntax for environment variable substitution.
+        """
+
+        for provider, key_value in self.api_keys.items():
+            if key_value and key_value.startswith("${") and key_value.endswith("}"):
+                # Extract environment variable name
+                env_var = key_value[2:-1]
+                # Get from environment, keep original if not found
+                self.api_keys[provider] = os.environ.get(env_var, key_value)
+
+    def get_api_key(self, provider: Optional[str] = None) -> Optional[str]:
+        """Get API key for a specific provider.
+
+        Args:
+            provider: Provider name (uses default if not specified)
+
+        Returns:
+            API key string or None if not configured
+        """
+        provider = provider or self.provider
+        key = self.api_keys.get(provider)
+
+        # Don't return placeholder values
+        if key and key.startswith("${") and key.endswith("}"):
+            return None
+
+        return key
+
+    def get_model(self, task: str = "default", provider: Optional[str] = None) -> str:
+        """Get model name for a specific task and provider.
+
+        Args:
+            task: Task type (default, summarization, analysis, etc.)
+            provider: Provider name (uses default if not specified)
+
+        Returns:
+            Model name string
+        """
+        provider = provider or self.provider
+
+        # Try provider-specific model first
+        provider_task = f"{provider}_{task}"
+        if provider_task in self.models:
+            return self.models[provider_task]
+
+        # Fall back to general task model
+        return self.models.get(task, self.models["default"])
+
+    def to_litellm_params(self) -> Dict[str, Any]:
+        """Convert to parameters for LiteLLM library.
+
+        Returns:
+            Dictionary of parameters compatible with LiteLLM
+        """
+        params = {
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+            "max_tokens": self.max_tokens_per_request,
+            "timeout": self.timeout,
+            "stream": self.stream,
+        }
+
+        # Add API key if available
+        api_key = self.get_api_key()
+        if api_key:
+            params["api_key"] = api_key
+
+        # Add custom base URL if specified
+        if self.provider in self.api_base_urls:
+            params["api_base"] = self.api_base_urls[self.provider]
+
+        # Add organization/project IDs if specified
+        if self.organization_id:
+            params["organization"] = self.organization_id
+        if self.project_id:
+            params["project"] = self.project_id
+
+        # Add custom headers
+        if self.custom_headers:
+            params["extra_headers"] = self.custom_headers
+
+        return params
 
 
 @dataclass
@@ -128,8 +376,8 @@ class SummarizerConfig:
         enable_cache: Whether to cache summaries
         preserve_code_structure: Whether to preserve imports/signatures in code
         max_cache_size: Maximum number of cached summaries
-        llm_provider: LLM provider for LLM mode (openai, anthropic, openrouter)
-        llm_model: LLM model to use
+        llm_provider: LLM provider for LLM mode (uses global LLM config)
+        llm_model: LLM model to use (uses global LLM config)
         llm_temperature: LLM sampling temperature
         llm_max_tokens: Maximum tokens for LLM response
         enable_ml_strategies: Whether to enable ML-based strategies
@@ -142,8 +390,8 @@ class SummarizerConfig:
     enable_cache: bool = True
     preserve_code_structure: bool = True
     max_cache_size: int = 100
-    llm_provider: str = "openai"
-    llm_model: str = "gpt-3.5-turbo"
+    llm_provider: Optional[str] = None  # Uses global LLM config if not specified
+    llm_model: Optional[str] = None  # Uses global LLM config if not specified
     llm_temperature: float = 0.3
     llm_max_tokens: int = 500
     enable_ml_strategies: bool = True
@@ -193,6 +441,8 @@ class CacheConfig:
         memory_cache_size: Number of items in memory cache
         sqlite_pragmas: SQLite performance settings
         max_age_hours: Max age for certain cached entries (used by analyzer)
+        llm_cache_enabled: Whether to cache LLM responses
+        llm_cache_ttl_hours: TTL for LLM response cache
     """
 
     enabled: bool = True
@@ -210,6 +460,8 @@ class CacheConfig:
         }
     )
     max_age_hours: int = 24
+    llm_cache_enabled: bool = True
+    llm_cache_ttl_hours: int = 24
 
 
 @dataclass
@@ -227,6 +479,8 @@ class OutputConfig:
         compression_threshold: File size threshold for summarization
         summary_ratio: Target compression ratio for summaries
         copy_on_distill: Automatically copy distill output to clipboard when true
+        show_token_usage: Whether to show token usage statistics
+        show_cost_estimate: Whether to show cost estimates for LLM operations
     """
 
     default_format: str = "markdown"
@@ -237,6 +491,8 @@ class OutputConfig:
     compression_threshold: int = 10_000  # Characters
     summary_ratio: float = 0.25  # Target 25% of original size
     copy_on_distill: bool = False  # Automatically copy distill output to clipboard when true
+    show_token_usage: bool = True
+    show_cost_estimate: bool = True
 
 
 @dataclass
@@ -268,7 +524,7 @@ class GitConfig:
 
 @dataclass
 class TenetsConfig:
-    """Main configuration for the Tenets system.
+    """Main configuration for the Tenets system with LLM support.
 
     This is the root configuration object that contains all subsystem configs
     and global settings. It handles loading from files, environment variables,
@@ -288,6 +544,7 @@ class TenetsConfig:
         cache: Cache subsystem configuration
         output: Output formatting configuration
         git: Git integration configuration
+        llm: LLM integration configuration
         custom: Custom user configuration
     """
 
@@ -307,6 +564,7 @@ class TenetsConfig:
     cache: CacheConfig = field(default_factory=CacheConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     git: GitConfig = field(default_factory=GitConfig)
+    llm: LLMConfig = field(default_factory=LLMConfig)  # New LLM configuration
 
     # Custom configuration
     custom: Dict[str, Any] = field(default_factory=dict)
@@ -419,7 +677,7 @@ class TenetsConfig:
         self._logger.info(f"Loading configuration from {path}")
 
         try:
-            with open(path, "r") as f:
+            with open(path) as f:
                 if path.suffix in [".yml", ".yaml"]:
                     data = yaml.safe_load(f) or {}
                 elif path.suffix == ".json":
@@ -459,6 +717,8 @@ class TenetsConfig:
                 self.output = OutputConfig(**value)
             elif key == "git" and isinstance(value, dict):
                 self.git = GitConfig(**value)
+            elif key == "llm" and isinstance(value, dict):
+                self.llm = LLMConfig(**value)
             elif key == "custom" and isinstance(value, dict):
                 self.custom = value
             elif hasattr(self, key):
@@ -478,7 +738,9 @@ class TenetsConfig:
             TENETS_MAX_TOKENS=150000
             TENETS_SCANNER_MAX_FILE_SIZE=10000000
             TENETS_RANKING_ALGORITHM=thorough
-            TENETS_SUMMARIZER_DEFAULT_MODE=extractive
+            TENETS_LLM_ENABLED=true
+            TENETS_LLM_PROVIDER=anthropic
+            TENETS_LLM_API_KEYS_OPENAI=sk-...
         """
         for env_key, env_value in os.environ.items():
             if not env_key.startswith("TENETS_"):
@@ -511,6 +773,20 @@ class TenetsConfig:
                         setattr(self, attr, self._parse_env_value(env_value))
                 elif len(parts_lower) >= 2:
                     subsystem = parts_lower[0]
+
+                    # Special handling for LLM API keys
+                    if (
+                        subsystem == "llm"
+                        and len(parts_lower) >= 3
+                        and parts_lower[1] == "api"
+                        and parts_lower[2] == "keys"
+                    ):
+                        if len(parts_lower) == 4:
+                            provider = parts_lower[3]
+                            self.llm.api_keys[provider] = env_value
+                            continue
+
+                    # Regular subsystem attributes
                     attr = "_".join(parts_lower[1:])
                     if hasattr(self, subsystem):
                         subsystem_config = getattr(self, subsystem)
@@ -647,6 +923,7 @@ class TenetsConfig:
             "cache": asdict(self.cache),
             "output": asdict(self.output),
             "git": asdict(self.git),
+            "llm": asdict(self.llm),
             "custom": self.custom,
         }
         return _as_serializable(data)
@@ -678,7 +955,7 @@ class TenetsConfig:
 
         self._logger.info(f"Configuration saved to {save_path}")
 
-    # Properties for compatibility
+    # Properties for compatibility and convenience
     @property
     def cache_dir(self) -> Path:
         """Get the cache directory path."""
@@ -686,6 +963,11 @@ class TenetsConfig:
 
     @cache_dir.setter
     def cache_dir(self, value: Union[str, Path]) -> None:
+        """Set the cache directory path.
+
+        Args:
+            value: New cache directory path
+        """
         path = Path(value).resolve()
         self.cache.directory = path
         path.mkdir(parents=True, exist_ok=True)
@@ -723,6 +1005,11 @@ class TenetsConfig:
 
     @respect_gitignore.setter
     def respect_gitignore(self, value: bool) -> None:
+        """Set whether to respect .gitignore files.
+
+        Args:
+            value: New value
+        """
         self.scanner.respect_gitignore = bool(value)
 
     @property
@@ -732,6 +1019,11 @@ class TenetsConfig:
 
     @follow_symlinks.setter
     def follow_symlinks(self, value: bool) -> None:
+        """Set whether to follow symbolic links.
+
+        Args:
+            value: New value
+        """
         self.scanner.follow_symlinks = bool(value)
 
     @property
@@ -741,6 +1033,11 @@ class TenetsConfig:
 
     @additional_ignore_patterns.setter
     def additional_ignore_patterns(self, patterns: List[str]) -> None:
+        """Set additional ignore patterns.
+
+        Args:
+            patterns: New patterns list
+        """
         self.scanner.additional_ignore_patterns = list(patterns)
 
     @property
@@ -750,6 +1047,11 @@ class TenetsConfig:
 
     @auto_instill_tenets.setter
     def auto_instill_tenets(self, value: bool) -> None:
+        """Set whether to automatically instill tenets.
+
+        Args:
+            value: New value
+        """
         self.tenet.auto_instill = bool(value)
 
     @property
@@ -759,6 +1061,11 @@ class TenetsConfig:
 
     @max_tenets_per_context.setter
     def max_tenets_per_context(self, value: int) -> None:
+        """Set maximum tenets to inject per context.
+
+        Args:
+            value: New value
+        """
         self.tenet.max_per_context = int(value)
 
     @property
@@ -778,6 +1085,11 @@ class TenetsConfig:
 
     @cache_ttl_days.setter
     def cache_ttl_days(self, value: int) -> None:
+        """Set cache time-to-live in days.
+
+        Args:
+            value: New TTL in days
+        """
         self.cache.ttl_days = int(value)
 
     @property
@@ -787,4 +1099,60 @@ class TenetsConfig:
 
     @max_cache_size_mb.setter
     def max_cache_size_mb(self, value: int) -> None:
+        """Set maximum cache size in megabytes.
+
+        Args:
+            value: New size in MB
+        """
         self.cache.max_size_mb = int(value)
+
+    @property
+    def llm_enabled(self) -> bool:
+        """Whether LLM features are enabled."""
+        return self.llm.enabled
+
+    @llm_enabled.setter
+    def llm_enabled(self, value: bool) -> None:
+        """Set whether LLM features are enabled.
+
+        Args:
+            value: New value
+        """
+        self.llm.enabled = bool(value)
+
+    @property
+    def llm_provider(self) -> str:
+        """Get the current LLM provider."""
+        return self.llm.provider
+
+    @llm_provider.setter
+    def llm_provider(self, value: str) -> None:
+        """Set the LLM provider.
+
+        Args:
+            value: Provider name
+        """
+        self.llm.provider = value
+
+    def get_llm_api_key(self, provider: Optional[str] = None) -> Optional[str]:
+        """Get LLM API key for a provider.
+
+        Args:
+            provider: Provider name (uses default if not specified)
+
+        Returns:
+            API key or None
+        """
+        return self.llm.get_api_key(provider)
+
+    def get_llm_model(self, task: str = "default", provider: Optional[str] = None) -> str:
+        """Get LLM model for a specific task.
+
+        Args:
+            task: Task type
+            provider: Provider name (uses default if not specified)
+
+        Returns:
+            Model name
+        """
+        return self.llm.get_model(task, provider)
