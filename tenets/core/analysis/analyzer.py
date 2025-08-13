@@ -324,7 +324,7 @@ class CodeAnalyzer:
 
     def analyze_files(
         self,
-    file_paths: list[Path],
+        file_paths: list[Path],
         deep: bool = False,
         parallel: bool = True,
         progress_callback: Optional[Callable] = None,
@@ -380,8 +380,8 @@ class CodeAnalyzer:
     def analyze_project(
         self,
         project_path: Path,
-    patterns: Optional[list[str]] = None,
-    exclude_patterns: Optional[list[str]] = None,
+        patterns: Optional[list[str]] = None,
+        exclude_patterns: Optional[list[str]] = None,
         deep: bool = True,
         parallel: bool = True,
         progress_callback: Optional[Callable] = None,
@@ -438,7 +438,7 @@ class CodeAnalyzer:
 
     def generate_report(
         self,
-    analysis: Union[FileAnalysis, ProjectAnalysis, list[FileAnalysis]],
+        analysis: Union[FileAnalysis, ProjectAnalysis, list[FileAnalysis]],
         format: str = "json",
         output_path: Optional[Path] = None,
     ) -> AnalysisReport:
@@ -1255,28 +1255,32 @@ class CodeAnalyzer:
         writer = csv.writer(output)
 
         if isinstance(analysis, ProjectAnalysis):
-            writer.writerow([
-                "File",
-                "Language",
-                "Lines",
-                "Complexity",
-                "Functions",
-                "Classes",
-                "Quality Score",
-            ])
+            writer.writerow(
+                [
+                    "File",
+                    "Language",
+                    "Lines",
+                    "Complexity",
+                    "Functions",
+                    "Classes",
+                    "Quality Score",
+                ]
+            )
 
             for file_analysis in analysis.files:
                 if file_analysis.error:
                     continue
-                writer.writerow([
-                    file_analysis.file_name,
-                    file_analysis.language,
-                    file_analysis.lines,
-                    file_analysis.complexity.cyclomatic if file_analysis.complexity else 0,
-                    len(file_analysis.functions) if file_analysis.functions else 0,
-                    len(file_analysis.classes) if file_analysis.classes else 0,
-                    getattr(file_analysis, "quality_score", 0),
-                ])
+                writer.writerow(
+                    [
+                        file_analysis.file_name,
+                        file_analysis.language,
+                        file_analysis.lines,
+                        file_analysis.complexity.cyclomatic if file_analysis.complexity else 0,
+                        len(file_analysis.functions) if file_analysis.functions else 0,
+                        len(file_analysis.classes) if file_analysis.classes else 0,
+                        getattr(file_analysis, "quality_score", 0),
+                    ]
+                )
 
         return output.getvalue()
 
