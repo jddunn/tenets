@@ -8,10 +8,10 @@ import hashlib
 import json
 import pickle
 import sqlite3
+from contextlib import suppress
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Dict
-from contextlib import suppress
+from typing import Any, Callable, Dict, Optional, TypeVar
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis

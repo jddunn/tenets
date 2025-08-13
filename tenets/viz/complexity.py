@@ -12,13 +12,13 @@ from typing import Any, Dict, List, Optional, Tuple
 from tenets.utils.logger import get_logger
 
 from .base import (
+    MATPLOTLIB_AVAILABLE,
+    PLOTLY_AVAILABLE,
     ColorScheme,
     VisualizationBase,
     VisualizationFormat,
     format_size,
     truncate_text,
-    MATPLOTLIB_AVAILABLE,
-    PLOTLY_AVAILABLE,
 )
 
 
@@ -394,9 +394,10 @@ class ComplexityHeatmap(VisualizationBase):
         if not MATPLOTLIB_AVAILABLE:
             return super()._render_svg(width, height, dpi)
 
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
         from io import StringIO
+
+        import matplotlib.patches as patches
+        import matplotlib.pyplot as plt
 
         # Create figure
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(width / dpi, height / dpi), dpi=dpi)

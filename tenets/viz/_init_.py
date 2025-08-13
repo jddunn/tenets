@@ -35,13 +35,6 @@ from .base import (
     format_size,
     truncate_text,
 )
-
-from .dependencies import (
-    DependencyGraph,
-    DependencyNode,
-    create_dependency_graph,
-)
-
 from .complexity import (
     ComplexityHeatmap,
     ComplexityMetrics,
@@ -49,19 +42,22 @@ from .complexity import (
     analyze_complexity_trends,
     create_complexity_heatmap,
 )
-
-from .coupling import (
-    CouplingGraph,
-    FileCoupling,
-    FileChangeHistory,
-    analyze_coupling_from_git,
-)
-
 from .contributors import (
     ContributorGraph,
     ContributorStats,
     TeamDynamics,
     analyze_contributors,
+)
+from .coupling import (
+    CouplingGraph,
+    FileChangeHistory,
+    FileCoupling,
+    analyze_coupling_from_git,
+)
+from .dependencies import (
+    DependencyGraph,
+    DependencyNode,
+    create_dependency_graph,
 )
 
 # Version info
@@ -454,8 +450,8 @@ def viz_from_cli(args: Dict[str, Any]) -> int:
     # Load data based on type
     if viz_type in ["deps", "dependencies", "complexity"]:
         # Need file analysis
-        from tenets.core.analysis import CodeAnalyzer
         from tenets.config import TenetsConfig
+        from tenets.core.analysis import CodeAnalyzer
 
         config = TenetsConfig()
         analyzer = CodeAnalyzer(config)
