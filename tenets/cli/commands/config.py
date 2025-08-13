@@ -190,10 +190,10 @@ def config_set(
     try:
         # Load current config
         config = TenetsConfig()
-        
+
         # Parse the key path
         parts = key.split(".")
-        
+
         # Navigate to the parent object
         obj = config
         for part in parts[:-1]:
@@ -202,7 +202,7 @@ def config_set(
             else:
                 console.print(f"[red]Invalid configuration key: {key}[/red]")
                 raise typer.Exit(1)
-        
+
         # Set the value
         attr_name = parts[-1]
         if hasattr(obj, attr_name):
@@ -218,10 +218,10 @@ def config_set(
                 parsed_value = value.split(",")
             else:
                 parsed_value = value
-            
+
             setattr(obj, attr_name, parsed_value)
             console.print(f"[green]✓[/green] Set {key} = {parsed_value}")
-            
+
             # Save if requested
             if save:
                 config_file = config.config_file or Path(".tenets.yml")
@@ -230,7 +230,7 @@ def config_set(
         else:
             console.print(f"[red]Invalid configuration attribute: {attr_name}[/red]")
             raise typer.Exit(1)
-            
+
     except Exception as e:
         console.print(f"[red]Error setting configuration:[/red] {str(e)}")
         raise typer.Exit(1)
@@ -256,12 +256,12 @@ def config_validate(
                 console.print(f"[green]✓[/green] Configuration file {config.config_file} is valid")
             else:
                 console.print("[green]✓[/green] Using default configuration (no config file)")
-        
+
         # Show key settings
         table = Table(title="Key Configuration Settings")
         table.add_column("Setting", style="cyan")
         table.add_column("Value", style="green")
-        
+
         table.add_row("Max Tokens", str(config.max_tokens))
         table.add_row("Ranking Algorithm", config.ranking.algorithm)
         table.add_row("Ranking Threshold", f"{config.ranking.threshold:.2f}")
@@ -270,9 +270,9 @@ def config_validate(
         table.add_row("Cache Enabled", str(config.cache.enabled))
         table.add_row("Git Enabled", str(config.git.enabled))
         table.add_row("Auto-instill Tenets", str(config.tenet.auto_instill))
-        
+
         console.print(table)
-        
+
     except Exception as e:
         console.print(f"[red]✗[/red] Configuration validation failed: {str(e)}")
         raise typer.Exit(1)
@@ -319,19 +319,19 @@ def config_cache_stats():
     if not cache_dir.exists():
         console.print("[dim]Cache directory does not exist.[/dim]")
         return
-    
+
     # Gather statistics
     total_size = 0
     file_count = 0
     cache_types = {"analysis": 0, "summary": 0, "other": 0}
-    
+
     for p in cache_dir.rglob("*"):
         if p.is_file():
             file_count += 1
             try:
                 size = p.stat().st_size
                 total_size += size
-                
+
                 # Categorize cache files
                 if "analysis" in str(p):
                     cache_types["analysis"] += size
@@ -341,14 +341,14 @@ def config_cache_stats():
                     cache_types["other"] += size
             except Exception:
                 pass
-    
+
     mb = total_size / (1024 * 1024)
-    
+
     # Create statistics table
     table = Table(title="Cache Statistics", show_header=True, header_style="bold cyan")
     table.add_column("Metric", style="dim")
     table.add_column("Value", justify="right")
-    
+
     table.add_row("Cache Path", str(cache_dir))
     table.add_row("Total Files", str(file_count))
     table.add_row("Total Size", f"{mb:.2f} MB")
@@ -357,7 +357,7 @@ def config_cache_stats():
     table.add_row("Other Cache", f"{cache_types['other'] / (1024 * 1024):.2f} MB")
     table.add_row("TTL Days", str(cfg.cache.ttl_days))
     table.add_row("Max Size MB", str(cfg.cache.max_size_mb))
-    
+
     console.print(table)
 
 
@@ -391,77 +391,77 @@ def _show_model_info():
 def _show_summarizer_info():
     """Display information about summarization strategies."""
     from rich.table import Table
-    
+
     table = Table(title="Summarization Strategies")
     table.add_column("Strategy", style="cyan")
     table.add_column("Description", style="white")
     table.add_column("Speed", style="green")
     table.add_column("Quality", style="yellow")
     table.add_column("Requirements", style="red")
-    
+
     strategies = [
         {
             "name": "extractive",
             "description": "Selects important sentences",
             "speed": "Fast",
             "quality": "Good",
-            "requirements": "None"
+            "requirements": "None",
         },
         {
             "name": "compressive",
             "description": "Removes redundant content",
             "speed": "Fast",
             "quality": "Good",
-            "requirements": "None"
+            "requirements": "None",
         },
         {
             "name": "textrank",
             "description": "Graph-based ranking",
             "speed": "Medium",
             "quality": "Very Good",
-            "requirements": "None"
+            "requirements": "None",
         },
         {
             "name": "transformer",
             "description": "Neural summarization",
             "speed": "Slow",
             "quality": "Excellent",
-            "requirements": "pip install tenets[ml]"
+            "requirements": "pip install tenets[ml]",
         },
         {
             "name": "llm",
             "description": "LLM-based (GPT, Claude)",
             "speed": "Slow",
             "quality": "Best",
-            "requirements": "API key + costs $"
+            "requirements": "API key + costs $",
         },
         {
             "name": "auto",
             "description": "Auto-selects best strategy",
             "speed": "Varies",
             "quality": "Adaptive",
-            "requirements": "None"
-        }
+            "requirements": "None",
+        },
     ]
-    
+
     for strategy in strategies:
         table.add_row(
             strategy["name"],
             strategy["description"],
             strategy["speed"],
             strategy["quality"],
-            strategy["requirements"]
+            strategy["requirements"],
         )
-    
+
     console.print(table)
-    
+
     console.print("\n[bold]Configuration:[/bold]")
     console.print("Set in .tenets.yml under 'summarizer' section:")
     console.print("  default_mode: auto")
     console.print("  target_ratio: 0.3")
     console.print("  llm_provider: openai")
     console.print("  llm_model: gpt-3.5-turbo")
-    
+
     console.print("\n[bold]Environment Variables:[/bold]")
     console.print("  TENETS_SUMMARIZER_DEFAULT_MODE=extractive")
     console.print("  TENETS_SUMMARIZER_TARGET_RATIO=0.25")
@@ -482,16 +482,16 @@ def config_export(
     """
     try:
         config = TenetsConfig()
-        
+
         # Ensure correct extension
         if format == "json" and not output.suffix == ".json":
             output = output.with_suffix(".json")
         elif format == "yaml" and output.suffix not in [".yml", ".yaml"]:
             output = output.with_suffix(".yml")
-        
+
         config.save(output)
         console.print(f"[green]✓[/green] Configuration exported to {output}")
-        
+
     except Exception as e:
         console.print(f"[red]Error exporting configuration:[/red] {str(e)}")
         raise typer.Exit(1)
@@ -516,28 +516,29 @@ def config_diff(
         else:
             config1 = TenetsConfig()
             label1 = "Current"
-        
+
         if file2:
             config2 = TenetsConfig(config_file=file2)
             label2 = str(file2)
         else:
             # Create default config for comparison
             from tempfile import NamedTemporaryFile
-            with NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+
+            with NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
                 # Empty file gives defaults
                 f.write("")
                 temp_path = Path(f.name)
             config2 = TenetsConfig(config_file=temp_path)
             temp_path.unlink()
             label2 = "Defaults"
-        
+
         # Get dictionaries
         dict1 = config1.to_dict()
         dict2 = config2.to_dict()
-        
+
         # Find differences
         differences = _find_differences(dict1, dict2)
-        
+
         if not differences:
             console.print(f"[green]No differences between {label1} and {label2}[/green]")
         else:
@@ -545,12 +546,12 @@ def config_diff(
             table.add_column("Key", style="cyan")
             table.add_column(label1, style="yellow")
             table.add_column(label2, style="green")
-            
+
             for key, val1, val2 in differences:
                 table.add_row(key, str(val1), str(val2))
-            
+
             console.print(table)
-            
+
     except Exception as e:
         console.print(f"[red]Error comparing configurations:[/red] {str(e)}")
         raise typer.Exit(1)
@@ -559,18 +560,18 @@ def config_diff(
 def _find_differences(dict1: dict, dict2: dict, prefix: str = "") -> list:
     """Find differences between two dictionaries recursively."""
     differences = []
-    
+
     all_keys = set(dict1.keys()) | set(dict2.keys())
-    
+
     for key in sorted(all_keys):
         full_key = f"{prefix}.{key}" if prefix else key
         val1 = dict1.get(key)
         val2 = dict2.get(key)
-        
+
         if isinstance(val1, dict) and isinstance(val2, dict):
             # Recurse into nested dicts
             differences.extend(_find_differences(val1, val2, full_key))
         elif val1 != val2:
             differences.append((full_key, val1, val2))
-    
+
     return differences
