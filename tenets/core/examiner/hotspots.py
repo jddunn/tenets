@@ -605,7 +605,9 @@ class HotspotDetector:
             f
             for f, count in change_data["coupled_files"].items()
             if count >= 3  # Minimum coupling threshold
-        ][:10]  # Top 10 coupled files
+        ][
+            :10
+        ]  # Top 10 coupled files
 
         # Add recent commits
         hotspot.recent_commits = sorted(

@@ -751,9 +751,7 @@ class ReportGenerator:
             icon = (
                 "🚨"
                 if rec["priority"] == "critical"
-                else "⚠️"
-                if rec["priority"] == "high"
-                else "💡"
+                else "⚠️" if rec["priority"] == "high" else "💡"
             )
             content.append(f"{icon} **{rec['action']}**")
             content.append(f"   Impact: {rec['impact']}")
