@@ -14,8 +14,8 @@ from tenets.utils.logger import get_logger
 
 # Try to import visualization libraries
 try:
-    import matplotlib.pyplot as plt
     import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
 
     MATPLOTLIB_AVAILABLE = True
 except ImportError:

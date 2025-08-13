@@ -14,13 +14,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from tenets.utils.logger import get_logger
 
 from .base import (
+    MATPLOTLIB_AVAILABLE,
+    PLOTLY_AVAILABLE,
     ColorScheme,
     VisualizationBase,
     VisualizationFormat,
     format_size,
     truncate_text,
-    MATPLOTLIB_AVAILABLE,
-    PLOTLY_AVAILABLE,
 )
 
 
@@ -505,8 +505,9 @@ class ContributorGraph(VisualizationBase):
         if not MATPLOTLIB_AVAILABLE:
             return super()._render_svg(width, height, dpi)
 
-        import matplotlib.pyplot as plt
         from io import StringIO
+
+        import matplotlib.pyplot as plt
 
         # Create figure with subplots
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(

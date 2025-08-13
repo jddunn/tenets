@@ -14,15 +14,15 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from tenets.utils.logger import get_logger
 
 from .base import (
+    MATPLOTLIB_AVAILABLE,
+    NETWORKX_AVAILABLE,
+    PLOTLY_AVAILABLE,
     ColorScheme,
     VisualizationBase,
     VisualizationFormat,
     create_graph_layout,
     format_size,
     truncate_text,
-    MATPLOTLIB_AVAILABLE,
-    NETWORKX_AVAILABLE,
-    PLOTLY_AVAILABLE,
 )
 
 
@@ -413,9 +413,10 @@ class DependencyGraph(VisualizationBase):
         if not MATPLOTLIB_AVAILABLE:
             return super()._render_svg(width, height, dpi)
 
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as mpatches
         from io import StringIO
+
+        import matplotlib.patches as mpatches
+        import matplotlib.pyplot as plt
 
         # Create figure
         fig, ax = plt.subplots(figsize=(width / dpi, height / dpi), dpi=dpi)

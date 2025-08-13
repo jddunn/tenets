@@ -14,14 +14,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from tenets.utils.logger import get_logger
 
 from .base import (
+    MATPLOTLIB_AVAILABLE,
+    NETWORKX_AVAILABLE,
+    PLOTLY_AVAILABLE,
     ColorScheme,
     VisualizationBase,
     VisualizationFormat,
     create_graph_layout,
     truncate_text,
-    MATPLOTLIB_AVAILABLE,
-    NETWORKX_AVAILABLE,
-    PLOTLY_AVAILABLE,
 )
 
 
@@ -471,8 +471,9 @@ class CouplingGraph(VisualizationBase):
         if not MATPLOTLIB_AVAILABLE:
             return super()._render_svg(width, height, dpi)
 
-        import matplotlib.pyplot as plt
         from io import StringIO
+
+        import matplotlib.pyplot as plt
 
         # Create figure
         fig, ax = plt.subplots(figsize=(width / dpi, height / dpi), dpi=dpi)
