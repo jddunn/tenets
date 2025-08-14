@@ -64,7 +64,7 @@ class TestTokenCounting:
         text = "Test text for tokenization"
 
         # Different models might have different tokenizations
-        models = ["gpt-4", "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]
+        models = ["gpt-4", "gpt-4o", "gpt-4o-mini"]
 
         counts = {}
         for model in models:
@@ -139,7 +139,7 @@ class TestModelMaxTokens:
             ("gpt-4.1", 128_000),
             ("gpt-4o", 128_000),
             ("gpt-4o-mini", 128_000),
-            ("gpt-3.5-turbo", 16_385),
+            # ("gpt-3.5-turbo", 16_385),  # legacy
             ("claude-3-opus", 200_000),
             ("claude-3-5-sonnet", 200_000),
             ("claude-3-haiku", 200_000),

@@ -261,8 +261,9 @@
    COPY CODE BUTTON - POSITIONED BELOW
    ===================================================== */
 
-.terminal-copy,
-.copy-btn {
+.quickstart-terminal .copy-btn,
+.installation-terminal .copy-btn,
+.terminal .terminal-copy {
   position: absolute;
   bottom: -35px; /* Position below terminal */
   right: 1rem;
@@ -282,20 +283,23 @@
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 
-.terminal-copy:hover,
-.copy-btn:hover {
+.quickstart-terminal .copy-btn:hover,
+.installation-terminal .copy-btn:hover,
+.terminal .terminal-copy:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
-.terminal-copy.copied,
-.copy-btn.copied {
+.quickstart-terminal .copy-btn.copied,
+.installation-terminal .copy-btn.copied,
+.terminal .terminal-copy.copied {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   color: white;
 }
 
-.terminal-copy.copied::after,
-.copy-btn.copied::after {
+.quickstart-terminal .copy-btn.copied::after,
+.installation-terminal .copy-btn.copied::after,
+.terminal .terminal-copy.copied::after {
   content: ' ✓';
 }
 
@@ -504,8 +508,9 @@
     max-height: 400px;
   }
   
-  .terminal-copy,
-  .copy-btn {
+  .quickstart-terminal .copy-btn,
+  .installation-terminal .copy-btn,
+  .terminal .terminal-copy {
     bottom: -30px;
     right: 0.5rem;
     padding: 0.25rem 0.5rem;

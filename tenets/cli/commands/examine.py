@@ -1,369 +1,296 @@
-"""Examine command - analyze codebase structure and health."""
+"""Examine command implementation.
 
-import json
+This command provides comprehensive code examination including complexity
+analysis, metrics calculation, and quality assessment.
+"""
+
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-import typer
-from rich import print
-from rich.console import Console
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.table import Table
-from rich.tree import Tree
+import click
 
-from tenets import Tenets
+from tenets.core.examiner import (
+    CodeExaminer,
+    HotspotDetector,
+    OwnershipAnalyzer,
+)
+from tenets.core.reporting import ReportGenerator
+from tenets.utils.logger import get_logger
+from tenets.viz import ComplexityVisualizer, HotspotVisualizer, TerminalDisplay
 
-console = Console()
 
-
+@click.command()
+@click.argument("path", type=click.Path(exists=True), default=".")
+@click.option("--output", "-o", type=click.Path(), help="Output file for report")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["terminal", "html", "json", "markdown"]),
+    default="terminal",
+    help="Output format",
+)
+@click.option(
+    "--metrics",
+    "-m",
+    multiple=True,
+    help="Specific metrics to calculate (complexity, duplication, etc.)",
+)
+@click.option(
+    "--threshold", "-t", type=int, default=10, help="Complexity threshold for flagging issues"
+)
+@click.option("--include", "-i", multiple=True, help="File patterns to include")
+@click.option("--exclude", "-e", multiple=True, help="File patterns to exclude")
+@click.option("--max-depth", type=int, default=5, help="Maximum directory depth")
+@click.option("--show-details", is_flag=True, help="Show detailed breakdown")
+@click.option("--hotspots", is_flag=True, help="Include hotspot analysis")
+@click.option("--ownership", is_flag=True, help="Include ownership analysis")
+@click.pass_context
 def examine(
-    path: Path = typer.Argument(Path("."), help="Path to examine (directory or file)"),
-    # Analysis options
-    deep: bool = typer.Option(False, "--deep", "-d", help="Perform deep analysis with AST parsing"),
-    # Output options
-    output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Save analysis results to file"
-    ),
-    format: str = typer.Option(
-        "table", "--format", "-f", help="Output format: table (default), json, yaml"
-    ),
-    # What to show
-    metrics: bool = typer.Option(False, "--metrics", help="Show detailed code metrics"),
-    complexity: bool = typer.Option(False, "--complexity", help="Show complexity analysis"),
-    ownership: bool = typer.Option(False, "--ownership", help="Show code ownership (requires git)"),
-    hotspots: bool = typer.Option(
-        False, "--hotspots", help="Show code hotspots (frequently changed files)"
-    ),
-    structure: bool = typer.Option(False, "--structure", help="Show directory structure"),
-    # Git options
-    no_git: bool = typer.Option(False, "--no-git", help="Disable git analysis"),
-    # Context
-    ctx: typer.Context = typer.Context,
+    ctx,
+    path: str,
+    output: Optional[str],
+    format: str,
+    metrics: List[str],
+    threshold: int,
+    include: List[str],
+    exclude: List[str],
+    max_depth: int,
+    show_details: bool,
+    hotspots: bool,
+    ownership: bool,
 ):
-    """
-    Examine codebase structure, complexity, and health.
+    """Examine code quality and complexity.
 
-    Provides detailed analysis of your code including metrics, dependencies,
-    complexity scores, and potential issues.
+    Performs comprehensive code analysis including complexity metrics,
+    code quality assessment, and optional hotspot detection.
 
     Examples:
-
-        # Basic examination
         tenets examine
-
-        # Deep analysis with metrics
-        tenets examine ./src --deep --metrics
-
-        # Show complexity and hotspots
-        tenets examine --complexity --hotspots
-
-        # Export full analysis
-        tenets examine --output analysis.json --format json
-
-        # Show code ownership
-        tenets examine --ownership --no-git
+        tenets examine src/ --format=html --output=report.html
+        tenets examine --metrics=complexity --threshold=15
+        tenets examine --hotspots --show-details
     """
-    verbose = ctx.obj.get("verbose", False)
-    quiet = ctx.obj.get("quiet", False)
+    logger = get_logger(__name__)
+    config = ctx.obj["config"]
+
+    # Initialize path
+    target_path = Path(path).resolve()
+    logger.info(f"Examining code at: {target_path}")
+
+    # Initialize examiner
+    examiner = CodeExaminer(config)
+
+    # Configure examination options
+    exam_options = {
+        "threshold": threshold,
+        "max_depth": max_depth,
+        "include_patterns": list(include) if include else None,
+        "exclude_patterns": list(exclude) if exclude else None,
+        "calculate_metrics": list(metrics) if metrics else ["all"],
+        "include_hotspots": hotspots,
+        "include_ownership": ownership,
+    }
 
     try:
-        tenets = Tenets()
+        # Perform examination
+        logger.info("Starting code examination...")
+        examination_results = examiner.examine(target_path, **exam_options)
 
-        # Run analysis
-        if not quiet:
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                console=console,
-                transient=True,
-            ) as progress:
-                progress.add_task(f"Examining {path}...", total=None)
-
-                result = tenets.examine(
-                    path=path, deep=deep, include_git=not no_git, output_metadata=True
-                )
-        else:
-            result = tenets.examine(
-                path=path, deep=deep, include_git=not no_git, output_metadata=True
+        # Add specialized analysis if requested
+        if hotspots:
+            logger.info("Performing hotspot analysis...")
+            hotspot_detector = HotspotDetector(config)
+            examination_results["hotspots"] = hotspot_detector.detect_hotspots(
+                target_path, threshold=threshold
             )
 
-        # Format output based on requested format
-        if format == "table":
-            _display_analysis_table(result, quiet)
+        if ownership:
+            logger.info("Analyzing code ownership...")
+            ownership_analyzer = OwnershipAnalyzer(config)
+            examination_results["ownership"] = ownership_analyzer.analyze_ownership(target_path)
 
-            if metrics:
-                _display_metrics_table(result)
-
-            if complexity:
-                _display_complexity_table(result)
-
-            if ownership and result.git_analysis:
-                _display_ownership_table(result.git_analysis)
-
-            if hotspots and result.git_analysis:
-                _display_hotspots_table(result.git_analysis)
-
-            if structure:
-                _display_structure_tree(result)
-
+        # Display or save results based on format
+        if format == "terminal":
+            _display_terminal_results(examination_results, show_details)
         elif format == "json":
-            output_data = result.to_dict()
-            if output:
-                output.write_text(json.dumps(output_data, indent=2))
-                if not quiet:
-                    console.print(f"[green]✓[/green] Analysis saved to {output}")
-            else:
-                console.print_json(data=output_data)
+            _output_json_results(examination_results, output)
+        else:
+            # Generate report using viz modules
+            _generate_report(examination_results, format, output, config)
 
-        elif format == "yaml":
-            import yaml
-
-            output_data = result.to_dict()
-            yaml_str = yaml.dump(output_data, default_flow_style=False, sort_keys=False)
-            if output:
-                output.write_text(yaml_str)
-                if not quiet:
-                    console.print(f"[green]✓[/green] Analysis saved to {output}")
-            else:
-                console.print(yaml_str)
+        # Summary
+        _print_summary(examination_results)
 
     except Exception as e:
-        console.print(f"[red]Error:[/red] {str(e)}")
-        if verbose:
-            console.print_exception()
-        raise typer.Exit(1)
+        logger.error(f"Examination failed: {e}")
+        raise click.ClickException(str(e))
 
 
-def _display_analysis_table(analysis, quiet: bool = False):
-    """Display main analysis results in a table."""
-    if not quiet:
-        console.print(
-            Panel(
-                f"[bold]Codebase Examination Results[/bold]\n" f"Root: {analysis.root_path}",
-                title="📊 Analysis Summary",
-                border_style="blue",
+def _display_terminal_results(results: Dict[str, Any], show_details: bool) -> None:
+    """Display results in terminal using viz modules.
+
+    Args:
+        results: Examination results
+        show_details: Whether to show detailed breakdown
+    """
+    display = TerminalDisplay()
+
+    # Display header
+    display.display_header(
+        "Code Examination Results",
+        subtitle=f"Files analyzed: {results.get('total_files', 0)}",
+        style="double",
+    )
+
+    # Display complexity analysis if available
+    if "complexity" in results:
+        complexity_viz = ComplexityVisualizer()
+        complexity_viz.display_terminal(results["complexity"], show_details)
+
+    # Display hotspots if available
+    if "hotspots" in results:
+        hotspot_viz = HotspotVisualizer()
+        hotspot_viz.display_terminal(results["hotspots"], show_details)
+
+    # Display ownership if available
+    if "ownership" in results:
+        _display_ownership_results(results["ownership"], display, show_details)
+
+    # Display overall metrics
+    if "metrics" in results:
+        display.display_metrics(results["metrics"], title="Overall Metrics", columns=2)
+
+
+def _display_ownership_results(
+    ownership: Dict[str, Any], display: TerminalDisplay, show_details: bool
+) -> None:
+    """Display ownership results in terminal.
+
+    Args:
+        ownership: Ownership data
+        display: Terminal display instance
+        show_details: Whether to show details
+    """
+    display.display_header("Code Ownership", style="single")
+
+    if "by_contributor" in ownership and show_details:
+        headers = ["Contributor", "Files", "Lines", "Percentage"]
+        rows = []
+
+        total_lines = ownership.get("total_lines", 1)
+        for contributor in ownership["by_contributor"][:10]:
+            percentage = (contributor["lines"] / total_lines) * 100
+            rows.append(
+                [
+                    contributor["name"][:30],
+                    str(contributor["files"]),
+                    str(contributor["lines"]),
+                    f"{percentage:.1f}%",
+                ]
             )
-        )
 
-    table = Table()
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", style="green")
+        display.display_table(headers, rows, title="Top Contributors")
 
-    # Add summary metrics
-    summary = analysis.summary
-    table.add_row("Total Files", str(analysis.total_files))
-    table.add_row("Total Lines", f"{analysis.total_lines:,}")
-
-    # Language breakdown
-    lang_str = ", ".join(
-        f"{lang} ({sum(1 for f in analysis.files if f.language == lang)})"
-        for lang in analysis.languages[:5]
-    )
-    if len(analysis.languages) > 5:
-        lang_str += f", +{len(analysis.languages) - 5} more"
-    table.add_row("Languages", lang_str)
-
-    # Average complexity if available
-    if any(f.complexity for f in analysis.files):
-        complexities = [f.complexity.cyclomatic for f in analysis.files if f.complexity]
-        avg_complexity = sum(complexities) / len(complexities) if complexities else 0
-        table.add_row("Avg Complexity", f"{avg_complexity:.2f}")
-
-    # Git stats if available
-    if hasattr(analysis, "git_analysis") and analysis.git_analysis:
-        git = analysis.git_analysis
-        if hasattr(git, "current_branch"):
-            table.add_row("Git Branch", git.current_branch or "detached")
-        if hasattr(git, "total_commits"):
-            table.add_row("Total Commits", str(git.total_commits))
-        if hasattr(git, "total_authors"):
-            table.add_row("Contributors", str(git.total_authors))
-
-    console.print(table)
+    # Display bus factor warning if low
+    bus_factor = ownership.get("bus_factor", 0)
+    if bus_factor <= 2:
+        display.display_warning(f"Low bus factor ({bus_factor}) - knowledge concentration risk!")
 
 
-def _display_metrics_table(analysis):
-    """Display detailed metrics by language."""
-    table = Table(title="Code Metrics by Language")
+def _generate_report(
+    results: Dict[str, Any], format: str, output: Optional[str], config: Any
+) -> None:
+    """Generate report using viz modules and reporting.
 
-    table.add_column("Language", style="cyan")
-    table.add_column("Files", style="green", justify="right")
-    table.add_column("Lines", style="yellow", justify="right")
-    table.add_column("Avg Lines/File", style="blue", justify="right")
-    table.add_column("Avg Complexity", style="red", justify="right")
+    Args:
+        results: Examination results
+        format: Report format
+        output: Output path
+        config: Configuration
+    """
+    from tenets.core.reporting import ReportConfig
 
-    # Group by language
-    from collections import defaultdict
+    # Initialize report generator
+    generator = ReportGenerator(config)
 
-    lang_stats = defaultdict(lambda: {"files": 0, "lines": 0, "complexity": []})
-
-    for file in analysis.files:
-        stats = lang_stats[file.language]
-        stats["files"] += 1
-        stats["lines"] += file.lines
-        if file.complexity:
-            stats["complexity"].append(file.complexity.cyclomatic)
-
-    # Sort by lines descending
-    sorted_langs = sorted(lang_stats.items(), key=lambda x: x[1]["lines"], reverse=True)
-
-    # Display
-    for lang, stats in sorted_langs[:15]:  # Top 15 languages
-        avg_lines = stats["lines"] // stats["files"] if stats["files"] > 0 else 0
-        avg_complexity = (
-            sum(stats["complexity"]) / len(stats["complexity"]) if stats["complexity"] else 0
-        )
-
-        table.add_row(
-            lang,
-            str(stats["files"]),
-            f"{stats['lines']:,}",
-            str(avg_lines),
-            f"{avg_complexity:.1f}" if avg_complexity > 0 else "-",
-        )
-
-    console.print(table)
-
-
-def _display_complexity_table(analysis):
-    """Display complexity analysis."""
-    # Get complex files
-    complex_files = [f for f in analysis.files if f.complexity and f.complexity.cyclomatic > 10]
-
-    if not complex_files:
-        console.print("[yellow]No files with high complexity found (threshold: 10)[/yellow]")
-        return
-
-    # Sort by complexity
-    complex_files.sort(key=lambda f: f.complexity.cyclomatic, reverse=True)
-
-    table = Table(title="High Complexity Files")
-    table.add_column("File", style="cyan")
-    table.add_column("Complexity", style="red", justify="right")
-    table.add_column("Lines", style="yellow", justify="right")
-    table.add_column("Functions", style="green", justify="right")
-    table.add_column("Classes", style="blue", justify="right")
-
-    for file in complex_files[:20]:  # Top 20
-        # Shorten path for display
-        display_path = file.path
-        if len(display_path) > 60:
-            parts = Path(display_path).parts
-            if len(parts) > 3:
-                display_path = f".../{'/'.join(parts[-3:])}"
-
-        table.add_row(
-            display_path,
-            str(file.complexity.cyclomatic),
-            str(file.lines),
-            str(len(file.functions)),
-            str(len(file.classes)),
-        )
-
-    console.print(table)
-
-
-def _display_ownership_table(git_analysis):
-    """Display code ownership information."""
-    if not hasattr(git_analysis, "author_stats") or not git_analysis.author_stats:
-        console.print("[yellow]No author statistics available[/yellow]")
-        return
-
-    table = Table(title="Code Ownership")
-    table.add_column("Author", style="cyan")
-    table.add_column("Commits", style="green", justify="right")
-    table.add_column("Lines Added", style="yellow", justify="right")
-    table.add_column("Lines Removed", style="red", justify="right")
-    table.add_column("Files Touched", style="blue", justify="right")
-
-    # Sort by commits
-    sorted_authors = sorted(
-        git_analysis.author_stats.items(), key=lambda x: x[1].get("commit_count", 0), reverse=True
+    # Create report configuration
+    report_config = ReportConfig(
+        title="Code Examination Report",
+        format=format,
+        include_charts=True,
+        include_code_snippets=True,
     )
 
-    for author, stats in sorted_authors[:20]:  # Top 20
-        # Truncate long author names
-        display_author = author[:30] + "..." if len(author) > 30 else author
+    # Generate report using viz modules for charts
+    output_path = Path(output) if output else Path(f"examination_report.{format}")
 
-        table.add_row(
-            display_author,
-            str(stats.get("commit_count", 0)),
-            f"{stats.get('lines_added', 0):,}",
-            f"{stats.get('lines_removed', 0):,}",
-            str(stats.get("files_touched", 0)),
-        )
+    # The generator will internally use viz modules
+    generator.generate(data=results, output_path=output_path, config=report_config)
 
-    console.print(table)
+    click.echo(f"Report generated: {output_path}")
 
 
-def _display_hotspots_table(git_analysis):
-    """Display code hotspots (frequently changed files)."""
-    if not hasattr(git_analysis, "hotspots") or not git_analysis.hotspots:
-        console.print("[yellow]No hotspots analysis available[/yellow]")
-        return
+def _output_json_results(results: Dict[str, Any], output: Optional[str]) -> None:
+    """Output results as JSON.
 
-    table = Table(title="Code Hotspots (Frequently Changed Files)")
-    table.add_column("File", style="cyan")
-    table.add_column("Changes", style="red", justify="right")
-    table.add_column("Authors", style="yellow", justify="right")
-    table.add_column("Last Modified", style="blue")
-    table.add_column("Complexity", style="green", justify="right")
+    Args:
+        results: Examination results
+        output: Output path
+    """
+    import json
 
-    for hotspot in git_analysis.hotspots[:20]:  # Top 20
-        # Shorten path
-        display_path = hotspot.get("file", "")
-        if len(display_path) > 50:
-            parts = Path(display_path).parts
-            if len(parts) > 3:
-                display_path = f".../{'/'.join(parts[-3:])}"
-
-        table.add_row(
-            display_path,
-            str(hotspot.get("change_count", 0)),
-            str(hotspot.get("author_count", 0)),
-            hotspot.get("last_modified", "")[:10],  # Date only
-            str(hotspot.get("complexity", "-")),
-        )
-
-    console.print(table)
+    if output:
+        with open(output, "w") as f:
+            json.dump(results, f, indent=2, default=str)
+        click.echo(f"Results saved to: {output}")
+    else:
+        click.echo(json.dumps(results, indent=2, default=str))
 
 
-def _display_structure_tree(analysis):
-    """Display directory structure as a tree."""
-    tree = Tree(f"[bold]{analysis.root_path}[/bold]")
+def _print_summary(results: Dict[str, Any]) -> None:
+    """Print examination summary.
 
-    # Build directory structure
-    from collections import defaultdict
+    Args:
+        results: Examination results
+    """
+    click.echo("\n" + "=" * 50)
+    click.echo("EXAMINATION SUMMARY")
+    click.echo("=" * 50)
 
-    dir_structure = defaultdict(list)
+    # Files analyzed
+    click.echo(f"Files analyzed: {results.get('total_files', 0)}")
+    click.echo(f"Total lines: {results.get('total_lines', 0):,}")
 
-    for file in analysis.files[:100]:  # Limit to first 100 files
-        parts = Path(file.path).parts
-        for i in range(len(parts) - 1):
-            parent = "/".join(parts[:i]) if i > 0 else "."
-            child = parts[i]
-            if child not in dir_structure[parent]:
-                dir_structure[parent].append(child)
+    # Complexity summary
+    if "complexity" in results:
+        complexity = results["complexity"]
+        click.echo("\nComplexity:")
+        click.echo(f"  Average: {complexity.get('avg_complexity', 0):.2f}")
+        click.echo(f"  Maximum: {complexity.get('max_complexity', 0)}")
+        click.echo(f"  Complex functions: {complexity.get('complex_functions', 0)}")
 
-        # Add file to its directory
-        if len(parts) > 1:
-            parent = "/".join(parts[:-1])
-            dir_structure[parent].append(parts[-1])
+    # Hotspot summary
+    if "hotspots" in results:
+        hotspots = results["hotspots"]
+        click.echo("\nHotspots:")
+        click.echo(f"  Total: {hotspots.get('total_hotspots', 0)}")
+        click.echo(f"  Critical: {hotspots.get('critical_count', 0)}")
 
-    # Build tree recursively
-    def add_nodes(node, path):
-        children = sorted(dir_structure.get(path, []))
-        for child in children[:20]:  # Limit children
-            child_path = f"{path}/{child}" if path != "." else child
-            if child_path in dir_structure:
-                # Directory
-                child_node = node.add(f"[blue]{child}/[/blue]")
-                add_nodes(child_node, child_path)
-            else:
-                # File
-                node.add(child)
+    # Health score
+    if "health_score" in results:
+        score = results["health_score"]
+        if score >= 80:
+            color = "green"
+            status = "Excellent"
+        elif score >= 60:
+            color = "yellow"
+            status = "Good"
+        elif score >= 40:
+            color = "yellow"
+            status = "Fair"
+        else:
+            color = "red"
+            status = "Needs Improvement"
 
-    add_nodes(tree, ".")
-
-    console.print(Panel(tree, title="Directory Structure", border_style="green"))
+        click.echo("\nHealth Score: ", nl=False)
+        click.secho(f"{score:.1f}/100 ({status})", fg=color)

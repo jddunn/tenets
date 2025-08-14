@@ -28,6 +28,11 @@ import yaml
 # Set environment variables for testing
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
+# Disable heavy ML features during tests to avoid network/model downloads
+# Summarizer ML (transformers) and any LLM integrations are optional
+os.environ.setdefault("TENETS_SUMMARIZER_ENABLE_ML_STRATEGIES", "false")
+os.environ.setdefault("TENETS_LLM_ENABLED", "false")
+
 # Import the modules we're testing
 from tenets.config import TenetsConfig
 from tenets.models.analysis import ComplexityMetrics, FileAnalysis, ImportInfo

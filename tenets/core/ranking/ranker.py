@@ -1,45 +1,48 @@
-"""Relevance ranking system for Tenets (consolidated).
+"""Main relevance ranking orchestrator.
 
-This is the canonical implementation (previous duplicate package removed).
-Implements fast, balanced, and thorough strategies with multi-factor scoring,
-optional ML semantic similarity hooks, custom ranker extension points, and
-parallel execution. Uses Google style docstrings.
+This module provides the main RelevanceRanker class that coordinates different
+ranking strategies, manages corpus analysis, and produces ranked results. It
+supports multiple algorithms, parallel processing, and custom ranking extensions.
+
+The ranker is designed to be efficient, scalable, and extensible while providing
+high-quality relevance scoring for code search and context generation.
 """
 
-from __future__ import annotations
-
 import concurrent.futures
-import math
-import re
-from abc import ABC, abstractmethod
+import time
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
 from tenets.utils.logger import get_logger
 
-# Optional ML dependencies exposed for tests/patching
-try:  # pragma: no cover - optional
+from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
+from .factors import RankedFile, RankingExplainer, RankingFactors
+from .strategies import (
+    BalancedRankingStrategy,
+    FastRankingStrategy,
+    MLRankingStrategy,
+    RankingStrategy,
+    ThoroughRankingStrategy,
+)
+
+# Optional symbol for tests to patch ML model class
+try:  # pragma: no cover - optional dependency
     from sentence_transformers import SentenceTransformer  # type: ignore
 except Exception:  # pragma: no cover
     SentenceTransformer = None  # type: ignore
 
-try:  # pragma: no cover - optional
-    from torch.nn.functional import cosine_similarity  # type: ignore
-except Exception:  # pragma: no cover
-
-    def cosine_similarity(*args, **kwargs):  # type: ignore
-        raise RuntimeError("cosine_similarity not available")
-
 
 class RankingAlgorithm(Enum):
-    """Available ranking algorithms."""
+    """Available ranking algorithms.
+
+    Each algorithm provides different trade-offs between speed and accuracy.
+    """
 
     FAST = "fast"
     BALANCED = "balanced"
@@ -49,719 +52,662 @@ class RankingAlgorithm(Enum):
 
 
 @dataclass
-class RankingFactors:
-    """Individual ranking factors for a file.
+class RankingStats:
+    """Statistics from ranking operation.
 
-    Attributes mirror scoring dimensions. custom_scores holds dynamic factors
-    (e.g., code pattern or AST relevance) contributed by advanced strategies.
+    Tracks performance metrics and diagnostic information about the
+    ranking process for monitoring and optimization.
+
+    Attributes:
+        total_files: Total number of files processed
+        files_ranked: Number of files successfully ranked
+        files_failed: Number of files that failed ranking
+        time_elapsed: Total time in seconds
+        algorithm_used: Which algorithm was used
+        threshold_applied: Relevance threshold used
+        files_above_threshold: Number of files above threshold
+        average_score: Average relevance score
+        max_score: Maximum relevance score
+        min_score: Minimum relevance score
+        corpus_stats: Dictionary of corpus statistics
     """
 
-    keyword_match: float = 0.0
-    tfidf_similarity: float = 0.0
-    bm25_score: float = 0.0
-    path_relevance: float = 0.0
-    import_centrality: float = 0.0
-    git_recency: float = 0.0
-    git_frequency: float = 0.0
-    complexity_relevance: float = 0.0
-    semantic_similarity: float = 0.0
-    type_relevance: float = 0.0
-    custom_scores: Dict[str, float] = field(default_factory=dict)
+    total_files: int = 0
+    files_ranked: int = 0
+    files_failed: int = 0
+    time_elapsed: float = 0.0
+    algorithm_used: str = ""
+    threshold_applied: float = 0.0
+    files_above_threshold: int = 0
+    average_score: float = 0.0
+    max_score: float = 0.0
+    min_score: float = 0.0
+    corpus_stats: Dict[str, Any] = None
 
-    def get_weighted_score(self, weights: Dict[str, float]) -> float:
-        """Calculate weighted score from factor values.
-
-        Args:
-            weights: Mapping of factor -> weight.
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary representation.
 
         Returns:
-            Clamped score 0-1.
+            Dictionary with all statistics
         """
-        score = 0.0
-        base = {
-            "keyword_match": self.keyword_match,
-            "tfidf_similarity": self.tfidf_similarity,
-            "bm25_score": self.bm25_score,
-            "path_relevance": self.path_relevance,
-            "import_centrality": self.import_centrality,
-            "git_recency": self.git_recency,
-            "git_frequency": self.git_frequency,
-            "complexity_relevance": self.complexity_relevance,
-            "semantic_similarity": self.semantic_similarity,
-            "type_relevance": self.type_relevance,
-        }
-        for k, v in base.items():
-            if k in weights:
-                score += v * weights[k]
-        for k, v in self.custom_scores.items():
-            if k in weights:
-                score += v * weights[k]
-        return max(0.0, min(1.0, score))
-
-
-@dataclass
-class RankedFile:
-    """A file plus its ranking metadata."""
-
-    analysis: FileAnalysis
-    score: float
-    factors: RankingFactors
-    explanation: str = ""
-
-    def __lt__(self, other):  # type: ignore[override]
-        return self.score < other.score
-
-
-class TFIDFCalculator:
-    """TF-IDF calculator with code-aware tokenization."""
-
-    def __init__(self, use_stopwords: bool = False):
-        self.logger = get_logger(__name__)
-        self.use_stopwords = use_stopwords
-        self.stopwords = set()
-        if self.use_stopwords:
-            self.stopwords = self._load_stopwords()
-        self.document_count = 0
-        self.document_frequency = defaultdict(int)
-        self.document_vectors: Dict[str, Dict[str, float]] = {}
-        self.document_norms: Dict[str, float] = {}
-        self.idf_cache: Dict[str, float] = {}
-        self.vocabulary: Set[str] = set()
-        self.token_pattern = re.compile(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b")
-        self.camel_case_pattern = re.compile(r"[A-Z][a-z]+|[a-z]+|[A-Z]+(?=[A-Z][a-z]|\b)")
-
-    def _load_stopwords(self) -> Set[str]:
-        stopwords = set()
-        current_dir = Path(__file__).parent
-        stopwords_path = current_dir / "stopwords.txt"
-        try:
-            if stopwords_path.exists():
-                with open(stopwords_path, "r", encoding="utf-8") as f:
-                    stopwords = {line.strip().lower() for line in f if line.strip()}
-        except Exception as e:  # pragma: no cover
-            self.logger.error(f"Failed to load stopwords: {e}")
-        return stopwords
-
-    def tokenize(self, text: str) -> List[str]:
-        if not text:
-            return []
-        tokens: List[str] = []
-        raw_tokens = self.token_pattern.findall(text)
-        for token in raw_tokens:
-            if len(token) == 1 and token not in {"i", "a", "x", "y", "z"}:
-                continue
-            if any(c.isupper() for c in token) and not token.isupper():
-                parts = self.camel_case_pattern.findall(token)
-                tokens.extend([p.lower() for p in parts if len(p) > 1])
-                tokens.append(token.lower())
-            elif "_" in token:
-                parts = token.split("_")
-                tokens.extend([p.lower() for p in parts if p])
-                tokens.append(token.lower())
-            else:
-                tokens.append(token.lower())
-        if self.use_stopwords and self.stopwords:
-            tokens = [t for t in tokens if t not in self.stopwords]
-        return tokens
-
-    def compute_tf(self, tokens: List[str], use_sublinear: bool = True) -> Dict[str, float]:
-        tf = Counter(tokens)
-        if use_sublinear:
-            return {term: 1.0 + math.log(count) for term, count in tf.items() if count > 0}
-        total = len(tokens)
-        return {} if total == 0 else {term: count / total for term, count in tf.items()}
-
-    def compute_idf(self, term: str) -> float:
-        if term in self.idf_cache:
-            return self.idf_cache[term]
-        if self.document_count == 0:
-            return 0.0
-        if self.document_count == 1:
-            idf = 1.0
-        else:
-            df = self.document_frequency.get(term, 0)
-            idf = math.log((self.document_count + 1) / (df + 1))
-        self.idf_cache[term] = idf
-        return idf
-
-    def add_document(self, doc_id: str, text: str) -> Dict[str, float]:
-        tokens = self.tokenize(text)
-        if not tokens:
-            self.document_vectors[doc_id] = {}
-            self.document_norms[doc_id] = 0.0
-            return {}
-        self.document_count += 1
-        for term in set(tokens):
-            self.document_frequency[term] += 1
-            self.vocabulary.add(term)
-        tf_scores = self.compute_tf(tokens)
-        tfidf_vector = {}
-        for term, tf in tf_scores.items():
-            idf = self.compute_idf(term)
-            tfidf_vector[term] = tf * idf
-        norm = math.sqrt(sum(score**2 for score in tfidf_vector.values()))
-        if norm > 0:
-            tfidf_vector = {term: score / norm for term, score in tfidf_vector.items()}
-            self.document_norms[doc_id] = norm
-        else:
-            self.document_norms[doc_id] = 0.0
-        self.document_vectors[doc_id] = tfidf_vector
-        self.idf_cache.clear()
-        return tfidf_vector
-
-    def compute_similarity(self, query_text: str, doc_id: str) -> float:
-        doc_vector = self.document_vectors.get(doc_id, {})
-        if not doc_vector:
-            return 0.0
-        query_tokens = self.tokenize(query_text)
-        if not query_tokens:
-            return 0.0
-        query_tf = self.compute_tf(query_tokens)
-        query_vector = {}
-        for term, tf in query_tf.items():
-            if term in self.vocabulary:
-                idf = self.compute_idf(term)
-                query_vector[term] = tf * idf
-        query_norm = math.sqrt(sum(score**2 for score in query_vector.values()))
-        if query_norm > 0:
-            query_vector = {term: score / query_norm for term, score in query_vector.items()}
-        else:
-            return 0.0
-        similarity = 0.0
-        for term, q_score in query_vector.items():
-            if term in doc_vector:
-                similarity += q_score * doc_vector[term]
-        return max(0.0, min(1.0, similarity))
-
-    def get_top_terms(self, doc_id: str, n: int = 10) -> List[Tuple[str, float]]:
-        doc_vector = self.document_vectors.get(doc_id, {})
-        if not doc_vector:
-            return []
-        return sorted(doc_vector.items(), key=lambda x: x[1], reverse=True)[:n]
-
-    def build_corpus(self, documents: List[Tuple[str, str]]) -> None:
-        for doc_id, text in documents:
-            self.add_document(doc_id, text)
-
-
-class RankingStrategy(ABC):
-    @abstractmethod
-    def rank_file(
-        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
-    ) -> RankingFactors:
-        pass
-
-    @abstractmethod
-    def get_weights(self) -> Dict[str, float]:
-        pass
-
-
-class FastRankingStrategy(RankingStrategy):
-    def rank_file(
-        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
-    ) -> RankingFactors:
-        factors = RankingFactors()
-        if file.content and prompt_context.keywords:
-            content_lower = file.content.lower()
-            keyword_hits = 0
-            keyword_density = 0
-            for keyword in prompt_context.keywords:
-                kw = keyword.lower()
-                count = content_lower.count(kw)
-                if count > 0:
-                    keyword_hits += 1
-                    keyword_density += count / max(1, len(file.content.split()))
-            factors.keyword_match = min(1.0, keyword_hits / len(prompt_context.keywords))
-            factors.keyword_match *= 1 + min(0.5, keyword_density)
-        path_lower = file.path.lower()
-        path_score = 0.0
-        for keyword in prompt_context.keywords:
-            if keyword.lower() in path_lower:
-                path_score += 0.3
-        for important in ["main", "index", "app", "core", "api", "handler", "service"]:
-            if important in path_lower:
-                path_score += 0.2
-                break
-        factors.path_relevance = min(1.0, path_score)
-        factors.type_relevance = self._calculate_type_relevance(file, prompt_context)
-        return factors
-
-    def get_weights(self) -> Dict[str, float]:
-        return {"keyword_match": 0.6, "path_relevance": 0.3, "type_relevance": 0.1}
-
-    def _calculate_type_relevance(self, file: FileAnalysis, prompt_context: PromptContext) -> float:
-        path_lower = file.path.lower()
-        task_type = prompt_context.task_type
-        if task_type == "test":
-            return 1.0 if ("test" in path_lower or "spec" in path_lower) else 0.3
-        if task_type == "debug":
-            return 0.8 if any(x in path_lower for x in ["error", "exception", "log"]) else 0.5
-        if task_type == "feature":
-            return 0.2 if "test" in path_lower else 0.6
-        if task_type == "refactor":
-            if file.complexity and file.complexity.cyclomatic > 10:
-                return 0.8
-            return 0.5
-        return 0.5
-
-
-class BalancedRankingStrategy(RankingStrategy):
-    def __init__(self):
-        self.logger = get_logger(__name__)
-
-    def rank_file(
-        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
-    ) -> RankingFactors:
-        factors = RankingFactors()
-        factors.keyword_match = self._calculate_keyword_score(file, prompt_context.keywords)
-        if (
-            corpus_stats.get("tfidf_calculator")
-            and file.path in corpus_stats["tfidf_calculator"].document_vectors
-        ):
-            factors.tfidf_similarity = corpus_stats["tfidf_calculator"].compute_similarity(
-                prompt_context.text, file.path
-            )
-        factors.path_relevance = self._analyze_path_structure(file.path, prompt_context)
-        if corpus_stats.get("import_graph"):
-            factors.import_centrality = self._calculate_import_centrality(
-                file, corpus_stats["import_graph"]
-            )
-        git_info = getattr(file, "git_info", None)
-        if git_info:
-            factors.git_recency = self._calculate_git_recency(git_info)
-            factors.git_frequency = self._calculate_git_frequency(git_info)
-        if file.complexity:
-            factors.complexity_relevance = self._calculate_complexity_relevance(
-                file.complexity, prompt_context
-            )
-        factors.type_relevance = self._calculate_type_relevance(file, prompt_context)
-        return factors
-
-    def get_weights(self) -> Dict[str, float]:
         return {
-            "keyword_match": 0.25,
-            "tfidf_similarity": 0.20,
-            "path_relevance": 0.15,
-            "import_centrality": 0.15,
-            "git_recency": 0.10,
-            "git_frequency": 0.05,
-            "complexity_relevance": 0.05,
-            "type_relevance": 0.05,
+            "total_files": self.total_files,
+            "files_ranked": self.files_ranked,
+            "files_failed": self.files_failed,
+            "time_elapsed": self.time_elapsed,
+            "algorithm_used": self.algorithm_used,
+            "threshold_applied": self.threshold_applied,
+            "files_above_threshold": self.files_above_threshold,
+            "average_score": self.average_score,
+            "max_score": self.max_score,
+            "min_score": self.min_score,
+            "corpus_stats": self.corpus_stats,
         }
-
-    def _calculate_keyword_score(self, file: FileAnalysis, keywords: List[str]) -> float:
-        if not keywords or not file.content:
-            return 0.0
-        score = 0.0
-        content_lower = file.content.lower()
-        content_lines = content_lower.split("\n")
-
-        def _safe_name(obj: Any) -> str:
-            try:
-                n = getattr(obj, "_mock_name", None)
-                if isinstance(n, str):
-                    return n
-                n = getattr(obj, "name", None)
-                if isinstance(n, str):
-                    return n
-            except Exception:
-                return ""
-            return ""
-
-        for keyword in keywords:
-            kw = keyword.lower()
-            keyword_score = 0.0
-            try:
-                if kw in Path(file.path).name.lower():
-                    keyword_score += 0.4
-            except Exception:
-                pass
-            for imp in file.imports:
-                try:
-                    module = getattr(imp, "module", "") or ""
-                    if isinstance(module, str) and kw in module.lower():
-                        keyword_score += 0.3
-                        break
-                except Exception:
-                    continue
-            if file.classes:
-                for cls in file.classes:
-                    name = _safe_name(cls)
-                    if name and kw in name.lower():
-                        keyword_score += 0.3
-                        break
-            if file.functions:
-                for func in file.functions:
-                    name = _safe_name(func)
-                    if name and kw in name.lower():
-                        keyword_score += 0.35
-                        break
-            occurrences = 0
-            position_weight_sum = 0.0
-            for i, line in enumerate(content_lines):
-                if kw in line:
-                    occurrences += 1
-                    position_weight = 1.0 - (i / max(1, len(content_lines))) * 0.5
-                    position_weight_sum += position_weight
-            if occurrences > 0:
-                freq_score = math.log(1 + occurrences) / math.log(10)
-                keyword_score += min(0.3, freq_score * (position_weight_sum / max(1, occurrences)))
-            score += keyword_score
-        return min(1.0, score / len(keywords))
-
-    def _analyze_path_structure(self, file_path: str, prompt_context: PromptContext) -> float:
-        path = Path(file_path)
-        path_parts = [p.lower() for p in path.parts]
-        score = 0.0
-        for keyword in prompt_context.keywords:
-            kw = keyword.lower()
-            if any(kw in part for part in path_parts):
-                score += 0.3
-        architecture_indicators = {
-            "api": 0.2,
-            "controller": 0.2,
-            "service": 0.2,
-            "model": 0.2,
-            "view": 0.15,
-            "handler": 0.2,
-            "manager": 0.15,
-            "repository": 0.15,
-            "dao": 0.15,
-            "util": 0.1,
-            "helper": 0.1,
-            "config": 0.15,
-            "core": 0.25,
-            "main": 0.25,
-            "index": 0.25,
-            "app": 0.25,
-        }
-        for indicator, weight in architecture_indicators.items():
-            if any(indicator in part for part in path_parts):
-                score += weight
-                break
-        if prompt_context.task_type != "test":
-            if any(
-                part.startswith("test") or part.endswith("test") or part.startswith("tests")
-                for part in path_parts
-            ):
-                score -= 0.2
-        return max(0.0, min(1.0, score))
-
-    def _calculate_import_centrality(
-        self, file: FileAnalysis, import_graph: Dict[str, Set[str]]
-    ) -> float:
-        try:
-            incoming = sum(1 for deps in import_graph.values() if file.path in deps)
-            outgoing = len(import_graph.get(file.path, []))
-            if incoming + outgoing == 0:
-                return 0.0
-            centrality = (incoming * 0.6 + outgoing * 0.4) / (incoming + outgoing)
-            return min(1.0, centrality)
-        except Exception:
-            return 0.0
-
-    def _calculate_git_recency(self, git_info: Dict[str, Any]) -> float:
-        try:
-            days_since_mod = git_info.get("days_since_last_mod", 365)
-            return max(0.0, min(1.0, 1 - days_since_mod / 365))
-        except Exception:
-            return 0.0
-
-    def _calculate_git_frequency(self, git_info: Dict[str, Any]) -> float:
-        try:
-            commit_count = git_info.get("recent_commit_count", 0)
-            return max(0.0, min(1.0, commit_count / 50))
-        except Exception:
-            return 0.0
-
-    def _calculate_complexity_relevance(
-        self, complexity: Any, prompt_context: PromptContext
-    ) -> float:
-        try:
-            if prompt_context.task_type == "refactor":
-                return min(1.0, complexity.cyclomatic / 20)
-            return min(1.0, complexity.cyclomatic / 40)
-        except Exception:
-            return 0.0
-
-    def _calculate_type_relevance(self, file: FileAnalysis, prompt_context: PromptContext) -> float:
-        path_lower = file.path.lower()
-        task_type = prompt_context.task_type
-        if task_type == "test":
-            return 1.0 if ("test" in path_lower or "spec" in path_lower) else 0.3
-        if task_type == "debug":
-            return 0.8 if any(x in path_lower for x in ["error", "exception", "log"]) else 0.5
-        if task_type == "feature":
-            return 0.2 if "test" in path_lower else 0.6
-        if task_type == "refactor":
-            if file.complexity and file.complexity.cyclomatic > 10:
-                return 0.8
-            return 0.5
-        return 0.5
-
-
-class ThoroughRankingStrategy(BalancedRankingStrategy):
-    def __init__(self):
-        super().__init__()
-        self._ml_enabled = False
-        self._model = None
-
-    def enable_ml(self):  # pragma: no cover - optional
-        if SentenceTransformer and not self._model:
-            try:
-                self._model = SentenceTransformer("all-MiniLM-L6-v2")
-                self._ml_enabled = True
-            except Exception:
-                self._ml_enabled = False
-
-    def rank_file(
-        self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
-    ) -> RankingFactors:
-        factors = super().rank_file(file, prompt_context, corpus_stats)
-        if self._ml_enabled and file.content:
-            try:
-                factors.semantic_similarity = min(1.0, len(file.content) / 10000)
-            except Exception:
-                pass
-        return factors
-
-    def get_weights(self) -> Dict[str, float]:
-        base = super().get_weights()
-        base.update({"semantic_similarity": 0.15})
-        return base
 
 
 class RelevanceRanker:
-    """Main ranking orchestrator (consolidated, backward compatible).
+    """Main relevance ranking system.
 
-    This class merges the simplified consolidated implementation with the
-    previous, more feature-rich API expected by tests (strategies registry,
-    parallel ranking, custom rankers, corpus analysis, explanations, and
-    shutdown support). Public behavior stays source‑compatible with the
-    prior version while keeping a lean core.
+    Orchestrates the ranking process by analyzing the corpus, selecting
+    appropriate strategies, and producing ranked results. Supports multiple
+    algorithms, parallel processing, and custom ranking extensions.
+
+    The ranker follows a multi-stage process:
+    1. Corpus analysis (TF-IDF, import graph, statistics)
+    2. Strategy selection based on algorithm
+    3. Parallel factor calculation
+    4. Score aggregation and weighting
+    5. Filtering and sorting
+
+    Attributes:
+        config: TenetsConfig instance
+        logger: Logger instance
+        strategies: Available ranking strategies
+        custom_rankers: Custom ranking functions
+        executor: Thread pool for parallel processing
+        stats: Latest ranking statistics
+        cache: Internal cache for optimizations
     """
 
     def __init__(
-        self, config: TenetsConfig, algorithm: Optional[str] = None, use_stopwords: bool = False
+        self,
+        config: TenetsConfig,
+        algorithm: Optional[str] = None,
+        use_stopwords: Optional[bool] = None,
     ):
+        """Initialize the relevance ranker.
+
+        Args:
+            config: Tenets configuration
+            algorithm: Override default algorithm
+            use_stopwords: Override stopword filtering setting
+        """
         self.config = config
         self.logger = get_logger(__name__)
-        algo = (algorithm or config.ranking.algorithm).lower()
-        self.algorithm = (
-            RankingAlgorithm(algo)
-            if algo in RankingAlgorithm._value2member_map_
-            else RankingAlgorithm.BALANCED
-        )
-        self.use_stopwords = use_stopwords or getattr(config, "use_tfidf_stopwords", False)
 
-        # Strategy registry for legacy tests
+        # Determine algorithm
+        algo_str = algorithm or config.ranking.algorithm
+        try:
+            self.algorithm = RankingAlgorithm(algo_str)
+        except ValueError:
+            self.logger.warning(f"Unknown algorithm '{algo_str}', using balanced")
+            self.algorithm = RankingAlgorithm.BALANCED
+
+        # Stopword configuration
+        self.use_stopwords = (
+            use_stopwords if use_stopwords is not None else config.ranking.use_stopwords
+        )
+
+        # Initialize strategies
         self.strategies: Dict[RankingAlgorithm, RankingStrategy] = {
             RankingAlgorithm.FAST: FastRankingStrategy(),
             RankingAlgorithm.BALANCED: BalancedRankingStrategy(),
             RankingAlgorithm.THOROUGH: ThoroughRankingStrategy(),
+            RankingAlgorithm.ML: MLRankingStrategy(),
         }
-        self._strategy = self._get_strategy(self.algorithm)
-        self._custom_rankers: List[
-            Callable[[List[RankedFile], PromptContext], List[RankedFile]]
-        ] = []
 
-        # Thread pool for optional parallel ranking
-        workers = max(2, getattr(config.ranking, "workers", 4))
-        try:
-            self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=workers)
-        except Exception:
-            # Fallback single-threaded executor stub
-            self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+        # Custom rankers list (keep public and test-expected private alias)
+        self.custom_rankers: List[Callable] = []
+        self._custom_rankers: List[Callable] = self.custom_rankers
 
-        # Corpus artifacts
-        self._tfidf_calculator: Optional[TFIDFCalculator] = None
-        self._import_graph: Dict[str, Set[str]] = {}
+        # Thread pool for parallel ranking
+        max_workers = int(config.ranking.workers or 4)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+        # Backwards-compat alias expected by some tests
+        self._executor = self.executor
 
-    # --- Public / legacy compatible API -------------------------------------------------
+        # Statistics and cache
+        self.stats = RankingStats()
+        self.cache = {}
+
+        # ML model (loaded lazily)
+        self._ml_model = None
+
+        # Optional ML embedding model placeholder for tests that patch it
+        # Also expose module-level symbol on instance for convenience
+        self.SentenceTransformer = SentenceTransformer
+
+        self.logger.info(
+            f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
+            f"workers={max_workers}, use_stopwords={self.use_stopwords}"
+        )
+
     def rank_files(
         self,
         files: List[FileAnalysis],
         prompt_context: PromptContext,
-        algorithm: str = "balanced",
+        algorithm: Optional[str] = None,
         parallel: bool = True,
+        explain: bool = False,
     ) -> List[FileAnalysis]:
-        """Rank files by relevance.
+        """Rank files by relevance to prompt.
+
+        This is the main entry point for ranking files. It analyzes the corpus,
+        applies the selected ranking strategy, and returns files sorted by
+        relevance above the configured threshold.
 
         Args:
-            files: Files to rank.
-            prompt_context: Parsed prompt context.
-            algorithm: Ranking algorithm key.
-            parallel: Whether to perform per-file factor calculation in parallel.
+            files: List of files to rank
+            prompt_context: Parsed prompt information
+            algorithm: Override algorithm for this ranking
+            parallel: Whether to rank files in parallel
+            explain: Whether to generate ranking explanations
 
         Returns:
-            List of FileAnalysis sorted by descending relevance, optionally
-            filtered by configured threshold.
+            List of FileAnalysis objects sorted by relevance (highest first)
+            and filtered by threshold
+
+        Raises:
+            ValueError: If algorithm is invalid
         """
         if not files:
             return []
 
-        # Select strategy dynamically (honor explicit algorithm parameter)
-        algo_key = algorithm.lower() if isinstance(algorithm, str) else str(algorithm)
-        if algo_key in RankingAlgorithm._value2member_map_:
-            self._strategy = self._get_strategy(RankingAlgorithm(algo_key))
+        start_time = time.time()
 
-        # Analyze corpus (TF-IDF, import graph, stats)
+        # Reset statistics
+        self.stats = RankingStats(
+            total_files=len(files),
+            algorithm_used=algorithm or self.algorithm.value,
+            threshold_applied=self.config.ranking.threshold,
+        )
+
+        self.logger.info(f"Ranking {len(files)} files using {self.stats.algorithm_used} algorithm")
+
+        # Select strategy
+        if algorithm:
+            try:
+                algo_enum = RankingAlgorithm(algorithm)
+                strategy = self.strategies.get(algo_enum)
+            except ValueError:
+                raise ValueError(f"Unknown ranking algorithm: {algorithm}")
+        else:
+            strategy = self._get_strategy(self.algorithm.value)
+
+        if not strategy:
+            raise ValueError(f"No strategy for algorithm: {self.algorithm}")
+
+        # Analyze corpus
         corpus_stats = self._analyze_corpus(files, prompt_context)
+        self.stats.corpus_stats = corpus_stats
 
-        strategy = self._strategy
+        # Rank files
+        ranked_files = self._rank_with_strategy(
+            files, prompt_context, corpus_stats, strategy, parallel
+        )
+
+        # Apply custom rankers
+        for custom_ranker in self.custom_rankers:
+            try:
+                ranked_files = custom_ranker(ranked_files, prompt_context)
+            except Exception as e:
+                self.logger.warning(f"Custom ranker failed: {e}")
+
+        # Sort by score
+        ranked_files.sort(reverse=True)
+
+        # Filter by threshold and update statistics
+        threshold = self.config.ranking.threshold
+        filtered_files = []
+        scores = []
+
+        for i, rf in enumerate(ranked_files):
+            scores.append(rf.score)
+
+            if rf.score >= threshold:
+                # Update FileAnalysis with ranking info
+                rf.analysis.relevance_score = rf.score
+                rf.analysis.relevance_rank = i + 1
+
+                # Generate explanation if requested
+                if explain:
+                    rf.explanation = rf.generate_explanation(strategy.get_weights(), verbose=True)
+
+                filtered_files.append(rf.analysis)
+
+        # Update statistics
+        self.stats.files_ranked = len(ranked_files)
+        self.stats.files_above_threshold = len(filtered_files)
+        self.stats.time_elapsed = time.time() - start_time
+
+        if scores:
+            self.stats.average_score = sum(scores) / len(scores)
+            self.stats.max_score = max(scores)
+            self.stats.min_score = min(scores)
+
+        self.logger.info(
+            f"Ranking complete: {len(filtered_files)}/{len(files)} files "
+            f"above threshold ({threshold:.2f}) in {self.stats.time_elapsed:.2f}s"
+        )
+
+        # Generate explanation report if requested
+        if explain and ranked_files:
+            explainer = RankingExplainer()
+            explanation = explainer.explain_ranking(ranked_files[:20], strategy.get_weights())
+            self.logger.info(f"Ranking Explanation:\n{explanation}")
+
+        return filtered_files
+
+    def _get_strategy(self, algorithm: Optional[str] = None) -> RankingStrategy:
+        """Return the strategy instance for the given algorithm string.
+
+        If algorithm is None, use the current instance algorithm.
+        """
+        algo = algorithm or self.algorithm.value
+        try:
+            algo_enum = RankingAlgorithm(algo)
+        except ValueError:
+            algo_enum = self.algorithm
+        return self.strategies.get(algo_enum)
+
+    def _rank_with_strategy(
+        self,
+        files: List[FileAnalysis],
+        prompt_context: PromptContext,
+        corpus_stats: Dict[str, Any],
+        strategy: RankingStrategy,
+        parallel: bool,
+    ) -> List[RankedFile]:
+        """Rank files using a specific strategy.
+
+        Args:
+            files: Files to rank
+            prompt_context: Prompt context
+            corpus_stats: Corpus statistics
+            strategy: Ranking strategy to use
+            parallel: Whether to use parallel processing
+
+        Returns:
+            List of RankedFile objects
+        """
+        ranked_files = []
         weights = strategy.get_weights()
 
-        ranked_wrappers: List[RankedFile] = []
+        if parallel and len(files) > 10:
+            # Parallel ranking
+            futures = []
 
-        def _process(f: FileAnalysis) -> Optional[RankedFile]:
-            try:
-                factors = strategy.rank_file(f, prompt_context, corpus_stats)
-                score = factors.get_weighted_score(weights)
-                explanation = self._generate_explanation(factors, weights)
-                return RankedFile(analysis=f, score=score, factors=factors, explanation=explanation)
-            except Exception as e:  # pragma: no cover - defensive
-                self.logger.debug(f"Ranking failed for {f.path}: {e}")
-                return None
+            for file in files:
+                future = self.executor.submit(
+                    self._rank_single_file, file, prompt_context, corpus_stats, strategy, weights
+                )
+                futures.append((file, future))
 
-        use_parallel = parallel and len(files) > 1
-        if use_parallel:
-            futures = [self._executor.submit(_process, f) for f in files]
-            for ft in futures:
-                rf = ft.result()
-                if rf:
-                    ranked_wrappers.append(rf)
+            # Collect results
+            for file, future in futures:
+                try:
+                    ranked_file = future.result(timeout=5.0)
+                    if ranked_file:
+                        ranked_files.append(ranked_file)
+                        self.stats.files_ranked += 1
+                except Exception as e:
+                    self.logger.warning(f"Failed to rank {file.path}: {e}")
+                    self.stats.files_failed += 1
+                    # Add with zero score
+                    ranked_files.append(
+                        RankedFile(
+                            analysis=file,
+                            score=0.0,
+                            factors=RankingFactors(),
+                            explanation=f"Ranking failed: {e!s}",
+                        )
+                    )
         else:
-            for f in files:
-                rf = _process(f)
-                if rf:
-                    ranked_wrappers.append(rf)
+            # Sequential ranking
+            for file in files:
+                try:
+                    ranked_file = self._rank_single_file(
+                        file, prompt_context, corpus_stats, strategy, weights
+                    )
+                    if ranked_file:
+                        ranked_files.append(ranked_file)
+                        self.stats.files_ranked += 1
+                except Exception as e:
+                    self.logger.warning(f"Failed to rank {file.path}: {e}")
+                    self.stats.files_failed += 1
+                    ranked_files.append(
+                        RankedFile(
+                            analysis=file,
+                            score=0.0,
+                            factors=RankingFactors(),
+                            explanation=f"Ranking failed: {e!s}",
+                        )
+                    )
 
-        # Apply custom rankers (post-processing) if any
-        for custom in self._custom_rankers:
-            try:
-                ranked_wrappers = custom(ranked_wrappers, prompt_context)  # type: ignore
-            except Exception as e:  # pragma: no cover
-                self.logger.debug(f"Custom ranker failed: {e}")
+        return ranked_files
 
-        # Sort and propagate to FileAnalysis
-        ranked_wrappers.sort(key=lambda r: r.score, reverse=True)
-        for idx, wrapper in enumerate(ranked_wrappers):
-            wrapper.analysis.relevance_score = wrapper.score
-            if not wrapper.explanation:
-                wrapper.explanation = f"Rank {idx+1}: score={wrapper.score:.3f}"
+    def _rank_single_file(
+        self,
+        file: FileAnalysis,
+        prompt_context: PromptContext,
+        corpus_stats: Dict[str, Any],
+        strategy: RankingStrategy,
+        weights: Dict[str, float],
+    ) -> RankedFile:
+        """Rank a single file.
 
-        # Threshold filtering
-        threshold = getattr(self.config.ranking, "threshold", 0.0) or 0.0
-        filtered = [w.analysis for w in ranked_wrappers if w.score >= threshold]
-        return filtered
+        Args:
+            file: File to rank
+            prompt_context: Prompt context
+            corpus_stats: Corpus statistics
+            strategy: Ranking strategy
+            weights: Factor weights
 
-    def register_custom_ranker(
-        self, ranker_func: Callable[[List[RankedFile], PromptContext], List[RankedFile]]
-    ) -> None:
-        """Register a custom post-processing ranker."""
-        self._custom_rankers.append(ranker_func)
-        self.logger.info(f"Registered custom ranker: {getattr(ranker_func, '__name__', 'anon')}")
+        Returns:
+            RankedFile object
+        """
+        # Calculate ranking factors
+        factors = strategy.rank_file(file, prompt_context, corpus_stats)
 
-    def shutdown(self) -> None:
-        """Shutdown thread pool resources."""
-        try:
-            self._executor.shutdown(wait=True)
-        except Exception:  # pragma: no cover
-            pass
+        # Calculate weighted score
+        score = factors.get_weighted_score(weights)
 
-    # --- Internal helpers (borrowed / adapted from legacy implementation) -------------
-    def _get_strategy(self, algorithm: RankingAlgorithm) -> RankingStrategy:
-        if algorithm == RankingAlgorithm.FAST:
-            return self.strategies[RankingAlgorithm.FAST]
-        if algorithm == RankingAlgorithm.THOROUGH:
-            return self.strategies[RankingAlgorithm.THOROUGH]
-        return self.strategies[RankingAlgorithm.BALANCED]
+        # Generate basic explanation
+        top_factors = factors.get_top_factors(weights, n=3)
+        explanations = []
+        for factor_name, value, contribution in top_factors:
+            explanations.append(f"{factor_name}: {value:.2f}")
+        explanation = "; ".join(explanations) if explanations else "Low relevance"
+
+        return RankedFile(analysis=file, score=score, factors=factors, explanation=explanation)
 
     def _analyze_corpus(
         self, files: List[FileAnalysis], prompt_context: PromptContext
     ) -> Dict[str, Any]:
-        stats: Dict[str, Any] = {
+        """Analyze the corpus for statistics.
+
+        Builds TF-IDF index, import graph, and other corpus-wide statistics
+        that are used by ranking strategies.
+
+        Args:
+            files: All files in corpus
+            prompt_context: Prompt context
+
+        Returns:
+            Dictionary of corpus statistics
+        """
+        self.logger.debug(f"Analyzing corpus of {len(files)} files")
+
+        stats = {
             "total_files": len(files),
             "languages": Counter(),
             "file_sizes": [],
             "import_graph": defaultdict(set),
+            "dependency_tree": {},
         }
-        # TF-IDF
-        self._tfidf_calculator = TFIDFCalculator(use_stopwords=self.use_stopwords)
-        documents: List[Tuple[str, str]] = []
-        for f in files:
-            if f.content:
-                documents.append((f.path, f.content))
-        self._tfidf_calculator.build_corpus(documents)
-        stats["tfidf_calculator"] = self._tfidf_calculator
-        # per-file stats & import graph
-        for f in files:
-            stats["languages"][getattr(f, "language", "")] += 1
-            stats["file_sizes"].append(getattr(f, "size", 0))
-            for imp in getattr(f, "imports", []) or []:
-                module = getattr(imp, "module", None)
-                if isinstance(module, str):
-                    resolved = self._resolve_import(module, f.path, files)
-                    if resolved:
-                        stats["import_graph"][resolved].add(f.path)
+
+        # Initialize TF-IDF calculator
+        tfidf_calc = TFIDFCalculator(use_stopwords=self.use_stopwords)
+
+        # Initialize BM25 calculator
+        bm25_calc = BM25Calculator(use_stopwords=self.use_stopwords)
+
+        # Build corpus and collect statistics
+        documents = []
+
+        for file in files:
+            # Language distribution
+            stats["languages"][file.language] += 1
+
+            # File sizes
+            stats["file_sizes"].append(file.size)
+
+            # Add to TF-IDF/BM25 corpus
+            if file.content:
+                documents.append((file.path, file.content))
+
+            # Build import graph
+            for imp in file.imports:
+                if hasattr(imp, "module"):
+                    module = imp.module
+                    # Try to resolve import to file
+                    imported_file = self._resolve_import(module, file.path, files)
+                    if imported_file:
+                        stats["import_graph"][imported_file].add(file.path)
+
+        # Build TF-IDF corpus
+        if documents:
+            tfidf_calc.build_corpus(documents)
+            stats["tfidf_calculator"] = tfidf_calc
+
+            # Build BM25 corpus
+            bm25_calc.build_corpus(documents)
+            stats["bm25_calculator"] = bm25_calc
+
+        # Calculate additional statistics
         if stats["file_sizes"]:
             stats["avg_file_size"] = sum(stats["file_sizes"]) / len(stats["file_sizes"])
+            stats["total_size"] = sum(stats["file_sizes"])
         else:
             stats["avg_file_size"] = 0
-        self._import_graph = stats["import_graph"]
+            stats["total_size"] = 0
+
+        stats["total_imports"] = sum(len(importers) for importers in stats["import_graph"].values())
+
+        # Build dependency tree (simplified)
+        stats["dependency_tree"] = self._build_dependency_tree(files, stats["import_graph"])
+
+        self.logger.debug(
+            f"Corpus analysis complete: {len(stats['languages'])} languages, "
+            f"{stats['total_imports']} imports"
+        )
+
         return stats
 
     def _resolve_import(
         self, module_name: str, from_file: str, all_files: List[FileAnalysis]
     ) -> Optional[str]:
-        parts = module_name.split(".")
-        tail = parts[-1]
-        for f in all_files:
-            p = Path(f.path)
-            if p.stem == tail:
-                return f.path
-            if all(seg in str(p) for seg in parts):
-                return f.path
+        """Resolve an import to a file path.
+
+        Attempts to match import statements to actual files in the project.
+        Uses heuristics based on module name and file paths.
+
+        Args:
+            module_name: Name of imported module
+            from_file: File doing the importing
+            all_files: All files in project
+
+        Returns:
+            Resolved file path or None
+        """
+        if not module_name:
+            return None
+
+        # Split module into parts
+        module_parts = module_name.split(".")
+
+        # Try different resolution strategies
+        for file in all_files:
+            file_path = Path(file.path)
+            file_stem = file_path.stem
+
+            # Direct filename match
+            if file_stem == module_parts[-1]:
+                return file.path
+
+            # Check if path contains module structure
+            path_parts = [p.lower() for p in file_path.parts]
+            module_parts_lower = [p.lower() for p in module_parts]
+
+            # Check if all module parts appear in path
+            if all(part in str(file_path).lower() for part in module_parts_lower):
+                return file.path
+
+            # Check relative imports
+            if module_name.startswith("."):
+                # Relative import - resolve based on from_file location
+                from_dir = Path(from_file).parent
+                relative_parts = module_parts[1:]  # Skip the '.'
+
+                # Try to find matching file in relative location
+                if file_stem in relative_parts and str(from_dir) in str(file_path):
+                    return file.path
+
         return None
 
-    def _generate_explanation(self, factors: RankingFactors, weights: Dict[str, float]) -> str:
-        contributions = []
-        for name, weight in weights.items():
-            if hasattr(factors, name):
-                val = getattr(factors, name)
-                contrib = val * weight
-                if contrib > 0.01:
-                    contributions.append((name, val, contrib))
-        contributions.sort(key=lambda x: x[2], reverse=True)
-        phrases = []
-        for name, val, _ in contributions[:3]:
-            if name == "keyword_match":
-                phrases.append(f"Strong keyword match ({val:.2f})")
-            elif name == "tfidf_similarity":
-                phrases.append(f"High TF-IDF similarity ({val:.2f})")
-            elif name == "semantic_similarity":
-                phrases.append(f"High semantic similarity ({val:.2f})")
-            elif name == "import_centrality":
-                phrases.append(f"Central in import graph ({val:.2f})")
-            elif name == "git_recency":
-                phrases.append(f"Recently modified ({val:.2f})")
-            elif name == "path_relevance":
-                phrases.append(f"Relevant path ({val:.2f})")
-        return "; ".join(phrases) if phrases else "Low relevance"
+    def _build_dependency_tree(
+        self, files: List[FileAnalysis], import_graph: Dict[str, Set[str]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """Build dependency tree from import graph.
 
-    # Legacy attribute accessors expected by tests (they access private fields)
-    # Provided implicitly via instance variables above.
+        Creates a tree structure showing dependency depth for each file.
+        Files with no dependencies are at depth 0, files that only depend
+        on depth-0 files are at depth 1, etc.
+
+        Args:
+            files: All files
+            import_graph: Import dependency graph
+
+        Returns:
+            Dictionary mapping file paths to dependency info
+        """
+        dependency_tree = {}
+
+        # Initialize all files
+        file_paths = {f.path for f in files}
+
+        # Find root files (no dependencies)
+        root_files = set()
+        for file_path in file_paths:
+            # Check if file imports anything
+            imports_others = False
+            for imported, importers in import_graph.items():
+                if file_path in importers:
+                    imports_others = True
+                    break
+
+            if not imports_others:
+                root_files.add(file_path)
+                dependency_tree[file_path] = {"depth": 0, "dependencies": set()}
+
+        # Build tree iteratively
+        current_depth = 0
+        max_iterations = 10  # Prevent infinite loops
+
+        while current_depth < max_iterations:
+            found_new = False
+            current_depth += 1
+
+            for file_path in file_paths:
+                if file_path in dependency_tree:
+                    continue  # Already processed
+
+                # Check if all dependencies are resolved
+                dependencies = import_graph.get(file_path, set())
+                if all(dep in dependency_tree for dep in dependencies):
+                    # Calculate depth as max dependency depth + 1
+                    if dependencies:
+                        max_dep_depth = max(dependency_tree[dep]["depth"] for dep in dependencies)
+                        depth = max_dep_depth + 1
+                    else:
+                        depth = 0
+
+                    dependency_tree[file_path] = {"depth": depth, "dependencies": dependencies}
+                    found_new = True
+
+            if not found_new:
+                break  # No new files resolved
+
+        # Mark unresolved files
+        for file_path in file_paths:
+            if file_path not in dependency_tree:
+                dependency_tree[file_path] = {
+                    "depth": -1,  # Circular or unresolved
+                    "dependencies": import_graph.get(file_path, set()),
+                }
+
+        return dependency_tree
+
+    def register_custom_ranker(
+        self, ranker_func: Callable[[List[RankedFile], PromptContext], List[RankedFile]]
+    ):
+        """Register a custom ranking function.
+
+        Custom rankers are applied after the main ranking strategy and can
+        adjust scores based on project-specific logic.
+
+        Args:
+            ranker_func: Function that takes ranked files and returns modified list
+
+        Example:
+            >>> def boost_tests(ranked_files, prompt_context):
+            ...     if 'test' in prompt_context.text:
+            ...         for rf in ranked_files:
+            ...             if 'test' in rf.path:
+            ...                 rf.score *= 1.5
+            ...     return ranked_files
+            >>> ranker.register_custom_ranker(boost_tests)
+        """
+        self.custom_rankers.append(ranker_func)
+        # Keep alias updated
+        self._custom_rankers = self.custom_rankers
+        self.logger.info(f"Registered custom ranker: {ranker_func.__name__}")
+
+    def get_ranking_explanation(self, ranked_files: List[RankedFile], top_n: int = 10) -> str:
+        """Get detailed explanation of ranking results.
+
+        Args:
+            ranked_files: List of ranked files
+            top_n: Number of top files to explain
+
+        Returns:
+            Formatted explanation string
+        """
+        explainer = RankingExplainer()
+        strategy = self.strategies.get(self.algorithm)
+        weights = strategy.get_weights() if strategy else {}
+
+        return explainer.explain_ranking(ranked_files[:top_n], weights, top_n=top_n)
+
+    def get_stats(self) -> RankingStats:
+        """Get latest ranking statistics.
+
+        Returns:
+            RankingStats object
+        """
+        return self.stats
+
+    def shutdown(self):
+        """Shutdown the ranker and clean up resources."""
+        self.executor.shutdown(wait=True)
+        self.logger.info("RelevanceRanker shutdown complete")
 
 
-__all__ = [
-    "RelevanceRanker",
-    "RankingAlgorithm",
-    "RankingFactors",
-    "RankedFile",
-    "TFIDFCalculator",
-    "FastRankingStrategy",
-    "BalancedRankingStrategy",
-    "ThoroughRankingStrategy",
-    "SentenceTransformer",
-    "cosine_similarity",
-]
+# Convenience function for creating ranker
+def create_ranker(
+    config: Optional[TenetsConfig] = None, algorithm: str = "balanced", use_stopwords: bool = False
+) -> RelevanceRanker:
+    """Create a configured relevance ranker.
+
+    Args:
+        config: Configuration (uses default if None)
+        algorithm: Ranking algorithm to use
+        use_stopwords: Whether to filter stopwords
+
+    Returns:
+        Configured RelevanceRanker instance
+    """
+    if config is None:
+        config = TenetsConfig()
+
+    return RelevanceRanker(config, algorithm=algorithm, use_stopwords=use_stopwords)

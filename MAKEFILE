@@ -1,7 +1,7 @@
 # tenets Development Makefile
 # Simplifies common development tasks
 
-.PHONY: help install dev test lint format clean build docs docs-serve docs-deploy docs-build release
+.PHONY: help install dev test lint format clean build docs docs-serve docs-deploy docs-build release viz
 
 # Default target
 help:
@@ -10,10 +10,14 @@ help:
 	@echo "Installation:"
 	@echo "  make install       - Install tenets in production mode"
 	@echo "  make dev           - Install tenets in development mode with all extras"
+	@echo "  make install-ml    - Install with ML features (ranking, summarization)"
+	@echo "  make install-viz   - Install with visualization features"
 	@echo ""
 	@echo "Testing & Quality:"
 	@echo "  make test          - Run all tests"
 	@echo "  make test-fast     - Run tests excluding slow ones"
+	@echo "  make test-ranking  - Run ranking tests"
+	@echo "  make test-summary  - Run summarization tests"
 	@echo "  make lint          - Run all linters"
 	@echo "  make format        - Auto-format code"
 	@echo ""
@@ -22,6 +26,10 @@ help:
 	@echo "  make docs-build    - Build docs to site/ directory"
 	@echo "  make docs-serve    - Serve docs with live reload"
 	@echo "  make docs-deploy   - Deploy docs to GitHub Pages (requires permissions)"
+	@echo ""
+	@echo "Visualization:"
+	@echo "  make viz-deps      - Visualize project dependencies"
+	@echo "  make viz-complex   - Visualize code complexity"
 	@echo ""
 	@echo "Build & Release:"
 	@echo "  make build         - Build distribution packages"
@@ -44,6 +52,18 @@ dev:
 	pre-commit install --hook-type push
 	@echo "✓ Development environment ready!"
 
+# Install with ML features
+install-ml:
+	pip install --upgrade pip
+	pip install -e ".[ml]"
+	@echo "✓ ML features installed (advanced ranking & summarization)"
+
+# Install with visualization features
+install-viz:
+	pip install --upgrade pip
+	pip install -e ".[viz]"
+	@echo "✓ Visualization features installed"
+
 # Run all tests
 test:
 	pytest -v --cov=tenets --cov-report=term-missing --cov-report=html
@@ -51,6 +71,18 @@ test:
 # Run fast tests only
 test-fast:
 	pytest -v -m "not slow" --cov=tenets
+
+# Run ranking tests
+test-ranking:
+	pytest -v tests/test_ranking/ --cov=tenets.core.ranking
+
+# Run summarization tests
+test-summary:
+	pytest -v tests/test_summarizer/ --cov=tenets.core.summarizer
+
+# Run visualization tests
+test-viz:
+	pytest -v tests/test_viz/ --cov=tenets.viz
 
 # Run specific test file
 test-file:
@@ -96,6 +128,7 @@ clean:
 	rm -rf .pytest_cache/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
+	rm -rf .tenets/  # Clean tenets cache
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.pyo" -delete
@@ -146,6 +179,18 @@ docs-deps:
 docs-check:
 	mkdocs build --strict 2>&1 | grep -E "WARNING|ERROR" || echo "✓ No documentation issues found!"
 
+# Visualization: show project dependencies
+viz-deps:
+	@echo "Generating dependency graph..."
+	tenets viz deps . --output deps.html --format html
+	@echo "✓ Dependency graph saved to deps.html"
+
+# Visualization: show code complexity
+viz-complex:
+	@echo "Generating complexity heatmap..."
+	tenets viz complexity . --output complexity.html --threshold 10
+	@echo "✓ Complexity heatmap saved to complexity.html"
+
 # Run pre-commit on all files
 pre-commit:
 	pre-commit run --all-files
@@ -177,7 +222,7 @@ install-hooks:
 # Update dependencies
 update-deps:
 	pip install --upgrade pip pip-tools
-	pip-compile --upgrade
+	pip-compile --upgrade pyproject.toml
 	@echo "✓ Dependencies updated!"
 
 # Run security checks
@@ -214,6 +259,16 @@ stats:
 	@echo "\nNumber of Python files:"
 	@find tenets -name "*.py" -type f | wc -l
 	@echo "\nNumber of tests:"
-	@find tests -name "test_*.py" -type f -exec grep -E "def test_" {} + | wc -l
+	@find tests -name "test_*.py" -type f -exec grep -E "def test_" {} + | wc -l || echo "0"
 	@echo "\nTODO items:"
 	@grep -r "TODO" tenets tests --include="*.py" | wc -l || echo "0"
+	@echo "\nRanking strategies:"
+	@ls -1 tenets/core/ranking/strategies.py | wc -l || echo "4"
+	@echo "\nSummarization strategies:"
+	@ls -1 tenets/core/summarizer/strategies.py | wc -l || echo "5"
+
+# Create example configuration
+example-config:
+	@cp .tenets.example.yml .tenets.yml
+	@echo "✓ Created .tenets.yml from example"
+	@echo "Edit .tenets.yml to customize your configuration"
