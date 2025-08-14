@@ -7,13 +7,13 @@ Covers:
 - Distill integration path metadata
 """
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
+from tenets import Tenets
 from tenets.config import TenetsConfig
 from tenets.core.instiller.instiller import Instiller
 from tenets.models.context import ContextResult
-from tenets import Tenets
 
 
 def make_config(tmpdir: str) -> TenetsConfig:

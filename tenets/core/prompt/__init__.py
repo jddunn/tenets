@@ -37,15 +37,15 @@ Example usage:
     >>> print(f"External source: {context.external_context['source']}")
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 # Import main classes
 from .parser import (
-    PromptParser,
+    ExternalReference,
     IntentType,
     ParsedEntity,
+    PromptParser,
     TemporalContext,
-    ExternalReference,
 )
 
 # Import from models (these are typically in tenets.models.context)

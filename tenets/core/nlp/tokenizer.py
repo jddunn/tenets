@@ -5,8 +5,8 @@ constructs and can handle camelCase, snake_case, and other patterns.
 """
 
 import re
-from typing import List, Optional, Set
 from pathlib import Path
+from typing import List, Optional, Set
 
 from tenets.utils.logger import get_logger
 

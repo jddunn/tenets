@@ -238,7 +238,7 @@ class ComplexityAnalyzer:
     def _init_nlp_components(self) -> None:
         """Initialize NLP components for analysis."""
         try:
-            from tenets.core.nlp import CodeTokenizer, KeywordExtractor, ML_AVAILABLE
+            from tenets.core.nlp import ML_AVAILABLE, CodeTokenizer, KeywordExtractor
 
             self.tokenizer = CodeTokenizer(use_stopwords=True)
             self.keyword_extractor = KeywordExtractor(

@@ -1,15 +1,16 @@
 """Tests for programming patterns utilities."""
 
 import json
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, mock_open, patch
+
+import pytest
 
 from tenets.core.nlp.programming_patterns import (
     ProgrammingPatterns,
-    get_programming_patterns,
-    extract_programming_keywords,
     analyze_code_patterns,
+    extract_programming_keywords,
+    get_programming_patterns,
 )
 
 
