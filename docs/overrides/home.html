@@ -286,11 +286,11 @@
           to surface exactly the files you need for any development task.
         </p>
         <ul class="feature-list">
-          <li><strong>TF-IDF Analysis:</strong> Statistical relevance scoring that understands term importance</li>
-          <li><strong>Import Graph:</strong> Dependency-aware file selection based on code relationships</li>
-          <li><strong>Git Signals:</strong> Recent changes and contributor patterns inform relevance</li>
-          <li><strong>Token Optimization:</strong> Smart budgeting for any LLM (GPT-4, Claude, etc.)</li>
-          <li><strong>Semantic Search:</strong> Optional ML-powered understanding of code intent</li>
+          <li><strong>Multi-Factor Ranking:</strong> Keywords, structure, imports, path relevance, and Git signals</li>
+          <li><strong>Optional ML:</strong> Semantic embeddings and transformers when <code>tenets[ml]</code> is installed</li>
+          <li><strong>Summarization:</strong> Rules-based and ML summarizers built-in; LLMs only if API keys enabled</li>
+          <li><strong>Token Optimization:</strong> Budget-aware packing and model-specific token counting</li>
+          <li><strong>Lightweight Extras:</strong> Extras-based dependency architecture keeps core lean</li>
         </ul>
       </div>
       
@@ -401,13 +401,15 @@
   </div>
 </section>
 
+<!-- Removed duplicate early script; logic lives below and runs after DOM ready -->
+
 <!-- How It Works Architecture -->
 <section class="architecture-section">
   <div class="section-container">
     <h2 class="section-title">How Tenets Works</h2>
     
-    <div class="architecture-flow">
-      <div class="arch-stage" data-stage="1">
+    <div class="architecture-flow" data-arch-flow>
+  <div class="arch-stage" data-stage="1" data-target="input" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">1</span>
         </div>
@@ -417,7 +419,7 @@
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="2">
+  <div class="arch-stage" data-stage="2" data-target="scan" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">2</span>
         </div>
@@ -427,76 +429,151 @@
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="3">
+  <div class="arch-stage" data-stage="3" data-target="analyze" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">3</span>
         </div>
         <h3>Analyze</h3>
-        <p>AST parsing &<br>structure extraction</p>
+        <p>Language analyzers & AST<br>structure and metrics</p>
       </div>
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="4">
+  <div class="arch-stage" data-stage="4" data-target="rank" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">4</span>
         </div>
         <h3>Rank</h3>
-        <p>Multi-factor<br>relevance scoring</p>
+        <p>Multi-factor scoring<br>keywords, structure, git</p>
       </div>
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="5">
+  <div class="arch-stage" data-stage="5" data-target="ml-optional" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">5</span>
         </div>
-        <h3>Output</h3>
-        <p>Optimized context<br>for any LLM</p>
+        <h3>ML (Optional)</h3>
+        <p>Embeddings & semantic<br>similarity when enabled</p>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+  <div class="arch-stage" data-stage="6" data-target="summarize" role="button" tabindex="0">
+        <div class="stage-icon">
+          <span class="stage-number">6</span>
+        </div>
+        <h3>Summarize & Output</h3>
+        <p>Token budgeting & summaries<br>LLMs optional via API keys</p>
       </div>
     </div>
-    
-    <div class="arch-details">
-      <div class="detail-card">
-        <h4>🔍 Smart Scanning</h4>
+    <!-- Architecture details panel -->
+    <div class="architecture-details" data-arch-details>
+      <div class="detail-card" data-detail="input" aria-hidden="true">
+        <h4>📝 Input</h4>
         <ul>
-          <li>Parallel filesystem traversal for speed</li>
-          <li>Respects .gitignore and custom patterns</li>
-          <li>Binary file detection and filtering</li>
-          <li>Language-specific file identification</li>
+          <li>Natural language prompt or concrete task</li>
+          <li>Optional tenets and constraints applied</li>
+          <li>Project-aware defaults from config</li>
         </ul>
       </div>
-      
-      <div class="detail-card">
-        <h4>📊 Deep Analysis</h4>
+
+      <div class="detail-card" data-detail="scan" aria-hidden="true">
+        <h4>🔎 Scan</h4>
         <ul>
-          <li>Language-specific AST parsing</li>
-          <li>Import and dependency extraction</li>
-          <li>Complexity metrics calculation</li>
-          <li>Git history integration</li>
+          <li>Parallel discovery of candidate files</li>
+          <li>Respects .gitignore and config filters</li>
+          <li>Language detection and basic heuristics</li>
         </ul>
       </div>
-      
-      <div class="detail-card">
-        <h4>🎯 Intelligent Ranking</h4>
+
+      <div class="detail-card" data-detail="analyze" aria-hidden="true">
+        <h4>🧠 Analyze</h4>
         <ul>
-          <li>TF-IDF keyword relevance</li>
-          <li>Import graph centrality</li>
-          <li>Path structure similarity</li>
-          <li>Recent change weighting</li>
+          <li>Language analyzers & AST structure</li>
+          <li>Symbols, imports, and metrics</li>
+          <li>Lightweight, per-language strategies</li>
         </ul>
       </div>
-      
-      <div class="detail-card">
-        <h4>📦 Token Optimization</h4>
+
+      <div class="detail-card" data-detail="rank" aria-hidden="true">
+        <h4>📈 Rank</h4>
+        <ul>
+          <li>Keyword and phrase matching</li>
+          <li>Import/dependency graph centrality</li>
+          <li>Path and structure relevance</li>
+          <li>Git recency and ownership signals</li>
+        </ul>
+      </div>
+
+      <div class="detail-card" data-detail="ml-optional" aria-hidden="true">
+        <h4>🤖 ML Integrations (Optional)</h4>
+        <ul>
+          <li>Local embeddings for semantic similarity</li>
+          <li>Enhanced ranking with transformers</li>
+          <li>Configurable, disabled by default</li>
+          <li>Install via extras: <code>tenets[ml]</code></li>
+        </ul>
+      </div>
+
+      <div class="detail-card" data-detail="summarize" aria-hidden="true">
+        <h4>📦 Summarization & Output</h4>
         <ul>
           <li>Model-specific token counting</li>
-          <li>Smart file summarization</li>
-          <li>Budget-aware selection</li>
-          <li>Context metadata inclusion</li>
+          <li>Rules-based and ML summarizers built-in</li>
+          <li>Optional LLM summarization only if API keys provided</li>
+          <li>Lightweight dependency architecture and extras</li>
         </ul>
       </div>
     </div>
+
+    <script>
+    // Inline interaction: bi-directional highlighting (stage ↔ detail card)
+    window.addEventListener('DOMContentLoaded', function(){
+      const flow = document.querySelector('[data-arch-flow]');
+      const detailsRoot = document.querySelector('[data-arch-details]');
+      const stages = flow ? Array.from(flow.querySelectorAll('.arch-stage')) : [];
+      const cards = detailsRoot ? Array.from(detailsRoot.querySelectorAll('.detail-card')) : [];
+      if (!stages.length || !cards.length) return;
+
+      const activate = (key) => {
+        // Cards
+        cards.forEach(card => {
+          const match = card.dataset.detail === key;
+          card.classList.toggle('is-active', match);
+          card.setAttribute('aria-hidden', match ? 'false' : 'true');
+        });
+        // Stages
+        stages.forEach(stage => {
+          const match = stage.dataset.target === key;
+          stage.classList.toggle('is-active', match);
+          stage.setAttribute('aria-pressed', match ? 'true' : 'false');
+        });
+      };
+
+      // Default selection
+      activate('scan');
+
+      // Stage interactions
+      stages.forEach(stage => {
+        const key = stage.dataset.target;
+        ['mouseenter','focus','click'].forEach(evt => stage.addEventListener(evt, () => activate(key)));
+        stage.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(key); }
+        });
+      });
+
+      // Card interactions
+      cards.forEach(card => {
+        const key = card.dataset.detail;
+        ['mouseenter','focus','click'].forEach(evt => card.addEventListener(evt, () => activate(key)));
+        card.tabIndex = 0; // make focusable
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(key); }
+        });
+      });
+    });
+    </script>
   </div>
 </section>
 

@@ -102,7 +102,7 @@
   label.md-header__button[for^="__palette_"] { display: flex !important; order: 2; }
   
   /* Prefer inline .md-search control only; hide label toggle */
-  .md-header__inner .md-search { order: 3; }
+  .md-header__inner .md-search { order: 3; display: flex !important; align-items: center; }
   .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
   
   .md-source { display: inline-flex !important; order: 4; }
@@ -123,7 +123,7 @@
 
   /* Medium view (tablet): add extra spacing between search and hamburger */
   @media screen and (min-width: 601px) and (max-width: 1099px) {
-    .md-header .md-search { margin-right: 1rem !important; }
+  .md-header .md-search { display: flex !important; margin-right: 1rem !important; }
     .md-header .md-source { margin-right: 0.75rem !important; }
   }
   
