@@ -22,6 +22,15 @@
   backdrop-filter: blur(12px);
 }
 
+/* When search is open, remove backdrop/filter to prevent creating a containing
+   block for fixed-position overlay inside the header (ensures full-screen modal) */
+.md-header:has(.md-search[aria-expanded="true"]),
+.md-header:has(.md-search[data-md-state="active"]) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
 [data-md-color-scheme="slate"] .md-header {
   background: linear-gradient(135deg, #1a2332 0%, #263244 100%);
   box-shadow:
@@ -109,8 +118,9 @@
   margin: 0 0.5rem 0 0.25rem;
   order: 1;
 }
-/* Theme toggle: show only one label (opposite scheme) based on order (first = default, second = slate) */
-.md-header__inner label.md-header__button[for^="__palette_"] { display:none !important; }
+/* Theme toggle: show only one label (opposite scheme) based on order (first = default, second = slate)
+  and keep it before search */
+.md-header__inner label.md-header__button[for^="__palette_"] { display:none !important; order: 2; }
 [data-md-color-scheme="default"] .md-header__inner label.md-header__button[for^="__palette_"]:last-of-type { display:flex !important; }
 [data-md-color-scheme="slate"] .md-header__inner label.md-header__button[for^="__palette_"]:first-of-type { display:flex !important; }
 
@@ -225,12 +235,16 @@
 
 /* Active Link */
 .md-header-nav__link--active,
-.md-tabs__link--active {
+.md-tabs__link--active,
+.md-header-nav__link[aria-current],
+.md-tabs__link[aria-current] {
   font-weight:700;
   position:relative;
 }
 .md-header-nav__link--active::after,
-.md-tabs__link--active::after {
+.md-tabs__link--active::after,
+.md-header-nav__link[aria-current]::after,
+.md-tabs__link[aria-current]::after {
   content:'';
   position:absolute;
   inset:0;
@@ -240,15 +254,19 @@
   mix-blend-mode:normal;
 }
 [data-md-color-scheme="slate"] .md-header-nav__link--active::after,
-[data-md-color-scheme="slate"] .md-tabs__link--active::after {
+[data-md-color-scheme="slate"] .md-tabs__link--active::after,
+[data-md-color-scheme="slate"] .md-header-nav__link[aria-current]::after,
+[data-md-color-scheme="slate"] .md-tabs__link[aria-current]::after {
   border-color:rgba(251,191,36,0.6);
 }
 
 /* Light mode: make active link/tabs amber (torch) for strong visibility */
 [data-md-color-scheme="default"] .md-header-nav__link--active,
-[data-md-color-scheme="default"] .md-tabs__link--active {
+[data-md-color-scheme="default"] .md-tabs__link--active,
+[data-md-color-scheme="default"] .md-header-nav__link[aria-current],
+[data-md-color-scheme="default"] .md-tabs__link[aria-current] {
   background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important; /* amber-300 -> amber-400 -> amber-500 */
-  color: #1a2332 !important; /* navy-900 for readable text */
+  color: #0b1220 !important; /* slightly darker navy for extra contrast */
   border: 1px solid rgba(245, 158, 11, 0.6) !important;
   box-shadow: 0 3px 10px rgba(245, 158, 11, 0.22),
               inset 0 1px 0 rgba(255, 255, 255, 0.55),
@@ -288,17 +306,16 @@
   transition: all 0.3s ease;
 }
 
-/* Search Bar - Neumorphic Inset - Smaller */
+/* Search - icon only (no input) when inactive */
 .md-search {
   position: relative;
-  margin-left: auto;
+  margin-left: auto; /* this pushes the search and everything after to the far right */
   margin-right: 0.5rem;
-  /* Keep the bar compact but allow text to use full inner width */
-  flex: 0 1 220px;
-  max-width: 220px;
+  flex: 0 0 auto; /* don't grow, don't shrink */
+  order: 4; /* search follows GitHub */
 }
 
-.md-search__form {
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form {
   background: #fdfdf9;
   border-radius: 18px;
   box-shadow:
@@ -306,53 +323,67 @@
     inset -2px -2px 4px rgba(255, 255, 255, 0.75);
   transition: all 0.25s ease;
   overflow: hidden;
-  height: 32px;
+  height: 34px; /* visually centers icon */
+  width: 34px;  /* icon-only */
   display: flex;
   align-items: center;
-  padding: 0 0.6rem;
-  width: 100%;
+  justify-content: center;
+  padding: 0; /* no inner padding when icon-only */
 }
 
-[data-md-color-scheme="slate"] .md-search__form {
+[data-md-color-scheme="slate"] .md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form {
   background: #1a2332;
   box-shadow:
     inset 2px 2px 5px rgba(0, 0, 0, 0.3),
     inset -2px -2px 5px rgba(255, 255, 255, 0.02);
 }
 
-.md-search__input {
-  font-size: 0.72rem;
-  padding: 0 0.3rem 0 1.75rem; /* ensure text never overlaps icon */
-  background: transparent;
-  border: none;
-  color: #1a2332;
-  width: 100%;
-  min-width: 0; /* allow shrinking within flex container */
-  height: 100%;
-  line-height: 32px;
-}
+/* Do not hide the input; let Material handle visibility and focus */
 
 .md-search__input::placeholder {
   color: #6b5d4f;
   opacity: 0.6;
 }
 
-[data-md-color-scheme="slate"] .md-search__input { color: #fdfdf9; }
-[data-md-color-scheme="slate"] .md-search__icon svg { fill:#fbbf24 !important; }
+[data-md-color-scheme="slate"] .md-header .md-search__input { color: #fdfdf9; }
+[data-md-color-scheme="slate"] .md-header .md-search__icon svg { fill:#fbbf24 !important; }
 
-.md-search__icon {
-  position: absolute;
-  left: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
+/* Center the icon within the 34x34 button when inactive only */
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__icon {
+  position: static;
+  transform: none;
   color: #f59e0b;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
+  height: 34px;
+  width: 34px;
+  line-height: 0; /* prevent inline SVG extra leading from shifting vertically */
 }
 
-.md-search__icon svg { width:16px; height:16px; fill:#f59e0b !important; stroke:none; }
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__icon svg { width:16px; height:16px; fill:#f59e0b !important; stroke:none; }
+
+/* When active, allow Material defaults to lay out the form and icons */
+.md-header .md-search[aria-expanded="true"] .md-search__form,
+.md-header .md-search[data-md-state="active"] .md-search__form {
+  width: 100% !important;
+  height: auto !important;
+  padding: var(--md-text-spacing, 0.35rem 0.6rem) !important;
+  border-radius: 10px;
+}
+
+/* Let the active search grow across the header row so typing isn't clipped */
+.md-header .md-search[aria-expanded="true"],
+.md-header .md-search[data-md-state="active"] {
+  flex: 1 1 auto !important;
+  min-width: 60%;
+}
+
+/* Ensure the input spans full width inside the active form */
+.md-header .md-search[aria-expanded="true"] .md-search__input,
+.md-header .md-search[data-md-state="active"] .md-search__input {
+  width: 100% !important;
+}
 
 /* GitHub Button - Neumorphic Card */
 /* GitHub icon compact */
@@ -372,7 +403,7 @@
   margin-right: 0.25rem;
   position: relative;
   overflow: hidden;
-  order: 5;
+  order: 3; /* immediately after theme toggle */
 }
 
 [data-md-color-scheme="slate"] .md-source {
@@ -391,10 +422,11 @@
   animation: githubLampFlicker 2.4s linear infinite;
 }
 
+/* Theme GitHub icon to match flame (amber) */
 .md-source__icon svg {
   width: 12px;
   height: 12px;
-  fill: #1a2332;
+  fill: #f59e0b; /* amber in light mode */
   transition: all 0.3s ease;
 }
 
@@ -429,6 +461,17 @@
   right: 8px;
   left: auto;
   z-index: 15000;
+}
+
+/* On desktop, keep drawer button in normal flow so it doesn't overlay other controls */
+@media screen and (min-width: 601px) {
+  .md-header__button[for="__drawer"] {
+    position: static;
+    top: auto;
+    right: auto;
+    left: auto;
+    z-index: auto;
+  }
 }
 
 /* Lamp-style gentle irregular flicker */
@@ -574,13 +617,24 @@ label.md-header__button[for^="__palette_"][data-tooltip]:hover::after {
   }
 }
 
-/* Re-order drawer button to far left only on mobile; on desktop we keep order natural: logo, nav, search, theme, github */
-.md-header__button[for="__drawer"] { order: -1; }
-.md-search { order: 2; margin-left: auto; }
-/* Prevent search from compressing nav to zero */
-.md-search { flex: 0 0 auto; }
-label.md-header__button[for^="__palette_"] { order:3; }
+/* Desktop order: logo (0), nav (1), theme toggle (2), search (3), github (4), hamburger (5) */
+.md-header__button[for="__drawer"] { order: 5; }
+.md-search { order: 3; margin-left: auto; }
+label.md-header__button[for^="__palette_"] { order: 2; }
 .md-source { order: 4; }
+
+/* Visually hide the built-in header search label but keep it in the DOM for accessibility/JS */
+label.md-header__button[for="__search"] {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+}
 
 /* MOBILE - Responsive at 1100px */
 @media screen and (max-width: 600px) {
@@ -648,17 +702,14 @@ label.md-header__button[for^="__palette_"] { order:3; }
     height: 52px !important;
   }
 
-  /* Hide header search on mobile (unless moved into drawer) */
-  .md-search { display: none; }
-  .md-search.in-mobile-drawer { display: block !important; width: 100%; margin: 0; }
-  .md-search.in-mobile-drawer .md-search__form { width: 100%; }
-  .md-search.in-mobile-drawer .md-search__input { width: 100%; }
+  /* Hide header search on mobile by default, but unhide when active */
+  /* Keep search button visible on mobile (icon-only); full dialog opens on tap */
+  .md-search { display: flex !important; order: 2; margin: 0 0.25rem; }
+  .md-search .md-search__form { width: 34px; height: 34px; }
   .mobile-drawer-search-wrapper { margin-top: 0.25rem !important; }
 
-  /* Hide GitHub on mobile */
-  .md-source {
-    display: none;
-  }
+  /* Keep GitHub visible on mobile, after search */
+  .md-source { display: inline-flex !important; order: 3; }
 
   /* Theme toggle on mobile */
   .md-header__button[for="__palette_1"],

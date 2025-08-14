@@ -6,6 +6,31 @@ label.md-header__button.md-icon[for="__search"],
 label.md-header__button[for="__search"].md-icon,
 label.md-header__button[for="__search"] .md-icon {
   color: var(--md-accent-fg-color) !important;
+  /* center the icon within its square button to avoid appearing too high */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 13010; /* above neighboring elements */
+}
+
+/* Ensure the header search toggle itself has a solid hit area */
+label.md-header__button[for="__search"] {
+  width: 34px;
+  height: 34px;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+/* Make the inline icon inside the search form clickable and above input */
+.md-search .md-search__icon[for="__search"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 2;
 }
 
 /* Input-leading icon inside the search form */
@@ -24,6 +49,9 @@ label.md-header__button[for="__search"] svg path,
 .md-search .md-search__icon .md-icon svg path {
   fill: var(--md-accent-fg-color) !important;
   stroke: var(--md-accent-fg-color) !important;
+  /* normalize icon box for vertical centering */
+  width: 18px;
+  height: 18px;
 }
 
 /* When theme uses currentColor in icons, ensure it flows */
@@ -47,6 +75,67 @@ label.md-header__button[for="__search"]::before {
   transform: translateX(-50%);
   z-index: 13005; /* above back-to-top */
   pointer-events: none;
+}
+
+/* Ensure search modal always appears above header/content */
+.md-search__overlay {
+  /* Above header and any page overlays */
+  z-index: 26050 !important;
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 35, 50, 0.6) !important; /* visible backdrop */
+  pointer-events: auto !important;
+}
+.md-search__inner[role="dialog"],
+.md-search[aria-expanded="true"] .md-search__inner,
+.md-search[data-md-state="active"] .md-search__inner {
+  z-index: 26060 !important;
+  position: relative;
+  max-width: min(96vw, 1024px); /* wide on mobile, capped on desktop */
+  margin: 12vh auto 0;
+}
+
+/* On very small screens, allow full width */
+@media (max-width: 600px) {
+  .md-search__inner[role="dialog"],
+  .md-search[aria-expanded="true"] .md-search__inner,
+  .md-search[data-md-state="active"] .md-search__inner {
+    max-width: 100vw;
+    margin: 10vh auto 0;
+  }
+}
+
+[data-md-color-scheme="slate"] .md-search__overlay {
+  background: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Elevate active search container in stacking context without changing layout */
+.md-search[aria-expanded="true"],
+.md-search[data-md-state="active"] {
+  z-index: 26060 !important;
+}
+
+/* Ensure full-width form and input inside the modal dialog */
+.md-search__inner .md-search__form { width: 100% !important; }
+.md-search__inner .md-search__input { width: 100% !important; }
+.md-search__inner .md-search__output { width: 100% !important; margin-left: 0; margin-right: 0; }
+
+/* Mobile fallback: if compact .md-search__form is absent, show the native label button */
+@media (max-width: 1099px) {
+  .md-header__inner label.md-header__button[for="__search"] {
+    position: static !important;
+    width: 34px !important;
+    height: 34px !important;
+    margin: 0 !important;
+    clip: auto !important;
+    clip-path: none !important;
+    overflow: visible !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    order: 2;
+  }
+  .md-source { display: inline-flex !important; }
 }
 
 .tenets-toast{

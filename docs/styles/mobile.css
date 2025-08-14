@@ -12,16 +12,11 @@
     display: flex !important;
   }
   
-  .md-header__button[for="__drawer"] {
-    display: none !important;
-  }
-  
+  /* Hide mobile-only elements on desktop */
+  .md-header__button[for="__drawer"],
   .md-nav--primary,
   .md-nav__toggle,
-  .md-sidebar--primary {
-    display: none !important;
-  }
-  
+  .md-sidebar--primary,
   .md-overlay {
     display: none !important;
   }
@@ -33,39 +28,63 @@
 
 @media screen and (max-width: 1099px) {
   
-  /* Mobile header adjustments */
+  /* Mobile header base styles */
   .md-header {
     height: 3.5rem;
     padding: 0 0.5rem;
+    position: fixed;
+    width: 100%;
+  /* Ensure header (and search modal within it) stacks above page overlays */
+  z-index: 24000;
   }
   
   .md-header__inner {
-    padding: 0 0.5rem;
+  padding: 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  /* Reserve space on the right for the fixed hamburger so controls don't crowd it */
+  padding-right: 88px !important;
   }
   
-  /* Hide desktop nav */
+  /* Hide desktop nav on mobile */
   .md-header-nav {
     display: none !important;
   }
   
-  /* Hamburger menu button - Neumorphic */
+  /* Title - centered and flexible */
+  .md-header__title {
+    display: block !important;
+    flex: 1;
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #1a2332;
+    text-transform: lowercase;
+    order: 2;
+  }
+  
+  [data-md-color-scheme="slate"] .md-header__title {
+    color: #fbbf24;
+  }
+  
+  /* Hamburger menu button - left side */
   .md-header__button[for="__drawer"] {
-  display: flex !important;
-  width: 2.5rem;
-  height: 2.5rem;
-  align-items: center;
-  justify-content: center;
-  position: fixed; /* always pin to viewport */
-  top: 8px;
-  right: 8px;
-  left: auto;
-  z-index: 15000;
+    display: flex !important;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
     background: linear-gradient(145deg, #ffffff, #f0ede8);
     border-radius: 8px;
     box-shadow: 
       3px 3px 8px rgba(26, 35, 50, 0.08),
       -3px -3px 8px rgba(255, 255, 255, 0.9);
     cursor: pointer;
+    order: 1;
+    position: relative;
+    z-index: 10002;
   }
   
   [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
@@ -75,12 +94,40 @@
       -3px -3px 8px rgba(255, 255, 255, 0.03);
   }
   
-  /* Hamburger icon */
   .md-header__button[for="__drawer"] svg {
     fill: #f59e0b;
   }
   
-  /* Mobile navigation drawer - FIXED */
+  /* Right side controls */
+  label.md-header__button[for^="__palette_"] { display: flex !important; order: 2; }
+  
+  /* Prefer inline .md-search control. Hide label-based fallback when inline exists. */
+  .md-header__inner .md-search { order: 3; }
+  .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
+  
+  .md-source { display: inline-flex !important; order: 4; }
+
+  /* Keep GitHub inline next to theme toggle (no fixed positioning) */
+  .md-header__source,
+  .md-header .md-source { position: static !important; margin-right: 0.25rem !important; }
+
+  /* Hide any GitHub/source block that theme may render inside drawer */
+  .md-nav__source,
+  .md-nav--primary .md-source,
+  .md-sidebar--primary .md-source {
+    display: none !important;
+  }
+  
+  /* Keep hamburger fixed at the top-right above other controls */
+  .md-header__button[for="__drawer"] { position: fixed; top: 8px; right: 8px; order: 5; }
+
+  /* Medium view (tablet): add extra spacing between search and hamburger */
+  @media screen and (min-width: 601px) and (max-width: 1099px) {
+    .md-header .md-search { margin-right: 1rem !important; }
+    .md-header .md-source { margin-right: 0.75rem !important; }
+  }
+  
+  /* Mobile navigation drawer */
   .md-nav--primary,
   .md-sidebar--primary {
     display: block !important;
@@ -94,7 +141,7 @@
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.2) !important;
     transform: translateX(-100%) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  z-index: 16000 !important; /* above fixed header */
+    z-index: 10010 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
@@ -105,7 +152,7 @@
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.4) !important;
   }
   
-  /* When drawer checkbox is checked - SHOW DRAWER */
+  /* Show drawer when checkbox is checked */
   input[type="checkbox"]#__drawer:checked ~ .md-container .md-nav--primary,
   input[type="checkbox"]#__drawer:checked ~ .md-container .md-sidebar--primary,
   .md-toggle--drawer:checked ~ .md-container .md-nav--primary,
@@ -116,23 +163,24 @@
   /* Mobile nav header with logo */
   .md-nav--primary .md-nav__title,
   .md-sidebar--primary .md-nav__title {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-  color: #1a2332;
-  padding: 1rem 1rem;
-  font-family: 'Playfair Display', serif;
-  font-weight: 700; /* lighter to reduce "fat" look */
-  font-size: 1.15rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-bottom: 1px solid rgba(26, 35, 50, 0.1);
-  position: relative; /* prevent covering first item */
-  top: auto;
-  z-index: auto;
-  text-transform: lowercase;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #1a2332;
+    padding: 1rem;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgba(26, 35, 50, 0.1);
+    margin-bottom: 0;
+    text-transform: lowercase;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
   
-  /* Logo in drawer header - non-cropped version */
+  /* Logo in drawer header */
   .md-nav--primary .md-nav__title::before,
   .md-sidebar--primary .md-nav__title::before {
     content: '';
@@ -141,9 +189,9 @@
     height: 40px;
     background: url('../logos/tenets_light_icon_transparent.png') no-repeat center;
     background-size: contain;
+    flex-shrink: 0;
   }
-
-  /* Swap to dark logo in dark mode */
+  
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title::before,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title::before {
     background-image: url('../logos/tenets_dark_icon_transparent.png');
@@ -152,38 +200,23 @@
   /* Navigation list container */
   .md-nav--primary .md-nav__list,
   .md-sidebar--primary .md-nav__list {
-    /* Ensure list starts below title and is fully clickable */
-    padding: 0.75rem 0 0 !important; /* extra space below header */
+    padding: 0 !important;
     margin: 0;
     list-style: none;
-    position: relative;
-    z-index: 1;
-    pointer-events: auto;
-  }
-
-  /* Lower the title in the stacking context to avoid covering first item */
-  .md-nav--primary .md-nav__title,
-  .md-sidebar--primary .md-nav__title {
-    z-index: 0;
-  }
-
-  /* Small top margin for very first item to avoid accidental overlap */
-  .md-nav--primary .md-nav__item:first-child,
-  .md-sidebar--primary .md-nav__item:first-child {
-    margin-top: 0.125rem;
   }
   
   /* Navigation items */
   .md-nav--primary .md-nav__item,
   .md-sidebar--primary .md-nav__item {
     border-bottom: 1px solid rgba(245, 158, 11, 0.06);
+    margin: 0;
   }
   
   .md-nav--primary .md-nav__link,
   .md-sidebar--primary .md-nav__link {
-  padding: 0.9rem 1.25rem !important;
-  font-size: 0.95rem;
-  font-weight: 600;
+    padding: 0.9rem 1.25rem !important;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: #3e342a;
     display: block;
     transition: all 0.2s ease;
@@ -207,10 +240,10 @@
   
   .md-nav--primary .md-nav__link--active,
   .md-sidebar--primary .md-nav__link--active {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
-  font-weight: 600; /* match regular weight to avoid fat look */
-  border-left: 3px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    font-weight: 600;
+    border-left: 3px solid #f59e0b;
   }
   
   /* Ornate decoration on hover */
@@ -256,7 +289,8 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-  z-index: 15950; /* just under drawer, above page/header */
+  /* Keep drawer overlay below header/search modal */
+  z-index: 10005;
     backdrop-filter: blur(5px);
     pointer-events: none;
   }
@@ -273,29 +307,24 @@
     pointer-events: auto !important;
   }
   
-  /* Hide tabs and secondary sidebar */
-  .md-tabs {
-    display: none !important;
+  /* Ensure search components are above everything on mobile and interactive */
+  .md-search__overlay { z-index: 24050 !important; pointer-events: auto !important; }
+
+  .md-search__inner[role="dialog"],
+  .md-search[aria-expanded="true"],
+  .md-search[data-md-state="active"] { z-index: 24060 !important; }
+  
+  /* Center search dialog on mobile */
+  .md-search[aria-expanded="true"] .md-search__inner,
+  .md-search[data-md-state="active"] .md-search__inner {
+    margin: 12vh auto 0 !important;
+    max-width: min(92vw, 720px) !important;
   }
   
+  /* Hide tabs and secondary sidebar on mobile */
+  .md-tabs,
   .md-sidebar--secondary {
     display: none !important;
-  }
-  
-  /* Show title on mobile */
-  .md-header__title {
-    display: block !important;
-    flex: 1;
-    text-align: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.25rem;
-    font-weight: 900;
-    color: #1a2332;
-    text-transform: lowercase;
-  }
-  
-  [data-md-color-scheme="slate"] .md-header__title {
-    color: #fbbf24;
   }
 }
 
@@ -319,7 +348,7 @@
 
 @media screen and (max-width: 1099px) {
   
-  /* Content spacing */
+  /* Content spacing to account for fixed header */
   .md-container {
     padding-top: 3.5rem;
   }
@@ -369,9 +398,9 @@
   /* Hero adjustments */
   .victorian-hero,
   .hero-section {
-    min-height: calc(100vh - 7rem);
+    min-height: calc(100vh - 3.5rem);
     padding: 1.5rem 1rem;
-    margin-top: 56px;
+    margin-top: 3.5rem;
   }
   
   .lantern-container {
@@ -416,10 +445,13 @@
     margin: 0.5rem 0;
   }
   
-  /* Hide search and source on mobile */
-  .md-search,
-  .md-source {
-    display: none !important;
+  /* Prevent body scroll when drawer is open */
+  body:has(#__drawer:checked),
+  body:has(.md-toggle--drawer:checked) {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
   }
 }
 
@@ -444,7 +476,7 @@
   
   .md-nav--primary,
   .md-sidebar--primary {
-    width: 75% !important;
+    width: 90% !important;
     max-width: 280px !important;
   }
   
@@ -456,12 +488,16 @@
     width: 60px;
     height: 60px;
   }
-}
-
-/* Prevent body scroll when drawer is open */
-body:has(#__drawer:checked),
-body:has(.md-toggle--drawer:checked) {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
+  
+  /* Adjust hero spacing for smaller header */
+  .victorian-hero,
+  .hero-section {
+    margin-top: 3rem;
+    min-height: calc(100vh - 3rem);
+  }
+  
+  /* Content spacing adjustment */
+  .md-container {
+    padding-top: 3rem;
+  }
 }

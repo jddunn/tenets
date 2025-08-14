@@ -7,7 +7,7 @@
    ===================================================== */
 
 .md-search__form {
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--md-default-bg-color--light);
   border: 1px solid var(--md-default-bg-color--lighter);
 }
@@ -27,10 +27,11 @@
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
   color: var(--md-default-fg-color);
+  font-weight: 600;
 }
 
 .md-search__input::placeholder {
-  opacity: 0.7;
+  opacity: 0.85;
   font-style: italic;
   color: var(--md-default-fg-color--light);
 }
@@ -41,9 +42,17 @@
   border: 1px solid var(--md-default-bg-color--lighter);
   margin-top: 0.5rem;
   overflow: hidden;
-  max-height: 70vh;
+  max-height: 72vh;
   overflow-y: auto;
 }
+
+/* Z-index and positioning safeguards (non-invasive) */
+/* Let overrides.css control stacking/position; avoid creating new stacking contexts here */
+/* .md-search__overlay positioning defined in overrides.css */
+/* .md-search__inner[role="dialog"] positioning defined in overrides.css */
+/* Let Material control visibility; no force-open classes */
+/* Prevent background scroll only if body class is present (not added by us anymore) */
+body.tenets-search-open { overflow: hidden; }
 
 [data-md-color-scheme="default"] .md-search__output {
   background: #fdfdf9;
@@ -99,6 +108,8 @@
   display: block;
   text-decoration: none;
 }
+/* Z-index and positioning safeguards */
+/* z-index handled in overrides.css to avoid conflicts */
 
 .md-search-result__link:hover {
   background: transparent;
@@ -201,11 +212,11 @@
   transform: scale(1.1);
 }
 
-/* Keyboard shortcut hint */
-@media screen and (min-width: 60em) {
-  .md-search__input:not(:focus)::placeholder {
-    content: "Search... (Press '/' to focus)";
-  }
+/* Make placeholder larger and centered on small screens when empty */
+@media screen and (max-width: 600px) {
+  .md-search__input::placeholder { font-size: 1.1rem; opacity: 0.9; color: var(--md-default-fg-color); }
+  .md-search__inner[role="dialog"] { margin: 12vh auto 0; max-width: min(96vw, 740px); }
+  .md-search__scrollwrap { display: block; min-height: unset; }
 }
 
 /* =====================================================
@@ -242,6 +253,15 @@
 .md-search-result__article {
   border-left: 3px solid transparent;
   transition: border-color 0.2s ease;
+}
+
+/* Make compact icon-only search feel interactive and focusable */
+.md-search__form[role="button"] {
+  cursor: pointer;
+}
+.md-search__form[role="button"]:focus-visible {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
 }
 
 .md-search-result__article:hover {

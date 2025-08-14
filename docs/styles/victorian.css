@@ -152,6 +152,12 @@ code, pre {
   position: relative;
 }
 
+.torch-container .lantern-layer{
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* behind logo (logo at 2) */
+}
+
 .torch-logo-static {
   width: 100%;
   height: 100%;
@@ -196,32 +202,10 @@ code, pre {
   filter: blur(2px);
 }
 
-.flame-glow-iridescent {
-  position: absolute;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 100px;
-  filter: blur(30px);
-  animation: iridescent 3s ease-in-out infinite;
-}
-
-@keyframes iridescent {
-  0%, 100% { 
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
-  }
-  25% { 
-    background: radial-gradient(circle, rgba(139, 0, 255, 0.4) 0%, transparent 70%);
-  }
-  50% { 
-    background: radial-gradient(circle, rgba(0, 255, 255, 0.4) 0%, transparent 70%);
-  }
-  75% { 
-    background: radial-gradient(circle, rgba(255, 0, 102, 0.4) 0%, transparent 70%);
-  }
-}
-
+/* Remove iridescent concentric radiance */
+.flame-glow-iridescent,
+.flame-glow-iridescent::before,
+.flame-glow-iridescent::after { display:none !important; }
 /* Hero Typography */
 .hero-title {
   font-family: 'Playfair Display', serif;
@@ -346,8 +330,11 @@ code, pre {
 
 .btn-primary.large,
 .btn-secondary.large {
-  padding: 1rem 2rem;
+  padding: 1rem 2.25rem;
   font-size: 1.125rem;
+  min-width: 280px;
+  max-width: 100%;
+  white-space: normal; /* allow wrapping */
 }
 
 .copy-btn {
@@ -1113,6 +1100,33 @@ code, pre {
   align-items: center;
   justify-content: center;
   gap: 1rem; /* spacing between the two buttons */
+}
+
+/* Coming soon cards */
+.install-card.coming-soon {
+  position: relative;
+  opacity: 0.7;
+  filter: saturate(0.6);
+}
+.install-card.coming-soon .copy-btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.install-card.coming-soon .code-block,
+.install-card.coming-soon .install-note {
+  pointer-events: none;
+}
+.coming-soon-badge {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background: var(--gradient-amber);
+  color: var(--navy-900);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
 }
 
 /* ===============================================
