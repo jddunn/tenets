@@ -89,9 +89,7 @@ def sample_analysis_data():
             "external_dependencies": 30,
             "circular_count": 2,
             "dependencies": [],
-            "most_dependent": [
-                {"name": "core.py", "dependencies": 10, "dependents": 20}
-            ],
+            "most_dependent": [{"name": "core.py", "dependencies": 10, "dependents": 20}],
         },
     }
 
@@ -120,7 +118,7 @@ class TestReportSection:
     def test_add_metric(self):
         """Test adding metrics to section."""
         section = ReportSection(id="test", title="Test")
-        
+
         section.add_metric("score", 95.5)
         section.add_metric("count", 10)
 
@@ -130,11 +128,8 @@ class TestReportSection:
     def test_add_table(self):
         """Test adding tables to section."""
         section = ReportSection(id="test", title="Test")
-        
-        table_data = {
-            "headers": ["Name", "Value"],
-            "rows": [["Test", 123], ["Demo", 456]]
-        }
+
+        table_data = {"headers": ["Name", "Value"], "rows": [["Test", 123], ["Demo", 456]]}
         section.add_table(table_data)
 
         assert len(section.tables) == 1
@@ -143,11 +138,8 @@ class TestReportSection:
     def test_add_chart(self):
         """Test adding charts to section."""
         section = ReportSection(id="test", title="Test")
-        
-        chart_config = {
-            "type": "bar",
-            "data": {"labels": ["A", "B"], "values": [1, 2]}
-        }
+
+        chart_config = {"type": "bar", "data": {"labels": ["A", "B"], "values": [1, 2]}}
         section.add_chart(chart_config)
 
         assert len(section.charts) == 1
@@ -157,7 +149,7 @@ class TestReportSection:
         """Test adding subsections."""
         parent = ReportSection(id="parent", title="Parent")
         child = ReportSection(id="child", title="Child", level=2)
-        
+
         parent.add_subsection(child)
 
         assert len(parent.subsections) == 1
@@ -188,7 +180,7 @@ class TestReportConfig:
             format="markdown",
             include_charts=False,
             theme="dark",
-            max_items=50
+            max_items=50,
         )
 
         assert config.title == "Custom Report"
@@ -212,7 +204,7 @@ class TestReportGenerator:
     def test_build_metadata(self, generator, sample_analysis_data):
         """Test metadata building."""
         report_config = ReportConfig(title="Test Report")
-        
+
         metadata = generator._build_metadata(sample_analysis_data, report_config)
 
         assert metadata["title"] == "Test Report"
@@ -237,11 +229,8 @@ class TestReportGenerator:
 
     def test_create_summary_section(self, generator, sample_analysis_data):
         """Test summary section creation."""
-        generator.metadata = generator._build_metadata(
-            sample_analysis_data,
-            ReportConfig()
-        )
-        
+        generator.metadata = generator._build_metadata(sample_analysis_data, ReportConfig())
+
         section = generator._create_summary_section(sample_analysis_data)
 
         assert section.id == "summary"
@@ -254,11 +243,8 @@ class TestReportGenerator:
     def test_create_complexity_section(self, generator, sample_analysis_data):
         """Test complexity section creation."""
         config = ReportConfig(include_charts=True, max_items=10)
-        
-        section = generator._create_complexity_section(
-            sample_analysis_data["complexity"],
-            config
-        )
+
+        section = generator._create_complexity_section(sample_analysis_data["complexity"], config)
 
         assert section.id == "complexity"
         assert section.title == "Complexity Analysis"
@@ -269,10 +255,9 @@ class TestReportGenerator:
     def test_create_contributors_section(self, generator, sample_analysis_data):
         """Test contributors section creation."""
         config = ReportConfig(include_charts=True)
-        
+
         section = generator._create_contributors_section(
-            sample_analysis_data["contributors"],
-            config
+            sample_analysis_data["contributors"], config
         )
 
         assert section.id == "contributors"
@@ -284,11 +269,8 @@ class TestReportGenerator:
     def test_create_hotspots_section(self, generator, sample_analysis_data):
         """Test hotspots section creation."""
         config = ReportConfig(include_charts=True)
-        
-        section = generator._create_hotspots_section(
-            sample_analysis_data["hotspots"],
-            config
-        )
+
+        section = generator._create_hotspots_section(sample_analysis_data["hotspots"], config)
 
         assert section.id == "hotspots"
         assert section.title == "Code Hotspots"
@@ -304,8 +286,10 @@ class TestReportGenerator:
         assert section.content is not None
         assert len(section.content) > 0
 
-    @patch('tenets.core.reporting.html_reporter.HTMLReporter')
-    def test_generate_html_report(self, mock_html_reporter, generator, sample_analysis_data, tmp_path):
+    @patch("tenets.core.reporting.html_reporter.HTMLReporter")
+    def test_generate_html_report(
+        self, mock_html_reporter, generator, sample_analysis_data, tmp_path
+    ):
         """Test HTML report generation."""
         output_path = tmp_path / "report.html"
         config = ReportConfig(format="html", include_charts=True)
@@ -321,8 +305,10 @@ class TestReportGenerator:
         mock_html_reporter.assert_called_once()
         mock_reporter_instance.generate.assert_called_once()
 
-    @patch('tenets.core.reporting.markdown_reporter.MarkdownReporter')
-    def test_generate_markdown_report(self, mock_md_reporter, generator, sample_analysis_data, tmp_path):
+    @patch("tenets.core.reporting.markdown_reporter.MarkdownReporter")
+    def test_generate_markdown_report(
+        self, mock_md_reporter, generator, sample_analysis_data, tmp_path
+    ):
         """Test Markdown report generation."""
         output_path = tmp_path / "report.md"
         config = ReportConfig(format="markdown")
@@ -343,9 +329,7 @@ class TestReportGenerator:
         config = ReportConfig(format="json")
 
         # Create some sections
-        generator.sections = [
-            ReportSection(id="test", title="Test Section")
-        ]
+        generator.sections = [ReportSection(id="test", title="Test Section")]
         generator.metadata = {"test": "metadata"}
 
         result = generator.generate(sample_analysis_data, output_path, config)
@@ -379,12 +363,7 @@ class TestReportGenerator:
     def test_sections_to_dict(self, generator):
         """Test converting sections to dictionary."""
         sections = [
-            ReportSection(
-                id="test",
-                title="Test",
-                content="Test content",
-                metrics={"score": 100}
-            )
+            ReportSection(id="test", title="Test", content="Test content", metrics={"score": 100})
         ]
 
         result = generator._sections_to_dict(sections)
@@ -398,18 +377,8 @@ class TestReportGenerator:
     def test_create_complex_functions_table(self, generator):
         """Test complex functions table creation."""
         complex_items = [
-            {
-                "name": "func1",
-                "file": "file1.py",
-                "complexity": 20,
-                "lines": 100
-            },
-            {
-                "name": "func2",
-                "file": "file2.py",
-                "complexity": 15,
-                "lines": 75
-            }
+            {"name": "func1", "file": "file1.py", "complexity": 20, "lines": 100},
+            {"name": "func2", "file": "file2.py", "complexity": 15, "lines": 75},
         ]
 
         table = generator._create_complex_functions_table(complex_items)
@@ -422,13 +391,7 @@ class TestReportGenerator:
     def test_create_contributors_table(self, generator):
         """Test contributors table creation."""
         contributors = [
-            {
-                "name": "Alice",
-                "commits": 100,
-                "lines": 5000,
-                "files": 50,
-                "last_commit_days_ago": 0
-            }
+            {"name": "Alice", "commits": 100, "lines": 5000, "files": 50, "last_commit_days_ago": 0}
         ]
 
         table = generator._create_contributors_table(contributors)
@@ -446,7 +409,7 @@ class TestReportGenerator:
                 "risk_level": "critical",
                 "change_frequency": 50,
                 "complexity": 30,
-                "risk_score": 85.5
+                "risk_score": 85.5,
             }
         ]
 
@@ -461,7 +424,7 @@ class TestReportGenerator:
         """Test report generation with minimal data."""
         output_path = tmp_path / "empty_report.json"
         config = ReportConfig(format="json", include_summary=False)
-        
+
         result = generator.generate({}, output_path, config)
 
         assert result == output_path
@@ -470,9 +433,7 @@ class TestReportGenerator:
     def test_generate_with_missing_sections(self, generator, sample_analysis_data, tmp_path):
         """Test report generation with missing data sections."""
         # Remove some sections
-        partial_data = {
-            "complexity": sample_analysis_data["complexity"]
-        }
+        partial_data = {"complexity": sample_analysis_data["complexity"]}
 
         output_path = tmp_path / "partial_report.json"
         config = ReportConfig(format="json")
