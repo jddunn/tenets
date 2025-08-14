@@ -84,23 +84,20 @@
   <div class="section-container">
     <h2 class="section-title">See It In Action</h2>
 
+    <!-- Radios must be siblings of .see-panes for CSS selectors to work -->
+    <input type="radio" name="see-tabs" id="tab-context" checked>
+    <input type="radio" name="see-tabs" id="tab-analysis">
+    <input type="radio" name="see-tabs" id="tab-quality">
+    <input type="radio" name="see-tabs" id="tab-sessions">
+    <input type="radio" name="see-tabs" id="tab-velocity">
+    <input type="radio" name="see-tabs" id="tab-viz">
+
     <div class="see-tabs">
-      <input type="radio" name="see-tabs" id="tab-context" checked>
       <label class="see-tab-label" for="tab-context">Context</label>
-
-      <input type="radio" name="see-tabs" id="tab-analysis">
       <label class="see-tab-label" for="tab-analysis">Analysis</label>
-
-      <input type="radio" name="see-tabs" id="tab-quality">
       <label class="see-tab-label" for="tab-quality">Quality</label>
-
-      <input type="radio" name="see-tabs" id="tab-sessions">
       <label class="see-tab-label" for="tab-sessions">Sessions</label>
-
-      <input type="radio" name="see-tabs" id="tab-velocity">
       <label class="see-tab-label" for="tab-velocity">Velocity</label>
-
-      <input type="radio" name="see-tabs" id="tab-viz">
       <label class="see-tab-label" for="tab-viz">Visualization</label>
     </div>
 

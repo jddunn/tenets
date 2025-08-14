@@ -38,19 +38,7 @@
       out.addEventListener('click', reveal);
 
       // If image fails to load, show a styled placeholder so terminals still render
-      const imgEl = out.querySelector('img');
-      if (imgEl) {
-        imgEl.addEventListener('error', () => {
-          const ph = document.createElement('div');
-          ph.className = 'see-placeholder';
-          ph.textContent = 'Screenshot coming soon';
-          const frame = out.querySelector('.shot-frame') || out.querySelector('.see-body') || out;
-          if (frame) {
-            frame.innerHTML = '';
-            frame.appendChild(ph);
-          }
-        }, { once: true });
-      }
+  // Intentionally do not replace missing images; allow 404s to show so markup remains visible
       // Lazy reveal when scrolled into view beyond 40% (fallback to timeout if IO missing)
       if ('IntersectionObserver' in window) {
         const io = new IntersectionObserver((entries)=>{
