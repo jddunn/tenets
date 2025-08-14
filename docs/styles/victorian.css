@@ -883,10 +883,13 @@ code, pre {
   padding: 1.5rem;
   transition: all 0.3s ease;
   position: relative;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
 .arch-stage:hover {
   transform: translateY(-10px);
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.18);
 }
 
 .stage-icon {
@@ -900,6 +903,18 @@ code, pre {
   justify-content: center;
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
+
+/* Active stage state */
+.arch-stage.is-active .stage-icon {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), 0 8px 24px rgba(245, 158, 11, 0.35);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.arch-stage.is-active h3 { color: var(--amber-600); }
+[data-md-color-scheme="slate"] .arch-stage.is-active h3 { color: var(--amber-400); }
+
+.arch-stage:focus { outline: none; }
+.arch-stage:focus-visible { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35); }
 
 .stage-number {
   font-size: 2rem;
@@ -958,6 +973,9 @@ code, pre {
   border-radius: 12px;
   box-shadow: var(--shadow-md);
   transition: all 0.3s ease;
+  /* Dim by default until corresponding stage is focused */
+  opacity: 0.45;
+  filter: grayscale(12%);
 }
 
 [data-md-color-scheme="slate"] .detail-card {
@@ -965,10 +983,18 @@ code, pre {
   border: 1px solid rgba(245, 158, 11, 0.1);
 }
 
-.detail-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--amber-500);
+.detail-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--amber-500); }
+
+/* Focused/active detail card */
+.detail-card.is-active {
+  opacity: 1;
+  filter: none;
+  box-shadow: 0 18px 48px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(251, 191, 36, 0.03)), var(--cream-100);
+}
+[data-md-color-scheme="slate"] .detail-card.is-active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(251, 191, 36, 0.03)), var(--navy-800);
 }
 
 .detail-card h4 {

@@ -93,13 +93,35 @@ theme:
 
 # Plugins
 plugins:
-  # Search plugin with ONLY supported options
+  # Generate API pages first so 'api/' exists for nav and other plugins
+  - gen-files:
+      scripts:
+        - docs/gen_api.py
+
+  # Collect and render Python docstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          # Ensure the repo root is on sys.path for imports
+          paths: [ "." ]
+          setup_commands:
+            - import os, sys
+            - sys.path.insert(0, os.path.abspath('.'))
+          options:
+            docstring_style: google
+            show_source: false
+            separate_signature: true
+            members_order: source
+
+  # Page ordering
+  - awesome-pages
+
+  # Search plugin
   - search:
       lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-      # REMOVED: prebuild_index and min_search_length (not supported)
 
-  # Minify plugin for optimization
+  # Minify output last
   - minify:
       minify_html: true
       minify_js: true
@@ -266,6 +288,7 @@ nav:
   - Quick Start: quickstart.md
   - Features: features.md
   - Supported Languages: supported-languages.md
+  - API Reference: api/
   - Documentation:
       - CLI Reference: CLI.md
       - Configuration: CONFIG.md

@@ -90,16 +90,19 @@
 #tab-velocity:checked ~ .see-panes #pane-velocity { display: block; }
 #tab-viz:checked ~ .see-panes #pane-viz { display: block; }
 
+
 .see-grid {
   display: grid;
-  grid-template-rows: 42vh minmax(44vh, 1fr);
+  /* Make code input much smaller, prioritize output */
+  grid-template-rows: minmax(16vh, auto) minmax(68vh, 1fr);
   grid-template-columns: 1fr;
   gap: 1rem;
   height: 100%;
 }
 
 @media (max-width: 900px) {
-  .see-grid { grid-template-rows: 38vh minmax(48vh, 1fr); }
+  /* On small screens keep input compact */
+  .see-grid { grid-template-rows: minmax(18vh, auto) minmax(62vh, 1fr); }
 }
 
 /* Terminal-like code card */
@@ -128,11 +131,12 @@
   padding: .5rem .75rem;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  position: relative; /* allow absolute centering of dots */
 }
 
 [data-md-color-scheme="slate"] .see-header { border-bottom-color: rgba(251,191,36,0.12); }
 
-.see-dots { display: flex; gap: .35rem; }
+.see-dots { display: flex; gap: .35rem; position: absolute; left: 50%; transform: translateX(-50%); }
 .see-dot { width: .65rem; height: .65rem; border-radius: 50%; }
 .see-dot.red { background: #ff5f57; }
 .see-dot.yellow { background: #ffbd2e; }
