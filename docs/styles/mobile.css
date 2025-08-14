@@ -101,7 +101,7 @@
   /* Right side controls */
   label.md-header__button[for^="__palette_"] { display: flex !important; order: 2; }
   
-  /* Prefer inline .md-search control. Hide label-based fallback when inline exists. */
+  /* Prefer inline .md-search control only; hide label toggle */
   .md-header__inner .md-search { order: 3; }
   .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
   

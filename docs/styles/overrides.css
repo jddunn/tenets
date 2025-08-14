@@ -20,7 +20,6 @@ label.md-header__button[for="__search"] .md-icon {
 label.md-header__button[for="__search"] {
   width: 34px;
   height: 34px;
-  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
@@ -121,22 +120,8 @@ label.md-header__button[for="__search"]::before {
 .md-search__inner .md-search__output { width: 100% !important; margin-left: 0; margin-right: 0; }
 
 /* Mobile fallback: if compact .md-search__form is absent, show the native label button */
-@media (max-width: 1099px) {
-  .md-header__inner label.md-header__button[for="__search"] {
-    position: static !important;
-    width: 34px !important;
-    height: 34px !important;
-    margin: 0 !important;
-    clip: auto !important;
-    clip-path: none !important;
-    overflow: visible !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    order: 2;
-  }
-  .md-source { display: inline-flex !important; }
-}
+/* We always use the inline .md-search; hide the label toggle across sizes */
+label.md-header__button[for="__search"] { display: none !important; }
 
 .tenets-toast{
   min-width: 180px;
