@@ -5,7 +5,7 @@
 site_name: tenets
 site_description: Context that feeds your prompts - Intelligent code exploration and AI pair programming tool
 site_url: https://tenets.dev
-site_author: manic.agency
+site_author: Johnny Dunn
 docs_dir: docs
 site_dir: site
 
@@ -24,7 +24,7 @@ theme:
   custom_dir: docs/overrides
 
   # Logo and favicon
-  logo: logos/tenets_dark_icon_transparent_cropped.png
+  logo: logos/tenets_dark_icon_transparent.png
   favicon: favicon/favicon.ico
 
   # Fonts
@@ -211,7 +211,12 @@ extra_css:
   # Base styles
   - styles/variables.css
   - styles/main.css
-  - styles/nav-fixes.css
+  # - styles/nav-fixes.css
+  # Animations
+  - styles/animations.css
+  # Theme styles
+  - styles/victorian.css
+  - styles/neumorphic.css
 
   # Component styles
   - styles/header.css
@@ -220,17 +225,16 @@ extra_css:
   - styles/cards.css
   - styles/hero.css
   - styles/terminal.css
+  - styles/back-to-top.css
+  - styles/see-it-in-action.css
   - styles/search.css
 
-  # Theme styles
-  - styles/victorian.css
-  - styles/neumorphic.css
+
 
   # Responsive
   - styles/mobile.css
 
-  # Animations
-  - styles/animations.css
+
   # Final overrides (must be last)
   - styles/overrides.css
 
@@ -238,19 +242,21 @@ extra_javascript:
   # Core functionality
   # - js/nav-injection.js  # disabled: reverting to native nav from config
   - js/main.js
-  - js/utils.js
+  # Small fallback removed to avoid duplicate toggles
 
   # Components
   - js/theme-toggle.js
   - js/terminal.js
   - js/mobile-menu.js
-  - js/mobile-search-drawer.js
-  - js/search-enhancements.js
+  # Removed moving search into drawer and custom enhancements to avoid conflicts
   - js/copy-buttons.js
+  - js/back-to-top.js
 
   # Homepage specific
+  - js/lantern.js
   - js/home-animations.js
   - js/architecture-diagram.js
+  - js/see-it-in-action.js
 
   # External libraries (if needed)
   - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
