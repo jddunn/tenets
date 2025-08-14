@@ -6,9 +6,9 @@ This module manages multiple stopword sets for different purposes:
 - Custom sets for specific domains
 """
 
-from pathlib import Path
-from typing import Set, Optional, List
 from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Set
 
 from tenets.utils.logger import get_logger
 

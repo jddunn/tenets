@@ -1,12 +1,13 @@
 """Tests for keyword extraction utilities."""
 
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
+
 from tenets.core.nlp.keyword_extractor import (
+    BM25Calculator,
     KeywordExtractor,
     TFIDFCalculator,
-    BM25Calculator,
     TFIDFExtractor,
 )
 

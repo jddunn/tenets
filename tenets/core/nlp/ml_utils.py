@@ -11,7 +11,7 @@ from tenets.utils.logger import get_logger
 
 # Check ML availability through NLP package
 try:
-    from tenets.core.nlp.embeddings import LocalEmbeddings, SENTENCE_TRANSFORMERS_AVAILABLE
+    from tenets.core.nlp.embeddings import SENTENCE_TRANSFORMERS_AVAILABLE, LocalEmbeddings
     from tenets.core.nlp.similarity import SemanticSimilarity, cosine_similarity
 
     ML_AVAILABLE = SENTENCE_TRANSFORMERS_AVAILABLE
