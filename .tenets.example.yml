@@ -1,4 +1,4 @@
-# .tenets.example.yml - Example Tenets Configuration
+# .tenets.example.yml - Complete Tenets Configuration Example
 # Copy this to .tenets.yml and customize for your project
 # https://github.com/jddunn/tenets
 
@@ -347,10 +347,11 @@ git:
     - trunk
 
 # ============================================================================
-# TENET SYSTEM - Guiding principles for consistent AI interactions
+# TENET SYSTEM - Smart injection of guiding principles for AI interactions
 # ============================================================================
 
 tenet:
+  # ---- CORE SETTINGS ----
   # Automatically inject tenets into context
   auto_instill: true
   
@@ -360,13 +361,14 @@ tenet:
   # Reinforce critical tenets at end
   reinforcement: true
   
-  # Injection strategy
-  injection_strategy: strategic  # strategic, uniform, random
+  # Injection strategy for placement
+  # Options: strategic, top, distributed, uniform, random
+  injection_strategy: strategic
   
   # Minimum distance between tenet injections (characters)
   min_distance_between: 1000
   
-  # Prefer injecting at natural break points
+  # Prefer injecting at natural break points (sections, paragraphs)
   prefer_natural_breaks: true
   
   # Tenet storage directory (defaults to ~/.tenets/tenets)
@@ -374,6 +376,127 @@ tenet:
   
   # Enable tenet collections (grouped tenets)
   collections_enabled: true
+  
+  # ---- SMART INJECTION FREQUENCY ----
+  # Control when and how often tenets are injected
+  
+  # Injection frequency mode
+  # Options:
+  #   always   - Inject into every distilled context
+  #   periodic - Inject every Nth distillation (set by injection_interval)
+  #   adaptive - Smart injection based on context complexity and session
+  #   manual   - Only inject when explicitly requested
+  injection_frequency: adaptive
+  
+  # Interval for periodic injection (e.g., 3 = every 3rd distill)
+  injection_interval: 3
+  
+  # Complexity threshold for adaptive injection (0-1)
+  # Higher values = inject only on complex contexts
+  session_complexity_threshold: 0.7
+  
+  # Minimum distills in session before first injection
+  # Prevents overwhelming users in short sessions
+  min_session_length: 5
+  
+  # Enable adaptive injection based on context analysis
+  adaptive_injection: true
+  
+  # Track injection history per session for smarter decisions
+  track_injection_history: true
+  
+  # How quickly tenet importance decays (0-1)
+  # 0 = never decay, 1 = immediate decay
+  # Lower values = tenets stay "fresh" longer
+  decay_rate: 0.1
+  
+  # Reinforce critical tenets every N injections
+  reinforcement_interval: 10
+  
+  # ---- SESSION TRACKING ----
+  # Session-aware injection patterns
+  
+  # Enable session-aware injection patterns
+  session_aware: true
+  
+  # Maximum concurrent sessions to track in memory
+  session_memory_limit: 100
+  
+  # Persist session histories to disk
+  persist_session_history: true
+  
+  # ---- ADVANCED INJECTION SETTINGS ----
+  # Fine-tune injection behavior
+  
+  # Weight given to complexity in injection decisions (0-1)
+  complexity_weight: 0.5
+  
+  # Boost factor for critical priority tenets
+  priority_boost_critical: 2.0
+  
+  # Boost factor for high priority tenets
+  priority_boost_high: 1.5
+  
+  # Skip low priority tenets when context complexity exceeds threshold
+  skip_low_priority_on_complex: true
+  
+  # ---- METRICS AND ANALYSIS ----
+  # Track and analyze tenet effectiveness
+  
+  # Enable effectiveness tracking
+  track_effectiveness: true
+  
+  # Days to consider for effectiveness analysis
+  effectiveness_window_days: 30
+  
+  # Minimum compliance score before forcing reinforcement
+  min_compliance_score: 0.6
+
+# ============================================================================
+# INJECTION FREQUENCY EXAMPLES
+# ============================================================================
+# 
+# Example configurations for different use cases:
+# 
+# 1. ALWAYS INJECT (Maximum reinforcement)
+# tenet:
+#   injection_frequency: always
+#   max_per_context: 3  # Limit to avoid overwhelming
+# 
+# 2. PERIODIC INJECTION (Regular intervals)
+# tenet:
+#   injection_frequency: periodic
+#   injection_interval: 5  # Every 5th distill
+#   min_session_length: 0  # Start immediately
+# 
+# 3. ADAPTIVE INJECTION (Smart, context-aware)
+# tenet:
+#   injection_frequency: adaptive
+#   session_complexity_threshold: 0.6  # Medium complexity trigger
+#   min_session_length: 3  # Wait for session to develop
+#   adaptive_injection: true
+#   decay_rate: 0.2  # Moderate decay
+# 
+# 4. MANUAL ONLY (User control)
+# tenet:
+#   injection_frequency: manual
+#   auto_instill: false  # Disable automatic injection
+# 
+# 5. AGGRESSIVE REINFORCEMENT (Learning/training)
+# tenet:
+#   injection_frequency: periodic
+#   injection_interval: 2  # Every other distill
+#   reinforcement_interval: 5  # Frequent reinforcement
+#   priority_boost_critical: 3.0  # Strong critical boost
+# 
+# 6. GENTLE REMINDER (Long sessions)
+# tenet:
+#   injection_frequency: adaptive
+#   min_session_length: 10  # Wait for established session
+#   decay_rate: 0.05  # Very slow decay
+#   session_complexity_threshold: 0.8  # Only complex contexts
+# 
+# ============================================================================
 
 # ============================================================================
 # CUSTOM CONFIGURATION - Project-specific settings
@@ -426,6 +549,23 @@ custom:
 #   TENETS_NLP_MULTIPROCESSING_ENABLED=true
 #   TENETS_NLP_MULTIPROCESSING_WORKERS=8
 # 
+# Tenet system configuration overrides:
+#   TENETS_TENET_AUTO_INSTILL=true
+#   TENETS_TENET_MAX_PER_CONTEXT=5
+#   TENETS_TENET_INJECTION_FREQUENCY=adaptive
+#   TENETS_TENET_INJECTION_INTERVAL=3
+#   TENETS_TENET_SESSION_COMPLEXITY_THRESHOLD=0.7
+#   TENETS_TENET_MIN_SESSION_LENGTH=5
+#   TENETS_TENET_ADAPTIVE_INJECTION=true
+#   TENETS_TENET_TRACK_INJECTION_HISTORY=true
+#   TENETS_TENET_DECAY_RATE=0.1
+#   TENETS_TENET_REINFORCEMENT_INTERVAL=10
+#   TENETS_TENET_SESSION_AWARE=true
+#   TENETS_TENET_COMPLEXITY_WEIGHT=0.5
+#   TENETS_TENET_PRIORITY_BOOST_CRITICAL=2.0
+#   TENETS_TENET_PRIORITY_BOOST_HIGH=1.5
+#   TENETS_TENET_TRACK_EFFECTIVENESS=true
+# 
 # API Keys can also be set as env vars (overrides config):
 #   export OPENAI_API_KEY=sk-...
 #   export ANTHROPIC_API_KEY=sk-ant-...
@@ -461,5 +601,43 @@ custom:
 # Without ML dependencies, the system falls back to:
 # - TF-IDF for similarity
 # - Frequency-based keyword extraction
+# 
+# ============================================================================
+
+# ============================================================================
+# NOTES ON TENET INJECTION SYSTEM
+# ============================================================================
+# 
+# The tenet injection system provides sophisticated control over when and how
+# guiding principles are injected into AI context:
+# 
+# 1. **Frequency Modes**:
+#    - always: Every single distillation gets tenets
+#    - periodic: Regular intervals (every Nth distill)
+#    - adaptive: Smart injection based on context analysis
+#    - manual: User controls when to inject
+# 
+# 2. **Session Awareness**:
+#    - Tracks injection history across a session
+#    - Prevents overwhelming users in short interactions
+#    - Adjusts injection based on session length and complexity
+# 
+# 3. **Priority System**:
+#    - Critical tenets get boosted injection priority
+#    - Low priority tenets can be skipped in complex contexts
+#    - Reinforcement ensures critical tenets stay fresh
+# 
+# 4. **Decay and Reinforcement**:
+#    - Tenets "decay" in importance over time
+#    - Critical tenets are reinforced at regular intervals
+#    - Adaptive system learns from effectiveness metrics
+# 
+# 5. **Complexity Analysis**:
+#    - Analyzes context complexity before injection
+#    - Adjusts injection strategy based on content
+#    - Prevents information overload in complex contexts
+# 
+# The system is designed to maintain consistent AI behavior without
+# overwhelming the context or degrading performance.
 # 
 # ============================================================================

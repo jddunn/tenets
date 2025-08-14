@@ -57,12 +57,12 @@ from .strategies import (
     ThoroughRankingStrategy,
 )
 
-# Import TF-IDF/BM25
-from .tfidf import BM25Calculator, TFIDFCalculator
+# Import TF-IDF/BM25 (moved from ranking.tfidf to nlp.tfidf)
+from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
 
 # Import ML utilities (optional)
 try:
-    from .ml_utils import (
+    from ..nlp.ml_utils import (
         EmbeddingModel,
         NeuralReranker,
         batch_similarity,
