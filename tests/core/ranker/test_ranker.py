@@ -30,9 +30,9 @@ from tenets.core.ranking.ranker import (
     RankingAlgorithm,
     RankingFactors,
     RelevanceRanker,
-    TFIDFCalculator,
     ThoroughRankingStrategy,
 )
+from tenets.core.nlp.tfidf import TFIDFCalculator
 from tenets.models.analysis import (
     ClassInfo,
     CodeStructure,
