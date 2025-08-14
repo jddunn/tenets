@@ -44,7 +44,7 @@
     align-items: center;
     gap: 0.5rem;
   /* Reserve space on the right for the fixed hamburger so controls don't crowd it */
-  padding-right: 88px !important;
+  padding-right: 140px !important;
   }
   
   /* Hide desktop nav on mobile */
@@ -55,7 +55,8 @@
   /* Title - centered and flexible */
   .md-header__title {
     display: block !important;
-    flex: 1;
+  flex: 1;
+  min-width: 0; /* allow title to shrink so controls remain visible */
     text-align: center;
     font-family: 'Playfair Display', serif;
     font-size: 1.25rem;
@@ -101,9 +102,10 @@
   /* Right side controls */
   label.md-header__button[for^="__palette_"] { display: flex !important; order: 2; }
   
-  /* Prefer inline .md-search control only; hide label toggle */
+  /* Prefer inline .md-search on tablet; search icon on very small screens */
   .md-header__inner .md-search { order: 3; display: flex !important; align-items: center; }
-  .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
+  /* don't force-hide the search icon at all sizes; control via sub-breakpoints */
+  .md-header__inner label.md-header__button[for="__search"] { display: none; }
   
   .md-source { display: inline-flex !important; order: 4; }
 
@@ -125,6 +127,8 @@
   @media screen and (min-width: 601px) and (max-width: 1099px) {
   .md-header .md-search { display: flex !important; margin-right: 1rem !important; }
     .md-header .md-source { margin-right: 0.75rem !important; }
+  /* hide the icon button on tablet when inline search is present */
+  .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
   }
   
   /* Mobile navigation drawer */
@@ -325,6 +329,78 @@
   .md-tabs,
   .md-sidebar--secondary {
     display: none !important;
+  }
+
+  /* Very small screens: show compact search icon and compact GitHub, hide inline search input */
+  @media screen and (max-width: 600px) {
+    /* Use the search icon button on tiny screens */
+    .md-header__inner label.md-header__button[for="__search"] {
+      display: flex !important;
+      order: 3;
+      align-items: center;
+      justify-content: center;
+    }
+    .md-header__inner .md-search { display: none !important; }
+
+    /* Compact GitHub/source: icon only */
+    .md-header__source,
+    .md-header .md-source { display: inline-flex !important; order: 4; }
+    .md-header .md-source__repository { display: none !important; }
+    .md-header .md-source__icon { margin: 0 !important; }
+
+    /* Slightly increase reserved space for buttons on tiny screens */
+    .md-header__inner { padding-right: 148px !important; }
+  }
+}
+
+/* =====================================================
+   INSTALL COMMANDS WRAPPING ON SMALL SCREENS
+   ===================================================== */
+@media screen and (max-width: 768px) {
+  /* Prefer wrapping for shell-like languages */
+  .md-typeset .highlight[data-lang="bash"] pre,
+  .md-typeset .highlight[data-lang="sh"] pre,
+  .md-typeset .highlight[data-lang="shell"] pre,
+  .md-typeset .highlight[data-lang="zsh"] pre,
+  .md-typeset .highlight[data-lang="powershell"] pre,
+  .md-typeset .highlight[data-lang="ps1"] pre,
+  .md-typeset .highlight[data-lang="cmd"] pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Fallback: if language attribute isn't present, allow wrapping inside pre > code */
+  .md-typeset pre > code.language-bash,
+  .md-typeset pre > code.language-sh,
+  .md-typeset pre > code.language-shell,
+  .md-typeset pre > code.language-zsh,
+  .md-typeset pre > code.language-powershell,
+  .md-typeset pre > code.language-cmd {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Ensure code blocks fit viewport with smooth horizontal scroll when needed */
+  .md-typeset .highlight,
+  .md-typeset pre {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Slightly reduce code font size on mobile to increase fit */
+  :root { --md-code-font-size: 0.85rem; }
+
+  /* Let inline code wrap within paragraphs to avoid overflow */
+  .md-typeset p code,
+  .md-typeset li code,
+  .md-typeset td code {
+    white-space: break-spaces;
+    word-break: break-word;
   }
 }
 
