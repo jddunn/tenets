@@ -33,6 +33,104 @@ debug: false
 quiet: false
 
 # ============================================================================
+# NLP (NATURAL LANGUAGE PROCESSING) - Centralized text processing
+# ============================================================================
+# All NLP operations go through the centralized tenets.core.nlp package
+
+nlp:
+  # Enable NLP features globally
+  enabled: true
+  
+  # ---- STOPWORD CONFIGURATION ----
+  # Dual stopword system for different contexts
+  stopwords_enabled: true
+  
+  # Stopword set for code search (ultra-minimal, ~25 words)
+  # Preserves ALL programming keywords like async, function, class, etc.
+  code_stopword_set: minimal  # minimal|aggressive|custom
+  
+  # Stopword set for prompt parsing (aggressive, 200+ words)
+  # Filters common words to extract core concepts
+  prompt_stopword_set: aggressive  # minimal|aggressive|custom
+  
+  # Additional custom stopword files
+  custom_stopword_files: []
+  
+  # ---- TOKENIZATION CONFIGURATION ----
+  # How text is broken into tokens
+  tokenization_mode: auto  # code|text|auto
+  
+  # Keep original tokens alongside split versions for exact matching
+  preserve_original_tokens: true
+  
+  # Split camelCase and PascalCase (getUserName → get, user, name)
+  split_camelcase: true
+  
+  # Split snake_case (user_name → user, name)
+  split_snakecase: true
+  
+  # Minimum token length to keep
+  min_token_length: 2
+  
+  # ---- KEYWORD EXTRACTION ----
+  # How keywords are extracted from text
+  keyword_extraction_method: auto  # auto|yake|tfidf|frequency
+  
+  # Maximum keywords to extract
+  max_keywords: 30
+  
+  # Maximum n-gram size (for phrases like "machine learning")
+  ngram_size: 3
+  
+  # YAKE deduplication threshold (if YAKE is available)
+  yake_dedup_threshold: 0.7
+  
+  # ---- TF-IDF CONFIGURATION ----
+  # Term Frequency-Inverse Document Frequency settings
+  tfidf_use_sublinear: true  # Use log scaling for term frequency
+  tfidf_use_idf: true        # Use inverse document frequency
+  tfidf_norm: l2             # Normalization method
+  
+  # ---- BM25 CONFIGURATION ----
+  # Best Matching 25 algorithm settings
+  bm25_k1: 1.2  # Term frequency saturation
+  bm25_b: 0.75  # Length normalization
+  
+  # ---- EMBEDDINGS CONFIGURATION (ML) ----
+  # Semantic embeddings for similarity computation
+  embeddings_enabled: false  # Requires sentence-transformers
+  
+  # Embedding model to use
+  # Options: all-MiniLM-L6-v2, all-MiniLM-L12-v2, all-mpnet-base-v2
+  embeddings_model: all-MiniLM-L6-v2
+  
+  # Device for embeddings
+  embeddings_device: auto  # auto|cpu|cuda
+  
+  # Cache computed embeddings
+  embeddings_cache: true
+  
+  # Batch size for embedding generation
+  embeddings_batch_size: 32
+  
+  # ---- SIMILARITY CONFIGURATION ----
+  # How similarity is computed
+  similarity_metric: cosine  # cosine|euclidean|manhattan
+  similarity_threshold: 0.7  # Minimum similarity to consider relevant
+  
+  # ---- NLP CACHE CONFIGURATION ----
+  # Cache TTL for NLP operations
+  cache_embeddings_ttl_days: 30
+  cache_tfidf_ttl_days: 7
+  cache_keywords_ttl_days: 7
+  
+  # ---- PERFORMANCE OPTIMIZATION ----
+  # Multiprocessing for large operations
+  multiprocessing_enabled: true
+  multiprocessing_workers: null  # null = cpu_count()
+  multiprocessing_chunk_size: 100
+
+# ============================================================================
 # FILE RANKING - How files are scored for relevance
 # ============================================================================
 
@@ -46,20 +144,29 @@ ranking:
   threshold: 0.10
   
   # Use TF-IDF for keyword matching (improves accuracy)
+  # This now uses the centralized NLP TF-IDF implementation
   use_tfidf: true
   
   # Filter common programming keywords (reduces noise)
-  use_stopwords: false
+  # This now uses the centralized NLP stopword system
+  use_stopwords: false  # For code search, use minimal stopwords
   
   # Use semantic embeddings for similarity (requires ML)
+  # This now uses the centralized NLP embeddings
   use_embeddings: false
   
-  # Embedding model for ML mode
+  # Include git signals in ranking
+  use_git: true
+  
+  # Enable ML features (uses NLP embeddings)
+  use_ml: false
+  
+  # Embedding model for ML mode (uses NLP config)
   embedding_model: all-MiniLM-L6-v2
   
   # Custom weights for ranking factors (advanced)
   custom_weights:
-    keyword_match: 0.25
+    keyword_match: 0.25      # Uses NLP keyword extraction
     path_relevance: 0.20
     import_graph: 0.20
     git_activity: 0.15
@@ -69,6 +176,7 @@ ranking:
   # Parallel processing settings
   workers: 2
   parallel_mode: auto  # thread, process, or auto
+  batch_size: 100      # Batch size for ML operations
 
 # ============================================================================
 # CONTENT SUMMARIZATION - Compress large files to fit token limits
@@ -302,11 +410,21 @@ custom:
 #   TENETS_MAX_TOKENS=150000
 #   TENETS_RANKING_ALGORITHM=thorough
 #   TENETS_RANKING_THRESHOLD=0.05
+#   TENETS_RANKING_USE_STOPWORDS=false
 #   TENETS_SUMMARIZER_DEFAULT_MODE=extractive
 #   TENETS_SUMMARIZER_TARGET_RATIO=0.2
 #   TENETS_CACHE_ENABLED=false
 #   TENETS_GIT_ENABLED=true
 #   TENETS_SCANNER_MAX_FILE_SIZE=10000000
+# 
+# NLP configuration overrides:
+#   TENETS_NLP_ENABLED=true
+#   TENETS_NLP_EMBEDDINGS_ENABLED=true
+#   TENETS_NLP_EMBEDDINGS_MODEL=all-MiniLM-L12-v2
+#   TENETS_NLP_KEYWORD_EXTRACTION_METHOD=yake
+#   TENETS_NLP_STOPWORDS_ENABLED=false
+#   TENETS_NLP_MULTIPROCESSING_ENABLED=true
+#   TENETS_NLP_MULTIPROCESSING_WORKERS=8
 # 
 # API Keys can also be set as env vars (overrides config):
 #   export OPENAI_API_KEY=sk-...
@@ -315,5 +433,33 @@ custom:
 # 
 # Use 'tenets config show --key models' to see model pricing
 # Use 'tenets estimate-cost' to calculate costs before running
+# 
+# ============================================================================
+
+# ============================================================================
+# NOTES ON NLP CONSOLIDATION
+# ============================================================================
+# 
+# The NLP system has been consolidated into tenets.core.nlp package:
+# 
+# 1. All tokenization goes through nlp.tokenizer
+# 2. All keyword extraction goes through nlp.keyword_extractor  
+# 3. All stopword filtering goes through nlp.stopwords
+# 4. All embeddings go through nlp.embeddings
+# 5. All similarity computation goes through nlp.similarity
+# 
+# The dual stopword system is critical:
+# - Code search uses MINIMAL stopwords (~25 words) to preserve accuracy
+# - Prompt parsing uses AGGRESSIVE stopwords (200+ words) to extract intent
+# 
+# Example: "async function" in code keeps both words
+# Example: "please implement async function" in prompt → ["async", "function"]
+# 
+# ML features (embeddings, semantic similarity) require:
+#   pip install sentence-transformers
+# 
+# Without ML dependencies, the system falls back to:
+# - TF-IDF for similarity
+# - Frequency-based keyword extraction
 # 
 # ============================================================================
