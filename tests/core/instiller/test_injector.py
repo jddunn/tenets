@@ -1,4 +1,4 @@
-"""Tests for TenetInjector."""
+"""Tests for TenetInjector with system instruction support."""
 
 from datetime import datetime
 from unittest.mock import Mock, patch
@@ -13,7 +13,27 @@ from tenets.models.tenet import Priority, Tenet, TenetStatus
 @pytest.fixture
 def injector():
     """Create TenetInjector instance."""
-    config = {"min_distance_between": 500, "prefer_natural_breaks": True, "reinforce_at_end": True}
+    config = {
+        "min_distance_between": 500,
+        "prefer_natural_breaks": True,
+        "reinforce_at_end": True,
+    }
+    return TenetInjector(config)
+
+
+@pytest.fixture
+def injector_with_system():
+    """Create TenetInjector with system instruction config."""
+    config = {
+        "min_distance_between": 500,
+        "prefer_natural_breaks": True,
+        "reinforce_at_end": True,
+        "system_instruction": "You are a helpful coding assistant.",
+        "system_instruction_position": "top",
+        "system_instruction_format": "markdown",
+        "system_instruction_separator": "\n---\n\n",
+        "system_instruction_label": "🎯 System Context",
+    }
     return TenetInjector(config)
 
 
@@ -94,6 +114,18 @@ class TestTenetInjector:
         assert "exceptions" in modified_content
         assert "docstrings" in modified_content
 
+    def test_inject_with_system_instruction(self, injector_with_system, markdown_content):
+        """Test that system instruction doesn't interfere with tenet injection."""
+        tenets = [Tenet(content="Test tenet", priority=Priority.HIGH)]
+
+        # Inject tenets (system instruction handled separately in Instiller)
+        modified, metadata = injector_with_system.inject_tenets(
+            markdown_content, tenets, format="markdown"
+        )
+
+        assert "Test tenet" in modified
+        assert metadata["injected_count"] == 1
+
     def test_analyze_content_structure_markdown(self, injector):
         """Test markdown structure analysis."""
         content = """# Main Title
@@ -109,7 +141,6 @@ code block
 
 More content.
 """
-
         structure = injector._analyze_content_structure(content, "markdown")
 
         assert len(structure["sections"]) == 3  # h1 and two h2s
@@ -122,7 +153,6 @@ More content.
 <section>Content 1</section>
 <section>Content 2</section>
 </document>"""
-
         structure = injector._analyze_content_structure(content, "xml")
 
         assert len(structure["sections"]) >= 1
@@ -318,7 +348,6 @@ def important_code():
 
 More content here.
 """
-
         tenets = [Tenet(content="Test", priority=Priority.HIGH)]
 
         modified, metadata = injector.inject_tenets(content, tenets, format="markdown")
@@ -348,3 +377,207 @@ More content here.
         for i in range(len(points) - 1):
             distance = abs(points[i + 1].position - points[i].position)
             assert distance >= 200 or distance == 0  # Same position is OK
+
+
+class TestInstillerSystemInstruction:
+    """Test suite for system instruction feature in Instiller."""
+
+    @pytest.fixture
+    def instiller(self):
+        """Create Instiller instance with system instruction config."""
+        from tenets.config import TenetsConfig
+        from tenets.core.instiller.instiller import Instiller
+
+        config = TenetsConfig()
+        return Instiller(config)
+
+    @pytest.fixture
+    def sample_context(self):
+        """Create sample ContextResult."""
+        return ContextResult(
+            files=["test.py"],
+            context="# Test\n\nOriginal content",
+            format="markdown",
+            metadata={"total_tokens": 100},
+        )
+
+    def test_inject_system_instruction_top(self, instiller):
+        """Test injecting system instruction at top."""
+        instiller.config.tenet.system_instruction = "System context here"
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.system_instruction_position = "top"
+
+        content = "# Main Content\n\nActual content here."
+        modified, metadata = instiller.inject_system_instruction(content, format="markdown")
+
+        assert modified.startswith("## 🎯 System Context")
+        assert "System context here" in modified
+        assert "Main Content" in modified
+        assert metadata["system_instruction_injected"] is True
+        assert metadata["system_instruction_position"] == "top"
+
+    def test_inject_system_instruction_after_header(self, instiller):
+        """Test injecting system instruction after header."""
+        instiller.config.tenet.system_instruction = "System context"
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.system_instruction_position = "after_header"
+
+        content = "# Main Title\n\nContent here."
+        modified, metadata = instiller.inject_system_instruction(content, format="markdown")
+
+        lines = modified.split("\n")
+        assert lines[0] == "# Main Title"
+        assert "System context" in modified
+        assert modified.index("System context") > modified.index("Main Title")
+
+    def test_inject_system_instruction_disabled(self, instiller):
+        """Test system instruction when disabled."""
+        instiller.config.tenet.system_instruction = "System context"
+        instiller.config.tenet.system_instruction_enabled = False
+
+        content = "Original content"
+        modified, metadata = instiller.inject_system_instruction(content)
+
+        assert modified == content
+        assert metadata["system_instruction_injected"] is False
+
+    def test_inject_system_instruction_once_per_session(self, instiller):
+        """Test system instruction only injected once per session."""
+        instiller.config.tenet.system_instruction = "System context"
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.system_instruction_once_per_session = True
+
+        # First injection
+        content1 = "Content 1"
+        modified1, metadata1 = instiller.inject_system_instruction(content1, session="test-session")
+        assert metadata1["system_instruction_injected"] is True
+
+        # Second injection - should skip
+        content2 = "Content 2"
+        modified2, metadata2 = instiller.inject_system_instruction(content2, session="test-session")
+        assert metadata2["system_instruction_injected"] is False
+        assert metadata2["reason"] == "already_injected_in_session"
+        assert modified2 == content2
+
+    def test_format_system_instruction_markdown(self, instiller):
+        """Test formatting system instruction as markdown."""
+        formatted = instiller._format_system_instruction("Test instruction", "markdown")
+
+        assert formatted.startswith("## 🎯 System Context")
+        assert "Test instruction" in formatted
+
+    def test_format_system_instruction_xml(self, instiller):
+        """Test formatting system instruction as XML."""
+        formatted = instiller._format_system_instruction("Test instruction", "xml")
+
+        assert formatted.startswith("<system_instruction>")
+        assert formatted.endswith("</system_instruction>")
+        assert "Test instruction" in formatted
+
+    def test_format_system_instruction_comment(self, instiller):
+        """Test formatting system instruction as comment."""
+        formatted = instiller._format_system_instruction("Test instruction", "comment")
+
+        assert formatted.startswith("//")
+        assert "Test instruction" in formatted
+
+    def test_instill_with_system_instruction(self, instiller, sample_tenets):
+        """Test full instill with system instruction."""
+        instiller.config.tenet.system_instruction = "You are a helpful assistant."
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.injection_frequency = "always"
+
+        with patch.object(instiller.manager, "get_pending_tenets", return_value=sample_tenets):
+            with patch.object(instiller.injector, "inject_tenets") as mock_inject:
+                mock_inject.return_value = ("Modified", {"injected_count": 2, "token_increase": 50})
+
+                result = instiller.instill(
+                    "Test content", session="sys-test", inject_system_instruction=True
+                )
+
+                # System instruction should be injected
+                assert "sys-test" in instiller.system_instruction_injected
+                assert instiller.system_instruction_injected["sys-test"] is True
+
+    def test_instill_context_result_with_system(self, instiller, sample_context, sample_tenets):
+        """Test instilling into ContextResult with system instruction."""
+        instiller.config.tenet.system_instruction = "System prompt"
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.injection_frequency = "always"
+
+        with patch.object(instiller.manager, "get_pending_tenets", return_value=sample_tenets):
+            with patch.object(instiller.injector, "inject_tenets") as mock_inject:
+                mock_inject.return_value = ("Modified", {"injected_count": 2, "token_increase": 50})
+
+                result = instiller.instill(sample_context, session="test")
+
+                assert isinstance(result, ContextResult)
+                assert "system_instruction" in result.metadata
+
+    def test_system_instruction_no_content(self, instiller):
+        """Test system instruction when no instruction configured."""
+        instiller.config.tenet.system_instruction = None
+
+        content = "Original"
+        modified, metadata = instiller.inject_system_instruction(content)
+
+        assert modified == content
+        assert metadata["system_instruction_injected"] is False
+
+    def test_system_instruction_token_counting(self, instiller):
+        """Test that token increase is calculated for system instruction."""
+        instiller.config.tenet.system_instruction = "A" * 1000  # Long instruction
+        instiller.config.tenet.system_instruction_enabled = True
+
+        with patch("tenets.core.instiller.instiller.estimate_tokens") as mock_estimate:
+            mock_estimate.side_effect = [100, 350]  # Original, then modified
+
+            content = "Short content"
+            modified, metadata = instiller.inject_system_instruction(content)
+
+            assert metadata["token_increase"] == 250  # 350 - 100
+
+    def test_system_instruction_with_separator(self, instiller):
+        """Test system instruction with custom separator."""
+        instiller.config.tenet.system_instruction = "Instruction"
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.system_instruction_separator = "\n===\n"
+
+        content = "Content"
+        modified, metadata = instiller.inject_system_instruction(content)
+
+        assert "\n===\n" in modified
+        assert modified.index("===") > modified.index("Instruction")
+        assert modified.index("===") < modified.index("Content")
+
+    def test_system_instruction_with_label(self, instiller):
+        """Test system instruction with custom label."""
+        instiller.config.tenet.system_instruction = "Instruction"
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.system_instruction_label = "🚀 Custom Label"
+
+        content = "Content"
+        modified, metadata = instiller.inject_system_instruction(content, format="markdown")
+
+        assert "🚀 Custom Label" in modified
+
+    def test_system_instruction_persist_in_context(self, instiller):
+        """Test system instruction persistence in context metadata."""
+        instiller.config.tenet.system_instruction = "Persistent instruction"
+        instiller.config.tenet.system_instruction_enabled = True
+        instiller.config.tenet.system_instruction_persist_in_context = True
+
+        content = "Content"
+        modified, metadata = instiller.inject_system_instruction(content)
+
+        assert metadata.get("system_instruction_persisted") is True
+        assert metadata.get("system_instruction_content") == "Persistent instruction"
+
+    def test_system_instruction_format_plain(self, instiller):
+        """Test system instruction with plain format."""
+        formatted = instiller._format_system_instruction("Test instruction", "plain")
+
+        assert formatted == "🎯 System Context\n\nTest instruction"
+        assert "<" not in formatted
+        assert "#" not in formatted
+        assert "//" not in formatted

@@ -1,221 +1,456 @@
-"""Momentum command - track development velocity and productivity."""
+"""Momentum command implementation.
 
+This command tracks and visualizes development velocity and team momentum
+metrics over time.
+"""
+
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-import typer
-from rich import print
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
+import click
 
-from tenets import Tenets
-
-console = Console()
+from tenets.core.git import GitAnalyzer
+from tenets.core.momentum import MomentumTracker
+from tenets.core.reporting import ReportGenerator
+from tenets.utils.logger import get_logger
+from tenets.viz import MomentumVisualizer, TerminalDisplay
 
 
+@click.command()
+@click.argument("path", type=click.Path(exists=True), default=".")
+@click.option(
+    "--period",
+    "-p",
+    type=click.Choice(["day", "week", "sprint", "month"]),
+    default="week",
+    help="Time period for velocity calculation",
+)
+@click.option("--duration", "-d", type=int, default=12, help="Number of periods to analyze")
+@click.option("--sprint-length", type=int, default=14, help="Sprint length in days")
+@click.option("--output", "-o", type=click.Path(), help="Output file for report")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["terminal", "html", "json", "markdown"]),
+    default="terminal",
+    help="Output format",
+)
+@click.option(
+    "--metrics",
+    "-m",
+    multiple=True,
+    help="Specific metrics to track (velocity, throughput, cycle-time)",
+)
+@click.option("--team", is_flag=True, help="Show team metrics")
+@click.option("--burndown", is_flag=True, help="Show burndown chart")
+@click.option("--forecast", is_flag=True, help="Include velocity forecast")
+@click.pass_context
 def momentum(
-    path: Path = typer.Option(Path("."), "--path", "-p", help="Repository path"),
-    since: str = typer.Option("last-month", "--since", "-s", help="Time period to analyze"),
-    team: bool = typer.Option(False, "--team", help="Show team-wide statistics"),
-    author: Optional[str] = typer.Option(
-        None, "--author", "-a", help="Show stats for specific author"
-    ),
-    weekly: bool = typer.Option(False, "--weekly", help="Show weekly breakdown"),
-    ctx: typer.Context = typer.Context,
+    ctx,
+    path: str,
+    period: str,
+    duration: int,
+    sprint_length: int,
+    output: Optional[str],
+    format: str,
+    metrics: List[str],
+    team: bool,
+    burndown: bool,
+    forecast: bool,
 ):
-    """
-    Track development momentum and velocity metrics.
+    """Track development momentum and velocity.
 
-    Measures coding velocity, team productivity, and development trends
-    to understand your project's momentum.
+    Analyzes repository activity to measure development velocity,
+    team productivity, and momentum trends over time.
 
     Examples:
-
-        # Personal momentum for last month
         tenets momentum
-
-        # Team momentum for the quarter
-        tenets momentum --team --since "3 months"
-
-        # Individual contributor stats
-        tenets momentum --author "alice@example.com"
-
-        # Weekly breakdown
-        tenets momentum --weekly --since "2 months"
+        tenets momentum --period=sprint --duration=6
+        tenets momentum --burndown --team
+        tenets momentum --forecast --format=html --output=velocity.html
     """
-    verbose = ctx.obj.get("verbose", False)
-    quiet = ctx.obj.get("quiet", False)
+    logger = get_logger(__name__)
+    config = ctx.obj["config"]
+
+    # Initialize path
+    target_path = Path(path).resolve()
+    logger.info(f"Tracking momentum at: {target_path}")
+
+    # Initialize momentum tracker
+    tracker = MomentumTracker(config)
+    git_analyzer = GitAnalyzer(target_path)
+
+    # Calculate date range based on period and duration
+    date_range = _calculate_date_range(period, duration, sprint_length)
+
+    # Determine which metrics to calculate
+    if metrics:
+        selected_metrics = list(metrics)
+    else:
+        selected_metrics = ["velocity", "throughput", "cycle_time"]
 
     try:
-        tenets = Tenets()
-
-        # Get velocity data
-        velocity_data = tenets.momentum(path=path, since=since, team=team, author=author)
-
-        if "error" in velocity_data:
-            console.print(f"[red]Error:[/red] {velocity_data['error']}")
-            raise typer.Exit(1)
-
-        # Display header
-        if not quiet:
-            title = "Development Momentum"
-            if team:
-                title = "Team " + title
-            elif author:
-                title = f"{author}'s " + title
-
-            console.print(
-                Panel(
-                    f"[bold]{title}[/bold]\n" f"Period: {since}\n" f"Repository: {path}",
-                    title="🚀 Momentum Analysis",
-                    border_style="blue",
-                )
-            )
-
-        # Show velocity chart
-        if weekly and "weekly" in velocity_data:
-            _display_velocity_chart(velocity_data["weekly"], "Weekly")
-
-        # Show overall stats
-        if "overall" in velocity_data:
-            _display_overall_stats(velocity_data["overall"], team, author)
-
-        # Show team stats if requested
-        if team and "team" in velocity_data:
-            _display_team_stats(velocity_data["team"])
-
-        # Show author stats if requested
-        if author and "author" in velocity_data:
-            _display_author_stats(author, velocity_data["author"])
-
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {str(e)}")
-        if verbose:
-            console.print_exception()
-        raise typer.Exit(1)
-
-
-def _display_velocity_chart(weekly_data, title):
-    """Display velocity chart."""
-    if not weekly_data:
-        return
-
-    console.print(f"\n[bold]{title} Momentum[/bold]")
-
-    # Find max for scaling
-    max_commits = max(w.get("commits", 0) for w in weekly_data) if weekly_data else 1
-
-    for week in weekly_data[-12:]:  # Last 12 weeks
-        commits = week.get("commits", 0)
-        bar_length = int((commits / max_commits) * 40) if max_commits > 0 else 0
-        bar = "█" * bar_length
-
-        week_label = week.get("week", "?")
-        if isinstance(week_label, str):
-            week_display = week_label
-        else:
-            week_display = f"W{week_label}"
-
-        # Color based on velocity
-        if commits == 0:
-            color = "dim"
-        elif commits < max_commits * 0.3:
-            color = "red"
-        elif commits < max_commits * 0.7:
-            color = "yellow"
-        else:
-            color = "green"
-
-        console.print(f"{week_display:>6} [{color}]{bar:<40}[/{color}] {commits:>3} commits")
-
-
-def _display_overall_stats(stats, team: bool, author: Optional[str]):
-    """Display overall statistics."""
-    table = Table(title="Overall Statistics")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", style="green")
-
-    # Basic stats
-    table.add_row("Total Commits", str(stats.get("commit_count", 0)))
-    table.add_row("Active Days", str(stats.get("active_days", 0)))
-    table.add_row("Lines Added", f"{stats.get('lines_added', 0):,}")
-    table.add_row("Lines Removed", f"{stats.get('lines_removed', 0):,}")
-    table.add_row("Net Lines", f"{stats.get('net_lines', 0):+,}")
-    table.add_row("Files Changed", str(stats.get("files_changed", 0)))
-
-    # Calculated metrics
-    if stats.get("active_days", 0) > 0:
-        avg_commits = stats.get("commit_count", 0) / stats["active_days"]
-        table.add_row("Avg Commits/Day", f"{avg_commits:.1f}")
-
-    if stats.get("commit_count", 0) > 0:
-        avg_change = stats.get("net_lines", 0) / stats["commit_count"]
-        table.add_row("Avg Lines/Commit", f"{avg_change:+.1f}")
-
-    console.print(table)
-
-
-def _display_team_stats(team_data):
-    """Display team statistics."""
-    console.print(f"\n[bold]Team Statistics[/bold]")
-    console.print(f"Total contributors: {team_data.get('total_authors', 0)}")
-
-    # Top contributors table
-    if team_data.get("author_stats"):
-        table = Table(title="Top Contributors")
-        table.add_column("Author", style="cyan")
-        table.add_column("Commits", style="green", justify="right")
-        table.add_column("Lines Added", style="yellow", justify="right")
-        table.add_column("Active Days", style="blue", justify="right")
-        table.add_column("Velocity", style="magenta", justify="right")
-
-        # Sort by commits
-        sorted_authors = sorted(
-            team_data["author_stats"].items(),
-            key=lambda x: x[1].get("commit_count", 0),
-            reverse=True,
+        # Track momentum
+        logger.info(f"Calculating {period}ly momentum...")
+        momentum_data = tracker.track_momentum(
+            target_path,
+            period=period,
+            since=date_range["since"],
+            until=date_range["until"],
+            metrics=selected_metrics,
+            sprint_length=sprint_length,
         )
 
-        for author, stats in sorted_authors[:10]:  # Top 10
-            # Calculate velocity (commits per active day)
-            active_days = stats.get("active_days", 1)
-            velocity = stats.get("commit_count", 0) / active_days if active_days > 0 else 0
-
-            table.add_row(
-                author[:30] + "..." if len(author) > 30 else author,
-                str(stats.get("commit_count", 0)),
-                f"{stats.get('lines_added', 0):,}",
-                str(active_days),
-                f"{velocity:.1f}/day",
+        # Add team metrics if requested
+        if team:
+            logger.info("Calculating team metrics...")
+            momentum_data["team_metrics"] = _calculate_team_metrics(
+                git_analyzer, date_range, sprint_length
             )
 
-        console.print(table)
+        # Add burndown if requested
+        if burndown and period == "sprint":
+            logger.info("Generating burndown data...")
+            momentum_data["burndown"] = _generate_burndown_data(git_analyzer, sprint_length)
+
+        # Add forecast if requested
+        if forecast:
+            logger.info("Generating velocity forecast...")
+            momentum_data["forecast"] = _generate_forecast(momentum_data.get("velocity_data", []))
+
+        # Display or save results
+        if format == "terminal":
+            _display_terminal_momentum(momentum_data, team, burndown, forecast)
+        elif format == "json":
+            _output_json_momentum(momentum_data, output)
+        else:
+            _generate_momentum_report(momentum_data, format, output, config)
+
+        # Summary
+        _print_momentum_summary(momentum_data)
+
+    except Exception as e:
+        logger.error(f"Momentum tracking failed: {e}")
+        raise click.ClickException(str(e))
 
 
-def _display_author_stats(author, stats):
-    """Display individual author statistics."""
-    console.print(f"\n[bold]Statistics for {author}[/bold]")
+def _calculate_date_range(period: str, duration: int, sprint_length: int) -> Dict[str, datetime]:
+    """Calculate date range for momentum tracking.
 
-    # Create a nice summary
-    summary_items = [
-        f"Commits: {stats.get('commit_count', 0)}",
-        f"Active days: {stats.get('active_days', 0)}",
-        f"Lines added: {stats.get('lines_added', 0):,}",
-        f"Lines removed: {stats.get('lines_removed', 0):,}",
-        f"Files touched: {stats.get('files_touched', 0)}",
-    ]
+    Args:
+        period: Time period type
+        duration: Number of periods
+        sprint_length: Sprint length in days
 
-    if stats.get("first_commit"):
-        summary_items.append(f"First commit: {stats['first_commit'][:10]}")
-    if stats.get("last_commit"):
-        summary_items.append(f"Last commit: {stats['last_commit'][:10]}")
+    Returns:
+        Date range dictionary
+    """
+    now = datetime.now()
 
-    for item in summary_items:
-        console.print(f"  • {item}")
+    if period == "day":
+        days_back = duration
+    elif period == "week":
+        days_back = duration * 7
+    elif period == "sprint":
+        days_back = duration * sprint_length
+    elif period == "month":
+        days_back = duration * 30
+    else:
+        days_back = 90
 
-    # Show frequently changed files
-    if stats.get("frequent_files"):
-        console.print(f"\n[bold]Frequently Changed Files:[/bold]")
-        for file_info in stats["frequent_files"][:10]:  # Top 10
-            console.print(f"  • {file_info['file']}: {file_info['changes']} changes")
+    return {"since": now - timedelta(days=days_back), "until": now}
+
+
+def _calculate_team_metrics(
+    git_analyzer: GitAnalyzer, date_range: Dict[str, datetime], sprint_length: int
+) -> Dict[str, Any]:
+    """Calculate team-level metrics.
+
+    Args:
+        git_analyzer: Git analyzer instance
+        date_range: Date range for analysis
+        sprint_length: Sprint length in days
+
+    Returns:
+        Team metrics data
+    """
+    # Get commits in range
+    commits = git_analyzer.get_commits(since=date_range["since"], until=date_range["until"])
+
+    # Calculate metrics
+    contributors = set()
+    daily_commits = {}
+
+    for commit in commits:
+        contributors.add(commit.get("author", "Unknown"))
+        date = commit.get("date", datetime.now()).date()
+        daily_commits[date] = daily_commits.get(date, 0) + 1
+
+    # Calculate velocity metrics
+    total_days = (date_range["until"] - date_range["since"]).days
+    active_days = len(daily_commits)
+
+    return {
+        "team_size": len(contributors),
+        "active_contributors": len(contributors),
+        "total_commits": len(commits),
+        "avg_commits_per_day": len(commits) / max(1, total_days),
+        "active_days": active_days,
+        "productivity": (active_days / max(1, total_days)) * 100,
+        "collaboration_index": _calculate_collaboration_index(commits),
+    }
+
+
+def _calculate_collaboration_index(commits: List[Dict[str, Any]]) -> float:
+    """Calculate collaboration index from commits.
+
+    Args:
+        commits: List of commits
+
+    Returns:
+        Collaboration index (0-100)
+    """
+    # Simple heuristic: files touched by multiple authors
+    file_authors = {}
+
+    for commit in commits:
+        author = commit.get("author", "Unknown")
+        for file in commit.get("files", []):
+            if file not in file_authors:
+                file_authors[file] = set()
+            file_authors[file].add(author)
+
+    if not file_authors:
+        return 0.0
+
+    # Calculate percentage of files with multiple authors
+    multi_author_files = sum(1 for authors in file_authors.values() if len(authors) > 1)
+    return (multi_author_files / len(file_authors)) * 100
+
+
+def _generate_burndown_data(git_analyzer: GitAnalyzer, sprint_length: int) -> Dict[str, Any]:
+    """Generate burndown chart data.
+
+    Args:
+        git_analyzer: Git analyzer instance
+        sprint_length: Sprint length in days
+
+    Returns:
+        Burndown data
+    """
+    # Get current sprint data
+    now = datetime.now()
+    sprint_start = now - timedelta(days=sprint_length)
+
+    commits = git_analyzer.get_commits(since=sprint_start, until=now)
+
+    # Calculate daily progress
+    daily_work = {}
+    for commit in commits:
+        date = commit.get("date", now).date()
+        # Simple metric: use files changed as work unit
+        work = len(commit.get("files", []))
+        daily_work[date] = daily_work.get(date, 0) + work
+
+    # Generate burndown lines
+    total_work = sum(daily_work.values())
+    dates = []
+    ideal_line = []
+    actual_line = []
+
+    remaining_work = total_work
+    for day in range(sprint_length):
+        date = (sprint_start + timedelta(days=day)).date()
+        dates.append(str(date))
+
+        # Ideal line
+        ideal_remaining = total_work * (1 - (day / sprint_length))
+        ideal_line.append(ideal_remaining)
+
+        # Actual line
+        if date in daily_work:
+            remaining_work -= daily_work[date]
+        actual_line.append(remaining_work)
+
+    return {
+        "dates": dates,
+        "ideal_line": ideal_line,
+        "actual_line": actual_line,
+        "total_work": total_work,
+        "remaining_work": remaining_work,
+        "on_track": remaining_work <= ideal_line[-1] if ideal_line else True,
+        "completion_percentage": ((total_work - remaining_work) / max(1, total_work)) * 100,
+    }
+
+
+def _generate_forecast(velocity_data: List[float]) -> Dict[str, Any]:
+    """Generate velocity forecast.
+
+    Args:
+        velocity_data: Historical velocity data
+
+    Returns:
+        Forecast data
+    """
+    if len(velocity_data) < 3:
+        return {"available": False, "reason": "Insufficient data"}
+
+    # Simple moving average forecast
+    recent_velocity = velocity_data[-3:]
+    avg_velocity = sum(recent_velocity) / len(recent_velocity)
+
+    # Calculate trend
+    if len(velocity_data) >= 6:
+        older_avg = sum(velocity_data[-6:-3]) / 3
+        trend = ((avg_velocity - older_avg) / max(1, older_avg)) * 100
+    else:
+        trend = 0
+
+    # Generate forecast
+    forecast_periods = 3
+    forecast = []
+    for i in range(forecast_periods):
+        # Apply trend
+        forecast_value = avg_velocity * (1 + (trend / 100) * (i + 1))
+        forecast.append(forecast_value)
+
+    return {
+        "available": True,
+        "current_velocity": avg_velocity,
+        "trend_percentage": trend,
+        "forecast_values": forecast,
+        "confidence": "medium" if len(velocity_data) >= 10 else "low",
+    }
+
+
+def _display_terminal_momentum(
+    momentum_data: Dict[str, Any], show_team: bool, show_burndown: bool, show_forecast: bool
+) -> None:
+    """Display momentum data in terminal.
+
+    Args:
+        momentum_data: Momentum tracking data
+        show_team: Whether to show team metrics
+        show_burndown: Whether to show burndown
+        show_forecast: Whether to show forecast
+    """
+    viz = MomentumVisualizer()
+    viz.display_terminal(momentum_data, show_details=True)
+
+    display = TerminalDisplay()
+
+    # Show additional visualizations if requested
+    if show_team and "team_metrics" in momentum_data:
+        display.display_header("Team Metrics", style="single")
+        display.display_metrics(momentum_data["team_metrics"], columns=2)
+
+    if show_burndown and "burndown" in momentum_data:
+        burndown = momentum_data["burndown"]
+        display.display_header("Sprint Burndown", style="single")
+
+        # Show progress bar
+        completion = burndown.get("completion_percentage", 0)
+        progress_bar = display.create_progress_bar(completion, 100)
+        print(f"Progress: {progress_bar}")
+
+        status = "On Track" if burndown.get("on_track", False) else "Behind Schedule"
+        color = "green" if burndown.get("on_track", False) else "red"
+        print(f"Status: {display.colorize(status, color)}")
+
+    if show_forecast and "forecast" in momentum_data:
+        forecast = momentum_data["forecast"]
+        if forecast.get("available", False):
+            display.display_header("Velocity Forecast", style="single")
+
+            trend = forecast.get("trend_percentage", 0)
+            trend_symbol = "↑" if trend > 0 else "↓" if trend < 0 else "→"
+            trend_color = "green" if trend > 5 else "red" if trend < -5 else "yellow"
+
+            print(f"Current Velocity: {forecast.get('current_velocity', 0):.1f}")
+            print(f"Trend: {display.colorize(trend_symbol, trend_color)} {abs(trend):.1f}%")
+            print(f"Confidence: {forecast.get('confidence', 'low').upper()}")
+
+            print("\nForecast (next 3 periods):")
+            for i, value in enumerate(forecast.get("forecast_values", []), 1):
+                print(f"  Period +{i}: {value:.1f}")
+
+
+def _generate_momentum_report(
+    momentum_data: Dict[str, Any], format: str, output: Optional[str], config: Any
+) -> None:
+    """Generate momentum report.
+
+    Args:
+        momentum_data: Momentum data
+        format: Report format
+        output: Output path
+        config: Configuration
+    """
+    from tenets.core.reporting import ReportConfig
+
+    generator = ReportGenerator(config)
+
+    report_config = ReportConfig(
+        title="Development Momentum Report", format=format, include_charts=True
+    )
+
+    output_path = Path(output) if output else Path(f"momentum_report.{format}")
+
+    generator.generate(data=momentum_data, output_path=output_path, config=report_config)
+
+    click.echo(f"Momentum report generated: {output_path}")
+
+
+def _output_json_momentum(momentum_data: Dict[str, Any], output: Optional[str]) -> None:
+    """Output momentum data as JSON.
+
+    Args:
+        momentum_data: Momentum data
+        output: Output path
+    """
+    import json
+
+    if output:
+        with open(output, "w") as f:
+            json.dump(momentum_data, f, indent=2, default=str)
+        click.echo(f"Momentum data saved to: {output}")
+    else:
+        click.echo(json.dumps(momentum_data, indent=2, default=str))
+
+
+def _print_momentum_summary(momentum_data: Dict[str, Any]) -> None:
+    """Print momentum summary.
+
+    Args:
+        momentum_data: Momentum data
+    """
+    click.echo("\n" + "=" * 50)
+    click.echo("MOMENTUM SUMMARY")
+    click.echo("=" * 50)
+
+    # Current velocity
+    if "current_velocity" in momentum_data:
+        click.echo(f"Current Velocity: {momentum_data['current_velocity']:.1f}")
+
+    # Trend
+    if "velocity_trend" in momentum_data:
+        trend = momentum_data["velocity_trend"]
+        if trend > 0:
+            click.secho(f"Trend: ↑ +{trend:.1f}%", fg="green")
+        elif trend < 0:
+            click.secho(f"Trend: ↓ {trend:.1f}%", fg="red")
+        else:
+            click.echo("Trend: → Stable")
+
+    # Team metrics
+    if "team_metrics" in momentum_data:
+        team = momentum_data["team_metrics"]
+        click.echo(f"\nTeam Size: {team.get('team_size', 0)}")
+        click.echo(f"Productivity: {team.get('productivity', 0):.1f}%")
+
+    # Forecast
+    if "forecast" in momentum_data:
+        forecast = momentum_data["forecast"]
+        if forecast.get("available", False):
+            click.echo(f"\nForecast Confidence: {forecast.get('confidence', 'low').upper()}")

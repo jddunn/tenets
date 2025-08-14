@@ -12,19 +12,20 @@
     display: flex !important;
   }
   
-  .md-header__button[for="__drawer"] {
-    display: none !important;
-  }
-  
-  .md-nav--primary,
+  /* Hide mobile-only elements on desktop */
+  .md-header__button[for="__drawer"],
   .md-nav__toggle,
-  .md-sidebar--primary {
-    display: none !important;
-  }
-  
   .md-overlay {
     display: none !important;
   }
+
+  /* Ensure primary sidebar/nav are visible on desktop */
+  .md-sidebar--primary,
+  .md-nav--primary {
+    display: block !important;
+  }
+  /* Reset any off-canvas transform from theme at desktop sizes */
+  .md-sidebar--primary { transform: none !important; }
 }
 
 /* =====================================================
@@ -33,36 +34,64 @@
 
 @media screen and (max-width: 1099px) {
   
-  /* Mobile header adjustments */
+  /* Mobile header base styles */
   .md-header {
     height: 3.5rem;
     padding: 0 0.5rem;
+    position: fixed;
+    width: 100%;
+  /* Ensure header (and search modal within it) stacks above page overlays */
+  z-index: 24000;
   }
   
   .md-header__inner {
-    padding: 0 0.5rem;
+  padding: 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  /* Reserve space on the right for the fixed hamburger so controls don't crowd it */
+  padding-right: 140px !important;
   }
   
-  /* Hide desktop nav */
+  /* Hide desktop nav on mobile */
   .md-header-nav {
     display: none !important;
   }
   
-  /* Hamburger menu button - Neumorphic */
+  /* Title - centered and flexible */
+  .md-header__title {
+    display: block !important;
+  flex: 1;
+  min-width: 0; /* allow title to shrink so controls remain visible */
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #1a2332;
+    text-transform: lowercase;
+    order: 2;
+  }
+  
+  [data-md-color-scheme="slate"] .md-header__title {
+    color: #fbbf24;
+  }
+  
+  /* Hamburger menu button - left side */
   .md-header__button[for="__drawer"] {
     display: flex !important;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
     align-items: center;
     justify-content: center;
-    position: relative;
-    z-index: 10001;
     background: linear-gradient(145deg, #ffffff, #f0ede8);
     border-radius: 8px;
     box-shadow: 
       3px 3px 8px rgba(26, 35, 50, 0.08),
       -3px -3px 8px rgba(255, 255, 255, 0.9);
     cursor: pointer;
+    order: 1;
+    position: relative;
+    z-index: 10002;
   }
   
   [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
@@ -72,12 +101,43 @@
       -3px -3px 8px rgba(255, 255, 255, 0.03);
   }
   
-  /* Hamburger icon */
   .md-header__button[for="__drawer"] svg {
     fill: #f59e0b;
   }
   
-  /* Mobile navigation drawer - FIXED */
+  /* Right side controls */
+  label.md-header__button[for^="__palette_"] { display: flex !important; order: 2; }
+  
+  /* Prefer inline .md-search on tablet; search icon on very small screens */
+  .md-header__inner .md-search { order: 3; display: flex !important; align-items: center; }
+  /* don't force-hide the search icon at all sizes; control via sub-breakpoints */
+  .md-header__inner label.md-header__button[for="__search"] { display: none; }
+  
+  .md-source { display: inline-flex !important; order: 4; }
+
+  /* Keep GitHub inline next to theme toggle (no fixed positioning) */
+  .md-header__source,
+  .md-header .md-source { position: static !important; margin-right: 0.25rem !important; }
+
+  /* Hide any GitHub/source block that theme may render inside drawer */
+  .md-nav__source,
+  .md-nav--primary .md-source,
+  .md-sidebar--primary .md-source {
+    display: none !important;
+  }
+  
+  /* Keep hamburger fixed at the top-right above other controls */
+  .md-header__button[for="__drawer"] { position: fixed; top: 8px; right: 8px; order: 5; }
+
+  /* Medium view (tablet): add extra spacing between search and hamburger */
+  @media screen and (min-width: 601px) and (max-width: 1099px) {
+  .md-header .md-search { display: flex !important; margin-right: 1rem !important; }
+    .md-header .md-source { margin-right: 0.75rem !important; }
+  /* hide the icon button on tablet when inline search is present */
+  .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
+  }
+  
+  /* Mobile navigation drawer */
   .md-nav--primary,
   .md-sidebar--primary {
     display: block !important;
@@ -91,7 +151,7 @@
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.2) !important;
     transform: translateX(-100%) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    z-index: 10000 !important;
+    z-index: 10010 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
@@ -102,7 +162,7 @@
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.4) !important;
   }
   
-  /* When drawer checkbox is checked - SHOW DRAWER */
+  /* Show drawer when checkbox is checked */
   input[type="checkbox"]#__drawer:checked ~ .md-container .md-nav--primary,
   input[type="checkbox"]#__drawer:checked ~ .md-container .md-sidebar--primary,
   .md-toggle--drawer:checked ~ .md-container .md-nav--primary,
@@ -115,35 +175,42 @@
   .md-sidebar--primary .md-nav__title {
     background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
     color: #1a2332;
-    padding: 1.25rem 1rem;
+    padding: 1rem;
     font-family: 'Playfair Display', serif;
-    font-weight: 900;
-    font-size: 1.25rem;
+    font-weight: 700;
+    font-size: 1.15rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    border-bottom: 2px solid rgba(26, 35, 50, 0.1);
+    border-bottom: 1px solid rgba(26, 35, 50, 0.1);
+    margin-bottom: 0;
+    text-transform: lowercase;
     position: sticky;
     top: 0;
     z-index: 10;
-    text-transform: lowercase;
   }
   
-  /* Logo in drawer header - non-cropped version */
+  /* Logo in drawer header */
   .md-nav--primary .md-nav__title::before,
   .md-sidebar--primary .md-nav__title::before {
     content: '';
     display: inline-block;
     width: 40px;
     height: 40px;
-    background: url('../logos/tenets_dark_icon_transparent.png') no-repeat center;
+    background: url('../logos/tenets_light_icon_transparent.png') no-repeat center;
     background-size: contain;
+    flex-shrink: 0;
+  }
+  
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title::before,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title::before {
+    background-image: url('../logos/tenets_dark_icon_transparent.png');
   }
   
   /* Navigation list container */
   .md-nav--primary .md-nav__list,
   .md-sidebar--primary .md-nav__list {
-    padding: 0;
+    padding: 0 !important;
     margin: 0;
     list-style: none;
   }
@@ -152,11 +219,12 @@
   .md-nav--primary .md-nav__item,
   .md-sidebar--primary .md-nav__item {
     border-bottom: 1px solid rgba(245, 158, 11, 0.06);
+    margin: 0;
   }
   
   .md-nav--primary .md-nav__link,
   .md-sidebar--primary .md-nav__link {
-    padding: 1rem 1.25rem !important;
+    padding: 0.9rem 1.25rem !important;
     font-size: 0.95rem;
     font-weight: 600;
     color: #3e342a;
@@ -184,7 +252,7 @@
   .md-sidebar--primary .md-nav__link--active {
     background: rgba(245, 158, 11, 0.12);
     color: #f59e0b;
-    font-weight: 700;
+    font-weight: 600;
     border-left: 3px solid #f59e0b;
   }
   
@@ -231,7 +299,8 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: 9999;
+  /* Keep drawer overlay below header/search modal */
+  z-index: 10005;
     backdrop-filter: blur(5px);
     pointer-events: none;
   }
@@ -248,29 +317,96 @@
     pointer-events: auto !important;
   }
   
-  /* Hide tabs and secondary sidebar */
-  .md-tabs {
-    display: none !important;
+  /* Ensure search components are above everything on mobile and interactive */
+  .md-search__overlay { z-index: 24050 !important; pointer-events: auto !important; }
+
+  .md-search__inner[role="dialog"],
+  .md-search[aria-expanded="true"],
+  .md-search[data-md-state="active"] { z-index: 24060 !important; }
+  
+  /* Center search dialog on mobile */
+  .md-search[aria-expanded="true"] .md-search__inner,
+  .md-search[data-md-state="active"] .md-search__inner {
+    margin: 12vh auto 0 !important;
+    max-width: min(92vw, 720px) !important;
   }
   
+  /* Hide tabs and secondary sidebar on mobile */
+  .md-tabs,
   .md-sidebar--secondary {
     display: none !important;
   }
-  
-  /* Show title on mobile */
-  .md-header__title {
-    display: block !important;
-    flex: 1;
-    text-align: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.25rem;
-    font-weight: 900;
-    color: #1a2332;
-    text-transform: lowercase;
+
+  /* Very small screens: show compact search icon and compact GitHub, hide inline search input */
+  @media screen and (max-width: 600px) {
+    /* Use the search icon button on tiny screens */
+    .md-header__inner label.md-header__button[for="__search"] {
+      display: flex !important;
+      order: 3;
+      align-items: center;
+      justify-content: center;
+    }
+    .md-header__inner .md-search { display: none !important; }
+
+    /* Compact GitHub/source: icon only */
+    .md-header__source,
+    .md-header .md-source { display: inline-flex !important; order: 4; }
+    .md-header .md-source__repository { display: none !important; }
+    .md-header .md-source__icon { margin: 0 !important; }
+
+    /* Slightly increase reserved space for buttons on tiny screens */
+    .md-header__inner { padding-right: 148px !important; }
   }
-  
-  [data-md-color-scheme="slate"] .md-header__title {
-    color: #fbbf24;
+}
+
+/* =====================================================
+   INSTALL COMMANDS WRAPPING ON SMALL SCREENS
+   ===================================================== */
+@media screen and (max-width: 768px) {
+  /* Prefer wrapping for shell-like languages */
+  .md-typeset .highlight[data-lang="bash"] pre,
+  .md-typeset .highlight[data-lang="sh"] pre,
+  .md-typeset .highlight[data-lang="shell"] pre,
+  .md-typeset .highlight[data-lang="zsh"] pre,
+  .md-typeset .highlight[data-lang="powershell"] pre,
+  .md-typeset .highlight[data-lang="ps1"] pre,
+  .md-typeset .highlight[data-lang="cmd"] pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Fallback: if language attribute isn't present, allow wrapping inside pre > code */
+  .md-typeset pre > code.language-bash,
+  .md-typeset pre > code.language-sh,
+  .md-typeset pre > code.language-shell,
+  .md-typeset pre > code.language-zsh,
+  .md-typeset pre > code.language-powershell,
+  .md-typeset pre > code.language-cmd {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Ensure code blocks fit viewport with smooth horizontal scroll when needed */
+  .md-typeset .highlight,
+  .md-typeset pre {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Slightly reduce code font size on mobile to increase fit */
+  :root { --md-code-font-size: 0.85rem; }
+
+  /* Let inline code wrap within paragraphs to avoid overflow */
+  .md-typeset p code,
+  .md-typeset li code,
+  .md-typeset td code {
+    white-space: break-spaces;
+    word-break: break-word;
   }
 }
 
@@ -294,7 +430,7 @@
 
 @media screen and (max-width: 1099px) {
   
-  /* Content spacing */
+  /* Content spacing to account for fixed header */
   .md-container {
     padding-top: 3.5rem;
   }
@@ -344,9 +480,9 @@
   /* Hero adjustments */
   .victorian-hero,
   .hero-section {
-    min-height: calc(100vh - 7rem);
+    min-height: calc(100vh - 3.5rem);
     padding: 1.5rem 1rem;
-    margin-top: 56px;
+    margin-top: 3.5rem;
   }
   
   .lantern-container {
@@ -391,10 +527,13 @@
     margin: 0.5rem 0;
   }
   
-  /* Hide search and source on mobile */
-  .md-search,
-  .md-source {
-    display: none !important;
+  /* Prevent body scroll when drawer is open */
+  body:has(#__drawer:checked),
+  body:has(.md-toggle--drawer:checked) {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
   }
 }
 
@@ -419,7 +558,7 @@
   
   .md-nav--primary,
   .md-sidebar--primary {
-    width: 75% !important;
+    width: 90% !important;
     max-width: 280px !important;
   }
   
@@ -431,12 +570,16 @@
     width: 60px;
     height: 60px;
   }
-}
-
-/* Prevent body scroll when drawer is open */
-body:has(#__drawer:checked),
-body:has(.md-toggle--drawer:checked) {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
+  
+  /* Adjust hero spacing for smaller header */
+  .victorian-hero,
+  .hero-section {
+    margin-top: 3rem;
+    min-height: calc(100vh - 3rem);
+  }
+  
+  /* Content spacing adjustment */
+  .md-container {
+    padding-top: 3rem;
+  }
 }

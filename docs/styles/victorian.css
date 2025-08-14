@@ -152,6 +152,12 @@ code, pre {
   position: relative;
 }
 
+.torch-container .lantern-layer{
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* behind logo (logo at 2) */
+}
+
 .torch-logo-static {
   width: 100%;
   height: 100%;
@@ -161,19 +167,20 @@ code, pre {
 }
 
 /* Logo visibility based on theme */
-.dark-logo {
+/* Scope hero torch logo swap to avoid impacting header/footer logos */
+.torch-logo-static.dark-logo {
   display: block;
 }
 
-.light-logo {
+.torch-logo-static.light-logo {
   display: none;
 }
 
-[data-md-color-scheme="default"] .dark-logo {
+[data-md-color-scheme="default"] .torch-logo-static.dark-logo {
   display: none;
 }
 
-[data-md-color-scheme="default"] .light-logo {
+[data-md-color-scheme="default"] .torch-logo-static.light-logo {
   display: block;
 }
 
@@ -195,32 +202,10 @@ code, pre {
   filter: blur(2px);
 }
 
-.flame-glow-iridescent {
-  position: absolute;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 100px;
-  filter: blur(30px);
-  animation: iridescent 3s ease-in-out infinite;
-}
-
-@keyframes iridescent {
-  0%, 100% { 
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
-  }
-  25% { 
-    background: radial-gradient(circle, rgba(139, 0, 255, 0.4) 0%, transparent 70%);
-  }
-  50% { 
-    background: radial-gradient(circle, rgba(0, 255, 255, 0.4) 0%, transparent 70%);
-  }
-  75% { 
-    background: radial-gradient(circle, rgba(255, 0, 102, 0.4) 0%, transparent 70%);
-  }
-}
-
+/* Remove iridescent concentric radiance */
+.flame-glow-iridescent,
+.flame-glow-iridescent::before,
+.flame-glow-iridescent::after { display:none !important; }
 /* Hero Typography */
 .hero-title {
   font-family: 'Playfair Display', serif;
@@ -279,7 +264,7 @@ code, pre {
 .install-command {
   display: inline-flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   background: var(--navy-900);
   padding: 0.75rem 1.5rem;
   border-radius: 25px;
@@ -296,6 +281,7 @@ code, pre {
   font-size: 1rem;
   background: none;
   padding: 0;
+  margin-right: 0.25rem;
 }
 
 /* ===============================================
@@ -344,8 +330,11 @@ code, pre {
 
 .btn-primary.large,
 .btn-secondary.large {
-  padding: 1rem 2rem;
+  padding: 1rem 2.25rem;
   font-size: 1.125rem;
+  min-width: 280px;
+  max-width: 100%;
+  white-space: normal; /* allow wrapping */
 }
 
 .copy-btn {
@@ -872,7 +861,7 @@ code, pre {
    =============================================== */
 
 .architecture-section {
-  padding: 5rem 0;
+  padding: 2.5rem 0 2rem;
   background: var(--cream-50);
 }
 
@@ -884,45 +873,63 @@ code, pre {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin: 3rem 0;
+  gap: 0.5rem;
+  flex-wrap: nowrap; /* keep steps on one line */
+  margin: 2rem 0 1.5rem;
+  overflow-x: auto; /* allow horizontal scroll if needed */
+  -webkit-overflow-scrolling: touch;
 }
 
 .arch-stage {
   text-align: center;
-  padding: 1.5rem;
+  padding: 0.75rem 0.5rem;
   transition: all 0.3s ease;
   position: relative;
+  border-radius: 10px;
+  cursor: pointer;
+  max-width: 160px; /* compact width per stage */
 }
 
 .arch-stage:hover {
   transform: translateY(-10px);
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.18);
 }
 
 .stage-icon {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 1rem;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 0.5rem;
   background: var(--gradient-amber);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.25);
 }
 
+/* Active stage state */
+.arch-stage.is-active .stage-icon {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), 0 8px 24px rgba(245, 158, 11, 0.35);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.arch-stage.is-active h3 { color: var(--amber-600); }
+[data-md-color-scheme="slate"] .arch-stage.is-active h3 { color: var(--amber-400); }
+
+.arch-stage:focus { outline: none; }
+.arch-stage:focus-visible { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35); }
+
 .stage-number {
-  font-size: 2rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: var(--navy-900);
 }
 
 .arch-stage h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
+  font-size: 1rem;
   color: var(--navy-900);
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
 }
 
 [data-md-color-scheme="slate"] .arch-stage h3 {
@@ -930,9 +937,9 @@ code, pre {
 }
 
 .arch-stage p {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--sepia-600);
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 [data-md-color-scheme="slate"] .arch-stage p {
@@ -940,7 +947,7 @@ code, pre {
 }
 
 .arch-arrow {
-  font-size: 2rem;
+  font-size: 1.25rem;
   color: var(--amber-500);
   animation: arrowPulse 2s ease-in-out infinite;
 }
@@ -956,19 +963,22 @@ code, pre {
   }
 }
 
-.arch-details {
+.architecture-details {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  margin-top: 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.25rem;
 }
 
 .detail-card {
   background: var(--cream-100);
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
+  padding: 1rem 1rem;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
+  /* Dim by default until corresponding stage is focused */
+  opacity: 0.45;
+  filter: grayscale(12%);
 }
 
 [data-md-color-scheme="slate"] .detail-card {
@@ -976,17 +986,25 @@ code, pre {
   border: 1px solid rgba(245, 158, 11, 0.1);
 }
 
-.detail-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--amber-500);
+.detail-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--amber-500); }
+
+/* Focused/active detail card */
+.detail-card.is-active {
+  opacity: 1;
+  filter: none;
+  box-shadow: 0 18px 48px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(251, 191, 36, 0.03)), var(--cream-100);
+}
+[data-md-color-scheme="slate"] .detail-card.is-active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(251, 191, 36, 0.03)), var(--navy-800);
 }
 
 .detail-card h4 {
   font-family: 'Playfair Display', serif;
   color: var(--amber-500);
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 
 .detail-card ul {
@@ -996,11 +1014,11 @@ code, pre {
 }
 
 .detail-card li {
-  padding: 0.5rem 0;
+  padding: 0.35rem 0;
   color: var(--sepia-800);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  padding-left: 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  padding-left: 1.25rem;
   position: relative;
 }
 
@@ -1059,8 +1077,8 @@ code, pre {
   font-family: 'JetBrains Mono', monospace;
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start; /* keep content aligned to top */
+  justify-content: flex-start;
   box-shadow: var(--shadow-md);
   margin: 1rem 0;
 }
@@ -1069,11 +1087,29 @@ code, pre {
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
+  padding-right: 3.25rem; /* reserve space for top-right copy button */
 }
 
 .code-block-multi code {
-  white-space: pre;
+  white-space: pre; /* preserve newlines */
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  margin-right: 0; /* rely on container padding-right for button clearance */
   line-height: 1.5;
+}
+
+/* Install section copy button placement (top-right) */
+.install-section .code-block .copy-btn {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  z-index: 2;
+}
+
+/* Create room so single-line code doesn’t clash with the button */
+.install-section .code-block:not(.code-block-multi) code {
+  padding-right: 2.5rem;
 }
 
 .install-note {
@@ -1089,6 +1125,37 @@ code, pre {
 .install-cta {
   text-align: center;
   margin-top: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem; /* spacing between the two buttons */
+}
+
+/* Coming soon cards */
+.install-card.coming-soon {
+  position: relative;
+  opacity: 0.7;
+  filter: saturate(0.6);
+}
+.install-card.coming-soon .copy-btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.install-card.coming-soon .code-block,
+.install-card.coming-soon .install-note {
+  pointer-events: none;
+}
+.coming-soon-badge {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background: var(--gradient-amber);
+  color: var(--navy-900);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
 }
 
 /* ===============================================

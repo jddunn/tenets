@@ -317,7 +317,7 @@
         init() {
             this.bindAnchorLinks();
             this.setupScrollEffects();
-            this.setupBackToTop();
+            // Back-to-top handled by dedicated module (js/back-to-top.js)
             console.log('✅ Smooth scroll initialized');
         }
         
@@ -389,39 +389,7 @@
             window.addEventListener('scroll', TenetsUtils.throttle(requestTick, 100));
         }
         
-        setupBackToTop() {
-            // Create back to top button
-            const button = document.createElement('button');
-            button.id = 'back-to-top';
-            button.className = 'back-to-top';
-            button.setAttribute('aria-label', 'Back to top');
-            button.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 19V5M5 12l7-7 7 7"/>
-                </svg>
-            `;
-            
-            document.body.appendChild(button);
-            
-            // Show/hide based on scroll position
-            const toggleButton = TenetsUtils.throttle(() => {
-                if (window.pageYOffset > TENETS_CONFIG.scroll.showBackToTopThreshold) {
-                    button.classList.add('visible');
-                } else {
-                    button.classList.remove('visible');
-                }
-            }, 100);
-            
-            window.addEventListener('scroll', toggleButton);
-            
-            // Scroll to top on click
-            button.addEventListener('click', () => {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            });
-        }
+    // setupBackToTop removed (superseded by js/back-to-top.js)
     }
     
     // ==========================================================================

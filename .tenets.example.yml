@@ -1,0 +1,643 @@
+# .tenets.example.yml - Complete Tenets Configuration Example
+# Copy this to .tenets.yml and customize for your project
+# https://github.com/jddunn/tenets
+
+# ============================================================================
+# API KEYS (OPTIONAL - Currently only used for LLM summarization)
+# ============================================================================
+# WARNING: Add .tenets.yml to .gitignore if you put API keys here!
+# 
+# Priority order: Environment variables override these config values
+# So you can commit a config without keys and use env vars in production
+
+# OpenAI API key for GPT models
+# OPENAI_API_KEY: ""
+
+# Anthropic API key for Claude models  
+# ANTHROPIC_API_KEY: ""
+
+# OpenRouter API key for multiple models
+# OPENROUTER_API_KEY: ""
+
+# ============================================================================
+# GLOBAL SETTINGS
+# ============================================================================
+
+# Maximum tokens for context generation (affects LLM costs)
+max_tokens: 100000  # Range: 1000-2000000
+
+# Debug mode - enables verbose logging
+debug: false
+
+# Quiet mode - suppresses non-essential output
+quiet: false
+
+# ============================================================================
+# NLP (NATURAL LANGUAGE PROCESSING) - Centralized text processing
+# ============================================================================
+# All NLP operations go through the centralized tenets.core.nlp package
+
+nlp:
+  # Enable NLP features globally
+  enabled: true
+  
+  # ---- STOPWORD CONFIGURATION ----
+  # Dual stopword system for different contexts
+  stopwords_enabled: true
+  
+  # Stopword set for code search (ultra-minimal, ~25 words)
+  # Preserves ALL programming keywords like async, function, class, etc.
+  code_stopword_set: minimal  # minimal|aggressive|custom
+  
+  # Stopword set for prompt parsing (aggressive, 200+ words)
+  # Filters common words to extract core concepts
+  prompt_stopword_set: aggressive  # minimal|aggressive|custom
+  
+  # Additional custom stopword files
+  custom_stopword_files: []
+  
+  # ---- TOKENIZATION CONFIGURATION ----
+  # How text is broken into tokens
+  tokenization_mode: auto  # code|text|auto
+  
+  # Keep original tokens alongside split versions for exact matching
+  preserve_original_tokens: true
+  
+  # Split camelCase and PascalCase (getUserName → get, user, name)
+  split_camelcase: true
+  
+  # Split snake_case (user_name → user, name)
+  split_snakecase: true
+  
+  # Minimum token length to keep
+  min_token_length: 2
+  
+  # ---- KEYWORD EXTRACTION ----
+  # How keywords are extracted from text
+  keyword_extraction_method: auto  # auto|yake|tfidf|frequency
+  
+  # Maximum keywords to extract
+  max_keywords: 30
+  
+  # Maximum n-gram size (for phrases like "machine learning")
+  ngram_size: 3
+  
+  # YAKE deduplication threshold (if YAKE is available)
+  yake_dedup_threshold: 0.7
+  
+  # ---- TF-IDF CONFIGURATION ----
+  # Term Frequency-Inverse Document Frequency settings
+  tfidf_use_sublinear: true  # Use log scaling for term frequency
+  tfidf_use_idf: true        # Use inverse document frequency
+  tfidf_norm: l2             # Normalization method
+  
+  # ---- BM25 CONFIGURATION ----
+  # Best Matching 25 algorithm settings
+  bm25_k1: 1.2  # Term frequency saturation
+  bm25_b: 0.75  # Length normalization
+  
+  # ---- EMBEDDINGS CONFIGURATION (ML) ----
+  # Semantic embeddings for similarity computation
+  embeddings_enabled: false  # Requires sentence-transformers
+  
+  # Embedding model to use
+  # Options: all-MiniLM-L6-v2, all-MiniLM-L12-v2, all-mpnet-base-v2
+  embeddings_model: all-MiniLM-L6-v2
+  
+  # Device for embeddings
+  embeddings_device: auto  # auto|cpu|cuda
+  
+  # Cache computed embeddings
+  embeddings_cache: true
+  
+  # Batch size for embedding generation
+  embeddings_batch_size: 32
+  
+  # ---- SIMILARITY CONFIGURATION ----
+  # How similarity is computed
+  similarity_metric: cosine  # cosine|euclidean|manhattan
+  similarity_threshold: 0.7  # Minimum similarity to consider relevant
+  
+  # ---- NLP CACHE CONFIGURATION ----
+  # Cache TTL for NLP operations
+  cache_embeddings_ttl_days: 30
+  cache_tfidf_ttl_days: 7
+  cache_keywords_ttl_days: 7
+  
+  # ---- PERFORMANCE OPTIMIZATION ----
+  # Multiprocessing for large operations
+  multiprocessing_enabled: true
+  multiprocessing_workers: null  # null = cpu_count()
+  multiprocessing_chunk_size: 100
+
+# ============================================================================
+# FILE RANKING - How files are scored for relevance
+# ============================================================================
+
+ranking:
+  # Algorithm for ranking files by relevance
+  # Options: fast, balanced, thorough, ml, custom
+  algorithm: balanced
+  
+  # Minimum relevance score to include file (0.0-1.0)
+  # Lower values include more files
+  threshold: 0.10
+  
+  # Use TF-IDF for keyword matching (improves accuracy)
+  # This now uses the centralized NLP TF-IDF implementation
+  use_tfidf: true
+  
+  # Filter common programming keywords (reduces noise)
+  # This now uses the centralized NLP stopword system
+  use_stopwords: false  # For code search, use minimal stopwords
+  
+  # Use semantic embeddings for similarity (requires ML)
+  # This now uses the centralized NLP embeddings
+  use_embeddings: false
+  
+  # Include git signals in ranking
+  use_git: true
+  
+  # Enable ML features (uses NLP embeddings)
+  use_ml: false
+  
+  # Embedding model for ML mode (uses NLP config)
+  embedding_model: all-MiniLM-L6-v2
+  
+  # Custom weights for ranking factors (advanced)
+  custom_weights:
+    keyword_match: 0.25      # Uses NLP keyword extraction
+    path_relevance: 0.20
+    import_graph: 0.20
+    git_activity: 0.15
+    file_type: 0.10
+    complexity: 0.10
+  
+  # Parallel processing settings
+  workers: 2
+  parallel_mode: auto  # thread, process, or auto
+  batch_size: 100      # Batch size for ML operations
+
+# ============================================================================
+# CONTENT SUMMARIZATION - Compress large files to fit token limits
+# ============================================================================
+
+summarizer:
+  # Default summarization strategy
+  # Options: extractive, compressive, textrank, transformer, llm, auto
+  default_mode: auto
+  
+  # Target compression ratio (0.3 = compress to 30% of original)
+  target_ratio: 0.3
+  
+  # Cache summaries for repeated content
+  enable_cache: true
+  max_cache_size: 100
+  
+  # Preserve code structure (imports, function signatures)
+  preserve_code_structure: true
+  
+  # LLM Configuration (optional - requires API keys above)
+  # llm_provider: ""  # openai, anthropic, openrouter
+  # llm_model: ""     # gpt-3.5-turbo, gpt-4, claude-3-haiku, etc.
+  # llm_temperature: 0.3  # 0-1, lower = more deterministic
+  # llm_max_tokens: 500   # Max tokens in response
+  
+  # ML Configuration
+  enable_ml_strategies: true   # Enable transformer models (requires ML)
+  quality_threshold: medium    # Quality target: low, medium, high
+  batch_size: 10               # Files to process in parallel
+
+# ============================================================================
+# FILE SCANNING - Control which files are analyzed
+# ============================================================================
+
+scanner:
+  # Respect .gitignore patterns
+  respect_gitignore: true
+  
+  # Follow symbolic links
+  follow_symlinks: false
+  
+  # Maximum file size to analyze (bytes)
+  max_file_size: 5000000  # 5MB
+  
+  # Maximum total files to scan
+  max_files: 10000
+  
+  # Check for and skip binary files
+  binary_check: true
+  
+  # File encoding
+  encoding: utf-8
+  
+  # Additional patterns to ignore (glob patterns)
+  additional_ignore_patterns:
+    - "*.generated.*"
+    - "*.min.js"
+    - "*.min.css"
+    - vendor/
+    - node_modules/
+    - .venv/
+    - "*.log"
+    - "*.tmp"
+  
+  # Patterns to explicitly include (overrides ignores)
+  additional_include_patterns: []
+  
+  # Parallel scanning settings
+  workers: 4
+  parallel_mode: auto
+  timeout: 5.0  # Per-file timeout in seconds
+
+# ============================================================================
+# OUTPUT FORMATTING - How context is formatted
+# ============================================================================
+
+output:
+  # Default output format
+  # Options: markdown, xml (for Claude), json
+  default_format: markdown
+  
+  # Enable syntax highlighting in output
+  syntax_highlighting: true
+  
+  # Include line numbers in code blocks
+  line_numbers: false
+  
+  # Maximum line length before wrapping
+  max_line_length: 120
+  
+  # Include metadata (file stats, git info, etc.)
+  include_metadata: true
+  
+  # Automatically summarize files larger than this (characters)
+  compression_threshold: 10000
+  
+  # Target compression ratio for large files
+  summary_ratio: 0.25
+  
+  # Automatically copy distill output to clipboard
+  copy_on_distill: false
+
+# ============================================================================
+# CACHING - Speed up repeated operations
+# ============================================================================
+
+cache:
+  # Enable caching system
+  enabled: true
+  
+  # Cache directory (defaults to ~/.tenets/cache)
+  # directory: /custom/cache/path
+  
+  # How long to keep cached data (days)
+  ttl_days: 7
+  
+  # Maximum cache size (MB)
+  max_size_mb: 500
+  
+  # Compress cached data (saves space, slower)
+  compression: false
+  
+  # In-memory cache size
+  memory_cache_size: 1000
+  
+  # SQLite performance tuning
+  sqlite_pragmas:
+    journal_mode: WAL
+    synchronous: NORMAL
+    cache_size: "-64000"  # 64MB
+    temp_store: MEMORY
+  
+  # Maximum age for analysis cache (hours)
+  max_age_hours: 24
+
+# ============================================================================
+# GIT INTEGRATION - Include version control context
+# ============================================================================
+
+git:
+  # Enable git integration
+  enabled: true
+  
+  # Include commit history in context
+  include_history: true
+  
+  # Maximum commits to include
+  history_limit: 100
+  
+  # Include git blame information
+  include_blame: false
+  
+  # Include repository statistics
+  include_stats: true
+  
+  # Authors to ignore (bots, etc.)
+  ignore_authors:
+    - "dependabot[bot]"
+    - "github-actions[bot]"
+    - "renovate[bot]"
+  
+  # Branch names considered "main"
+  main_branches:
+    - main
+    - master
+    - develop
+    - trunk
+
+# ============================================================================
+# TENET SYSTEM - Smart injection of guiding principles for AI interactions
+# ============================================================================
+
+tenet:
+  # ---- CORE SETTINGS ----
+  # Automatically inject tenets into context
+  auto_instill: true
+  
+  # Maximum tenets to include per context
+  max_per_context: 5
+  
+  # Reinforce critical tenets at end
+  reinforcement: true
+  
+  # Injection strategy for placement
+  # Options: strategic, top, distributed, uniform, random
+  injection_strategy: strategic
+  
+  # Minimum distance between tenet injections (characters)
+  min_distance_between: 1000
+  
+  # Prefer injecting at natural break points (sections, paragraphs)
+  prefer_natural_breaks: true
+  
+  # Tenet storage directory (defaults to ~/.tenets/tenets)
+  # storage_path: /custom/tenets/path
+  
+  # Enable tenet collections (grouped tenets)
+  collections_enabled: true
+  
+  # ---- SMART INJECTION FREQUENCY ----
+  # Control when and how often tenets are injected
+  
+  # Injection frequency mode
+  # Options:
+  #   always   - Inject into every distilled context
+  #   periodic - Inject every Nth distillation (set by injection_interval)
+  #   adaptive - Smart injection based on context complexity and session
+  #   manual   - Only inject when explicitly requested
+  injection_frequency: adaptive
+  
+  # Interval for periodic injection (e.g., 3 = every 3rd distill)
+  injection_interval: 3
+  
+  # Complexity threshold for adaptive injection (0-1)
+  # Higher values = inject only on complex contexts
+  session_complexity_threshold: 0.7
+  
+  # Minimum distills in session before first injection
+  # Prevents overwhelming users in short sessions
+  min_session_length: 5
+  
+  # Enable adaptive injection based on context analysis
+  adaptive_injection: true
+  
+  # Track injection history per session for smarter decisions
+  track_injection_history: true
+  
+  # How quickly tenet importance decays (0-1)
+  # 0 = never decay, 1 = immediate decay
+  # Lower values = tenets stay "fresh" longer
+  decay_rate: 0.1
+  
+  # Reinforce critical tenets every N injections
+  reinforcement_interval: 10
+  
+  # ---- SESSION TRACKING ----
+  # Session-aware injection patterns
+  
+  # Enable session-aware injection patterns
+  session_aware: true
+  
+  # Maximum concurrent sessions to track in memory
+  session_memory_limit: 100
+  
+  # Persist session histories to disk
+  persist_session_history: true
+  
+  # ---- ADVANCED INJECTION SETTINGS ----
+  # Fine-tune injection behavior
+  
+  # Weight given to complexity in injection decisions (0-1)
+  complexity_weight: 0.5
+  
+  # Boost factor for critical priority tenets
+  priority_boost_critical: 2.0
+  
+  # Boost factor for high priority tenets
+  priority_boost_high: 1.5
+  
+  # Skip low priority tenets when context complexity exceeds threshold
+  skip_low_priority_on_complex: true
+  
+  # ---- METRICS AND ANALYSIS ----
+  # Track and analyze tenet effectiveness
+  
+  # Enable effectiveness tracking
+  track_effectiveness: true
+  
+  # Days to consider for effectiveness analysis
+  effectiveness_window_days: 30
+  
+  # Minimum compliance score before forcing reinforcement
+  min_compliance_score: 0.6
+
+# ============================================================================
+# INJECTION FREQUENCY EXAMPLES
+# ============================================================================
+# 
+# Example configurations for different use cases:
+# 
+# 1. ALWAYS INJECT (Maximum reinforcement)
+# tenet:
+#   injection_frequency: always
+#   max_per_context: 3  # Limit to avoid overwhelming
+# 
+# 2. PERIODIC INJECTION (Regular intervals)
+# tenet:
+#   injection_frequency: periodic
+#   injection_interval: 5  # Every 5th distill
+#   min_session_length: 0  # Start immediately
+# 
+# 3. ADAPTIVE INJECTION (Smart, context-aware)
+# tenet:
+#   injection_frequency: adaptive
+#   session_complexity_threshold: 0.6  # Medium complexity trigger
+#   min_session_length: 3  # Wait for session to develop
+#   adaptive_injection: true
+#   decay_rate: 0.2  # Moderate decay
+# 
+# 4. MANUAL ONLY (User control)
+# tenet:
+#   injection_frequency: manual
+#   auto_instill: false  # Disable automatic injection
+# 
+# 5. AGGRESSIVE REINFORCEMENT (Learning/training)
+# tenet:
+#   injection_frequency: periodic
+#   injection_interval: 2  # Every other distill
+#   reinforcement_interval: 5  # Frequent reinforcement
+#   priority_boost_critical: 3.0  # Strong critical boost
+# 
+# 6. GENTLE REMINDER (Long sessions)
+# tenet:
+#   injection_frequency: adaptive
+#   min_session_length: 10  # Wait for established session
+#   decay_rate: 0.05  # Very slow decay
+#   session_complexity_threshold: 0.8  # Only complex contexts
+# 
+# ============================================================================
+
+# ============================================================================
+# CUSTOM CONFIGURATION - Project-specific settings
+# ============================================================================
+
+custom:
+  # Add any project-specific configuration here
+  # These values are accessible via config.custom
+  
+  # Example: Project metadata
+  # project_name: "My Project"
+  # project_version: "1.0.0"
+  
+  # Example: Team preferences
+  # team:
+  #   lead: "john.doe@example.com"
+  #   slack_channel: "#dev-team"
+  
+  # Example: Integration settings
+  # integrations:
+  #   jira_url: "https://company.atlassian.net"
+  #   github_org: "my-org"
+
+# ============================================================================
+# ENVIRONMENT VARIABLE OVERRIDES
+# ============================================================================
+# 
+# Any configuration value can be overridden using environment variables.
+# This includes API keys - env vars take precedence over config values.
+# 
+# Format: TENETS_<SECTION>_<KEY>=value
+# 
+# Examples:
+#   TENETS_MAX_TOKENS=150000
+#   TENETS_RANKING_ALGORITHM=thorough
+#   TENETS_RANKING_THRESHOLD=0.05
+#   TENETS_RANKING_USE_STOPWORDS=false
+#   TENETS_SUMMARIZER_DEFAULT_MODE=extractive
+#   TENETS_SUMMARIZER_TARGET_RATIO=0.2
+#   TENETS_CACHE_ENABLED=false
+#   TENETS_GIT_ENABLED=true
+#   TENETS_SCANNER_MAX_FILE_SIZE=10000000
+# 
+# NLP configuration overrides:
+#   TENETS_NLP_ENABLED=true
+#   TENETS_NLP_EMBEDDINGS_ENABLED=true
+#   TENETS_NLP_EMBEDDINGS_MODEL=all-MiniLM-L12-v2
+#   TENETS_NLP_KEYWORD_EXTRACTION_METHOD=yake
+#   TENETS_NLP_STOPWORDS_ENABLED=false
+#   TENETS_NLP_MULTIPROCESSING_ENABLED=true
+#   TENETS_NLP_MULTIPROCESSING_WORKERS=8
+# 
+# Tenet system configuration overrides:
+#   TENETS_TENET_AUTO_INSTILL=true
+#   TENETS_TENET_MAX_PER_CONTEXT=5
+#   TENETS_TENET_INJECTION_FREQUENCY=adaptive
+#   TENETS_TENET_INJECTION_INTERVAL=3
+#   TENETS_TENET_SESSION_COMPLEXITY_THRESHOLD=0.7
+#   TENETS_TENET_MIN_SESSION_LENGTH=5
+#   TENETS_TENET_ADAPTIVE_INJECTION=true
+#   TENETS_TENET_TRACK_INJECTION_HISTORY=true
+#   TENETS_TENET_DECAY_RATE=0.1
+#   TENETS_TENET_REINFORCEMENT_INTERVAL=10
+#   TENETS_TENET_SESSION_AWARE=true
+#   TENETS_TENET_COMPLEXITY_WEIGHT=0.5
+#   TENETS_TENET_PRIORITY_BOOST_CRITICAL=2.0
+#   TENETS_TENET_PRIORITY_BOOST_HIGH=1.5
+#   TENETS_TENET_TRACK_EFFECTIVENESS=true
+# 
+# API Keys can also be set as env vars (overrides config):
+#   export OPENAI_API_KEY=sk-...
+#   export ANTHROPIC_API_KEY=sk-ant-...
+#   export OPENROUTER_API_KEY=sk-or-...
+# 
+# Use 'tenets config show --key models' to see model pricing
+# Use 'tenets estimate-cost' to calculate costs before running
+# 
+# ============================================================================
+
+# ============================================================================
+# NOTES ON NLP CONSOLIDATION
+# ============================================================================
+# 
+# The NLP system has been consolidated into tenets.core.nlp package:
+# 
+# 1. All tokenization goes through nlp.tokenizer
+# 2. All keyword extraction goes through nlp.keyword_extractor  
+# 3. All stopword filtering goes through nlp.stopwords
+# 4. All embeddings go through nlp.embeddings
+# 5. All similarity computation goes through nlp.similarity
+# 
+# The dual stopword system is critical:
+# - Code search uses MINIMAL stopwords (~25 words) to preserve accuracy
+# - Prompt parsing uses AGGRESSIVE stopwords (200+ words) to extract intent
+# 
+# Example: "async function" in code keeps both words
+# Example: "please implement async function" in prompt → ["async", "function"]
+# 
+# ML features (embeddings, semantic similarity) require:
+#   pip install sentence-transformers
+# 
+# Without ML dependencies, the system falls back to:
+# - TF-IDF for similarity
+# - Frequency-based keyword extraction
+# 
+# ============================================================================
+
+# ============================================================================
+# NOTES ON TENET INJECTION SYSTEM
+# ============================================================================
+# 
+# The tenet injection system provides sophisticated control over when and how
+# guiding principles are injected into AI context:
+# 
+# 1. **Frequency Modes**:
+#    - always: Every single distillation gets tenets
+#    - periodic: Regular intervals (every Nth distill)
+#    - adaptive: Smart injection based on context analysis
+#    - manual: User controls when to inject
+# 
+# 2. **Session Awareness**:
+#    - Tracks injection history across a session
+#    - Prevents overwhelming users in short interactions
+#    - Adjusts injection based on session length and complexity
+# 
+# 3. **Priority System**:
+#    - Critical tenets get boosted injection priority
+#    - Low priority tenets can be skipped in complex contexts
+#    - Reinforcement ensures critical tenets stay fresh
+# 
+# 4. **Decay and Reinforcement**:
+#    - Tenets "decay" in importance over time
+#    - Critical tenets are reinforced at regular intervals
+#    - Adaptive system learns from effectiveness metrics
+# 
+# 5. **Complexity Analysis**:
+#    - Analyzes context complexity before injection
+#    - Adjusts injection strategy based on content
+#    - Prevents information overload in complex contexts
+# 
+# The system is designed to maintain consistent AI behavior without
+# overwhelming the context or degrading performance.
+# 
+# ============================================================================

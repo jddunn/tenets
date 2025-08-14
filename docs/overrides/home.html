@@ -37,31 +37,18 @@
   </div>
   
   <div class="hero-content">
-    <!-- Static cropped logo with multi-color flame effect -->
+    <!-- Static cropped logo with iridescent lantern glow + particles behind it -->
     <div class="torch-container">
-      <!-- Theme-aware logo switching -->
-      <img src="{{ 'logos/tenets_dark_icon_transparent_cropped.png'}}" 
-           alt="tenets" 
-           class="torch-logo-static dark-logo">
-      <img src="{{ 'logos/tenets_light_icon_transparent_cropped.png'}}" 
-           alt="tenets" 
-           class="torch-logo-static light-logo">
-      
-      <!-- Iridescent flame effect with multiple colors -->
-      <div class="flame-effect">
-        <div class="flame-particle flame-1" data-color="orange"></div>
-        <div class="flame-particle flame-2" data-color="yellow"></div>
-        <div class="flame-particle flame-3" data-color="blue"></div>
-        <div class="flame-particle flame-4" data-color="purple"></div>
-        <div class="flame-particle flame-5" data-color="green"></div>
-        <div class="flame-particle flame-6" data-color="red"></div>
-        <div class="flame-glow-iridescent"></div>
-      </div>
-    </div>
-    
-    <!-- Title right underneath logo -->
-    <h1 class="hero-title">tenets</h1>
-    
+   <!-- Lantern animation layer (auto-initialized by js/lantern.js) -->
+  <div class="lantern-layer" data-lantern data-flicker-speed="2600" data-glow-intensity="1.15" data-particle-count="8" data-iridescent="true" aria-hidden="true"></div>
+   <!-- Theme-aware logo switching -->
+   <img src="{{ 'logos/tenets_dark_icon_transparent_cropped.png'}}" 
+     alt="tenets" 
+     class="torch-logo-static dark-logo">
+   <img src="{{ 'logos/tenets_light_icon_transparent_cropped.png'}}" 
+     alt="tenets" 
+     class="torch-logo-static light-logo">
+    </div><!-- /torch-container -->
     <p class="hero-tagline">Context that feeds your prompts</p>
     
     <p class="hero-description">
@@ -88,207 +75,172 @@
     </div>
     
     <!-- Install commands right below buttons -->
-    <div class="quick-install">
-      <div class="install-command">
-        <code>pip install tenets</code>
-        <button class="copy-btn" data-text="pip install tenets">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- Quick Start Section -->
-<section class="quickstart-section" id="quick-start">
-  <div class="section-container">
-    <h2 class="section-title">Get Started in 30 Seconds</h2>
-    
-    <div class="quickstart-steps">
-      <div class="step-card">
-        <div class="step-number">1</div>
-        <h3>Install</h3>
-        <div class="code-block">
-          <code>pip install tenets</code>
-          <button class="copy-btn" data-text="pip install tenets">Copy</button>
-        </div>
-      </div>
-      
-      <div class="step-card">
-        <div class="step-number">2</div>
-        <h3>Generate Context</h3>
-        <div class="code-block">
-          <code>tenets distill "add authentication"</code>
-          <button class="copy-btn" data-text='tenets distill "add authentication"'>Copy</button>
-        </div>
-      </div>
-      
-      <div class="step-card">
-        <div class="step-number">3</div>
-        <h3>Paste to AI</h3>
-        <p>Copy the generated context into ChatGPT, Claude, or any LLM</p>
-      </div>
-    </div>
-    
-    <div class="quickstart-cta">
-      <a href="{{ 'quickstart/'}}" class="btn-primary">
-        View Full Guide
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-      </a>
-    </div>
-  </div>
-</section>
+  </div><!-- /hero-content -->
+</section><!-- /victorian-hero -->
 
-<!-- Examples Section -->
+<!-- See It In Action: Tabbed Examples -->
 <section class="examples-section" id="examples">
   <div class="section-container">
     <h2 class="section-title">See It In Action</h2>
-    
-    <div class="example-tabs">
-      <input type="radio" name="example-tab" id="tab-context" checked>
-      <label for="tab-context" class="tab-label">Context Building</label>
-      
-      <input type="radio" name="example-tab" id="tab-analysis">
-      <label for="tab-analysis" class="tab-label">Code Analysis</label>
-      
-      <input type="radio" name="example-tab" id="tab-quality">
-      <label for="tab-quality" class="tab-label">Quality Metrics</label>
-      
-      <input type="radio" name="example-tab" id="tab-sessions">
-      <label for="tab-sessions" class="tab-label">Sessions</label>
-      
-      <input type="radio" name="example-tab" id="tab-velocity">
-      <label for="tab-velocity" class="tab-label">Velocity</label>
-      
-      <input type="radio" name="example-tab" id="tab-viz">
-      <label for="tab-viz" class="tab-label">Visualization</label>
-      
-      <!-- Context Building Example -->
-      <div class="tab-content" id="content-context">
-        <div class="terminal">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-            <span class="terminal-title">Context Generation</span>
-            <button class="run-example" data-example="context">Run</button>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-input visible">
-              <span class="prompt">$</span> tenets distill "implement OAuth2 authentication with refresh tokens"
+
+    <!-- Radios must be siblings of .see-panes for CSS selectors to work -->
+    <input type="radio" name="see-tabs" id="tab-context" checked>
+    <input type="radio" name="see-tabs" id="tab-analysis">
+    <input type="radio" name="see-tabs" id="tab-quality">
+    <input type="radio" name="see-tabs" id="tab-sessions">
+    <input type="radio" name="see-tabs" id="tab-velocity">
+    <input type="radio" name="see-tabs" id="tab-viz">
+
+    <div class="see-tabs">
+      <label class="see-tab-label" for="tab-context">Context</label>
+      <label class="see-tab-label" for="tab-analysis">Analysis</label>
+      <label class="see-tab-label" for="tab-quality">Quality</label>
+      <label class="see-tab-label" for="tab-sessions">Sessions</label>
+      <label class="see-tab-label" for="tab-velocity">Velocity</label>
+      <label class="see-tab-label" for="tab-viz">Visualization</label>
+    </div>
+
+    <div class="see-panes">
+      <div class="see-pane" id="pane-context">
+        <div class="see-grid">
+          <div class="see-code">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Context Building</div>
             </div>
-            <div class="terminal-output">
-              <!-- Output will animate when Run is clicked -->
-            </div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets distill "implement OAuth2 authentication with refresh tokens"</code></pre></div>
           </div>
-        </div>
-      </div>
-      
-      <!-- Code Analysis Example -->
-      <div class="tab-content" id="content-analysis">
-        <div class="terminal">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-            <span class="terminal-title">Codebase Examination</span>
-            <button class="run-example" data-example="analysis">Run</button>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-input visible">
-              <span class="prompt">$</span> tenets examine . --complexity --hotspots --ownership
+          <div class="see-output" data-caption="Context builder assembling the most relevant files">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Output</div>
             </div>
-            <div class="terminal-output">
-              <!-- Output will animate when Run is clicked -->
+            <div class="see-body">
+              <div class="shot-frame">
+                <img src="{{ 'assets/images/screenshots/context-building.png' | url }}" alt="Context building" loading="lazy" data-poster="{{ 'assets/images/screenshots/context-building.png' | url }}" data-gif="{{ 'assets/images/screenshots/context-building.gif' | url }}" />
+                <span class="see-hint">Click to reveal</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Quality Metrics Example -->
-      <div class="tab-content" id="content-quality">
-        <div class="terminal">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-            <span class="terminal-title">Quality Assessment</span>
-            <button class="run-example" data-example="quality">Run</button>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-input visible">
-              <span class="prompt">$</span> tenets examine . --quality --metrics --suggestions
+
+      <div class="see-pane" id="pane-analysis">
+        <div class="see-grid">
+          <div class="see-code">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Code Analysis</div>
             </div>
-            <div class="terminal-output">
-              <!-- Output will animate when Run is clicked -->
-            </div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets examine . --complexity --hotspots --ownership</code></pre></div>
           </div>
-        </div>
-      </div>
-      
-      <!-- Session Management Example -->
-      <div class="tab-content" id="content-sessions">
-        <div class="terminal">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-            <span class="terminal-title">Iterative Development</span>
-            <button class="run-example" data-example="sessions">Run</button>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-input visible">
-              <span class="prompt">$</span> tenets session create payment-integration
+          <div class="see-output" data-caption="Examination of complexity, hotspots, ownership">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Output</div>
             </div>
-            <div class="terminal-output">
-              <!-- Output will animate when Run is clicked -->
+            <div class="see-body">
+              <div class="shot-frame">
+                <img src="{{ 'assets/images/screenshots/code-analysis.png' | url }}" alt="Code analysis" loading="lazy" data-poster="{{ 'assets/images/screenshots/code-analysis.png' | url }}" data-gif="{{ 'assets/images/screenshots/code-analysis.gif' | url }}" />
+                <span class="see-hint">Click to reveal</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Velocity Tracking Example -->
-      <div class="tab-content" id="content-velocity">
-        <div class="terminal">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-            <span class="terminal-title">Development Velocity</span>
-            <button class="run-example" data-example="velocity">Run</button>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-input visible">
-              <span class="prompt">$</span> tenets momentum --team --since "last month" --detailed
+
+      <div class="see-pane" id="pane-quality">
+        <div class="see-grid">
+          <div class="see-code">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Quality Metrics</div>
             </div>
-            <div class="terminal-output">
-              <!-- Output will animate when Run is clicked -->
+            <div class="see-body"><pre><code class="language-bash">$ tenets examine . --quality --metrics --suggestions</code></pre></div>
+          </div>
+          <div class="see-output" data-caption="Quality dashboards and suggestions">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Output</div>
+            </div>
+            <div class="see-body">
+              <div class="shot-frame">
+                <img src="{{ 'assets/images/screenshots/quality-metrics.png' | url }}" alt="Quality metrics" loading="lazy" data-poster="{{ 'assets/images/screenshots/quality-metrics.png' | url }}" data-gif="{{ 'assets/images/screenshots/quality-metrics.gif' | url }}" />
+                <span class="see-hint">Click to reveal</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Visualization Example -->
-      <div class="tab-content" id="content-viz">
-        <div class="terminal">
-          <div class="terminal-header">
-            <span class="terminal-dot red"></span>
-            <span class="terminal-dot yellow"></span>
-            <span class="terminal-dot green"></span>
-            <span class="terminal-title">Architecture Visualization</span>
-            <button class="run-example" data-example="viz">Run</button>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-input visible">
-              <span class="prompt">$</span> tenets viz deps --format ascii --show-imports
+
+      <div class="see-pane" id="pane-sessions">
+        <div class="see-grid">
+          <div class="see-code">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Sessions</div>
             </div>
-            <div class="terminal-output">
-              <!-- Output will animate when Run is clicked -->
+            <div class="see-body"><pre><code class="language-bash">$ tenets session create payment-integration</code></pre></div>
+          </div>
+          <div class="see-output" data-caption="Sessions managing iterative context">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Output</div>
+            </div>
+            <div class="see-body">
+              <div class="shot-frame">
+                <img src="{{ 'assets/images/screenshots/sessions.png' | url }}" alt="Sessions flow" loading="lazy" data-poster="{{ 'assets/images/screenshots/sessions.png' | url }}" data-gif="{{ 'assets/images/screenshots/sessions.gif' | url }}" />
+                <span class="see-hint">Click to reveal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="see-pane" id="pane-velocity">
+        <div class="see-grid">
+          <div class="see-code">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Velocity</div>
+            </div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets momentum --team --since "last month" --detailed</code></pre></div>
+          </div>
+          <div class="see-output" data-caption="Team velocity trends and insights">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Output</div>
+            </div>
+            <div class="see-body">
+              <div class="shot-frame">
+                <img src="{{ 'assets/images/screenshots/velocity.png' | url }}" alt="Velocity" loading="lazy" data-poster="{{ 'assets/images/screenshots/velocity.png' | url }}" data-gif="{{ 'assets/images/screenshots/velocity.gif' | url }}" />
+                <span class="see-hint">Click to reveal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="see-pane" id="pane-viz">
+        <div class="see-grid">
+          <div class="see-code">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Visualization</div>
+            </div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets viz deps --format ascii --show-imports</code></pre></div>
+          </div>
+          <div class="see-output" data-caption="Dependency graph visualization">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Output</div>
+            </div>
+            <div class="see-body">
+              <div class="shot-frame">
+                <img src="{{ 'assets/images/screenshots/visualization.png' | url }}" alt="Visualization" loading="lazy" data-poster="{{ 'assets/images/screenshots/visualization.png' | url }}" data-gif="{{ 'assets/images/screenshots/visualization.gif' | url }}" />
+                <span class="see-hint">Click to reveal</span>
+              </div>
             </div>
           </div>
         </div>
@@ -296,6 +248,7 @@
     </div>
   </div>
 </section>
+            
 
 <!-- Core Features Section -->
 <section class="features-section">
@@ -333,11 +286,11 @@
           to surface exactly the files you need for any development task.
         </p>
         <ul class="feature-list">
-          <li><strong>TF-IDF Analysis:</strong> Statistical relevance scoring that understands term importance</li>
-          <li><strong>Import Graph:</strong> Dependency-aware file selection based on code relationships</li>
-          <li><strong>Git Signals:</strong> Recent changes and contributor patterns inform relevance</li>
-          <li><strong>Token Optimization:</strong> Smart budgeting for any LLM (GPT-4, Claude, etc.)</li>
-          <li><strong>Semantic Search:</strong> Optional ML-powered understanding of code intent</li>
+          <li><strong>Multi-Factor Ranking:</strong> Keywords, structure, imports, path relevance, and Git signals</li>
+          <li><strong>Optional ML:</strong> Semantic embeddings and transformers when <code>tenets[ml]</code> is installed</li>
+          <li><strong>Summarization:</strong> Rules-based and ML summarizers built-in; LLMs only if API keys enabled</li>
+          <li><strong>Token Optimization:</strong> Budget-aware packing and model-specific token counting</li>
+          <li><strong>Lightweight Extras:</strong> Extras-based dependency architecture keeps core lean</li>
         </ul>
       </div>
       
@@ -448,13 +401,15 @@
   </div>
 </section>
 
+<!-- Removed duplicate early script; logic lives below and runs after DOM ready -->
+
 <!-- How It Works Architecture -->
 <section class="architecture-section">
   <div class="section-container">
     <h2 class="section-title">How Tenets Works</h2>
     
-    <div class="architecture-flow">
-      <div class="arch-stage" data-stage="1">
+    <div class="architecture-flow" data-arch-flow>
+  <div class="arch-stage" data-stage="1" data-target="input" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">1</span>
         </div>
@@ -464,7 +419,7 @@
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="2">
+  <div class="arch-stage" data-stage="2" data-target="scan" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">2</span>
         </div>
@@ -474,76 +429,151 @@
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="3">
+  <div class="arch-stage" data-stage="3" data-target="analyze" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">3</span>
         </div>
         <h3>Analyze</h3>
-        <p>AST parsing &<br>structure extraction</p>
+        <p>Language analyzers & AST<br>structure and metrics</p>
       </div>
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="4">
+  <div class="arch-stage" data-stage="4" data-target="rank" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">4</span>
         </div>
         <h3>Rank</h3>
-        <p>Multi-factor<br>relevance scoring</p>
+        <p>Multi-factor scoring<br>keywords, structure, git</p>
       </div>
       
       <div class="arch-arrow">→</div>
       
-      <div class="arch-stage" data-stage="5">
+  <div class="arch-stage" data-stage="5" data-target="ml-optional" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">5</span>
         </div>
-        <h3>Output</h3>
-        <p>Optimized context<br>for any LLM</p>
+        <h3>ML (Optional)</h3>
+        <p>Embeddings & semantic<br>similarity when enabled</p>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+  <div class="arch-stage" data-stage="6" data-target="summarize" role="button" tabindex="0">
+        <div class="stage-icon">
+          <span class="stage-number">6</span>
+        </div>
+        <h3>Summarize & Output</h3>
+        <p>Token budgeting & summaries<br>LLMs optional via API keys</p>
       </div>
     </div>
-    
-    <div class="arch-details">
-      <div class="detail-card">
-        <h4>🔍 Smart Scanning</h4>
+    <!-- Architecture details panel -->
+    <div class="architecture-details" data-arch-details>
+      <div class="detail-card" data-detail="input" aria-hidden="true">
+        <h4>📝 Input</h4>
         <ul>
-          <li>Parallel filesystem traversal for speed</li>
-          <li>Respects .gitignore and custom patterns</li>
-          <li>Binary file detection and filtering</li>
-          <li>Language-specific file identification</li>
+          <li>Natural language prompt or concrete task</li>
+          <li>Optional tenets and constraints applied</li>
+          <li>Project-aware defaults from config</li>
         </ul>
       </div>
-      
-      <div class="detail-card">
-        <h4>📊 Deep Analysis</h4>
+
+      <div class="detail-card" data-detail="scan" aria-hidden="true">
+        <h4>🔎 Scan</h4>
         <ul>
-          <li>Language-specific AST parsing</li>
-          <li>Import and dependency extraction</li>
-          <li>Complexity metrics calculation</li>
-          <li>Git history integration</li>
+          <li>Parallel discovery of candidate files</li>
+          <li>Respects .gitignore and config filters</li>
+          <li>Language detection and basic heuristics</li>
         </ul>
       </div>
-      
-      <div class="detail-card">
-        <h4>🎯 Intelligent Ranking</h4>
+
+      <div class="detail-card" data-detail="analyze" aria-hidden="true">
+        <h4>🧠 Analyze</h4>
         <ul>
-          <li>TF-IDF keyword relevance</li>
-          <li>Import graph centrality</li>
-          <li>Path structure similarity</li>
-          <li>Recent change weighting</li>
+          <li>Language analyzers & AST structure</li>
+          <li>Symbols, imports, and metrics</li>
+          <li>Lightweight, per-language strategies</li>
         </ul>
       </div>
-      
-      <div class="detail-card">
-        <h4>📦 Token Optimization</h4>
+
+      <div class="detail-card" data-detail="rank" aria-hidden="true">
+        <h4>📈 Rank</h4>
+        <ul>
+          <li>Keyword and phrase matching</li>
+          <li>Import/dependency graph centrality</li>
+          <li>Path and structure relevance</li>
+          <li>Git recency and ownership signals</li>
+        </ul>
+      </div>
+
+      <div class="detail-card" data-detail="ml-optional" aria-hidden="true">
+        <h4>🤖 ML Integrations (Optional)</h4>
+        <ul>
+          <li>Local embeddings for semantic similarity</li>
+          <li>Enhanced ranking with transformers</li>
+          <li>Configurable, disabled by default</li>
+          <li>Install via extras: <code>tenets[ml]</code></li>
+        </ul>
+      </div>
+
+      <div class="detail-card" data-detail="summarize" aria-hidden="true">
+        <h4>📦 Summarization & Output</h4>
         <ul>
           <li>Model-specific token counting</li>
-          <li>Smart file summarization</li>
-          <li>Budget-aware selection</li>
-          <li>Context metadata inclusion</li>
+          <li>Rules-based and ML summarizers built-in</li>
+          <li>Optional LLM summarization only if API keys provided</li>
+          <li>Lightweight dependency architecture and extras</li>
         </ul>
       </div>
     </div>
+
+    <script>
+    // Inline interaction: bi-directional highlighting (stage ↔ detail card)
+    window.addEventListener('DOMContentLoaded', function(){
+      const flow = document.querySelector('[data-arch-flow]');
+      const detailsRoot = document.querySelector('[data-arch-details]');
+      const stages = flow ? Array.from(flow.querySelectorAll('.arch-stage')) : [];
+      const cards = detailsRoot ? Array.from(detailsRoot.querySelectorAll('.detail-card')) : [];
+      if (!stages.length || !cards.length) return;
+
+      const activate = (key) => {
+        // Cards
+        cards.forEach(card => {
+          const match = card.dataset.detail === key;
+          card.classList.toggle('is-active', match);
+          card.setAttribute('aria-hidden', match ? 'false' : 'true');
+        });
+        // Stages
+        stages.forEach(stage => {
+          const match = stage.dataset.target === key;
+          stage.classList.toggle('is-active', match);
+          stage.setAttribute('aria-pressed', match ? 'true' : 'false');
+        });
+      };
+
+      // Default selection
+      activate('scan');
+
+      // Stage interactions
+      stages.forEach(stage => {
+        const key = stage.dataset.target;
+        ['mouseenter','focus','click'].forEach(evt => stage.addEventListener(evt, () => activate(key)));
+        stage.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(key); }
+        });
+      });
+
+      // Card interactions
+      cards.forEach(card => {
+        const key = card.dataset.detail;
+        ['mouseenter','focus','click'].forEach(evt => card.addEventListener(evt, () => activate(key)));
+        card.tabIndex = 0; // make focusable
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(key); }
+        });
+      });
+    });
+    </script>
   </div>
 </section>
 
@@ -570,6 +600,45 @@
         </div>
         <p class="install-note">Everything including ML models and visualization</p>
       </div>
+
+      <div class="install-card">
+        <h3>Light NLP</h3>
+        <div class="code-block">
+          <code>pip install tenets[light]</code>
+          <button class="copy-btn" data-text="pip install tenets[light]">Copy</button>
+        </div>
+        <p class="install-note">Keyword extraction, TextRank, metrics without deep learning</p>
+      </div>
+
+      <div class="install-card">
+        <h3>ML</h3>
+        <div class="code-block">
+          <code>pip install tenets[ml]</code>
+          <button class="copy-btn" data-text="pip install tenets[ml]">Copy</button>
+        </div>
+        <p class="install-note">Transformers, embeddings, vector search, providers</p>
+      </div>
+
+      <div class="install-card">
+        <h3>Visualization</h3>
+        <div class="code-block">
+          <code>pip install tenets[viz]</code>
+          <button class="copy-btn" data-text="pip install tenets[viz]">Copy</button>
+        </div>
+        <p class="install-note">Graphs, plots, and visual dashboards</p>
+      </div>
+
+      
+      
+      <div class="install-card coming-soon" aria-disabled="true">
+        <div class="coming-soon-badge" aria-hidden="true">Coming soon</div>
+        <h3>Web Interface</h3>
+        <div class="code-block">
+          <code>pip install tenets[web]</code>
+          <button class="copy-btn" data-text="pip install tenets[web]" disabled>Copy</button>
+        </div>
+        <p class="install-note">FastAPI, Uvicorn, SSE, uploads</p>
+      </div>
       
       <div class="install-card">
         <h3>Install & Build from Source</h3>
@@ -579,6 +648,16 @@ cd tenets && pip install -e .</code>
           <button class="copy-btn" data-text="git clone https://github.com/jddunn/tenets.git && cd tenets && pip install -e .">Copy</button>
         </div>
         <p class="install-note">Latest development version with all updates</p>
+      </div>
+
+      <div class="install-card coming-soon" aria-disabled="true">
+        <div class="coming-soon-badge" aria-hidden="true">Coming soon</div>
+        <h3>Docker (Install &amp; Build)</h3>
+        <div class="code-block">
+          <code># Official Docker commands are coming soon</code>
+          <button class="copy-btn" disabled>Copy</button>
+        </div>
+        <p class="install-note">Official Docker image and compose examples coming soon</p>
       </div>
     </div>
     
@@ -599,12 +678,7 @@ cd tenets && pip install -e .</code>
   </div>
 </section>
 
-<!-- Back to top button -->
-<button class="back-to-top" id="back-to-top">
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path d="M12 19V5M5 12l7-7 7 7"/>
-  </svg>
-</button>
+<!-- Back to top handled by js/back-to-top.js -->
 
 {% endblock %}
 

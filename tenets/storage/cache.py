@@ -8,10 +8,10 @@ import hashlib
 import json
 import pickle
 import sqlite3
+from contextlib import suppress
 from datetime import datetime, timedelta
-from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, Callable, Dict, Optional, TypeVar
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
@@ -49,11 +49,9 @@ class MemoryCache:
             if key in self._access_order:
                 self._access_order.remove(key)
         elif len(self._cache) >= self.max_size:
-            # Evict least recently used
-            if self._access_order:
-                lru_key = self._access_order.pop(0)
-                if lru_key in self._cache:
-                    del self._cache[lru_key]
+            # Evict least recently used (single compound condition)
+            if self._access_order and (lru_key := self._access_order.pop(0)) in self._cache:
+                del self._cache[lru_key]
         self._cache[key] = value
         self._access_order.append(key)
 
@@ -130,7 +128,8 @@ class DiskCache:
 
                 # Deserialize value
                 try:
-                    return pickle.loads(value_blob)
+                    # nosec B301 - Pickle limited to trusted internal cache storage
+                    return pickle.loads(value_blob)  # nosec
                 except Exception as e:
                     self.logger.warning(f"Failed to deserialize cache value: {e}")
                     return None
@@ -138,7 +137,7 @@ class DiskCache:
         return None
 
     def put(
-        self, key: str, value: Any, ttl: Optional[int] = None, metadata: Optional[Dict] = None
+        self, key: str, value: Any, ttl: Optional[int] = None, metadata: Optional[dict] = None
     ) -> None:
         """Put item in cache.
 
@@ -197,7 +196,7 @@ class DiskCache:
             # Delete expired entries
             cursor = conn.execute(
                 """
-                DELETE FROM cache 
+                DELETE FROM cache
                 WHERE (ttl IS NOT NULL AND datetime('now') > datetime(created_at, '+' || ttl || ' seconds'))
                    OR accessed_at < datetime('now', '-' || ? || ' days')
             """,
@@ -216,10 +215,10 @@ class DiskCache:
                 # Delete least recently used until under limit
                 cursor = conn.execute(
                     """
-                    DELETE FROM cache 
+                    DELETE FROM cache
                     WHERE key IN (
-                        SELECT key FROM cache 
-                        ORDER BY accessed_at ASC 
+                        SELECT key FROM cache
+                        ORDER BY accessed_at ASC
                         LIMIT (SELECT COUNT(*) / 4 FROM cache)
                     )
                 """
@@ -336,10 +335,8 @@ class AnalysisCache:
 
     def close(self) -> None:
         """Close underlying caches."""
-        try:
+        with suppress(Exception):
             self.disk.close()
-        except Exception:
-            pass
 
 
 class CacheManager:
@@ -418,7 +415,7 @@ class CacheManager:
         self.analysis.disk.clear()
         self.general.clear()
 
-    def cleanup(self) -> Dict[str, int]:
+    def cleanup(self) -> dict[str, int]:
         """Clean up old cache entries.
 
         Returns:

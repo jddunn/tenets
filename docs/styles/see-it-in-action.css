@@ -1,0 +1,244 @@
+/* See it in action: fullscreen terminal-style input (top) + output (bottom) */
+
+.see-action { margin: 0; }
+
+/* Full-bleed section */
+.examples-section {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  /* remove bright radiance */
+  background: linear-gradient(180deg, rgba(245,158,11,0.02), rgba(245,158,11,0.0));
+}
+
+.examples-section .section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem 2.5rem;
+}
+
+/* Tabs: labels + radio-controlled panes */
+.see-tabs {
+  margin: 0 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem .5rem;
+  justify-content: center; /* center the tabs */
+}
+
+.see-tabs input[type="radio"] {
+  position: absolute;
+  left: -9999px;
+}
+
+.see-tab-label {
+  display: inline-block;
+  margin: 0 .4rem .75rem 0;
+  padding: .45rem .85rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(252, 211, 77, 0.08);
+  color: #0b1220;
+  font-weight: 700;
+  font-size: .85rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.see-tab-label:hover { background: rgba(252, 211, 77, 0.18); }
+
+[data-md-color-scheme="slate"] .see-tab-label {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.06);
+  color: #e6dcc6;
+}
+
+#tab-context:checked + label,
+#tab-analysis:checked + label,
+#tab-quality:checked + label,
+#tab-sessions:checked + label,
+#tab-velocity:checked + label,
+#tab-viz:checked + label {
+  background: linear-gradient(135deg, rgba(252, 211, 77, 0.35), rgba(245, 158, 11, 0.35));
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #0b1220;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15) inset;
+}
+
+[data-md-color-scheme="slate"] #tab-context:checked + label,
+[data-md-color-scheme="slate"] #tab-analysis:checked + label,
+[data-md-color-scheme="slate"] #tab-quality:checked + label,
+[data-md-color-scheme="slate"] #tab-sessions:checked + label,
+[data-md-color-scheme="slate"] #tab-velocity:checked + label,
+[data-md-color-scheme="slate"] #tab-viz:checked + label {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.25));
+  border-color: rgba(251, 191, 36, 0.6);
+  color: #fbbf24;
+}
+
+.see-panes { min-height: calc(100vh - 120px); }
+.see-panes > .see-pane { display: none; height: 100%; }
+
+#tab-context:checked ~ .see-panes #pane-context { display: block; }
+#tab-analysis:checked ~ .see-panes #pane-analysis { display: block; }
+#tab-quality:checked ~ .see-panes #pane-quality { display: block; }
+#tab-sessions:checked ~ .see-panes #pane-sessions { display: block; }
+#tab-velocity:checked ~ .see-panes #pane-velocity { display: block; }
+#tab-viz:checked ~ .see-panes #pane-viz { display: block; }
+
+
+.see-grid {
+  display: grid;
+  /* Make code input much smaller, prioritize output */
+  grid-template-rows: minmax(16vh, auto) minmax(68vh, 1fr);
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+  /* On small screens keep input compact */
+  .see-grid { grid-template-rows: minmax(18vh, auto) minmax(62vh, 1fr); }
+}
+
+/* Terminal-like code card */
+[data-md-color-scheme="default"] .see-code,
+[data-md-color-scheme="default"] .see-output {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffffff, #faf7ef);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.10), inset 0 0 0 1px rgba(0,0,0,0.04);
+  overflow: hidden;
+  border: 1px solid rgba(245, 158, 11, 0.18);
+}
+
+[data-md-color-scheme="slate"] .see-code,
+[data-md-color-scheme="slate"] .see-output {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1a1d24 0%, #0f1117 100%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255,255,255,0.05);
+  overflow: hidden;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.see-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  position: relative; /* allow absolute centering of dots */
+}
+
+[data-md-color-scheme="slate"] .see-header { border-bottom-color: rgba(251,191,36,0.12); }
+
+.see-dots { display: flex; gap: .35rem; position: absolute; left: 50%; transform: translateX(-50%); }
+.see-dot { width: .65rem; height: .65rem; border-radius: 50%; }
+.see-dot.red { background: #ff5f57; }
+.see-dot.yellow { background: #ffbd2e; }
+.see-dot.green { background: #28c840; }
+
+.see-title {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: .8rem;
+  color: #0b1220;
+}
+[data-md-color-scheme="slate"] .see-title { color: #fbbf24; }
+
+/* Code body */
+.see-body { padding: .75rem 1rem; position: relative; height: 100%; overflow: auto; }
+.see-body pre { margin: 0; }
+
+/* Tweak code card to behave like terminal input area */
+.see-code .see-body { display: flex; align-items: flex-start; }
+[data-md-color-scheme="default"] .see-code .see-body { background: rgba(255,255,255,0.6); }
+[data-md-color-scheme="slate"] .see-code .see-body { background: rgba(0,0,0,0.35); }
+.see-code pre { width: 100%; overflow-x: auto; }
+
+/* Output image frame with gradient border and reveal */
+.see-output .see-body { padding: 0; }
+
+.see-output .shot-frame {
+  position: relative;
+  padding: 8px;
+  background:
+    linear-gradient(#0f1117, #0f1117) padding-box,
+    linear-gradient(135deg, #fcd34d, #f59e0b) border-box;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  min-height: 240px; /* ensure visible area even if image pending */
+}
+
+[data-md-color-scheme="default"] .see-output .shot-frame {
+  background:
+    linear-gradient(#ffffff, #faf7ef) padding-box,
+    linear-gradient(135deg, #fcd34d, #f59e0b) border-box;
+}
+[data-md-color-scheme="slate"] .see-output .shot-frame {
+  background:
+    linear-gradient(#0f1117, #0f1117) padding-box,
+    linear-gradient(135deg, #fbbf24, #f59e0b) border-box;
+}
+
+.see-output img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  border-radius: 10px;
+  opacity: 1; /* show by default so examples render */
+  transform: none;
+  filter: none;
+  transition: opacity .2s ease, transform .2s ease, filter .2s ease;
+  object-fit: contain;
+}
+
+/* keep class for compatibility but it's now effectively a no-op */
+.see-output.revealed img { opacity: 1; transform: none; filter: none; }
+
+/* Optional caption */
+.see-caption { margin-top: 8px; font-size: .8rem; font-weight: 600; }
+[data-md-color-scheme="default"] .see-caption { color: #2a2723; }
+[data-md-color-scheme="slate"] .see-caption { color: #e6dcc6; }
+
+/* Click hint */
+.see-hint {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  background: rgba(245, 158, 11, 0.9);
+  color: #0b1220;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: .7rem;
+  font-weight: 800;
+  opacity: .85;
+}
+
+[data-md-color-scheme="slate"] .see-hint {
+  background: rgba(251, 191, 36, 0.9);
+  color: #0d1117;
+}
+
+.see-output.revealed .see-hint { display: none; }
+
+/* Placeholder for missing screenshots */
+.see-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #6b7280;
+  background: repeating-linear-gradient(45deg, rgba(245,158,11,0.07), rgba(245,158,11,0.07) 10px, transparent 10px, transparent 20px);
+  border-radius: 10px;
+  font-weight: 700;
+}
+[data-md-color-scheme="slate"] .see-placeholder {
+  color: #c7bfa8;
+  background: repeating-linear-gradient(45deg, rgba(251,191,36,0.08), rgba(251,191,36,0.08) 10px, transparent 10px, transparent 20px);
+}

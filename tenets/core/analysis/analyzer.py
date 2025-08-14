@@ -6,12 +6,15 @@ caching, parallel processing, and fallback strategies.
 """
 
 import concurrent.futures
+import csv
+import fnmatch
 import hashlib
+import io
 import json
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Union  # Legacy types still referenced below
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import (
@@ -98,7 +101,7 @@ class CodeAnalyzer:
 
         self.logger.info(f"CodeAnalyzer initialized with {len(self.analyzers)} language analyzers")
 
-    def _initialize_analyzers(self) -> Dict[str, LanguageAnalyzer]:
+    def _initialize_analyzers(self) -> dict[str, LanguageAnalyzer]:
         """Initialize all language-specific analyzers.
 
         Returns:
@@ -321,11 +324,11 @@ class CodeAnalyzer:
 
     def analyze_files(
         self,
-        file_paths: List[Path],
+        file_paths: list[Path],
         deep: bool = False,
         parallel: bool = True,
         progress_callback: Optional[Callable] = None,
-    ) -> List[FileAnalysis]:
+    ) -> list[FileAnalysis]:
         """Analyze multiple files.
 
         Args:
@@ -377,8 +380,8 @@ class CodeAnalyzer:
     def analyze_project(
         self,
         project_path: Path,
-        patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+        patterns: Optional[list[str]] = None,
+        exclude_patterns: Optional[list[str]] = None,
         deep: bool = True,
         parallel: bool = True,
         progress_callback: Optional[Callable] = None,
@@ -435,7 +438,7 @@ class CodeAnalyzer:
 
     def generate_report(
         self,
-        analysis: Union[FileAnalysis, ProjectAnalysis, List[FileAnalysis]],
+        analysis: Union[FileAnalysis, ProjectAnalysis, list[FileAnalysis]],
         format: str = "json",
         output_path: Optional[Path] = None,
     ) -> AnalysisReport:
@@ -668,17 +671,22 @@ class CodeAnalyzer:
         return file_path.read_text(encoding="utf-8", errors="ignore")
 
     def _get_cache_key(self, file_path: Path) -> str:
-        """Generate cache key for a file.
+        """Generate a deterministic cache key for file analysis results.
+
+        The key is derived from the file path, last modification timestamp, and
+        file size. MD5 is intentionally used here (with ``usedforsecurity=False``)
+        because it is fast and collision risk is acceptable for a non‑security
+        cache namespace.
 
         Args:
-            file_path: Path to the file
+            file_path: Path to the file whose analysis result is being cached.
 
         Returns:
-            Cache key string
+            str: A stable hexadecimal cache key.
         """
-        # Include file path and modification time in key
         key_data = f"{file_path}:{file_path.stat().st_mtime}:{file_path.stat().st_size}"
-        return hashlib.md5(key_data.encode()).hexdigest()
+        # nosec B324 - MD5 used only for non-security cache key generation
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()  # nosec
 
     def _is_cache_valid(self, cached_data: Dict, file_path: Path) -> bool:
         """Check if cached data is still valid.
@@ -720,7 +728,7 @@ class CodeAnalyzer:
         """
         return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
-    def _extract_keywords(self, content: str, language: str) -> List[str]:
+    def _extract_keywords(self, content: str, language: str) -> list[str]:
         """Extract keywords from content.
 
         Args:
@@ -860,7 +868,7 @@ class CodeAnalyzer:
 
         # Consider maintainability index
         if hasattr(analysis.complexity, "maintainability_index"):
-            mi_factor = analysis.complexity.maintainability_index / 100
+            # Blend raw score with maintainability index (weighted average)
             score = score * 0.7 + analysis.complexity.maintainability_index * 0.3
 
         return max(0, min(100, score))
@@ -868,9 +876,9 @@ class CodeAnalyzer:
     def _collect_project_files(
         self,
         project_path: Path,
-        patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-    ) -> List[Path]:
+        patterns: Optional[list[str]] = None,
+        exclude_patterns: Optional[list[str]] = None,
+    ) -> list[Path]:
         """Collect files to analyze in a project.
 
         Args:
@@ -881,13 +889,11 @@ class CodeAnalyzer:
         Returns:
             List of file paths to analyze
         """
-        import fnmatch
-
-        files = []
+        files: list[Path] = []
 
         # Default patterns if none provided
         if not patterns:
-            patterns = ["*" + ext for ext in self.analyzers.keys()]
+            patterns = [f"*{ext}" for ext in self.analyzers]
 
         # Default exclude patterns
         default_excludes = [
@@ -909,31 +915,23 @@ class CodeAnalyzer:
             "*.map",
         ]
 
-        if exclude_patterns:
-            exclude_patterns.extend(default_excludes)
-        else:
-            exclude_patterns = default_excludes
+        exclude_patterns = (exclude_patterns or []) + default_excludes
 
-        # Walk the project directory
         for root, dirs, filenames in os.walk(project_path):
             root_path = Path(root)
 
-            # Filter directories
+            # Filter directories in-place
             dirs[:] = [
                 d
                 for d in dirs
                 if not any(fnmatch.fnmatch(d, pattern) for pattern in exclude_patterns)
             ]
 
-            # Filter files
             for filename in filenames:
-                file_path = root_path / filename
-
-                # Check if file matches include patterns
-                if any(fnmatch.fnmatch(filename, pattern) for pattern in patterns):
-                    # Check if file doesn't match exclude patterns
-                    if not any(fnmatch.fnmatch(filename, pattern) for pattern in exclude_patterns):
-                        files.append(file_path)
+                if any(fnmatch.fnmatch(filename, p) for p in patterns) and not any(
+                    fnmatch.fnmatch(filename, ep) for ep in exclude_patterns
+                ):
+                    files.append(root_path / filename)
 
         return files
 
@@ -987,7 +985,7 @@ class CodeAnalyzer:
             lang: (count / total_files * 100) for lang, count in languages.items()
         }
 
-    def _build_dependency_graph(self, file_analyses: List[FileAnalysis]) -> DependencyGraph:
+    def _build_dependency_graph(self, file_analyses: list[FileAnalysis]) -> DependencyGraph:
         """Build dependency graph from file analyses.
 
         Args:
@@ -1052,7 +1050,7 @@ class CodeAnalyzer:
 
         return None
 
-    def _detect_project_type(self, project_path: Path, file_analyses: List[FileAnalysis]) -> str:
+    def _detect_project_type(self, project_path: Path, file_analyses: list[FileAnalysis]) -> str:
         """Detect the type of project.
 
         Args:
@@ -1091,7 +1089,7 @@ class CodeAnalyzer:
 
         return "unknown"
 
-    def _detect_frameworks(self, file_analyses: List[FileAnalysis]) -> List[str]:
+    def _detect_frameworks(self, file_analyses: list[FileAnalysis]) -> list[str]:
         """Detect frameworks used in the project.
 
         Args:
@@ -1108,7 +1106,7 @@ class CodeAnalyzer:
 
         return list(frameworks)
 
-    def _generate_project_summary(self, project: ProjectAnalysis) -> Dict[str, Any]:
+    def _generate_project_summary(self, project: ProjectAnalysis) -> dict[str, Any]:
         """Generate a summary of the project analysis.
 
         Args:
@@ -1253,23 +1251,25 @@ class CodeAnalyzer:
         Returns:
             CSV string
         """
-        import csv
-        import io
-
         output = io.StringIO()
         writer = csv.writer(output)
 
         if isinstance(analysis, ProjectAnalysis):
-            # Write headers
             writer.writerow(
-                ["File", "Language", "Lines", "Complexity", "Functions", "Classes", "Quality Score"]
+                [
+                    "File",
+                    "Language",
+                    "Lines",
+                    "Complexity",
+                    "Functions",
+                    "Classes",
+                    "Quality Score",
+                ]
             )
 
-            # Write file data
             for file_analysis in analysis.files:
                 if file_analysis.error:
                     continue
-
                 writer.writerow(
                     [
                         file_analysis.file_name,
@@ -1278,11 +1278,7 @@ class CodeAnalyzer:
                         file_analysis.complexity.cyclomatic if file_analysis.complexity else 0,
                         len(file_analysis.functions) if file_analysis.functions else 0,
                         len(file_analysis.classes) if file_analysis.classes else 0,
-                        (
-                            file_analysis.quality_score
-                            if hasattr(file_analysis, "quality_score")
-                            else 0
-                        ),
+                        getattr(file_analysis, "quality_score", 0),
                     ]
                 )
 

@@ -1,0 +1,156 @@
+/* Strong override to color search icons using the site accent (amber)
+   Covers header button, drawer button, and input-leading icon across theme versions. */
+
+/* Header/drawer search button (label toggles search dialog) */
+label.md-header__button.md-icon[for="__search"],
+label.md-header__button[for="__search"].md-icon,
+label.md-header__button[for="__search"] .md-icon {
+  color: var(--md-accent-fg-color) !important;
+  /* center the icon within its square button to avoid appearing too high */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 13010; /* above neighboring elements */
+}
+
+/* Ensure the header search toggle itself has a solid hit area */
+label.md-header__button[for="__search"] {
+  width: 34px;
+  height: 34px;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+/* Make the inline icon inside the search form clickable and above input */
+.md-search .md-search__icon[for="__search"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 2;
+}
+
+/* Input-leading icon inside the search form */
+.md-search .md-search__icon,
+.md-search .md-search__icon.md-icon,
+.md-search .md-search__icon .md-icon {
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Force inline SVGs to adopt the accent */
+label.md-header__button[for="__search"] svg,
+label.md-header__button[for="__search"] svg path,
+.md-search .md-search__icon svg,
+.md-search .md-search__icon svg path,
+.md-search .md-search__icon .md-icon svg,
+.md-search .md-search__icon .md-icon svg path {
+  fill: var(--md-accent-fg-color) !important;
+  stroke: var(--md-accent-fg-color) !important;
+  /* normalize icon box for vertical centering */
+  width: 18px;
+  height: 18px;
+}
+
+/* When theme uses currentColor in icons, ensure it flows */
+.md-search .md-search__icon .md-icon,
+label.md-header__button[for="__search"] .md-icon {
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Pseudo-element fallback (older/newer variants using mask images) */
+.md-search .md-search__icon::before,
+label.md-header__button[for="__search"] .md-icon::before,
+label.md-header__button[for="__search"]::before {
+  background-color: var(--md-accent-fg-color) !important;
+}
+
+/* Toast notifications for copy actions */
+#tenets-toast-container{
+  position: fixed;
+  left: 50%;
+  bottom: calc(76px + env(safe-area-inset-bottom)); /* above footer/back-to-top */
+  transform: translateX(-50%);
+  z-index: 13005; /* above back-to-top */
+  pointer-events: none;
+}
+
+/* Ensure search modal always appears above header/content */
+.md-search__overlay {
+  /* Above header and any page overlays */
+  z-index: 26050 !important;
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 35, 50, 0.6) !important; /* visible backdrop */
+  pointer-events: auto !important;
+}
+.md-search__inner[role="dialog"],
+.md-search[aria-expanded="true"] .md-search__inner,
+.md-search[data-md-state="active"] .md-search__inner {
+  z-index: 26060 !important;
+  position: relative;
+  max-width: min(96vw, 1024px); /* wide on mobile, capped on desktop */
+  margin: 12vh auto 0;
+}
+
+/* On very small screens, allow full width */
+@media (max-width: 600px) {
+  .md-search__inner[role="dialog"],
+  .md-search[aria-expanded="true"] .md-search__inner,
+  .md-search[data-md-state="active"] .md-search__inner {
+    max-width: 100vw;
+    margin: 10vh auto 0;
+  }
+}
+
+[data-md-color-scheme="slate"] .md-search__overlay {
+  background: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Elevate active search container in stacking context without changing layout */
+.md-search[aria-expanded="true"],
+.md-search[data-md-state="active"] {
+  z-index: 26060 !important;
+}
+
+/* Ensure full-width form and input inside the modal dialog */
+.md-search__inner .md-search__form { width: 100% !important; }
+.md-search__inner .md-search__input { width: 100% !important; }
+.md-search__inner .md-search__output { width: 100% !important; margin-left: 0; margin-right: 0; }
+
+/* Mobile fallback: if compact .md-search__form is absent, show the native label button */
+/* We always use the inline .md-search; hide the label toggle across sizes */
+label.md-header__button[for="__search"] { display: none !important; }
+
+.tenets-toast{
+  min-width: 180px;
+  max-width: 360px;
+  margin: 6px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-align: center;
+  color: #1a2332;
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.65);
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+}
+
+[data-md-color-scheme="slate"] .tenets-toast{
+  color: #0d1117;
+}
+
+.tenets-toast.visible{
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.tenets-toast.tenets-toast--error{
+  background: linear-gradient(135deg, #fca5a5, #ef4444);
+  color: #0d1117;
+}

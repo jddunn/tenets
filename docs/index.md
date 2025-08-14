@@ -290,87 +290,135 @@ hide:
   </div>
 </div>
 
-<div class="code-examples">
+<div class="see-action">
   <div class="section-header">
     <div class="ornament left"></div>
-    <h2>Quick Examples</h2>
+    <h2>See it in action</h2>
     <div class="ornament right"></div>
   </div>
-  <div class="example-tabs">
-    <input type="radio" name="example-tab" id="cli-tab" checked>
-    <label for="cli-tab" class="tab-label">CLI</label>
-    
-    <input type="radio" name="example-tab" id="python-tab">
-    <label for="python-tab" class="tab-label">Python</label>
-    
-    <input type="radio" name="example-tab" id="session-tab">
-    <label for="session-tab" class="tab-label">Sessions</label>
-    
-    <div class="tab-content" id="cli-content">
+
+  <!-- Example 1: CLI vs Output -->
+  <div class="see-grid">
+    <div class="see-code">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">CLI</div>
+      </div>
+      <div class="see-body">
 
 ```bash
-# Generate context for debugging
-tenets make-context "users getting 401 errors on checkout"
-
-# Copy result straight to your clipboard
-tenets make-context "map out request lifecycle" --copy
-
-# Analyze codebase structure
-tenets analyze --complexity --hotspots
-
-# Track recent changes
-tenets track-changes --since "last-deploy"
-
-# Visualize dependencies
-tenets viz deps --format ascii
-
-# Force include critical files & copy
-tenets make-context "migrate payment logic" --pin services/payments/*.py --copy
+$ tenets make-context "implement OAuth2 authentication"
+✨ Finding relevant files...
+📊 Ranking by importance...
+📦 Aggregating context (45,231 tokens)
+✅ Context ready for your LLM!
 ```
 
-</div>
-    
-<div class="tab-content" id="python-content">
+      </div>
+    </div>
+  <div class="see-output" data-shot="context-building" data-caption="Context builder assembling the most relevant files">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Output</div>
+      </div>
+      <div class="see-body">
+        <div class="shot-frame">
+          <img src="assets/images/screenshots/context-building.png" alt="Context building screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/context-building.png" data-gif="assets/images/screenshots/context-building.gif" />
+          <span class="see-hint">Click to reveal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Example 2: Python API vs Output -->
+  <div class="see-grid">
+    <div class="see-code">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Python</div>
+      </div>
+      <div class="see-body">
 
 ```python
 from tenets import Tenets
-
-# Initialize
 t = Tenets()
-
-# Generate context
 result = t.make_context(
-    prompt="implement caching layer",
-    path="./src",
-    max_tokens=100_000
+    prompt="map request lifecycle",
+    path="./",
 )
-
-print(f"Found {result.files_included} relevant files")
-print(f"Generated {result.token_count} tokens")
-
-# Copy to clipboard or save
-result.save("context.md")
+print(result.summary)
 ```
 
-</div>
-    
-<div class="tab-content" id="session-content">
+      </div>
+    </div>
+  <div class="see-output" data-shot="python-summary" data-caption="Python API summary output">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Output</div>
+      </div>
+      <div class="see-body">
+        <div class="shot-frame">
+          <img src="assets/images/screenshots/python-summary.png" alt="Python API result screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/python-summary.png" data-gif="assets/images/screenshots/python-summary.gif" />
+          <span class="see-hint">Click to reveal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Example 3: Sessions vs Output -->
+  <div class="see-grid">
+    <div class="see-code">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Sessions</div>
+      </div>
+      <div class="see-body">
 
 ```python
-# Start a session for iterative development
-session = t.create_session("payment-feature")
-
-# Initial context
+session = t.create_session("checkout-flow")
 ctx = session.make_context("design payment flow")
-
-# AI requests specific files
-session.show_files(["payment.py", "stripe.py"])
-
-# Build on previous context
+session.show_files(["payment.py", "stripe.py"])  # the model asked for these
 ctx = session.make_context("add refund support")
 ```
 
-</div>
+      </div>
+    </div>
+  <div class="see-output" data-shot="sessions-flow" data-caption="Sessions flow with iterative context">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Output</div>
+      </div>
+      <div class="see-body">
+        <div class="shot-frame">
+          <img src="assets/images/screenshots/sessions-flow.png" alt="Sessions flow screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/sessions-flow.png" data-gif="assets/images/screenshots/sessions-flow.gif" />
+          <span class="see-hint">Click to reveal</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

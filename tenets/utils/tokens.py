@@ -45,7 +45,7 @@ _MODEL_TO_ENCODING = {
     "gpt-4o": "o200k_base",
     "gpt-4o-mini": "o200k_base",
     "gpt-4.1": "o200k_base",
-    "gpt-3.5-turbo": "cl100k_base",
+    # "gpt-3.5-turbo": "cl100k_base",  # legacy model
 }
 
 
@@ -201,7 +201,7 @@ def get_model_max_tokens(model: Optional[str]) -> int:
         "gpt-4.1": 128_000,
         "gpt-4o": 128_000,
         "gpt-4o-mini": 128_000,
-        "gpt-3.5-turbo": 16_385,
+        # "gpt-3.5-turbo": 16_385,  # legacy
         "claude-3-opus": 200_000,
         "claude-3-5-sonnet": 200_000,
         "claude-3-haiku": 200_000,

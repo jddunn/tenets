@@ -10,7 +10,9 @@
 [![CI](https://github.com/jddunn/tenets/actions/workflows/ci.yml/badge.svg)](https://github.com/jddunn/tenets/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jddunn/tenets/branch/main/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
 [![Coverage Status](https://coveralls.io/repos/github/jddunn/tenets/badge.svg?branch=main)](https://coveralls.io/github/jddunn/tenets?branch=main)
-[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://docs.tenets.dev)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
+
+See docs locally: [docs/](./docs/) • Live site: https://tenets.dev/docs
 
 **tenets** automatically finds and builds the most relevant context from your codebase. Instead of manually copying files or searching for documentation, tenets intelligently aggregates exactly what you need - whether you're debugging, building features, or chatting with an AI assistant.
 
@@ -106,21 +108,73 @@ $ tenets distill "fix payment processing bug"
 # (recent changes inform ranking) — all ranked by relevance
 ```
 
-## How it Works
+## How It Works
 
-1. **Scans** your codebase respecting .gitignore
-2. **Analyzes** code structure, imports, and dependencies
-3. **Ranks** files using multi-factor scoring:
-   - Keyword matching (TF-IDF with `light` extra)
-   - Import relationships
-   - Git activity and recency (used for relevance; not shown in output)
-   - Code complexity
-   - Path relevance
-   - Semantic similarity (with `ml` extra)
-4. **Aggregates** intelligently within token limits
-5. **Formats** for optimal consumption
+Tenets uses a sophisticated multi-stage pipeline to understand your code:
 
-*All processing is local. Your code never leaves your machine. By design tenets never offloads any logic to LLMs, using classical ML / NLP techniques when desired.*
+### 1. Intelligent Parsing
+When you provide a prompt like "implement OAuth2 authentication", Tenets:
+- Extracts key concepts (OAuth2, authentication)
+- Identifies intent (implementation/feature)
+- Detects any file patterns or specific mentions
+- Understands temporal context ("recent changes")
+
+### 2. Code Analysis
+For each file in your codebase, Tenets analyzes:
+- **Structure**: Classes, functions, imports, exports
+- **Dependencies**: What files import this, what it imports
+- **Patterns**: Common code patterns (auth, API, database)
+- **Metadata**: Language, size, complexity
+
+### 3. Relevance Ranking
+Files are scored using multiple factors:
+- **Semantic Understanding** (25%): ML-based similarity to your prompt
+- **Keyword Matching** (15%): Direct term matching
+- **Statistical Relevance** (15%): TF-IDF scoring
+- **Code Structure** (20%): Import centrality, path relevance
+- **Git Signals** (15%): Recent changes, frequency (optional)
+- **File Characteristics** (10%): Type, patterns
+
+All factors are configurable - you can disable git integration, adjust weights, or add custom factors.
+
+### 4. Context Optimization
+Finally, Tenets:
+- Selects files that score above threshold
+- Fits them within token limits
+- Summarizes large files if needed
+- Formats for optimal LLM consumption
+
+## Advanced Configuration
+
+### Customizing Ranking Weights
+
+Create `.tenets.yml` in your project:
+
+```yaml
+ranking:
+  algorithm: ml  # Use ML-based ranking
+  threshold: 0.1  # Lower threshold for more files
+  
+  # Disable git factors for stable codebases
+  use_git: false
+  
+  # Custom weights
+  weights:
+    semantic_similarity: 0.40  # Increase ML weight
+    keyword_match: 0.20
+    import_centrality: 0.20
+    path_relevance: 0.20
+
+  # Performance tuning
+  cache:
+    embeddings: true  # Cache ML embeddings
+    ttl_days: 30     # Longer cache lifetime
+    max_size_mb: 2000  # More cache space
+
+  ranking:
+    workers: 8  # More parallel workers
+    batch_size: 100  # Larger batches for ML
+```
 
 ## Key Features
 

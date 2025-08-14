@@ -8,7 +8,7 @@ authors = [{name = "Tenets Team", email = "team@tenets.dev"}]
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
-keywords = ["ai", "llm", "code-analysis", "prompt-engineering", "developer-tools"]
+keywords = ["ai", "llm", "code-analysis", "prompt-engineering", "developer-tools", "context-management", "code-intelligence"]
 
 # PyPI classifiers
 classifiers = [
@@ -23,6 +23,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
 # Core dependencies
@@ -38,7 +40,8 @@ dependencies = [
     "aiofiles>=23.0.0",
     "tqdm>=4.65.0",
     "psutil>=5.9.0",
-    "PyYAML>=6.0"
+    "PyYAML>=6.0",
+    "numpy>=1.24.0",  # For TF-IDF and ranking calculations
 ]
 
 [project.urls]
@@ -52,14 +55,15 @@ Changelog = "https://github.com/jddunn/tenets/blob/main/CHANGELOG.md"
 tenets = "tenets.cli.app:app"
 
 [project.optional-dependencies]
-# Light NLP features
+# Light NLP features (includes basic summarization)
 light = [
     "yake>=0.4.8",
     "scikit-learn>=1.3.0",
     "textstat>=0.7.3",
+    "nltk>=3.8.0",  # For TextRank summarization
 ]
 
-# Deep learning features
+# Deep learning features (advanced ranking and summarization)
 ml = [
     "torch>=2.0.0",
     "transformers>=4.30.0",
@@ -69,6 +73,7 @@ ml = [
     "openai>=1.0.0",
     "anthropic>=0.25.0",
     "litellm>=1.0.0",
+    "huggingface-hub>=0.19.0",
 ]
 
 # Visualization features
@@ -77,6 +82,7 @@ viz = [
     "networkx>=3.0",
     "pydot>=1.4.0",
     "plotly>=5.0.0",
+    "graphviz>=0.20.0",
 ]
 
 # Web interface
@@ -94,6 +100,7 @@ db = [
     "alembic>=1.12.0",
     "sqlalchemy>=2.0.0",
     "redis>=5.0.0",
+    "diskcache>=5.6.0",  # For disk-based caching
 ]
 
 # Development dependencies
@@ -108,10 +115,12 @@ dev = [
     "faker>=19.0.0",
     "freezegun>=1.2.0",
     "coverage>=7.3.0",
+    "coverage-badge>=1.1.0",
     "black>=23.0.0",
     "isort>=5.12.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
+    "autoflake>=2.2.0",
     "bandit[toml]>=1.7.5",
     "safety>=2.3.0",
     "pre-commit>=3.4.0",
@@ -130,6 +139,7 @@ dev = [
     "wheel>=0.41.0",
     "commitizen>=3.12.0",
     "pyinstaller>=6.0.0",
+    "pip-tools>=7.3.0",
 ]
 
 # Test dependencies
@@ -143,6 +153,8 @@ test = [
     "hypothesis>=6.92.0",
     "responses>=0.24.0",
     "faker>=20.0.0",
+    # Include tiktoken so tokenization tests aren't skipped in core test matrix
+    "tiktoken>=0.5.0",
 ]
 
 # Documentation dependencies
@@ -153,9 +165,12 @@ docs = [
     "mkdocs-minify-plugin>=0.7.0",
     "pymdown-extensions>=10.0",
     "mkdocs-gen-files>=0.5.0",
+    "mkdocs-awesome-pages-plugin>=2.9.0",
     "mkdocs-literate-nav>=0.6.0",
     "mkdocs-section-index>=0.3.0",
-    "mike>=2.0.0",
+    "mkdocs-git-revision-date-localized-plugin>=1.2.0",
+    "mkdocs-redirects>=1.2.0",
+    "mike>=2.0.0"
 ]
 
 # All features
@@ -177,6 +192,7 @@ include = [
     "tenets/**/*.html",
     "tenets/**/*.css",
     "tenets/**/*.js",
+    "tenets/**/*.txt",  # Include stopwords.txt
 ]
 exclude = [
     "tests",
@@ -295,6 +311,11 @@ module = [
     "tiktoken.*",
     "transformers.*",
     "faiss.*",
+    "nltk.*",
+    "networkx.*",
+    "plotly.*",
+    "matplotlib.*",
+    "graphviz.*",
 ]
 ignore_missing_imports = true
 
@@ -321,6 +342,7 @@ markers = [
     "unit: marks tests as unit tests",
     "requires_git: marks tests that require git",
     "requires_ml: marks tests that require ML dependencies",
+    "requires_viz: marks tests that require visualization dependencies",
     "cli: CLI command tests",
     "smoke: Quick smoke tests for CI",
 ]
@@ -379,8 +401,8 @@ bump_pattern = "^(feat|fix|perf|refactor|BREAKING)"
 "refactor" = "PATCH"
 
 [tool.bandit]
-exclude_dirs = ["tests", "venv", ".venv"]
-skips = ["B101", "B601"]
+exclude_dirs = ["tests", "venv", ".venv", "build", "dist"]
+severity = "medium"  # Only report medium and high severity issues
 
 [tool.pydocstyle]
 convention = "google"

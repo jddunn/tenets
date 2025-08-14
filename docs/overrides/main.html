@@ -71,7 +71,9 @@
         <!-- Brand Column -->
         <div class="footer-brand">
           <div class="footer-logo-container">
-            <img src="{{ 'logos/tenets_light_icon_transparent_cropped.png'}}" alt="Tenets" class="footer-logo">
+            <!-- Dual-logo (text variants) with theme-aware swap and correct URL resolution -->
+            <img src="{{ 'logos/tenets_dark_icon_transparent.png' | url }}" alt="Tenets" class="footer-logo dark-logo" loading="lazy">
+            <img src="{{ 'logos/tenets_light_icon_transparent.png' | url }}" alt="Tenets" class="footer-logo light-logo" loading="lazy">
             <div class="footer-brand-text">
               <h4>tenets</h4>
               <div class="footer-tagline">Context that feeds your prompts</div>
@@ -127,7 +129,7 @@
         
         <!-- Company Column -->
         <div class="footer-column">
-          <h5>manic.agency</h5>
+          <h5>Development sponsored by manic.agency</h5>
           <ul>
             <li><a href="https://manic.agency" target="_blank" rel="noopener">Website</a></li>
             <li><a href="https://manic.agency/blog" target="_blank" rel="noopener">Blog</a></li>
@@ -162,7 +164,7 @@
     <div class="footer-bottom">
       <div class="footer-bottom-content">
         <div class="footer-copyright">
-          © 2024 <a href="https://manic.agency" target="_blank" rel="noopener">manic.agency</a> | MIT License
+          © 2024 <a href="https://jddunn.github.io" target="_blank" rel="noopener">Johnny Dunn</a> | MIT License
         </div>
         <div class="footer-links">
           <a href="https://github.com/jddunn/tenets/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
