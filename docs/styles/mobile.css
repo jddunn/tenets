@@ -14,12 +14,18 @@
   
   /* Hide mobile-only elements on desktop */
   .md-header__button[for="__drawer"],
-  .md-nav--primary,
   .md-nav__toggle,
-  .md-sidebar--primary,
   .md-overlay {
     display: none !important;
   }
+
+  /* Ensure primary sidebar/nav are visible on desktop */
+  .md-sidebar--primary,
+  .md-nav--primary {
+    display: block !important;
+  }
+  /* Reset any off-canvas transform from theme at desktop sizes */
+  .md-sidebar--primary { transform: none !important; }
 }
 
 /* =====================================================

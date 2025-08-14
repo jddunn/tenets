@@ -39,18 +39,20 @@ def write_module_page(mod_name: str, is_pkg: bool):
         out_path = rel_dir.with_suffix(".md")
         title = mod_name
 
-    content = f"""---
+        content = f"""---
 title: {title}
+hide:
+    - toc
 ---
 
 # {title}
 
 ::: {mod_name}
-    options:
-      show_source: false
-      separate_signature: true
-      members_order: source
-      docstring_style: google
+        options:
+            show_source: false
+            separate_signature: true
+            members_order: source
+            docstring_style: google
 """
 
     with mkdocs_gen_files.open(out_path.as_posix(), "w") as fd:
@@ -66,8 +68,10 @@ collapse_single_pages: true
         fd.write(pages_yaml)
 
     # Root index
-    index_md = """---
+        index_md = """---
 title: API Reference
+hide:
+    - toc
 ---
 
 # API Reference
