@@ -14,15 +14,15 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
 from tenets.utils.logger import get_logger
 
+from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
 from .factors import RankedFile, RankingExplainer, RankingFactors
-from ..nlp.ml_utils import check_ml_dependencies, load_embedding_model
 from .strategies import (
     BalancedRankingStrategy,
     FastRankingStrategy,
@@ -30,7 +30,6 @@ from .strategies import (
     RankingStrategy,
     ThoroughRankingStrategy,
 )
-from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
 
 # Optional symbol for tests to patch ML model class
 try:  # pragma: no cover - optional dependency
@@ -172,7 +171,6 @@ class RelevanceRanker:
         self._custom_rankers: List[Callable] = self.custom_rankers
 
         # Thread pool for parallel ranking
-        # Note: normalize indentation to avoid Windows hidden-char issues
         max_workers = int(config.ranking.workers or 4)
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
         # Backwards-compat alias expected by some tests
@@ -371,7 +369,7 @@ class RelevanceRanker:
                             analysis=file,
                             score=0.0,
                             factors=RankingFactors(),
-                            explanation=f"Ranking failed: {str(e)}",
+                            explanation=f"Ranking failed: {e!s}",
                         )
                     )
         else:
@@ -392,7 +390,7 @@ class RelevanceRanker:
                             analysis=file,
                             score=0.0,
                             factors=RankingFactors(),
-                            explanation=f"Ranking failed: {str(e)}",
+                            explanation=f"Ranking failed: {e!s}",
                         )
                     )
 

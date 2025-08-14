@@ -23,6 +23,7 @@ from unittest.mock import Mock, mock_open, patch
 
 import pytest
 
+from tenets.core.nlp.tfidf import TFIDFCalculator
 from tenets.core.ranking.ranker import (
     BalancedRankingStrategy,
     FastRankingStrategy,
@@ -32,7 +33,6 @@ from tenets.core.ranking.ranker import (
     RelevanceRanker,
     ThoroughRankingStrategy,
 )
-from tenets.core.nlp.tfidf import TFIDFCalculator
 from tenets.models.analysis import (
     ClassInfo,
     CodeStructure,

@@ -11,20 +11,17 @@ No more duplicate programming patterns or keyword extraction logic.
 import math
 import re
 from abc import ABC, abstractmethod
-from collections import Counter, defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set
 
+# Import centralized NLP components
+from tenets.core.nlp.programming_patterns import get_programming_patterns
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
 from tenets.utils.logger import get_logger
 
-# Import centralized NLP components
-from tenets.core.nlp.programming_patterns import get_programming_patterns
-
 from .factors import RankingFactors
-from .tfidf import BM25Calculator, TFIDFCalculator
 
 
 class RankingStrategy(ABC):
@@ -337,9 +334,8 @@ class BalancedRankingStrategy(RankingStrategy):
         if prompt_context.task_type == "test":
             if any("test" in part or "spec" in part for part in path_parts):
                 score += 0.5
-        else:
-            if any("test" in part or "spec" in part for part in path_parts):
-                score *= 0.5
+        elif any("test" in part or "spec" in part for part in path_parts):
+            score *= 0.5
 
         # Depth penalty (prefer files not too deeply nested)
         depth_penalty = max(0, len(path_parts) - 4) * 0.05
@@ -426,7 +422,6 @@ class BalancedRankingStrategy(RankingStrategy):
                 return 0.5
             else:
                 return 0.2
-
         elif task_type == "debug":
             # Complex files more likely to have bugs
             if cyclomatic > 15:
@@ -435,7 +430,6 @@ class BalancedRankingStrategy(RankingStrategy):
                 return 0.6
             else:
                 return 0.4
-
         else:
             # Neutral for other tasks
             return 0.5
@@ -750,7 +744,7 @@ class MLRankingStrategy(RankingStrategy):
     def _load_model(self):
         """Load ML model lazily."""
         try:
-            from tenets.core.ranking.ml_utils import load_embedding_model
+            from tenets.core.nlp.ml_utils import load_embedding_model
 
             self._model = load_embedding_model()
             self.logger.info("ML model loaded for semantic ranking")
@@ -803,7 +797,7 @@ class MLRankingStrategy(RankingStrategy):
             return 0.0
 
         try:
-            from tenets.core.ranking.ml_utils import compute_similarity
+            from tenets.core.nlp.ml_utils import compute_similarity
 
             # Truncate content if too long
             max_length = 512
