@@ -413,6 +413,24 @@ class OwnershipTracker:
 
         return report
 
+
+# Backward-compatible functional API expected by tests
+def track_ownership(
+    repo_path: Path, since_days: int = 90, config: Optional[TenetsConfig] = None
+) -> OwnershipReport:
+    """Track ownership via a simple functional wrapper.
+
+    Args:
+        repo_path: Path to repository
+        since_days: How many days of history to analyze
+        config: Optional TenetsConfig
+
+    Returns:
+        OwnershipReport
+    """
+    tracker = OwnershipTracker(config or TenetsConfig())
+    return tracker.track(repo_path, since_days=since_days)
+
     def _analyze_contributors(self, report: OwnershipReport, since_days: int) -> None:
         """Analyze individual contributors.
 

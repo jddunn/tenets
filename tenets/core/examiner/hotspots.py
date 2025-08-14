@@ -458,6 +458,41 @@ class HotspotDetector:
 
         return report
 
+
+# Backward-compatible functional API expected by tests
+def detect_hotspots(
+    repo_path: Path,
+    files: Optional[List[Any]] = None,
+    since_days: int = 90,
+    threshold: int = 10,
+    include_stable: bool = False,
+    config: Optional[TenetsConfig] = None,
+) -> HotspotReport:
+    """Detect hotspots in a repository path.
+
+    Thin wrapper that constructs a HotspotDetector and delegates to detect().
+
+    Args:
+        repo_path: Path to the repository
+        files: Optional analyzed files list
+        since_days: History window
+        threshold: Minimum hotspot score
+        include_stable: Include stable files
+        config: Optional TenetsConfig
+
+    Returns:
+        HotspotReport
+    """
+    cfg = config or TenetsConfig()
+    detector = HotspotDetector(cfg)
+    return detector.detect(
+        repo_path=repo_path,
+        files=files,
+        since_days=since_days,
+        threshold=threshold,
+        include_stable=include_stable,
+    )
+
     def _analyze_file_changes(self, since_date: datetime) -> Dict[str, Dict[str, Any]]:
         """Analyze file change patterns from git history.
 
@@ -1113,3 +1148,25 @@ class HotspotDetector:
             matrix[level] = matrix[level][:20]
 
         return matrix
+
+
+# Backward-compatible functional API expected by tests
+def detect_hotspots(
+    repo_path: Path,
+    files: Optional[List[Any]] = None,
+    threshold: int = 5,
+    config: Optional[TenetsConfig] = None,
+) -> HotspotReport:
+    """Detect hotspots via a simple functional wrapper.
+
+    Args:
+        repo_path: Path to repository
+        files: Optional analyzed files
+        threshold: Minimum hotspot score to include
+        config: Optional TenetsConfig
+
+    Returns:
+        HotspotReport
+    """
+    detector = HotspotDetector(config or TenetsConfig())
+    return detector.detect(repo_path, files=files, threshold=threshold)

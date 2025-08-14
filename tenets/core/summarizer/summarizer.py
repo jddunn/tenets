@@ -13,6 +13,7 @@ The summarizer supports multiple strategies:
 """
 
 import hashlib
+import ast
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -22,6 +23,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
 from tenets.utils.logger import get_logger
+from tenets.utils.tokens import count_tokens
 
 from .llm import LLMSummaryStrategy, create_llm_summarizer
 from .strategies import (
@@ -181,6 +183,18 @@ class Summarizer:
 
     def _init_ml_strategies(self):
         """Initialize ML-based strategies if available."""
+        # Honor configuration to enable/disable ML strategies (avoids heavy downloads in tests/CI)
+        try:
+            enable_ml = True
+            if hasattr(self, "config") and hasattr(self.config, "summarizer"):
+                enable_ml = bool(getattr(self.config.summarizer, "enable_ml_strategies", True))
+        except Exception:
+            enable_ml = True
+
+        if not enable_ml:
+            self.logger.info("ML strategies disabled by config; skipping transformer/LLM initialization")
+            return
+
         # Try transformer strategy
         try:
             self.strategies[SummarizationMode.TRANSFORMER] = TransformerStrategy()
@@ -414,6 +428,93 @@ class Summarizer:
                 summary_lines.append(f"# {comment_summary}")
 
         return "\n".join(summary_lines)
+
+
+# Legacy shim: FileSummarizer expected by tests
+class FileSummarizer:
+    """Backwards-compatible file summarizer facade.
+
+    Provides a simple API used in tests, delegating to the new Summarizer when possible
+    and using lightweight heuristics otherwise.
+    """
+
+    def __init__(self, model: Optional[str] = None, config: Optional[TenetsConfig] = None):
+        self.model = model
+        self.config = config or TenetsConfig()
+        self._summarizer = Summarizer(config=self.config)
+
+    def summarize_file(self, path: Union[str, Path], max_lines: int = 50):
+        from tenets.models.summary import FileSummary
+
+        p = Path(path)
+        text = self._read_text(p)
+        if not text:
+            return FileSummary(path=str(p), summary="", token_count=0, metadata={"strategy": "empty"})
+
+        # Try to extract a meaningful head/comment/docstring summary
+        summary = self._extract_summary(text, max_lines=max_lines)
+        tokens = count_tokens(summary)
+        return FileSummary(
+            path=str(p), summary=summary, token_count=tokens, metadata={"strategy": "heuristic", "max_lines": max_lines}
+        )
+
+    # --- Internals mirrored from tests’ expectations ---
+    def _read_text(self, path: Union[str, Path]) -> str:
+        p = Path(path)
+        try:
+            return p.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            try:
+                return p.read_text(encoding="latin-1")
+            except Exception:
+                return ""
+        except FileNotFoundError:
+            return ""
+        except Exception:
+            return ""
+
+    def _extract_summary(self, code: str, max_lines: int = 50) -> str:
+        """Heuristic: extract module docstring or leading comments; else head lines."""
+        # 1) Try Python docstring via AST
+        try:
+            import ast
+
+            tree = ast.parse(code)
+            doc = ast.get_docstring(tree)
+            if doc:
+                return "\n".join(doc.splitlines()[: max_lines])
+        except Exception:
+            pass
+
+        # 2) Leading comment block (//, #, /* */)
+        lines = code.splitlines()
+        comment_prefixes = ("#", "//", "/*", "* ", " *")
+        block: List[str] = []
+        in_block = False
+        for line in lines:
+            s = line.strip()
+            if not s and not in_block and not block:
+                continue
+            if s.startswith("/*"):
+                in_block = True
+                block.append(s.lstrip("/* "))
+                continue
+            if in_block:
+                if s.endswith("*/"):
+                    block.append(s.rstrip("*/ "))
+                    break
+                block.append(s.lstrip("* "))
+                continue
+            if s.startswith(comment_prefixes):
+                block.append(s.lstrip("#/"))
+            else:
+                break
+        if block:
+            return "\n".join(block[: max_lines])
+
+        # 3) Fallback to first N lines
+        head = lines[: max_lines]
+        return "\n".join(head)
 
     def _is_import_line(self, line: str, language: str) -> bool:
         """Check if line is an import statement.
@@ -719,3 +820,179 @@ class Summarizer:
             stats["avg_time"] = 0.0
 
         return stats
+
+
+class FileSummarizer:
+    """Backward-compatible file summarizer used by tests.
+
+    This lightweight class focuses on extracting a concise summary from a single
+    file using deterministic heuristics (docstrings, leading comments, or head
+    lines). It integrates with Tenets token utilities and returns the
+    `FileSummary` model expected by the tests.
+    """
+
+    def __init__(self, model: Optional[str] = None):
+        self.model = model
+        self.logger = get_logger(__name__)
+
+    # --- Public API used by tests ---
+    def summarize_file(self, path: Union[str, Path], max_lines: int = 50):
+        """Summarize a file from disk into a FileSummary.
+
+        Args:
+            path: Path to the file
+            max_lines: Maximum number of lines in the summary
+
+        Returns:
+            FileSummary: summary object with metadata
+        """
+        from tenets.models.summary import FileSummary  # local import to avoid cycles
+
+        p = Path(path)
+        text = self._read_text(p)
+        summary_text = self._extract_summary(text, max_lines=max_lines, file_path=p)
+
+        tokens = count_tokens(summary_text, model=self.model)
+        metadata = {"strategy": "heuristic", "max_lines": max_lines}
+
+        return FileSummary(
+            path=str(p),
+            summary=summary_text,
+            token_count=tokens,
+            metadata=metadata,
+        )
+
+    # --- Helpers expected by tests ---
+    def _read_text(self, path: Union[str, Path]) -> str:
+        """Read text from file, tolerating different encodings and binary data.
+
+        Returns empty string if the file does not exist.
+        """
+        p = Path(path)
+        if not p.exists() or not p.is_file():
+            return ""
+
+        # Try common encodings, then fall back to permissive decode
+        for enc in ("utf-8", "utf-16", "latin-1"):
+            try:
+                return p.read_text(encoding=enc)
+            except Exception:
+                continue
+
+        # Final fallback: binary-safe read and decode with errors ignored
+        try:
+            data = p.read_bytes()
+            return data.decode("utf-8", errors="ignore")
+        except Exception:
+            return ""
+
+    def _extract_summary(
+        self, text: str, max_lines: int = 50, file_path: Optional[Path] = None
+    ) -> str:
+        """Extract a human-friendly summary from the file content.
+
+        Preference order:
+        1) Python module docstring (if parseable)
+        2) Leading comment block (Python // JS /**/ styles)
+        3) First N lines of the file
+        """
+        if not text:
+            return ""
+
+        # 1) Try Python module docstring via AST when it looks like Python
+        looks_py = False
+        if file_path is not None and file_path.suffix.lower() in {".py", ".pyw"}:
+            looks_py = True
+        else:
+            # Heuristic look for Python indicators
+            indicators = ("def ", "class ", "import ", "from ", '"""', "'''")
+            looks_py = sum(1 for ind in indicators if ind in text) >= 2
+
+        if looks_py:
+            try:
+                module = ast.parse(text)
+                doc = ast.get_docstring(module, clean=True)
+                if doc:
+                    return self._limit_lines(doc, max_lines)
+            except Exception:
+                # Fall through to other strategies on parse errors
+                pass
+
+        # 2) Leading comment block extraction (supports Python/JS/TS)
+        comment_block = self._extract_leading_comments(text)
+        if comment_block:
+            return self._limit_lines(comment_block, max_lines)
+
+        # 3) Fallback to head extraction
+        return self._limit_lines(text, max_lines)
+
+    # --- Internal helpers ---
+    def _limit_lines(self, text: str, max_lines: int) -> str:
+        if max_lines <= 0:
+            return ""
+        lines = text.splitlines()
+        if len(lines) <= max_lines:
+            return "\n".join(lines)
+        return "\n".join(lines[:max_lines])
+
+    def _extract_leading_comments(self, text: str) -> str:
+        lines = text.splitlines()
+        buf: List[str] = []
+        i = 0
+
+        # Skip shebang or coding lines
+        while i < len(lines) and (
+            lines[i].startswith("#!/") or "coding:" in lines[i]
+        ):
+            i += 1
+
+        # Triple-quoted doc/comment block at top
+        if i < len(lines) and (lines[i].strip().startswith('"""') or lines[i].strip().startswith("'''")):
+            quote = '"""' if '"""' in lines[i] else "'''"
+            first = lines[i].split(quote, 1)[-1]
+            if first:
+                buf.append(first)
+            i += 1
+            while i < len(lines):
+                line = lines[i]
+                if quote in line:
+                    before, _sep, _after = line.partition(quote)
+                    buf.append(before)
+                    break
+                buf.append(line)
+                i += 1
+            if buf:
+                return "\n".join(l.strip("\n") for l in buf).strip()
+
+        # Line-comment blocks (Python # or JS //) at file head
+        j = i
+        while j < len(lines) and (lines[j].lstrip().startswith("#") or lines[j].lstrip().startswith("//")):
+            # Strip leading comment markers while keeping content
+            line = lines[j].lstrip()
+            if line.startswith("#"):
+                content = line[1:].strip()
+            else:
+                content = line[2:].strip()
+            buf.append(content)
+            j += 1
+        if buf:
+            return "\n".join(buf).strip()
+
+        # JS/TS block comments /* ... */ at head
+        if i < len(lines) and lines[i].lstrip().startswith("/*"):
+            inner = lines[i].lstrip()[2:]
+            if inner:
+                buf.append(inner.rstrip("*/ "))
+            i += 1
+            while i < len(lines):
+                line = lines[i]
+                if "*/" in line:
+                    before, _sep, _after = line.partition("*/")
+                    buf.append(before)
+                    break
+                buf.append(line)
+                i += 1
+            if buf:
+                return "\n".join(buf).strip()
+
+        return ""
