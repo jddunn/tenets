@@ -22,7 +22,7 @@ from tenets.models.context import PromptContext
 from tenets.utils.logger import get_logger
 
 from .factors import RankedFile, RankingExplainer, RankingFactors
-from .ml_utils import check_ml_dependencies, load_embedding_model
+from ..nlp.ml_utils import check_ml_dependencies, load_embedding_model
 from .strategies import (
     BalancedRankingStrategy,
     FastRankingStrategy,
@@ -30,7 +30,13 @@ from .strategies import (
     RankingStrategy,
     ThoroughRankingStrategy,
 )
-from .tfidf import BM25Calculator, TFIDFCalculator
+from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
+
+# Optional symbol for tests to patch ML model class
+try:  # pragma: no cover - optional dependency
+    from sentence_transformers import SentenceTransformer  # type: ignore
+except Exception:  # pragma: no cover
+    SentenceTransformer = None  # type: ignore
 
 
 class RankingAlgorithm(Enum):
@@ -161,12 +167,16 @@ class RelevanceRanker:
             RankingAlgorithm.ML: MLRankingStrategy(),
         }
 
-        # Custom rankers list
+        # Custom rankers list (keep public and test-expected private alias)
         self.custom_rankers: List[Callable] = []
+        self._custom_rankers: List[Callable] = self.custom_rankers
 
         # Thread pool for parallel ranking
-        max_workers = config.ranking.workers or 4
+        # Note: normalize indentation to avoid Windows hidden-char issues
+        max_workers = int(config.ranking.workers or 4)
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+        # Backwards-compat alias expected by some tests
+        self._executor = self.executor
 
         # Statistics and cache
         self.stats = RankingStats()
@@ -174,6 +184,10 @@ class RelevanceRanker:
 
         # ML model (loaded lazily)
         self._ml_model = None
+
+        # Optional ML embedding model placeholder for tests that patch it
+        # Also expose module-level symbol on instance for convenience
+        self.SentenceTransformer = SentenceTransformer
 
         self.logger.info(
             f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
@@ -230,7 +244,7 @@ class RelevanceRanker:
             except ValueError:
                 raise ValueError(f"Unknown ranking algorithm: {algorithm}")
         else:
-            strategy = self.strategies.get(self.algorithm)
+            strategy = self._get_strategy(self.algorithm.value)
 
         if not strategy:
             raise ValueError(f"No strategy for algorithm: {self.algorithm}")
@@ -295,6 +309,18 @@ class RelevanceRanker:
             self.logger.info(f"Ranking Explanation:\n{explanation}")
 
         return filtered_files
+
+    def _get_strategy(self, algorithm: Optional[str] = None) -> RankingStrategy:
+        """Return the strategy instance for the given algorithm string.
+
+        If algorithm is None, use the current instance algorithm.
+        """
+        algo = algorithm or self.algorithm.value
+        try:
+            algo_enum = RankingAlgorithm(algo)
+        except ValueError:
+            algo_enum = self.algorithm
+        return self.strategies.get(algo_enum)
 
     def _rank_with_strategy(
         self,
@@ -635,6 +661,8 @@ class RelevanceRanker:
             >>> ranker.register_custom_ranker(boost_tests)
         """
         self.custom_rankers.append(ranker_func)
+        # Keep alias updated
+        self._custom_rankers = self.custom_rankers
         self.logger.info(f"Registered custom ranker: {ranker_func.__name__}")
 
     def get_ranking_explanation(self, ranked_files: List[RankedFile], top_n: int = 10) -> str:

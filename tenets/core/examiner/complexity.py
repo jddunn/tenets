@@ -1019,3 +1019,24 @@ class ComplexityAnalyzer:
                 distribution["very complex (21+)"] += 1
 
         return distribution
+
+
+# Backward-compatible functional API expected by tests
+def analyze_complexity(
+    files: List[Any], threshold: int = 10, config: Optional[TenetsConfig] = None
+) -> ComplexityReport:
+    """Analyze complexity for a list of files.
+
+    Thin wrapper that constructs a ComplexityAnalyzer and returns its report.
+
+    Args:
+        files: List of analyzed file-like objects
+        threshold: Threshold for high/very high classification
+        config: Optional TenetsConfig instance
+
+    Returns:
+        ComplexityReport
+    """
+    cfg = config or TenetsConfig()
+    analyzer = ComplexityAnalyzer(cfg)
+    return analyzer.analyze(files, threshold=float(threshold), deep=False)

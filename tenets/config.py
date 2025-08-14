@@ -1,4 +1,4 @@
-"""Configuration management for Tenets with enhanced LLM support.
+"""Configuration management for Tenets with enhanced LLM and NLP support.
 
 This module handles all configuration for the Tenets system, including loading
 from files, environment variables, and providing defaults. Configuration can
@@ -15,7 +15,7 @@ The configuration system is designed to work with zero configuration (sensible
 defaults) while allowing full customization when needed.
 
 Enhanced with comprehensive LLM provider support for optional AI-powered features
-like intelligent summarization, semantic search, and code understanding.
+and centralized NLP configuration for all text processing operations.
 """
 
 import json
@@ -27,6 +27,138 @@ from typing import Any, Dict, List, Optional, Union
 import yaml
 
 from tenets.utils.logger import get_logger
+
+
+@dataclass
+class NLPConfig:
+    """Configuration for centralized NLP (Natural Language Processing) system.
+    
+    Controls all text processing operations including tokenization, keyword
+    extraction, stopword filtering, embeddings, and similarity computation.
+    All NLP operations are centralized in the tenets.core.nlp package.
+    
+    Attributes:
+        enabled: Whether NLP features are enabled globally
+        stopwords_enabled: Whether to use stopword filtering
+        code_stopword_set: Stopword set for code search (minimal)
+        prompt_stopword_set: Stopword set for prompt parsing (aggressive)
+        custom_stopword_files: Additional custom stopword files
+        tokenization_mode: Tokenization mode ('code', 'text', 'auto')
+        preserve_original_tokens: Keep original tokens for exact matching
+        split_camelcase: Split camelCase and PascalCase
+        split_snakecase: Split snake_case
+        min_token_length: Minimum token length to keep
+        keyword_extraction_method: Method for keyword extraction
+        max_keywords: Maximum keywords to extract
+        ngram_size: Maximum n-gram size for extraction
+        yake_dedup_threshold: YAKE deduplication threshold
+        tfidf_use_sublinear: Use log scaling for term frequency
+        tfidf_use_idf: Use inverse document frequency
+        tfidf_norm: Normalization method for TF-IDF
+        bm25_k1: BM25 term frequency saturation parameter
+        bm25_b: BM25 length normalization parameter
+        embeddings_enabled: Whether to use embeddings (requires ML)
+        embeddings_model: Default embedding model
+        embeddings_device: Device for embeddings ('auto', 'cpu', 'cuda')
+        embeddings_cache: Whether to cache embeddings
+        embeddings_batch_size: Batch size for embedding generation
+        similarity_metric: Default similarity metric
+        similarity_threshold: Default similarity threshold
+        cache_embeddings_ttl_days: TTL for embedding cache
+        cache_tfidf_ttl_days: TTL for TF-IDF cache
+        cache_keywords_ttl_days: TTL for keyword cache
+        multiprocessing_enabled: Enable multiprocessing for NLP operations
+        multiprocessing_workers: Number of workers (None = cpu_count)
+        multiprocessing_chunk_size: Chunk size for parallel processing
+    """
+    
+    # Core settings
+    enabled: bool = True
+    
+    # Stopword configuration
+    stopwords_enabled: bool = True
+    code_stopword_set: str = "minimal"      # Minimal for code search
+    prompt_stopword_set: str = "aggressive" # Aggressive for prompt parsing
+    custom_stopword_files: List[str] = field(default_factory=list)
+    
+    # Tokenization configuration
+    tokenization_mode: str = "auto"  # 'code', 'text', or 'auto'
+    preserve_original_tokens: bool = True
+    split_camelcase: bool = True
+    split_snakecase: bool = True
+    min_token_length: int = 2
+    
+    # Keyword extraction configuration
+    keyword_extraction_method: str = "auto"  # 'auto', 'yake', 'tfidf', 'frequency'
+    max_keywords: int = 30
+    ngram_size: int = 3
+    yake_dedup_threshold: float = 0.7
+    
+    # TF-IDF configuration
+    tfidf_use_sublinear: bool = True
+    tfidf_use_idf: bool = True
+    tfidf_norm: str = "l2"
+    
+    # BM25 configuration
+    bm25_k1: float = 1.2
+    bm25_b: float = 0.75
+    
+    # Embeddings configuration (ML features)
+    embeddings_enabled: bool = False
+    embeddings_model: str = "all-MiniLM-L6-v2"
+    embeddings_device: str = "auto"  # 'auto', 'cpu', 'cuda'
+    embeddings_cache: bool = True
+    embeddings_batch_size: int = 32
+    
+    # Similarity configuration
+    similarity_metric: str = "cosine"  # 'cosine', 'euclidean', 'manhattan'
+    similarity_threshold: float = 0.7
+    
+    # Cache configuration for NLP
+    cache_embeddings_ttl_days: int = 30
+    cache_tfidf_ttl_days: int = 7
+    cache_keywords_ttl_days: int = 7
+    
+    # Performance optimization
+    multiprocessing_enabled: bool = True
+    multiprocessing_workers: Optional[int] = None  # None = cpu_count()
+    multiprocessing_chunk_size: int = 100
+    
+    def __post_init__(self):
+        """Validate NLP configuration after initialization."""
+        # Validate stopword sets
+        valid_stopword_sets = ["minimal", "aggressive", "custom"]
+        if self.code_stopword_set not in valid_stopword_sets:
+            raise ValueError(f"Invalid code stopword set: {self.code_stopword_set}")
+        if self.prompt_stopword_set not in valid_stopword_sets:
+            raise ValueError(f"Invalid prompt stopword set: {self.prompt_stopword_set}")
+            
+        # Validate tokenization mode
+        valid_modes = ["code", "text", "auto"]
+        if self.tokenization_mode not in valid_modes:
+            raise ValueError(f"Invalid tokenization mode: {self.tokenization_mode}")
+            
+        # Validate keyword extraction method
+        valid_methods = ["auto", "yake", "tfidf", "frequency"]
+        if self.keyword_extraction_method not in valid_methods:
+            raise ValueError(f"Invalid keyword extraction method: {self.keyword_extraction_method}")
+            
+        # Validate similarity metric
+        valid_metrics = ["cosine", "euclidean", "manhattan"]
+        if self.similarity_metric not in valid_metrics:
+            raise ValueError(f"Invalid similarity metric: {self.similarity_metric}")
+            
+        # Validate thresholds
+        if not 0.0 <= self.similarity_threshold <= 1.0:
+            raise ValueError(f"Similarity threshold must be between 0 and 1, got {self.similarity_threshold}")
+        if not 0.0 < self.yake_dedup_threshold <= 1.0:
+            raise ValueError(f"YAKE dedup threshold must be between 0 and 1, got {self.yake_dedup_threshold}")
+            
+        # Validate BM25 parameters
+        if self.bm25_k1 < 0:
+            raise ValueError(f"BM25 k1 must be non-negative, got {self.bm25_k1}")
+        if not 0.0 <= self.bm25_b <= 1.0:
+            raise ValueError(f"BM25 b must be between 0 and 1, got {self.bm25_b}")
 
 
 @dataclass
@@ -331,6 +463,7 @@ class RankingConfig:
     """Configuration for relevance ranking system.
 
     Controls how files are scored and ranked for relevance to prompts.
+    Uses centralized NLP components for all text processing.
 
     Attributes:
         algorithm: Default ranking algorithm (fast, balanced, thorough, ml)
@@ -338,17 +471,22 @@ class RankingConfig:
         use_tfidf: Whether to use TF-IDF for keyword matching
         use_stopwords: Whether to use stopwords filtering
         use_embeddings: Whether to use semantic embeddings (requires ML)
+        use_git: Whether to include git signals in ranking
+        use_ml: Whether to enable ML features (uses NLP embeddings)
         embedding_model: Which embedding model to use
         custom_weights: Custom weights for ranking factors
         workers: Number of parallel workers for ranking
         parallel_mode: Parallel execution mode ("thread", "process", or "auto")
+        batch_size: Batch size for ML operations
     """
 
     algorithm: str = "balanced"
     threshold: float = 0.1
     use_tfidf: bool = True
-    use_stopwords: bool = False
+    use_stopwords: bool = False  # For code search, use minimal stopwords
     use_embeddings: bool = False
+    use_git: bool = True
+    use_ml: bool = False  # Enable ML features (uses NLP package)
     embedding_model: str = "all-MiniLM-L6-v2"
     custom_weights: Dict[str, float] = field(
         default_factory=lambda: {
@@ -362,6 +500,7 @@ class RankingConfig:
     )
     workers: int = 2
     parallel_mode: str = "auto"
+    batch_size: int = 100  # Batch size for ML operations
 
 
 @dataclass
@@ -524,7 +663,7 @@ class GitConfig:
 
 @dataclass
 class TenetsConfig:
-    """Main configuration for the Tenets system with LLM support.
+    """Main configuration for the Tenets system with LLM and NLP support.
 
     This is the root configuration object that contains all subsystem configs
     and global settings. It handles loading from files, environment variables,
@@ -545,6 +684,7 @@ class TenetsConfig:
         output: Output formatting configuration
         git: Git integration configuration
         llm: LLM integration configuration
+        nlp: NLP system configuration
         custom: Custom user configuration
     """
 
@@ -564,7 +704,8 @@ class TenetsConfig:
     cache: CacheConfig = field(default_factory=CacheConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     git: GitConfig = field(default_factory=GitConfig)
-    llm: LLMConfig = field(default_factory=LLMConfig)  # New LLM configuration
+    llm: LLMConfig = field(default_factory=LLMConfig)  # LLM configuration
+    nlp: NLPConfig = field(default_factory=NLPConfig)  # NLP configuration
 
     # Custom configuration
     custom: Dict[str, Any] = field(default_factory=dict)
@@ -719,6 +860,8 @@ class TenetsConfig:
                 self.git = GitConfig(**value)
             elif key == "llm" and isinstance(value, dict):
                 self.llm = LLMConfig(**value)
+            elif key == "nlp" and isinstance(value, dict):
+                self.nlp = NLPConfig(**value)
             elif key == "custom" and isinstance(value, dict):
                 self.custom = value
             elif hasattr(self, key):
@@ -741,6 +884,8 @@ class TenetsConfig:
             TENETS_LLM_ENABLED=true
             TENETS_LLM_PROVIDER=anthropic
             TENETS_LLM_API_KEYS_OPENAI=sk-...
+            TENETS_NLP_EMBEDDINGS_ENABLED=true
+            TENETS_NLP_EMBEDDINGS_MODEL=all-MiniLM-L12-v2
         """
         for env_key, env_value in os.environ.items():
             if not env_key.startswith("TENETS_"):
@@ -784,6 +929,13 @@ class TenetsConfig:
                         if len(parts_lower) == 4:
                             provider = parts_lower[3]
                             self.llm.api_keys[provider] = env_value
+                            continue
+                            
+                    # Special handling for NLP settings
+                    if subsystem == "nlp":
+                        attr = "_".join(parts_lower[1:])
+                        if hasattr(self.nlp, attr):
+                            setattr(self.nlp, attr, self._parse_env_value(env_value))
                             continue
 
                     # Regular subsystem attributes
@@ -924,6 +1076,7 @@ class TenetsConfig:
             "output": asdict(self.output),
             "git": asdict(self.git),
             "llm": asdict(self.llm),
+            "nlp": asdict(self.nlp),
             "custom": self.custom,
         }
         return _as_serializable(data)
@@ -1156,3 +1309,31 @@ class TenetsConfig:
             Model name
         """
         return self.llm.get_model(task, provider)
+    
+    @property
+    def nlp_enabled(self) -> bool:
+        """Whether NLP features are enabled."""
+        return self.nlp.enabled
+    
+    @nlp_enabled.setter
+    def nlp_enabled(self, value: bool) -> None:
+        """Set whether NLP features are enabled.
+        
+        Args:
+            value: New value
+        """
+        self.nlp.enabled = bool(value)
+    
+    @property
+    def nlp_embeddings_enabled(self) -> bool:
+        """Whether NLP embeddings are enabled."""
+        return self.nlp.embeddings_enabled
+    
+    @nlp_embeddings_enabled.setter
+    def nlp_embeddings_enabled(self, value: bool) -> None:
+        """Set whether NLP embeddings are enabled.
+        
+        Args:
+            value: New value
+        """
+        self.nlp.embeddings_enabled = bool(value)
