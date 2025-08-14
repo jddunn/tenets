@@ -53,6 +53,8 @@ class InjectionHistory:
     complexity_scores: List[float] = field(default_factory=list)
     injected_tenets: Set[str] = field(default_factory=set)
     reinforcement_count: int = 0
+    # Track whether the system instruction has been injected for this session
+    system_instruction_injected: bool = False
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     
@@ -500,6 +502,112 @@ class Instiller:
         self._cache: Dict[str, InstillationResult] = {}
         
         self.logger.info("Instiller initialized with smart injection capabilities")
+
+    def inject_system_instruction(
+        self,
+        content: str,
+        format: str = "markdown",
+        session: Optional[str] = None,
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Inject system instruction (system prompt) according to config.
+
+        Behavior:
+        - If system instruction is disabled or empty, return unchanged.
+        - If session provided and once-per-session is enabled, inject only on first distill.
+        - If no session, inject on every distill.
+        - Placement controlled by system_instruction_position.
+        - Formatting controlled by system_instruction_format.
+
+        Returns modified content and metadata about injection.
+        """
+        cfg = self.config.tenet
+        meta: Dict[str, Any] = {
+            "system_instruction_enabled": cfg.system_instruction_enabled,
+            "system_instruction_injected": False,
+        }
+
+        if not cfg.system_instruction_enabled or not cfg.system_instruction:
+            meta["reason"] = "disabled_or_empty"
+            return content, meta
+
+        # Session-aware check: only once per session
+        if session:
+            # Ensure a history exists for the session
+            if session not in self.session_histories:
+                self.session_histories[session] = InjectionHistory(session_id=session)
+            hist = self.session_histories[session]
+            if cfg.system_instruction_once_per_session and hist.system_instruction_injected:
+                meta["reason"] = "already_injected_in_session"
+                return content, meta
+
+        instruction = cfg.system_instruction
+        formatted_instr = self._format_system_instruction(instruction, cfg.system_instruction_format)
+
+        # Determine position
+        if cfg.system_instruction_position == "top":
+            modified = formatted_instr + "\n" + content
+            position = "top"
+        elif cfg.system_instruction_position == "after_header":
+            # After first markdown header or beginning if not found
+            header_match = None
+            try:
+                import re
+                # Match first Markdown header line
+                header_match = re.search(r"^#+\s+.*$", content, flags=re.MULTILINE)
+            except Exception:
+                header_match = None
+            if header_match:
+                idx = header_match.end()
+                modified = content[:idx] + "\n\n" + formatted_instr + content[idx:]
+                position = "after_header"
+            else:
+                modified = formatted_instr + "\n" + content
+                position = "top_fallback"
+        elif cfg.system_instruction_position == "before_content":
+            # Before first non-empty line
+            lines = content.splitlines()
+            i = 0
+            while i < len(lines) and not lines[i].strip():
+                i += 1
+            prefix = "\n".join(lines[:i])
+            suffix = "\n".join(lines[i:])
+            modified = prefix + ("\n" if prefix else "") + formatted_instr + ("\n" if suffix else "") + suffix
+            position = "before_content"
+        else:
+            modified = formatted_instr + "\n" + content
+            position = "top_default"
+
+        from tenets.utils.tokens import count_tokens
+        meta.update(
+            {
+                "system_instruction_injected": True,
+                "system_instruction_position": position,
+                "token_increase": count_tokens(modified) - count_tokens(content),
+            }
+        )
+
+        # Mark as injected for this session and persist history if applicable
+        if session:
+            hist = self.session_histories[session]
+            hist.system_instruction_injected = True
+            hist.updated_at = datetime.now()
+            # Best-effort save
+            try:
+                self._save_session_histories()
+            except Exception:
+                pass
+        return modified, meta
+
+    def _format_system_instruction(self, instruction: str, fmt: str) -> str:
+        """Format system instruction according to selected format."""
+        if fmt == "markdown":
+            return f"<!-- System Instruction -->\n> [!NOTE]\n> {instruction.strip()}\n"
+        if fmt == "xml":
+            return f"<system-instruction>{instruction.strip()}</system-instruction>\n"
+        if fmt == "comment":
+            # Use a neutral comment style; markdown HTML comment works across formats
+            return f"<!-- {instruction.strip()} -->\n"
+        return instruction.strip() + "\n"
         
     def _load_session_histories(self) -> None:
         """Load session histories from storage."""
@@ -509,7 +617,6 @@ class Instiller:
             try:
                 with open(history_file, 'r') as f:
                     data = json.load(f)
-                    
                 for session_id, history_data in data.items():
                     history = InjectionHistory(
                         session_id=session_id,
@@ -518,17 +625,21 @@ class Instiller:
                         complexity_scores=history_data.get("complexity_scores", []),
                         injected_tenets=set(history_data.get("injected_tenets", [])),
                         reinforcement_count=history_data.get("reinforcement_count", 0),
+                        system_instruction_injected=history_data.get("system_instruction_injected", False),
                     )
                     
                     if history_data.get("last_injection"):
                         history.last_injection = datetime.fromisoformat(
                             history_data["last_injection"]
                         )
-                        
-                    self.session_histories[session_id] = history
                     
-                self.logger.info(f"Loaded {len(self.session_histories)} session histories")
+                    # Restore last_injection_index if present
+                    if "last_injection_index" in history_data:
+                        history.last_injection_index = history_data["last_injection_index"]
+                    
+                    self.session_histories[session_id] = history
                 
+                self.logger.info(f"Loaded {len(self.session_histories)} session histories")
             except Exception as e:
                 self.logger.warning(f"Failed to load session histories: {e}")
                 
@@ -537,6 +648,8 @@ class Instiller:
         history_file = self.config.cache.directory / "injection_histories.json"
         
         try:
+            # Ensure cache directory exists
+            history_file.parent.mkdir(parents=True, exist_ok=True)
             data = {}
             for session_id, history in self.session_histories.items():
                 data[session_id] = {
@@ -550,6 +663,7 @@ class Instiller:
                     "complexity_scores": history.complexity_scores,
                     "injected_tenets": list(history.injected_tenets),
                     "reinforcement_count": history.reinforcement_count,
+                    "system_instruction_injected": history.system_instruction_injected,
                 }
                 
             with open(history_file, 'w') as f:

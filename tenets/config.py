@@ -580,6 +580,13 @@ class TenetConfig:
         track_effectiveness: Track tenet effectiveness metrics
         effectiveness_window_days: Days to consider for effectiveness analysis
         min_compliance_score: Minimum compliance score before reinforcement
+        
+    # System instruction (system prompt) configuration
+    system_instruction: Optional text to inject as foundational context
+    system_instruction_enabled: Enable auto-injection when instruction exists
+    system_instruction_position: Where to inject (top, after_header, before_content)
+    system_instruction_format: Format of instruction (markdown, xml, comment, plain)
+    system_instruction_once_per_session: Inject once per session; if no session, inject every distill
     """
 
     # Core settings
@@ -617,6 +624,13 @@ class TenetConfig:
     track_effectiveness: bool = True  # Track effectiveness metrics
     effectiveness_window_days: int = 30  # Analysis window
     min_compliance_score: float = 0.6  # Minimum before reinforcement
+    
+    # System instruction (system prompt) configuration
+    system_instruction: Optional[str] = None
+    system_instruction_enabled: bool = False
+    system_instruction_position: str = "top"  # 'top', 'after_header', 'before_content'
+    system_instruction_format: str = "markdown"  # 'markdown', 'xml', 'comment', 'plain'
+    system_instruction_once_per_session: bool = True
     
     def __post_init__(self):
         """Validate tenet configuration after initialization."""
@@ -677,6 +691,20 @@ class TenetConfig:
         if self.effectiveness_window_days < 1:
             raise ValueError(
                 f"effectiveness_window_days must be at least 1, got {self.effectiveness_window_days}"
+            )
+        
+        # Validate system instruction options
+        valid_positions = ["top", "after_header", "before_content"]
+        if self.system_instruction_position not in valid_positions:
+            raise ValueError(
+                f"Invalid system_instruction_position: {self.system_instruction_position}. "
+                f"Must be one of {valid_positions}"
+            )
+        valid_formats = ["markdown", "xml", "comment", "plain"]
+        if self.system_instruction_format not in valid_formats:
+            raise ValueError(
+                f"Invalid system_instruction_format: {self.system_instruction_format}. "
+                f"Must be one of {valid_formats}"
             )
             
     @property

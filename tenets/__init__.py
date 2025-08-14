@@ -286,6 +286,22 @@ class Tenets:
             pinned_files=pinned_files or None,
         )
 
+        # Inject system instruction if configured
+        try:
+            modified, meta = self.instiller.inject_system_instruction(
+                result.context, format=result.format, session=session
+            )
+            if meta.get("system_instruction_injected"):
+                result = ContextResult(
+                    files=result.files,
+                    context=modified,
+                    format=result.format,
+                    metadata={**result.metadata, "system_instruction": meta},
+                )
+        except Exception:
+            # Best-effort; don't fail distill if injection fails
+            pass
+
         # Apply tenets if configured
         should_apply_tenets = (
             apply_tenets if apply_tenets is not None else self.config.auto_instill_tenets
@@ -694,6 +710,57 @@ class Tenets:
         # Use a conservative default for expected output if not specified elsewhere
         default_output = get_model_limits(model).max_output
         return _estimate_cost(input_tokens=input_tokens, output_tokens=default_output, model=model)
+
+    # ============= System Instruction Management =============
+
+    def set_system_instruction(
+        self,
+        instruction: str,
+        enable: bool = True,
+        position: str = "top",
+        format: str = "markdown",
+        save: bool = False,
+    ) -> None:
+        """Set the system instruction for AI interactions.
+        
+        Args:
+            instruction: The system instruction text
+            enable: Whether to auto-inject
+            position: Where to inject ('top', 'after_header', 'before_content')
+            format: Format type ('markdown', 'xml', 'comment', 'plain')
+            save: Whether to save to config file
+        """
+        self.config.tenet.system_instruction = instruction
+        self.config.tenet.system_instruction_enabled = enable
+        self.config.tenet.system_instruction_position = position
+        self.config.tenet.system_instruction_format = format
+        
+        if save and getattr(self.config, "config_file", None):
+            self.config.save()
+            
+        self.logger.info(f"System instruction set ({len(instruction)} chars)")
+
+    def get_system_instruction(self) -> Optional[str]:
+        """Get the current system instruction.
+        
+        Returns:
+            The system instruction text or None
+        """
+        return self.config.tenet.system_instruction
+
+    def clear_system_instruction(self, save: bool = False) -> None:
+        """Clear the system instruction.
+        
+        Args:
+            save: Whether to save to config file
+        """
+        self.config.tenet.system_instruction = None
+        self.config.tenet.system_instruction_enabled = False
+        
+        if save and getattr(self.config, "config_file", None):
+            self.config.save()
+            
+        self.logger.info("System instruction cleared")
 
 
 # Convenience exports
