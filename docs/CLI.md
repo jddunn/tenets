@@ -11,12 +11,17 @@
   - [examine](#examine)
   - [chronicle](#chronicle)
   - [momentum](#momentum)
+  - [instill](#instill)
+  - [tenet](#tenet)
 - [Visualization Commands](#visualization-commands)
   - [viz deps](#viz-deps)
   - [viz complexity](#viz-complexity)
   - [viz coupling](#viz-coupling)
   - [viz contributors](#viz-contributors)
 - [Session Commands](#session-commands)
+- [Tenet Commands](#tenet-commands)
+- [Instill Command](#instill-command)
+- [System Instruction Commands](#system-instruction-commands)
 - [Configuration](#configuration)
 - [Common Use Cases](#common-use-cases)
 - [Examples](#examples)
@@ -298,6 +303,53 @@ tenets momentum --team --since "3 months"
 tenets momentum --author "alice@example.com"
 ```
 
+### instill
+
+Apply configured tenets to your context using smart strategies (periodic/adaptive/manual). Typically used after setting up tenets.
+
+```bash
+tenets instill [options]
+```
+
+Options:
+- `--session, -s`: Use a named session to leverage history and pinned files
+- `--force`: Force instillation regardless of frequency settings
+- `--max-tenets`: Limit number of tenets applied in one pass
+
+Examples:
+
+```bash
+# Apply pending tenets for a session
+tenets instill --session refactor-auth
+
+# Force all tenets once
+tenets instill --force
+```
+
+See also: [Tenet Commands](#tenet-commands) for managing tenets.
+
+### tenet
+
+Manage guiding principles (“tenets”) that can be injected into distilled context.
+
+Common subcommands:
+
+```bash
+# Add tenets
+tenets tenet add "Always use type hints" --priority high --category style
+tenets tenet add "Validate all user inputs" --priority critical --category security
+
+# List & filter
+tenets tenet list
+tenets tenet list --pending --session oauth --category security --verbose
+
+# Show / remove
+tenets tenet show abc123
+tenets tenet remove abc123 --force
+```
+
+For full details, see: [Tenet Commands](#tenet-commands)
+
 ## Visualization Commands
 
 All visualization commands support ASCII output for terminal display, with optional graphical formats.
@@ -525,6 +577,187 @@ tenets session clear [--keep-context]
 Notes:
 - Creating or resetting a session marks it active.
 - Only one session is active at a time (resuming one deactivates others).
+
+## Tenet Commands
+
+Create and manage guiding principles (“tenets”) that can be injected into context.
+
+### tenet add
+
+Add a new tenet.
+
+```bash
+tenets tenet add "Always use type hints" --priority high --category style
+tenets tenet add "Validate all user inputs" --priority critical --category security
+tenets tenet add "Use async/await for I/O" --session feature-x
+```
+
+Options:
+- `--priority, -p`: low | medium | high | critical (default: medium)
+- `--category, -c`: Freeform tag (e.g., architecture, security, style, performance, testing)
+- `--session, -s`: Bind tenet to a session
+
+### tenet list
+
+List tenets with filters.
+
+```bash
+tenets tenet list
+tenets tenet list --pending
+tenets tenet list --session oauth --category security --verbose
+```
+
+Options:
+- `--pending`: Only pending
+- `--instilled`: Only instilled
+- `--session, -s`: Filter by session
+- `--category, -c`: Filter by category
+- `--verbose, -v`: Show full content and metadata
+
+### tenet remove
+
+Remove a tenet by ID (partial ID accepted).
+
+```bash
+tenets tenet remove abc123
+tenets tenet remove abc123 --force
+```
+
+### tenet show
+
+Show details for a tenet.
+
+```bash
+tenets tenet show abc123
+```
+
+### tenet export / import
+
+Export/import tenets.
+
+```bash
+# Export to stdout or file
+tenets tenet export
+tenets tenet export --format json --session oauth -o team-tenets.json
+
+# Import from file (optionally into a session)
+tenets tenet import team-tenets.yml
+tenets tenet import standards.json --session feature-x
+```
+
+## Instill Command
+
+Apply tenets to the current context with smart strategies (periodic/adaptive/manual).
+
+```bash
+tenets instill [options]
+```
+
+Common options:
+- `--session, -s`: Use a named session for history and pinned files
+- `--force`: Force instillation regardless of frequency
+- `--max-tenets`: Cap number of tenets applied
+
+Examples:
+
+```bash
+# Apply pending tenets for a session
+tenets instill --session refactor-auth
+
+# Force all tenets once
+tenets instill --force
+```
+
+## System Instruction Commands
+
+Manage the system instruction (system prompt) that can be auto-injected at the start of a session’s first distill (or every output if no session is used).
+
+### system-instruction set
+
+Set/update the system instruction and options.
+
+```bash
+tenets system-instruction set "You are a helpful coding assistant" \
+  --enable \
+  --position top \
+  --format markdown
+
+# From file
+tenets system-instruction set --file prompts/system.md --enable
+```
+
+Options:
+- `--file, -f`: Read instruction from file
+- `--enable/--disable`: Enable or disable auto-injection
+- `--position`: Placement: `top`, `after_header`, `before_content`
+- `--format`: Format of injected block: `markdown`, `xml`, `comment`, `plain`
+- `--save/--no-save`: Persist to config
+
+### system-instruction show
+
+Display current configuration and instruction.
+
+```bash
+tenets system-instruction show
+tenets system-instruction show --raw
+```
+
+Options:
+- `--raw`: Print raw instruction only
+
+### system-instruction clear
+
+Clear and disable the system instruction.
+
+```bash
+tenets system-instruction clear
+tenets system-instruction clear --yes
+```
+
+Options:
+- `--yes, -y`: Skip confirmation
+
+### system-instruction test
+
+Preview how injection would modify content.
+
+```bash
+tenets system-instruction test
+tenets system-instruction test --session my-session
+```
+
+Options:
+- `--session`: Test with a session to respect once-per-session behavior
+
+### system-instruction export
+
+Export the instruction to a file.
+
+```bash
+tenets system-instruction export prompts/system.md
+```
+
+### system-instruction validate
+
+Validate the instruction for basic issues and optional token estimates.
+
+```bash
+tenets system-instruction validate
+tenets system-instruction validate --tokens --max-tokens 800
+```
+
+Options:
+- `--tokens`: Show a rough token estimate
+- `--max-tokens`: Threshold for warnings/errors
+
+### system-instruction edit
+
+Edit the instruction in your editor and save changes back to config.
+
+```bash
+tenets system-instruction edit
+tenets system-instruction edit --editor code
+```
 
 ### session show
 

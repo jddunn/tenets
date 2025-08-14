@@ -861,7 +861,7 @@ code, pre {
    =============================================== */
 
 .architecture-section {
-  padding: 5rem 0;
+  padding: 2.5rem 0 2rem;
   background: var(--cream-50);
 }
 
@@ -873,18 +873,21 @@ code, pre {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin: 3rem 0;
+  gap: 0.5rem;
+  flex-wrap: nowrap; /* keep steps on one line */
+  margin: 2rem 0 1.5rem;
+  overflow-x: auto; /* allow horizontal scroll if needed */
+  -webkit-overflow-scrolling: touch;
 }
 
 .arch-stage {
   text-align: center;
-  padding: 1.5rem;
+  padding: 0.75rem 0.5rem;
   transition: all 0.3s ease;
   position: relative;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
+  max-width: 160px; /* compact width per stage */
 }
 
 .arch-stage:hover {
@@ -893,15 +896,15 @@ code, pre {
 }
 
 .stage-icon {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 1rem;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 0.5rem;
   background: var(--gradient-amber);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.25);
 }
 
 /* Active stage state */
@@ -917,16 +920,16 @@ code, pre {
 .arch-stage:focus-visible { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35); }
 
 .stage-number {
-  font-size: 2rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: var(--navy-900);
 }
 
 .arch-stage h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
+  font-size: 1rem;
   color: var(--navy-900);
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
 }
 
 [data-md-color-scheme="slate"] .arch-stage h3 {
@@ -934,9 +937,9 @@ code, pre {
 }
 
 .arch-stage p {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--sepia-600);
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 [data-md-color-scheme="slate"] .arch-stage p {
@@ -944,7 +947,7 @@ code, pre {
 }
 
 .arch-arrow {
-  font-size: 2rem;
+  font-size: 1.25rem;
   color: var(--amber-500);
   animation: arrowPulse 2s ease-in-out infinite;
 }
@@ -962,16 +965,16 @@ code, pre {
 
 .architecture-details {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  margin-top: 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.25rem;
 }
 
 .detail-card {
   background: var(--cream-100);
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
+  padding: 1rem 1rem;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
   /* Dim by default until corresponding stage is focused */
   opacity: 0.45;
@@ -1000,8 +1003,8 @@ code, pre {
 .detail-card h4 {
   font-family: 'Playfair Display', serif;
   color: var(--amber-500);
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 
 .detail-card ul {
@@ -1011,11 +1014,11 @@ code, pre {
 }
 
 .detail-card li {
-  padding: 0.5rem 0;
+  padding: 0.35rem 0;
   color: var(--sepia-800);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  padding-left: 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  padding-left: 1.25rem;
   position: relative;
 }
 
