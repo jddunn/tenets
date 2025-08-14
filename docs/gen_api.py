@@ -3,6 +3,7 @@ Generate per-module API documentation pages for mkdocs using mkdocstrings.
 Creates files under docs/api/ mirroring the tenets package structure so the
 sidebar shows a nested tree. Requires plugins: gen-files, awesome-pages, mkdocstrings.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -67,7 +68,7 @@ collapse_single_pages: true
     with mkdocs_gen_files.open((API_DIR / ".pages").as_posix(), "w") as fd:
         fd.write(pages_yaml)
 
-    # Root index
+        # Root index
         index_md = """---
 title: API Reference
 hide:

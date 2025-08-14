@@ -32,7 +32,6 @@ def instill(
     session: Optional[str] = typer.Option(
         None, "--session", "-s", help="Target session for instillation"
     ),
-    
     # Injection control
     force: bool = typer.Option(
         False, "--force", "-f", help="Force injection regardless of frequency settings"
@@ -43,7 +42,6 @@ def instill(
     interval: Optional[int] = typer.Option(
         None, "--interval", help="Override injection interval for periodic mode"
     ),
-    
     # Analysis and preview
     dry_run: bool = typer.Option(
         False, "--dry-run", help="Show what would be instilled without applying"
@@ -51,21 +49,13 @@ def instill(
     analyze: bool = typer.Option(
         False, "--analyze", help="Analyze injection patterns and effectiveness"
     ),
-    stats: bool = typer.Option(
-        False, "--stats", help="Show injection statistics"
-    ),
-    
+    stats: bool = typer.Option(False, "--stats", help="Show injection statistics"),
     # Listing options
-    list_pending: bool = typer.Option(
-        False, "--list-pending", help="List pending tenets and exit"
-    ),
+    list_pending: bool = typer.Option(False, "--list-pending", help="List pending tenets and exit"),
     list_history: bool = typer.Option(
         False, "--list-history", help="Show injection history for session"
     ),
-    list_sessions: bool = typer.Option(
-        False, "--list-sessions", help="List all tracked sessions"
-    ),
-    
+    list_sessions: bool = typer.Option(False, "--list-sessions", help="List all tracked sessions"),
     # File pinning
     add_file: Optional[list[str]] = typer.Option(
         None,
@@ -87,7 +77,6 @@ def instill(
     list_pinned: bool = typer.Option(
         False, "--list-pinned", help="List pinned files for the session and exit"
     ),
-    
     # Session management
     reset_session: bool = typer.Option(
         False, "--reset-session", help="Reset injection history for the session"
@@ -95,7 +84,6 @@ def instill(
     clear_all_sessions: bool = typer.Option(
         False, "--clear-all-sessions", help="Clear all session histories (requires confirmation)"
     ),
-    
     # Export options
     export_history: Optional[Path] = typer.Option(
         None, "--export-history", help="Export injection history to file (JSON or CSV)"
@@ -103,7 +91,6 @@ def instill(
     export_format: str = typer.Option(
         "json", "--export-format", help="Format for export (json/csv)"
     ),
-    
     # Configuration
     set_frequency: Optional[str] = typer.Option(
         None, "--set-frequency", help="Set default injection frequency and save to config"
@@ -114,7 +101,6 @@ def instill(
     show_config: bool = typer.Option(
         False, "--show-config", help="Show current injection configuration"
     ),
-    
     # Context
     ctx: typer.Context = typer.Context,
 ):
@@ -169,7 +155,7 @@ def instill(
         tenets_instance = Tenets(config)
 
         # Check if tenet system is available
-        if not hasattr(tenets_instance, 'instiller') or not tenets_instance.instiller:
+        if not hasattr(tenets_instance, "instiller") or not tenets_instance.instiller:
             console.print("[red]Error:[/red] Tenet system is not available.")
             console.print("This may be due to missing dependencies or configuration issues.")
             raise typer.Exit(1)
@@ -229,13 +215,7 @@ def instill(
             return
 
         if add_file or add_folder or remove_file:
-            _manage_pinned_files(
-                tenets_instance,
-                session,
-                add_file,
-                add_folder,
-                remove_file
-            )
+            _manage_pinned_files(tenets_instance, session, add_file, add_folder, remove_file)
             if not (force or dry_run):  # Only manage files, don't instill
                 return
 
@@ -286,7 +266,7 @@ def instill(
         if not force and injection_frequency != "manual":
             # Simulate a distill to check frequency
             test_context = "# Test Context\n\nChecking injection frequency..."
-            
+
             # This won't actually inject, just checks frequency
             result = instiller.instill(
                 test_context,
@@ -294,23 +274,29 @@ def instill(
                 force=False,
                 check_frequency=True,
             )
-            
+
             # Check if injection was skipped
-            last_record = instiller.metrics_tracker.instillations[-1] if instiller.metrics_tracker.instillations else None
+            last_record = (
+                instiller.metrics_tracker.instillations[-1]
+                if instiller.metrics_tracker.instillations
+                else None
+            )
             if last_record and last_record.get("skip_reason"):
                 skip_reason = last_record["skip_reason"]
-                
+
                 if not quiet:
                     console.print(
                         f"[yellow]Injection skipped:[/yellow] {skip_reason}\n"
                         f"Use --force to override or wait for next trigger."
                     )
-                    
+
                     # Show when next injection will occur
                     if "periodic" in injection_frequency:
-                        next_at = ((session_info['total_distills'] // injection_interval) + 1) * injection_interval
+                        next_at = (
+                            (session_info["total_distills"] // injection_interval) + 1
+                        ) * injection_interval
                         console.print(f"Next injection at distill #{next_at}")
-                        
+
                 return
 
         # Dry run mode
@@ -347,7 +333,7 @@ def instill(
         if instiller._cache:
             last_key = list(instiller._cache.keys())[-1]
             last_result = instiller._cache[last_key]
-            
+
             if not quiet:
                 _show_instillation_result(last_result, verbose)
 
@@ -360,6 +346,7 @@ def instill(
 
 # ============= Helper Functions =============
 
+
 def _show_injection_config(config: TenetsConfig) -> None:
     """Show current injection configuration."""
     table = Table(title="Tenet Injection Configuration")
@@ -370,12 +357,20 @@ def _show_injection_config(config: TenetsConfig) -> None:
     settings = [
         ("Frequency Mode", config.tenet.injection_frequency, "When to inject tenets"),
         ("Injection Interval", str(config.tenet.injection_interval), "For periodic mode"),
-        ("Complexity Threshold", f"{config.tenet.session_complexity_threshold:.2f}", "Triggers adaptive injection"),
+        (
+            "Complexity Threshold",
+            f"{config.tenet.session_complexity_threshold:.2f}",
+            "Triggers adaptive injection",
+        ),
         ("Min Session Length", str(config.tenet.min_session_length), "Before first injection"),
         ("Max Per Context", str(config.tenet.max_per_context), "Maximum tenets to inject"),
         ("Strategy", config.tenet.injection_strategy, "Placement strategy"),
         ("Decay Rate", f"{config.tenet.decay_rate:.2f}", "How quickly tenets decay"),
-        ("Reinforcement Interval", str(config.tenet.reinforcement_interval), "Reinforce critical tenets"),
+        (
+            "Reinforcement Interval",
+            str(config.tenet.reinforcement_interval),
+            "Reinforce critical tenets",
+        ),
         ("Track History", str(config.tenet.track_injection_history), "Track per-session patterns"),
         ("Session Aware", str(config.tenet.session_aware), "Use session patterns"),
     ]
@@ -386,21 +381,19 @@ def _show_injection_config(config: TenetsConfig) -> None:
     console.print(table)
 
 
-def _set_injection_frequency(
-    config: TenetsConfig,
-    frequency: str,
-    interval: Optional[int]
-) -> None:
+def _set_injection_frequency(config: TenetsConfig, frequency: str, interval: Optional[int]) -> None:
     """Set and save injection frequency configuration."""
     valid_frequencies = ["always", "periodic", "adaptive", "manual"]
-    
+
     if frequency not in valid_frequencies:
-        console.print(f"[red]Error:[/red] Invalid frequency. Must be one of: {', '.join(valid_frequencies)}")
+        console.print(
+            f"[red]Error:[/red] Invalid frequency. Must be one of: {', '.join(valid_frequencies)}"
+        )
         raise typer.Exit(1)
 
     # Update configuration
     config.tenet.injection_frequency = frequency
-    
+
     if interval:
         config.tenet.injection_interval = interval
 
@@ -435,7 +428,7 @@ def _list_sessions(instiller) -> None:
 
     for session_id, history in instiller.session_histories.items():
         stats = history.get_stats()
-        
+
         last_injection = "Never"
         if history.last_injection:
             time_ago = datetime.now() - history.last_injection
@@ -452,7 +445,7 @@ def _list_sessions(instiller) -> None:
             str(stats["total_injections"]),
             f"{stats['injection_rate']:.1%}",
             last_injection,
-            f"{stats['average_complexity']:.2f}"
+            f"{stats['average_complexity']:.2f}",
         )
 
     console.print(table)
@@ -463,7 +456,7 @@ def _clear_all_sessions(instiller) -> None:
     count = len(instiller.session_histories)
     instiller.session_histories.clear()
     instiller._save_session_histories()
-    
+
     console.print(f"[green]✓[/green] Cleared {count} session histories")
 
 
@@ -478,7 +471,7 @@ def _reset_session(instiller, session: str) -> None:
 def _show_injection_history(instiller, session: Optional[str]) -> None:
     """Show detailed injection history."""
     records = instiller.metrics_tracker.instillations
-    
+
     if session:
         records = [r for r in records if r.get("session") == session]
         title = f"Injection History - Session: {session}"
@@ -503,7 +496,7 @@ def _show_injection_history(instiller, session: Optional[str]) -> None:
     for record in records[-20:]:
         timestamp = datetime.fromisoformat(record["timestamp"])
         time_str = timestamp.strftime("%Y-%m-%d %H:%M")
-        
+
         status = "Skipped" if record.get("skip_reason") else "Injected"
         if record.get("skip_reason"):
             status = f"Skip: {record['skip_reason'][:20]}"
@@ -515,7 +508,7 @@ def _show_injection_history(instiller, session: Optional[str]) -> None:
             str(record["token_increase"]),
             record["strategy"],
             f"{record.get('complexity', 0):.2f}",
-            status
+            status,
         )
 
     console.print(table)
@@ -524,14 +517,14 @@ def _show_injection_history(instiller, session: Optional[str]) -> None:
 def _show_statistics(instiller, session: Optional[str]) -> None:
     """Show injection statistics."""
     metrics = instiller.metrics_tracker.get_metrics(session)
-    
+
     if "message" in metrics:
         console.print(f"[yellow]{metrics['message']}[/yellow]")
         return
 
     # Create statistics display
     title = f"Injection Statistics - {session or 'All Sessions'}"
-    
+
     stats_text = f"""
 [bold]Overall:[/bold]
   Total Instillations: {metrics['total_instillations']}
@@ -543,17 +536,17 @@ def _show_statistics(instiller, session: Optional[str]) -> None:
 
 [bold]Strategy Distribution:[/bold]"""
 
-    for strategy, count in metrics.get('strategy_distribution', {}).items():
+    for strategy, count in metrics.get("strategy_distribution", {}).items():
         stats_text += f"\n  {strategy}: {count}"
 
-    if metrics.get('skip_distribution'):
+    if metrics.get("skip_distribution"):
         stats_text += "\n\n[bold]Skip Reasons:[/bold]"
-        for reason, count in metrics['skip_distribution'].items():
+        for reason, count in metrics["skip_distribution"].items():
             stats_text += f"\n  {reason}: {count}"
 
-    if metrics.get('top_tenets'):
+    if metrics.get("top_tenets"):
         stats_text += "\n\n[bold]Most Used Tenets:[/bold]"
-        for tenet_id, count in metrics['top_tenets'][:5]:
+        for tenet_id, count in metrics["top_tenets"][:5]:
             stats_text += f"\n  {tenet_id[:8]}...: {count} times"
 
     console.print(Panel(stats_text, title=title, border_style="blue"))
@@ -562,40 +555,40 @@ def _show_statistics(instiller, session: Optional[str]) -> None:
 def _analyze_effectiveness(instiller, session: Optional[str]) -> None:
     """Analyze injection effectiveness."""
     analysis = instiller.analyze_effectiveness(session)
-    
+
     # Create tree display
     tree = Tree("🎯 Tenet Injection Analysis")
-    
+
     # Configuration
     config_branch = tree.add("⚙️ Configuration")
-    for key, value in analysis['configuration'].items():
+    for key, value in analysis["configuration"].items():
         config_branch.add(f"{key}: {value}")
-    
+
     # Metrics
     metrics_branch = tree.add("📊 Metrics")
-    metrics = analysis['instillation_metrics']
+    metrics = analysis["instillation_metrics"]
     if metrics and "message" not in metrics:
         metrics_branch.add(f"Total Injections: {metrics.get('total_instillations', 0)}")
         metrics_branch.add(f"Average Complexity: {metrics.get('avg_complexity', 0):.2f}")
         metrics_branch.add(f"Total Tokens: {metrics.get('total_token_increase', 0):,}")
-    
+
     # Tenet effectiveness
     tenet_branch = tree.add("📈 Tenet Effectiveness")
-    tenet_data = analysis['tenet_effectiveness']
+    tenet_data = analysis["tenet_effectiveness"]
     if tenet_data:
         tenet_branch.add(f"Total Tenets: {tenet_data.get('total_tenets', 0)}")
-        
-        if tenet_data.get('by_priority'):
+
+        if tenet_data.get("by_priority"):
             priority_branch = tenet_branch.add("By Priority")
-            for priority, data in tenet_data['by_priority'].items():
+            for priority, data in tenet_data["by_priority"].items():
                 priority_branch.add(f"{priority}: {data}")
-    
+
     # Recommendations
-    if analysis['recommendations']:
+    if analysis["recommendations"]:
         rec_branch = tree.add("💡 Recommendations")
-        for rec in analysis['recommendations']:
+        for rec in analysis["recommendations"]:
             rec_branch.add(rec)
-    
+
     console.print(tree)
 
 
@@ -618,18 +611,14 @@ def _list_pending_tenets(tenets_instance, session: Optional[str]) -> None:
     table.add_column("Injections", justify="right")
 
     for tenet in pending:
-        content_preview = (
-            tenet.content[:60] + "..." 
-            if len(tenet.content) > 60 
-            else tenet.content
-        )
-        
+        content_preview = tenet.content[:60] + "..." if len(tenet.content) > 60 else tenet.content
+
         table.add_row(
             str(tenet.id)[:8] + "...",
             content_preview,
             tenet.priority.value,
             tenet.category.value if tenet.category else "-",
-            str(tenet.metrics.injection_count)
+            str(tenet.metrics.injection_count),
         )
 
     console.print(table)
@@ -640,16 +629,12 @@ def _list_pinned_files(tenets_instance, session: Optional[str]) -> None:
     sess_name = session or "default"
     pinned_map = tenets_instance.config.custom.get("pinned_files", {})
     files = sorted(pinned_map.get(sess_name, [])) if pinned_map else []
-    
+
     if not files:
         console.print(f"[yellow]No pinned files for session: {sess_name}[/yellow]")
     else:
         console.print(
-            Panel(
-                "\n".join(files),
-                title=f"Pinned Files ({sess_name})",
-                border_style="green"
-            )
+            Panel("\n".join(files), title=f"Pinned Files ({sess_name})", border_style="green")
         )
 
 
@@ -658,13 +643,13 @@ def _manage_pinned_files(
     session: Optional[str],
     add_files: Optional[list[str]],
     add_folders: Optional[list[str]],
-    remove_files: Optional[list[str]]
+    remove_files: Optional[list[str]],
 ) -> None:
     """Manage pinned files for a session."""
     sess_name = session or "default"
     added = 0
     removed = 0
-    
+
     # Add individual files
     if add_files:
         for f in add_files:
@@ -672,7 +657,7 @@ def _manage_pinned_files(
                 added += 1
                 if not quiet:
                     console.print(f"[green]✓[/green] Pinned: {f}")
-    
+
     # Add folders
     if add_folders:
         for d in add_folders:
@@ -680,7 +665,7 @@ def _manage_pinned_files(
             added += count
             if not quiet and count > 0:
                 console.print(f"[green]✓[/green] Pinned {count} files from: {d}")
-    
+
     # Remove files
     if remove_files:
         pinned_map = tenets_instance.config.custom.get("pinned_files", {})
@@ -692,7 +677,7 @@ def _manage_pinned_files(
                     removed += 1
                     if not quiet:
                         console.print(f"[yellow]✗[/yellow] Unpinned: {f}")
-    
+
     if added > 0 or removed > 0:
         summary = []
         if added > 0:
@@ -702,49 +687,42 @@ def _manage_pinned_files(
         console.print(f"Files updated: {', '.join(summary)}")
 
 
-def _dry_run_instillation(
-    tenets_instance,
-    session: str,
-    frequency: str
-) -> None:
+def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None:
     """Show what would be instilled without actually doing it."""
     pending = tenets_instance.get_pending_tenets(session=session)
-    
+
     if not pending:
         console.print("[yellow]No tenets would be instilled (none pending).[/yellow]")
         return
-    
+
     console.print("[bold]Would instill the following tenets:[/bold]\n")
-    
-    for i, tenet in enumerate(pending[:tenets_instance.config.tenet.max_per_context], 1):
+
+    for i, tenet in enumerate(pending[: tenets_instance.config.tenet.max_per_context], 1):
         priority_color = {
             "critical": "red",
             "high": "yellow",
             "medium": "blue",
             "low": "dim",
         }.get(tenet.priority.value, "white")
-        
+
         console.print(
             f"{i}. [[{priority_color}]{tenet.priority.value.upper()}[/{priority_color}]] "
             f"{tenet.content}"
         )
-        
+
         if tenet.category:
             console.print(f"   Category: {tenet.category.value}")
         console.print(f"   Added: {tenet.created_at.strftime('%Y-%m-%d %H:%M')}")
         console.print(f"   Previous injections: {tenet.metrics.injection_count}")
         console.print()
-    
+
     console.print(f"\n[dim]Frequency: {frequency}")
-    console.print(f"Total: {len(pending[:tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]")
+    console.print(
+        f"Total: {len(pending[:tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]"
+    )
 
 
-def _export_history(
-    instiller,
-    output_path: Path,
-    format: str,
-    session: Optional[str]
-) -> None:
+def _export_history(instiller, output_path: Path, format: str, session: Optional[str]) -> None:
     """Export injection history."""
     try:
         instiller.export_instillation_history(output_path, format=format, session=session)
@@ -759,8 +737,7 @@ def _show_instillation_result(result, verbose: bool) -> None:
     if result.skip_reason:
         console.print(
             Panel(
-                f"[yellow]Injection skipped[/yellow]\n"
-                f"Reason: {result.skip_reason}",
+                f"[yellow]Injection skipped[/yellow]\n" f"Reason: {result.skip_reason}",
                 title="⏭️ Skipped",
                 border_style="yellow",
             )
@@ -773,12 +750,12 @@ def _show_instillation_result(result, verbose: bool) -> None:
             f"Token increase: {result.token_increase}",
             f"Complexity: {result.complexity_score:.2f}",
         ]
-        
+
         if verbose and result.tenets_instilled:
             info.append("\nTenets instilled:")
             for tenet in result.tenets_instilled:
                 info.append(f"  • {tenet.content[:50]}...")
-        
+
         console.print(
             Panel(
                 "\n".join(info),
