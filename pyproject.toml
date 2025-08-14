@@ -165,6 +165,7 @@ docs = [
     "mkdocs-minify-plugin>=0.7.0",
     "pymdown-extensions>=10.0",
     "mkdocs-gen-files>=0.5.0",
+    "mkdocs-awesome-pages-plugin>=2.9.0",
     "mkdocs-literate-nav>=0.6.0",
     "mkdocs-section-index>=0.3.0",
     "mike>=2.0.0",

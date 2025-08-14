@@ -542,19 +542,47 @@ class SummarizerConfig:
 class TenetConfig:
     """Configuration for the tenet (guiding principles) system.
 
-    Controls how tenets are managed and injected into context.
+    Controls how tenets are managed and injected into context, including
+    smart injection frequency, session tracking, and adaptive behavior.
 
     Attributes:
         auto_instill: Whether to automatically apply tenets to context
         max_per_context: Maximum tenets to inject per context
         reinforcement: Whether to reinforce critical tenets
-        injection_strategy: Default injection strategy
+        injection_strategy: Default injection strategy ('strategic', 'top', 'distributed')
         min_distance_between: Minimum character distance between injections
         prefer_natural_breaks: Whether to inject at natural break points
         storage_path: Where to store tenet database
         collections_enabled: Whether to enable tenet collections
+        
+        # Smart injection frequency settings
+        injection_frequency: How often to inject tenets ('always', 'periodic', 'adaptive', 'manual')
+        injection_interval: Numeric interval for periodic injection (e.g., every 3rd distill)
+        session_complexity_threshold: Complexity threshold for smart injection (0-1)
+        min_session_length: Minimum session length before first injection
+        adaptive_injection: Enable adaptive injection based on context analysis
+        track_injection_history: Track injection history per session for smarter decisions
+        decay_rate: How quickly tenet importance decays (0-1, higher = faster decay)
+        reinforcement_interval: How often to reinforce critical tenets (every N injections)
+        
+        # Session tracking settings
+        session_aware: Enable session-aware injection patterns
+        session_memory_limit: Max sessions to track in memory
+        persist_session_history: Save session histories to disk
+        
+        # Advanced injection settings
+        complexity_weight: Weight given to complexity in injection decisions (0-1)
+        priority_boost_critical: Boost factor for critical priority tenets
+        priority_boost_high: Boost factor for high priority tenets
+        skip_low_priority_on_complex: Skip low priority tenets when complexity > threshold
+        
+        # Metrics and analysis
+        track_effectiveness: Track tenet effectiveness metrics
+        effectiveness_window_days: Days to consider for effectiveness analysis
+        min_compliance_score: Minimum compliance score before reinforcement
     """
 
+    # Core settings
     auto_instill: bool = True
     max_per_context: int = 5
     reinforcement: bool = True
@@ -563,6 +591,103 @@ class TenetConfig:
     prefer_natural_breaks: bool = True
     storage_path: Optional[Path] = None
     collections_enabled: bool = True
+    
+    # Smart injection frequency settings
+    injection_frequency: str = "adaptive"  # 'always', 'periodic', 'adaptive', 'manual'
+    injection_interval: int = 3  # Every Nth distill for periodic mode
+    session_complexity_threshold: float = 0.7  # 0-1, triggers injection when exceeded
+    min_session_length: int = 5  # Minimum distills before first injection
+    adaptive_injection: bool = True  # Enable smart context-aware injection
+    track_injection_history: bool = True  # Track per-session injection patterns
+    decay_rate: float = 0.1  # How quickly tenet importance decays (0=never, 1=immediate)
+    reinforcement_interval: int = 10  # Reinforce critical tenets every N injections
+    
+    # Session tracking settings
+    session_aware: bool = True  # Enable session-aware patterns
+    session_memory_limit: int = 100  # Max concurrent sessions to track
+    persist_session_history: bool = True  # Save histories to disk
+    
+    # Advanced injection settings
+    complexity_weight: float = 0.5  # Weight for complexity in decisions
+    priority_boost_critical: float = 2.0  # Boost for critical tenets
+    priority_boost_high: float = 1.5  # Boost for high priority tenets
+    skip_low_priority_on_complex: bool = True  # Skip low priority when complex
+    
+    # Metrics and analysis
+    track_effectiveness: bool = True  # Track effectiveness metrics
+    effectiveness_window_days: int = 30  # Analysis window
+    min_compliance_score: float = 0.6  # Minimum before reinforcement
+    
+    def __post_init__(self):
+        """Validate tenet configuration after initialization."""
+        # Validate injection frequency
+        valid_frequencies = ["always", "periodic", "adaptive", "manual"]
+        if self.injection_frequency not in valid_frequencies:
+            raise ValueError(
+                f"Invalid injection_frequency: {self.injection_frequency}. "
+                f"Must be one of {valid_frequencies}"
+            )
+            
+        # Validate injection strategy
+        valid_strategies = ["strategic", "top", "distributed", "uniform", "random"]
+        if self.injection_strategy not in valid_strategies:
+            raise ValueError(
+                f"Invalid injection_strategy: {self.injection_strategy}. "
+                f"Must be one of {valid_strategies}"
+            )
+            
+        # Validate numeric ranges
+        if not 0.0 <= self.session_complexity_threshold <= 1.0:
+            raise ValueError(
+                f"session_complexity_threshold must be between 0 and 1, "
+                f"got {self.session_complexity_threshold}"
+            )
+            
+        if not 0.0 <= self.decay_rate <= 1.0:
+            raise ValueError(f"decay_rate must be between 0 and 1, got {self.decay_rate}")
+            
+        if not 0.0 <= self.complexity_weight <= 1.0:
+            raise ValueError(
+                f"complexity_weight must be between 0 and 1, got {self.complexity_weight}"
+            )
+            
+        if not 0.0 <= self.min_compliance_score <= 1.0:
+            raise ValueError(
+                f"min_compliance_score must be between 0 and 1, got {self.min_compliance_score}"
+            )
+            
+        if self.injection_interval < 1:
+            raise ValueError(f"injection_interval must be at least 1, got {self.injection_interval}")
+            
+        if self.min_session_length < 0:
+            raise ValueError(
+                f"min_session_length must be non-negative, got {self.min_session_length}"
+            )
+            
+        if self.reinforcement_interval < 1:
+            raise ValueError(
+                f"reinforcement_interval must be at least 1, got {self.reinforcement_interval}"
+            )
+            
+        if self.session_memory_limit < 1:
+            raise ValueError(
+                f"session_memory_limit must be at least 1, got {self.session_memory_limit}"
+            )
+            
+        if self.effectiveness_window_days < 1:
+            raise ValueError(
+                f"effectiveness_window_days must be at least 1, got {self.effectiveness_window_days}"
+            )
+            
+    @property
+    def injection_config(self) -> Dict[str, Any]:
+        """Get injection configuration as dictionary for TenetInjector."""
+        return {
+            "strategy": self.injection_strategy,
+            "min_distance_between": self.min_distance_between,
+            "prefer_natural_breaks": self.prefer_natural_breaks,
+            "reinforce_at_end": self.reinforcement,
+        }
 
 
 @dataclass

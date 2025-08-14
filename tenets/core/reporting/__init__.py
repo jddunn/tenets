@@ -39,8 +39,6 @@ from .generator import (
     ReportConfig,
     ReportGenerator,
     ReportSection,
-    generate_report,
-    generate_summary,
 )
 from .html_reporter import (
     HTMLReporter,
@@ -151,6 +149,49 @@ def quick_report(
     # Generate report
     generator = ReportGenerator(config)
     return generator.generate(analysis_results, output_path, report_config)
+
+
+def generate_report(
+    analysis_results: Dict[str, Any],
+    output_path: Union[str, Path],
+    *,
+    format: str = "html",
+    config: Optional[Any] = None,
+    title: str = "Code Analysis Report",
+    include_charts: bool = True,
+    include_code_snippets: bool = True,
+    include_recommendations: bool = True,
+) -> Path:
+    """Convenience wrapper to generate a report.
+
+    This mirrors the legacy API expected by callers/tests by providing a
+    simple function that configures ReportGenerator under the hood.
+    """
+    from tenets.config import TenetsConfig
+
+    if config is None:
+        config = TenetsConfig()
+
+    report_config = ReportConfig(
+        title=title,
+        format=format,
+        include_charts=include_charts,
+        include_code_snippets=include_code_snippets,
+        include_recommendations=include_recommendations,
+    )
+
+    generator = ReportGenerator(config)
+    return generator.generate(analysis_results, Path(output_path), report_config)
+
+
+def generate_summary(analysis_results: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a compact summary dict for quick inspection/CLI printing."""
+    from tenets.config import TenetsConfig
+
+    generator = ReportGenerator(TenetsConfig())
+    # Build metadata to compute summary using generator's logic
+    meta = generator._build_metadata(analysis_results, ReportConfig())
+    return meta.get("analysis_summary", {})
 
 
 def export_data(
