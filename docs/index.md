@@ -4,7 +4,6 @@ title: Tenets - Context that feeds your prompts
 hide:
   - navigation
   - toc
-  - footer
 ---
 
 <div class="victorian-hero">
@@ -41,7 +40,7 @@ hide:
       View on GitHub
     </a>
   </div>
-  
+
   <div class="terminal-showcase">
     <div class="terminal">
       <div class="terminal-header">
@@ -149,20 +148,20 @@ hide:
             <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
           </marker>
         </defs>
-        
+
         <!-- Boxes -->
         <rect x="20" y="120" width="140" height="70" rx="8" class="arch-box"></rect>
         <text x="90" y="155" class="arch-label" text-anchor="middle">Input</text>
-        
+
         <rect x="200" y="120" width="140" height="70" rx="8" class="arch-box"></rect>
         <text x="270" y="155" class="arch-label" text-anchor="middle">Scanner</text>
-        
+
         <rect x="380" y="120" width="140" height="70" rx="8" class="arch-box"></rect>
         <text x="450" y="155" class="arch-label" text-anchor="middle">Analyzer</text>
-        
+
         <rect x="560" y="120" width="140" height="70" rx="8" class="arch-box"></rect>
         <text x="630" y="155" class="arch-label" text-anchor="middle">Ranker</text>
-        
+
         <rect x="740" y="120" width="140" height="70" rx="8" class="arch-box"></rect>
         <text x="810" y="155" class="arch-label" text-anchor="middle">Aggregator</text>
 

@@ -14,13 +14,13 @@
   --navy-800: #263244;
   --navy-700: #364152;
   --navy-600: #475569;
-  
+
   /* Amber/Gold Palette */
   --amber-500: #f59e0b;
   --amber-400: #fbbf24;
   --amber-300: #fcd34d;
   --amber-200: #fde68a;
-  
+
   /* Cream/Sepia Palette */
   --cream-50: #fdfdf9;
   --cream-100: #f7f5f0;
@@ -28,18 +28,18 @@
   --sepia-300: #d4ccb8;
   --sepia-600: #6b5d4f;
   --sepia-800: #3e342a;
-  
+
   /* Semantic Colors */
   --success: #059669;
   --warning: #d97706;
   --error: #dc2626;
   --info: #0891b2;
-  
+
   /* Gradients */
   --gradient-nav: linear-gradient(135deg, #0f1721 0%, #1a2332 25%, #263244 50%, #1a2332 75%, #0f1721 100%);
   --gradient-amber: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   --gradient-dark: linear-gradient(135deg, #1a2332 0%, #263244 100%);
-  
+
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -503,13 +503,13 @@ code, pre {
 }
 
 @keyframes fadeIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(10px); 
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -748,9 +748,9 @@ code, pre {
 
 .feature-card-large h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.75rem;
+  font-size: 1.5rem; /* smaller heading for denser layout */
   color: var(--navy-900);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 [data-md-color-scheme="slate"] .feature-card-large h3 {
@@ -759,9 +759,9 @@ code, pre {
 
 .feature-description {
   color: var(--sepia-800);
-  line-height: 1.8;
-  margin-bottom: 1.5rem;
-  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
+  font-size: 0.95rem; /* smaller body text */
 }
 
 [data-md-color-scheme="slate"] .feature-description {
@@ -800,12 +800,12 @@ code, pre {
 }
 
 @keyframes pulse {
-  0%, 100% { 
-    opacity: 1; 
+  0%, 100% {
+    opacity: 1;
     r: 4px;
   }
-  50% { 
-    opacity: 0.6; 
+  50% {
+    opacity: 0.6;
     r: 6px;
   }
 }
@@ -815,10 +815,10 @@ code, pre {
 }
 
 @keyframes drawLine {
-  0%, 100% { 
+  0%, 100% {
     stroke-dasharray: 0 100;
   }
-  50% { 
+  50% {
     stroke-dasharray: 100 0;
   }
 }
@@ -828,14 +828,14 @@ code, pre {
 }
 
 @keyframes growBar {
-  0% { 
+  0% {
     transform: scaleY(0);
     transform-origin: bottom;
   }
-  50% { 
+  50% {
     transform: scaleY(1);
   }
-  100% { 
+  100% {
     transform: scaleY(0);
     transform-origin: bottom;
   }
@@ -846,11 +846,11 @@ code, pre {
 }
 
 @keyframes sessionPulse {
-  0%, 100% { 
+  0%, 100% {
     transform: scale(1);
     opacity: 1;
   }
-  50% { 
+  50% {
     transform: scale(1.2);
     opacity: 0.8;
   }
@@ -878,6 +878,14 @@ code, pre {
   margin: 2rem 0 1.5rem;
   overflow-x: auto; /* allow horizontal scroll if needed */
   -webkit-overflow-scrolling: touch;
+  width: 100vw; /* full viewport width */
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw; /* bleed to edges */
+  margin-right: -50vw;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .arch-stage {
@@ -953,11 +961,11 @@ code, pre {
 }
 
 @keyframes arrowPulse {
-  0%, 100% { 
+  0%, 100% {
     transform: translateX(0);
     opacity: 0.6;
   }
-  50% { 
+  50% {
     transform: translateX(5px);
     opacity: 1;
   }
@@ -972,13 +980,14 @@ code, pre {
 
 .detail-card {
   background: var(--cream-100);
-  padding: 1rem 1rem;
+  padding: 0.75rem 0.85rem; /* slightly tighter */
   border-radius: 10px;
   box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
   /* Dim by default until corresponding stage is focused */
   opacity: 0.45;
   filter: grayscale(12%);
+  text-align: left; /* ensure left alignment */
 }
 
 [data-md-color-scheme="slate"] .detail-card {
@@ -1003,8 +1012,8 @@ code, pre {
 .detail-card h4 {
   font-family: 'Playfair Display', serif;
   color: var(--amber-500);
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.95rem; /* smaller heading */
 }
 
 .detail-card ul {
@@ -1014,11 +1023,11 @@ code, pre {
 }
 
 .detail-card li {
-  padding: 0.35rem 0;
+  padding: 0.25rem 0; /* tighter list spacing */
   color: var(--sepia-800);
-  font-size: 0.875rem;
-  line-height: 1.4;
-  padding-left: 1.25rem;
+  font-size: 0.8125rem; /* smaller list text */
+  line-height: 1.35;
+  padding-left: 1.05rem; /* bring bullet closer */
   position: relative;
 }
 
@@ -1031,7 +1040,7 @@ code, pre {
   position: absolute;
   left: 0;
   color: var(--amber-500);
-  font-size: 0.75rem;
+  font-size: 0.6rem; /* smaller bullet */
 }
 
 /* ===============================================
@@ -1273,59 +1282,59 @@ code, pre {
   .hero-title {
     font-size: 3rem;
   }
-  
+
   .hero-tagline {
     font-size: 1.25rem;
   }
-  
+
   .hero-description {
     font-size: 1rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .hero-actions .btn-primary,
   .hero-actions .btn-secondary {
     width: 100%;
     max-width: 280px;
   }
-  
+
   .section-title {
     font-size: 2rem;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
-  
+
   .architecture-flow {
     flex-direction: column;
   }
-  
+
   .arch-arrow {
     transform: rotate(90deg);
     margin: 1rem 0;
   }
-  
+
   .arch-details {
     grid-template-columns: 1fr;
   }
-  
+
   .install-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .tab-label {
     display: block;
     margin: 0.25rem 0;
     width: 100%;
     text-align: center;
   }
-  
+
   .quickstart-steps {
     grid-template-columns: 1fr;
   }
@@ -1335,20 +1344,20 @@ code, pre {
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .torch-container {
     width: 100px;
     height: 100px;
   }
-  
+
   .section-container {
     padding: 0 1rem;
   }
-  
+
   .feature-card-large {
     padding: 1.5rem;
   }
-  
+
   .terminal-body {
     font-size: 0.8rem;
     padding: 1rem;

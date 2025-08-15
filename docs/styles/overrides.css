@@ -82,7 +82,7 @@ label.md-header__button[for="__search"]::before {
   z-index: 26050 !important;
   position: fixed;
   inset: 0;
-  background: rgba(26, 35, 50, 0.6) !important; /* visible backdrop */
+  background: rgba(26, 35, 50, 0.75) !important; /* solid, non-gradient, clear backdrop */
   pointer-events: auto !important;
 }
 .md-search__inner[role="dialog"],
@@ -92,6 +92,9 @@ label.md-header__button[for="__search"]::before {
   position: relative;
   max-width: min(96vw, 1024px); /* wide on mobile, capped on desktop */
   margin: 12vh auto 0;
+  background: var(--md-default-bg-color) !important; /* ensure panel background is solid */
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.35), 0 8px 20px rgba(0,0,0,.25);
 }
 
 /* On very small screens, allow full width */
@@ -105,7 +108,7 @@ label.md-header__button[for="__search"]::before {
 }
 
 [data-md-color-scheme="slate"] .md-search__overlay {
-  background: rgba(0, 0, 0, 0.65) !important;
+  background: rgba(0, 0, 0, 0.8) !important; /* darker to improve contrast */
 }
 
 /* Elevate active search container in stacking context without changing layout */
@@ -117,7 +120,13 @@ label.md-header__button[for="__search"]::before {
 /* Ensure full-width form and input inside the modal dialog */
 .md-search__inner .md-search__form { width: 100% !important; }
 .md-search__inner .md-search__input { width: 100% !important; }
-.md-search__inner .md-search__output { width: 100% !important; margin-left: 0; margin-right: 0; }
+.md-search__inner .md-search__output {
+  width: 100% !important;
+  margin-left: 0;
+  margin-right: 0;
+  background: var(--md-default-bg-color) !important; /* solid results panel */
+  box-shadow: none;
+}
 
 /* Mobile fallback: if compact .md-search__form is absent, show the native label button */
 /* We always use the inline .md-search; hide the label toggle across sizes */

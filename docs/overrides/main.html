@@ -2,30 +2,36 @@
 
 {% block extrahead %}
   {{ super() }}
-  
+
   <!-- SEO Meta Tags -->
   <meta name="description" content="{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}">
   <meta name="keywords" content="tenets, code context, AI programming, LLM tools, developer tools">
   <meta name="author" content="Johnny Dunn, manic.agency">
-  
+
   <!-- Open Graph -->
-  <meta property="og:title" content="{% if page and page.title %}{{ page.title }} - {% endif %}{{ config.site_name }}">
+  {% set og_title = (page.title ~ ' - ' ~ config.site_name) if page and page.title else config.site_name %}
+  {% set og_desc = (page.meta.description) if page and page.meta and page.meta.description else config.site_description %}
+  {% set og_image = config.site_url ~ '/logos/tenets_dark_icon_transparent_cropped.png' %}
+  <meta property="og:title" content="{{ og_title }}">
   <meta property="og:description" content="{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{% if page and page.canonical_url %}{{ page.canonical_url }}{% else %}{{ config.site_url }}{% endif %}">
-  <meta property="og:image" content="{{ config.site_url }}logos/tenets_dark_icon_transparent_cropped.png">
-  
+  <meta property="og:image" content="{{ og_image }}">
+
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ og_title }}">
+  <meta name="twitter:description" content="{{ og_desc }}">
+  <meta name="twitter:image" content="{{ og_image }}">
   <meta name="twitter:site" content="@manicagency">
   <meta name="twitter:creator" content="@manicagency">
-  
+
   <!-- Favicons -->
   <link rel="apple-touch-icon" sizes="180x180" href="{{ 'favicon/apple-touch-icon.png'}}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ 'favicon/favicon-32x32.png'}}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ 'favicon/favicon-16x16.png'}}">
   <link rel="manifest" href="{{ 'favicon/site.webmanifest'}}">
-  
+
   <!-- Schema.org -->
   <script type="application/ld+json">
   {
@@ -62,12 +68,12 @@
       </form>
     </div>
   </section> -->
-  
+
   <!-- Victorian Footer -->
   <footer class="md-footer victorian-footer">
     <div class="footer-content">
       <div class="footer-grid">
-        
+
         <!-- Brand Column -->
         <div class="footer-brand">
           <div class="footer-logo-container">
@@ -80,10 +86,10 @@
             </div>
           </div>
           <p class="footer-description">
-            Intelligent code aggregation and analysis for modern development. 
+            Intelligent code aggregation and analysis for modern development.
             Built with obsessive attention to detail by manic.agency.
           </p>
-          
+
           <!-- Social Links -->
           <div class="social-links">
             <a href="https://github.com/jddunn/tenets" class="social-link" title="GitHub" target="_blank" rel="noopener">
@@ -103,7 +109,7 @@
             </a>
           </div>
         </div>
-        
+
         <!-- Documentation Column -->
         <div class="footer-column">
           <h5>Documentation</h5>
@@ -115,7 +121,7 @@
             <li><a href="{{ 'CONFIG/'}}">Configuration</a></li>
           </ul>
         </div>
-        
+
         <!-- Resources Column -->
         <div class="footer-column">
           <h5>Resources</h5>
@@ -126,7 +132,7 @@
             <li><a href="https://github.com/jddunn/tenets/issues" target="_blank" rel="noopener">Issues</a></li>
           </ul>
         </div>
-        
+
         <!-- Company Column -->
         <div class="footer-column">
           <h5>Development sponsored by manic.agency</h5>
@@ -137,7 +143,7 @@
             <li><a href="mailto:team@manic.agency">Contact</a></li>
           </ul>
         </div>
-        
+
         <!-- Status Column -->
         <div class="footer-column">
           <h5>Project Status</h5>
@@ -156,10 +162,10 @@
             </div>
           </div>
         </div>
-        
+
       </div>
     </div>
-    
+
     <!-- Footer Bottom -->
     <div class="footer-bottom">
       <div class="footer-bottom-content">
@@ -174,6 +180,6 @@
       </div>
     </div>
   </footer>
-  
+
   {{ super() }}
 {% endblock %}

@@ -1,0 +1,20 @@
+{#
+  Site-wide Open Graph / Twitter meta tags with a static image.
+  Material supports injecting meta via the 'partials/head-meta.html' hook.
+  This avoids overriding main.html and prevents block redefinition.
+#}
+{% set og_title = page.meta.title or page.title or config.site_name %}
+{% set og_desc = config.site_description %}
+{% set og_image = config.site_url ~ "/logos/tenets_dark_icon_transparent.png" %}
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="{{ config.site_name }}" />
+<meta property="og:title" content="{{ og_title }}" />
+<meta property="og:description" content="{{ og_desc }}" />
+<meta property="og:url" content="{{ page.canonical_url }}" />
+<meta property="og:image" content="{{ og_image }}" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{{ og_title }}" />
+<meta name="twitter:description" content="{{ og_desc }}" />
+<meta name="twitter:image" content="{{ og_image }}" />
