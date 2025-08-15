@@ -5,11 +5,6 @@ relevant files, track development velocity, and build optimal context for both
 human understanding and AI pair programming - all without making any LLM API calls.
 
 This package provides:
-- Intelligent context extraction (distill)
-- Guiding principles management (tenets/instill)
-- Code analysis and metrics (examine)
-- Development tracking (chronicle/momentum)
-- Visualization capabilities (viz)
 
 Example:
     Basic usage for context extraction:
@@ -26,6 +21,8 @@ Example:
     >>> result = ten.distill("add user model")  # Context now includes tenets
 """
 
+from __future__ import annotations
+
 __version__ = "0.1.0"
 __author__ = "Johnny Dunn"
 __license__ = "MIT"
@@ -33,21 +30,40 @@ __license__ = "MIT"
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 # Check Python version
 if sys.version_info < (3, 9):
     raise RuntimeError("Tenets requires Python 3.9 or higher")
 
-# Import core components
+# Keep runtime imports lightweight. Only import heavy modules lazily.
 from tenets.config import TenetsConfig
-from tenets.core.analysis.analyzer import CodeAnalyzer
-from tenets.core.distiller import Distiller
-from tenets.core.instiller import Instiller
-from tenets.core.instiller.manager import TenetManager
-from tenets.models.context import ContextResult
-from tenets.models.tenet import Priority, Tenet, TenetCategory
+from tenets.models.context import ContextResult  # re-export for public API/tests
+from tenets.models.tenet import Priority, Tenet, TenetCategory  # re-export for public API/tests
 from tenets.utils.logger import get_logger
+
+
+# Lightweight, patchable factories for heavy components (allow tests to patch tenets.Distiller/Instiller)
+def Distiller(*args, **kwargs):  # type: ignore[override]
+    from tenets.core.distiller import Distiller as _Distiller
+
+    return _Distiller(*args, **kwargs)
+
+
+def Instiller(*args, **kwargs):  # type: ignore[override]
+    from tenets.core.instiller import Instiller as _Instiller
+
+    return _Instiller(*args, **kwargs)
+
+
+# Type-checking only imports (no runtime side-effects)
+if TYPE_CHECKING:  # pragma: no cover - used only for typing
+    from tenets.core.analysis.analyzer import CodeAnalyzer
+    from tenets.core.distiller import Distiller
+    from tenets.core.instiller import Instiller
+    from tenets.core.instiller.manager import TenetManager
+    from tenets.models.context import ContextResult
+    from tenets.models.tenet import Priority, Tenet, TenetCategory
 
 
 class Tenets:
@@ -159,7 +175,7 @@ class Tenets:
         self.logger = get_logger(__name__)
         self.logger.info(f"Initializing Tenets v{__version__}")
 
-        # Initialize core components
+        # Initialize core components using module-level factories (patchable in tests)
         self.distiller = Distiller(self.config)
         self.instiller = Instiller(self.config)
         self.tenet_manager = self.instiller.manager
@@ -722,7 +738,7 @@ class Tenets:
         save: bool = False,
     ) -> None:
         """Set the system instruction for AI interactions.
-        
+
         Args:
             instruction: The system instruction text
             enable: Whether to auto-inject
@@ -734,15 +750,15 @@ class Tenets:
         self.config.tenet.system_instruction_enabled = enable
         self.config.tenet.system_instruction_position = position
         self.config.tenet.system_instruction_format = format
-        
+
         if save and getattr(self.config, "config_file", None):
             self.config.save()
-            
+
         self.logger.info(f"System instruction set ({len(instruction)} chars)")
 
     def get_system_instruction(self) -> Optional[str]:
         """Get the current system instruction.
-        
+
         Returns:
             The system instruction text or None
         """
@@ -750,27 +766,27 @@ class Tenets:
 
     def clear_system_instruction(self, save: bool = False) -> None:
         """Clear the system instruction.
-        
+
         Args:
             save: Whether to save to config file
         """
         self.config.tenet.system_instruction = None
         self.config.tenet.system_instruction_enabled = False
-        
+
         if save and getattr(self.config, "config_file", None):
             self.config.save()
-            
+
         self.logger.info("System instruction cleared")
 
 
 # Convenience exports
 __all__ = [
+    "CodeAnalyzer",
+    "ContextResult",
+    "Priority",
+    "Tenet",
+    "TenetCategory",
     "Tenets",
     "TenetsConfig",
-    "ContextResult",
-    "Tenet",
-    "Priority",
-    "TenetCategory",
-    "CodeAnalyzer",
     "__version__",
 ]

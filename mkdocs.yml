@@ -274,9 +274,10 @@ extra:
   generator: false
 
   # Version provider (if using mike for versioning)
-  version:
-    provider: mike
-    default: stable
+  # Disabled in local dev to avoid versions.json 404; re-enable when using mike
+  # version:
+  #   provider: mike
+  #   default: stable
 
   # Social links
   social:
@@ -344,7 +345,6 @@ extra_javascript:
   - js/back-to-top.js
   # Homepage specific
   - js/lantern.js
-  - js/home-animations.js
   - js/architecture-diagram.js
   - js/see-it-in-action.js
   # External libraries
