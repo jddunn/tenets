@@ -7,7 +7,8 @@ of expensive embedding operations.
 import hashlib
 import pickle
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 import numpy as np
 
 from tenets.storage.cache import DiskCache

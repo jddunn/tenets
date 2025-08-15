@@ -385,8 +385,8 @@ class TestInstillerSystemInstruction:
     @pytest.fixture
     def instiller(self):
         """Create Instiller instance with system instruction config."""
-        from tenets.core.instiller.instiller import Instiller
         from tenets.config import TenetsConfig
+        from tenets.core.instiller.instiller import Instiller
 
         config = TenetsConfig()
         return Instiller(config)

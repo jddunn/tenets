@@ -1,14 +1,15 @@
 """Tests for embedding generation."""
 
-import pytest
-import numpy as np
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import numpy as np
+import pytest
 
 from tenets.core.nlp.embeddings import (
     EmbeddingModel,
-    LocalEmbeddings,
     FallbackEmbeddings,
+    LocalEmbeddings,
     create_embedding_model,
 )
 

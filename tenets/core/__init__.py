@@ -13,4 +13,4 @@ It exposes a stable import path for documentation and users:
 """
 
 # Re-export common subpackages for convenience
-from . import analysis, ranking, session, instiller, git, summarizer  # noqa: F401
+from . import analysis, git, instiller, ranking, session, summarizer  # noqa: F401

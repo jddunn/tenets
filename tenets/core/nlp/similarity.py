@@ -5,7 +5,8 @@ cosine similarity and semantic similarity using embeddings.
 """
 
 import math
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 
 from tenets.utils.logger import get_logger

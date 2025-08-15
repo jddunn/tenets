@@ -10,18 +10,19 @@ This package provides all NLP/ML functionality for Tenets including:
 All ML features are optional and gracefully degrade when not available.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
+
+from .keyword_extractor import KeywordExtractor, TFIDFExtractor
+from .stopwords import StopwordManager, StopwordSet
 
 # Core NLP components (always available)
 from .tokenizer import CodeTokenizer, TextTokenizer
-from .stopwords import StopwordManager, StopwordSet
-from .keyword_extractor import KeywordExtractor, TFIDFExtractor
 
 # ML components (optional)
 try:
+    from .cache import EmbeddingCache
     from .embeddings import EmbeddingModel, LocalEmbeddings
     from .similarity import SemanticSimilarity, cosine_similarity
-    from .cache import EmbeddingCache
 
     ML_AVAILABLE = True
 except ImportError:

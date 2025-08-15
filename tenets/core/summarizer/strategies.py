@@ -19,11 +19,11 @@ from tenets.utils.logger import get_logger
 
 # Import centralized NLP components
 try:
-    from tenets.core.nlp.keyword_extractor import KeywordExtractor, TFIDFCalculator
-    from tenets.core.nlp.tokenizer import TextTokenizer
-    from tenets.core.nlp.stopwords import StopwordManager
-    from tenets.core.nlp.similarity import SemanticSimilarity
     from tenets.core.nlp.embeddings import create_embedding_model
+    from tenets.core.nlp.keyword_extractor import KeywordExtractor, TFIDFCalculator
+    from tenets.core.nlp.similarity import SemanticSimilarity
+    from tenets.core.nlp.stopwords import StopwordManager
+    from tenets.core.nlp.tokenizer import TextTokenizer
 
     NLP_AVAILABLE = True
 except ImportError:

@@ -7,7 +7,7 @@ and methods to the NLP implementation and add a couple of helpers that the
 ranking tests depend on (e.g., ``get_top_terms``).
 """
 
-from typing import Dict, List, Tuple, Any, Set
+from typing import Any, Dict, List, Set, Tuple
 
 from tenets.utils.logger import get_logger
 
@@ -29,9 +29,7 @@ class TFIDFCalculator:
         self.use_stopwords = use_stopwords
 
         # Use centralized NLP TF-IDF calculator
-        from tenets.core.nlp.keyword_extractor import (
-            TFIDFCalculator as NLPTFIDFCalculator,
-        )
+        from tenets.core.nlp.keyword_extractor import TFIDFCalculator as NLPTFIDFCalculator
 
         self._calculator = NLPTFIDFCalculator(
             use_stopwords=use_stopwords,

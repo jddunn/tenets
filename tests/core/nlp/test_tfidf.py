@@ -1,7 +1,8 @@
 """Tests for TF-IDF and BM25 calculators used in ranking / NLP."""
 
 import pytest
-from tenets.core.nlp.tfidf import TFIDFCalculator, BM25Calculator
+
+from tenets.core.nlp.tfidf import BM25Calculator, TFIDFCalculator
 
 
 class TestTFIDFCalculator:
