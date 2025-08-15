@@ -33,16 +33,16 @@ theme:
   name: material
   custom_dir: docs/overrides
   language: en
-  
+
   # Logo and Branding
   logo: logos/tenets_dark_icon_transparent.png
   favicon: favicon/favicon.ico
-  
+
   # Typography
   font:
     text: Inter
     code: JetBrains Mono
-  
+
   # Icons
   icon:
     repo: fontawesome/brands/github
@@ -60,27 +60,27 @@ theme:
       bug: octicons/bug-16
       example: octicons/beaker-16
       quote: octicons/quote-16
-  
+
   # Color Schemes - USING CUSTOM PRIMARY
   palette:
     # Light mode
-    - media: "(prefers-color-scheme: light)"
+    - media: '(prefers-color-scheme: light)'
       scheme: default
-      primary: custom  # CRITICAL: Keep this as 'custom' for your theme
+      primary: custom # CRITICAL: Keep this as 'custom' for your theme
       accent: amber
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-    
+
     # Dark mode
-    - media: "(prefers-color-scheme: dark)"
+    - media: '(prefers-color-scheme: dark)'
       scheme: slate
-      primary: custom  # CRITICAL: Keep this as 'custom' for your theme
+      primary: custom # CRITICAL: Keep this as 'custom' for your theme
       accent: amber
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-  
+
   # Features - NO HEADER AUTOHIDE
   features:
     # Navigation
@@ -97,16 +97,16 @@ theme:
     - navigation.indexes
     - navigation.top
     - navigation.footer
-    
+
     # Table of Contents - RIGHT SIDEBAR
-    - toc.follow  # TOC follows scroll
+    - toc.follow # TOC follows scroll
     # REMOVED toc.integrate - keeps TOC as right sidebar
-    
+
     # Search
     - search.suggest
     - search.highlight
     - search.share
-    
+
     # Content
     - content.code.copy
     - content.code.select
@@ -122,26 +122,26 @@ plugins:
   - search:
       lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-  
+
   # Generate API documentation files
   - gen-files:
       scripts:
-        - docs/gen_api.py  # Make sure this script exists!
-  
+        - docs/gen_api.py # Make sure this script exists!
+
   # Navigation plugins for API docs
   - literate-nav:
       nav_file: SUMMARY.md
       implicit_index: true
-  
+
   - section-index
-  
+
   # API Documentation from docstrings - FULL CONFIG
   - mkdocstrings:
       enabled: true
       default_handler: python
       handlers:
         python:
-          paths: ["."]
+          paths: ['.']
           setup_commands:
             - import os, sys
             - sys.path.insert(0, os.path.abspath('.'))
@@ -154,29 +154,29 @@ plugins:
             show_category_heading: true
             show_symbol_type_heading: true
             show_symbol_type_toc: true
-            
+
             # Member options
             members_order: source
             group_by_category: true
             show_submodules: true
-            
+
             # Docstring options
             docstring_style: google
             docstring_section_style: table
             merge_init_into_class: true
             show_if_no_docstring: false
-            
+
             # Signature options
             separate_signature: true
             line_length: 80
             show_signature_annotations: true
             signature_crossrefs: true
-            
+
             # Filtering
-            filters: ["!^_"]
+            filters: ['!^_']
             inherited_members: true
             preload_modules: []
-  
+
   # Git information (optional - comment out if causing issues)
   - git-revision-date-localized:
       enabled: true
@@ -184,7 +184,7 @@ plugins:
       enable_creation_date: true
       fallback_to_build_date: true
       enable_git_follow: false
-  
+
   # Minification (must be last)
   - minify:
       minify_html: true
@@ -216,8 +216,8 @@ markdown_extensions:
       slugify: !!python/object/apply:pymdownx.slugs.slugify
         kwds:
           case: lower
-      toc_depth: 3  # Full depth for API docs
-  
+      toc_depth: 3 # Full depth for API docs
+
   # PyMdown Extensions
   - pymdownx.arithmatex:
       generic: true
@@ -272,12 +272,12 @@ markdown_extensions:
 extra:
   # Disable generator meta tag
   generator: false
-  
+
   # Version provider (if using mike for versioning)
   version:
     provider: mike
     default: stable
-  
+
   # Social links
   social:
     - icon: fontawesome/brands/github
@@ -335,6 +335,7 @@ extra_css:
 extra_javascript:
   # Core functionality
   - js/main.js
+  - js/page-flags.js
   # Components
   - js/theme-toggle.js
   - js/terminal.js
@@ -353,7 +354,6 @@ extra_javascript:
 # NAVIGATION - KEEP SIMPLE BUT ADD API SECTION
 # ==============================================================================
 nav:
-  - Home: index.md
   - Quick Start: quickstart.md
   - Features: features.md
   - Supported Languages: supported-languages.md
