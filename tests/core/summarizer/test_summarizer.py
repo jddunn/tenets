@@ -2,25 +2,25 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
 from tenets.config import TenetsConfig
+from tenets.core.summarizer.strategies import (
+    CompressiveStrategy,
+    ExtractiveStrategy,
+    NLPEnhancedStrategy,
+    TextRankStrategy,
+)
 from tenets.core.summarizer.summarizer import (
+    BatchSummarizationResult,
     FileSummarizer,
-    Summarizer,
     SummarizationMode,
     SummarizationResult,
-    BatchSummarizationResult,
+    Summarizer,
 )
-from tenets.core.summarizer.strategies import (
-    ExtractiveStrategy,
-    CompressiveStrategy,
-    TextRankStrategy,
-    NLPEnhancedStrategy,
-)
-from tenets.models.analysis import FileAnalysis, CodeStructure
+from tenets.models.analysis import CodeStructure, FileAnalysis
 from tenets.models.summary import FileSummary
 
 

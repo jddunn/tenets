@@ -34,6 +34,9 @@ from typing import List, Optional
 
 from tenets.config import TenetsConfig
 
+# Import TF-IDF/BM25 (moved from ranking.tfidf to nlp.tfidf)
+from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
+
 # Import main classes
 from .factors import (
     FactorWeight,
@@ -56,9 +59,6 @@ from .strategies import (
     RankingStrategy,
     ThoroughRankingStrategy,
 )
-
-# Import TF-IDF/BM25 (moved from ranking.tfidf to nlp.tfidf)
-from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
 
 # Import ML utilities (optional)
 try:

@@ -27,11 +27,11 @@ from typing import Any, Dict, List, Optional, Union
 
 # Import visualization components (actual available symbols)
 from .base import BaseVisualizer, ChartConfig, ChartType, ColorPalette, DisplayConfig
-from .displays import TerminalDisplay
-from .dependencies import DependencyVisualizer
 from .complexity import ComplexityVisualizer
 from .contributors import ContributorVisualizer
 from .coupling import CouplingVisualizer
+from .dependencies import DependencyVisualizer
+from .displays import TerminalDisplay
 
 # Version info
 __version__ = "0.1.0"

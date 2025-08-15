@@ -18,9 +18,9 @@ from tenets.cli.commands import (
 )
 from tenets.cli.commands.config import config_app
 from tenets.cli.commands.session import session_app
+from tenets.cli.commands.system_instruction import app as system_instruction_app
 from tenets.cli.commands.tenet import tenet_app
 from tenets.cli.commands.viz import viz_app
-from tenets.cli.commands.system_instruction import app as system_instruction_app
 from tenets.utils.logger import get_logger
 
 # Create main app

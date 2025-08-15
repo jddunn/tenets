@@ -20,13 +20,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import parse_qs, urlparse
 
+from tenets.config import TenetsConfig
+
 # Import centralized NLP components
 from tenets.core.nlp.keyword_extractor import KeywordExtractor
-from tenets.core.nlp.tokenizer import TextTokenizer, CodeTokenizer
-from tenets.core.nlp.stopwords import StopwordManager
 from tenets.core.nlp.programming_patterns import get_programming_patterns
-
-from tenets.config import TenetsConfig
+from tenets.core.nlp.stopwords import StopwordManager
+from tenets.core.nlp.tokenizer import CodeTokenizer, TextTokenizer
 from tenets.models.context import PromptContext, TaskType
 from tenets.utils.logger import get_logger
 
