@@ -3,6 +3,7 @@ Generate per-module API documentation pages for mkdocs using mkdocstrings.
 Creates files under docs/api/ mirroring the tenets package structure so the
 sidebar shows a nested tree. Requires plugins: gen-files, awesome-pages, mkdocstrings.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -32,27 +33,22 @@ API_DIR = Path("api")
 def write_module_page(mod_name: str, is_pkg: bool):
     # Path like api/tenets/core/ranking/index.md for packages, module.md for leaf modules
     rel_dir = API_DIR / Path(*mod_name.split("."))
-    if is_pkg:
-        out_path = rel_dir / "index.md"
-        title = mod_name
-    else:
-        out_path = rel_dir.with_suffix(".md")
-        title = mod_name
+    out_path = (rel_dir / "index.md") if is_pkg else rel_dir.with_suffix(".md")
+    title = mod_name
 
-        content = f"""---
+    # Keep TOC visible for API pages so sidebar and page toc render
+    content = f"""---
 title: {title}
-hide:
-    - toc
 ---
 
 # {title}
 
 ::: {mod_name}
-        options:
-            show_source: false
-            separate_signature: true
-            members_order: source
-            docstring_style: google
+    options:
+        show_source: false
+        separate_signature: true
+        members_order: source
+        docstring_style: google
 """
 
     with mkdocs_gen_files.open(out_path.as_posix(), "w") as fd:
@@ -61,25 +57,19 @@ hide:
 
 def write_root_pages_file():
     # Root .pages to title the section
-    pages_yaml = """title: API Reference
-collapse_single_pages: true
-"""
+    pages_yaml = "title: API Reference\ncollapse_single_pages: true\n"
     with mkdocs_gen_files.open((API_DIR / ".pages").as_posix(), "w") as fd:
         fd.write(pages_yaml)
 
-    # Root index
-        index_md = """---
-title: API Reference
-hide:
-    - toc
----
-
-# API Reference
-
-This section contains the full API reference generated from docstrings.
-
-- Package: `tenets`
-"""
+    # Root index (keep TOC)
+    index_md = (
+        "---\n"
+        "title: API Reference\n"
+        "---\n\n"
+        "# API Reference\n\n"
+        "This section contains the full API reference generated from docstrings.\n\n"
+        "- Package: `tenets`\n"
+    )
     with mkdocs_gen_files.open((API_DIR / "index.md").as_posix(), "w") as fd:
         fd.write(index_md)
 

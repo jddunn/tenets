@@ -62,10 +62,51 @@ Docs are (a) built in CI on PR for validation; (b) deployed on release tag push 
 |--------|----------|---------|-------|
 | `PYPI_API_TOKEN` | Yes* | PyPI publish in `release.yml` | *Omit if using Trusted Publishing (approve first build). |
 | `CODECOV_TOKEN` | Public: often no / Private: yes | Coverage uploads | Set to be explicit. |
+| `GOOGLE_ANALYTICS_ID` | Optional | GA4 measurement ID for docs analytics | Used by MkDocs Material via `!ENV` in `mkdocs.yml` (e.g., `G-XXXXXXXXXX`). If unset/empty, analytics are disabled. |
 | `DOCKER_USERNAME` / `DOCKER_TOKEN` | Optional | Future Docker image publishing | Not required yet. |
 | `GH_PAT` | No | Cross-repo automation (not standard) | Avoid storing if unused. |
 
 Environment (optional): `TENETS_DEBUG`, `TENETS_CACHE_DIRECTORY`.
+
+### Google Analytics (optional)
+
+MkDocs Material analytics are wired to an environment variable:
+
+- In `mkdocs.yml`: `extra.analytics.property: !ENV [GOOGLE_ANALYTICS_ID, ""]`
+- Provide a GA4 Measurement ID (format `G-XXXXXXXXXX`). If the variable is unset or empty, analytics are disabled automatically.
+
+Local usage
+
+```bash
+# bash / Git Bash / WSL
+export GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
+mkdocs serve
+```
+
+```powershell
+# PowerShell
+$env:GOOGLE_ANALYTICS_ID = 'G-XXXXXXXXXX'
+mkdocs serve
+```
+
+GitHub Actions (recommended)
+
+```yaml
+jobs:
+   docs:
+      runs-on: ubuntu-latest
+      env:
+         GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
+      steps:
+         - uses: actions/checkout@v4
+         - uses: actions/setup-python@v5
+            with:
+               python-version: '3.12'
+         - run: pip install -e '.[docs]'
+         - run: mkdocs build --clean
+```
+
+Store your GA4 Measurement ID as a repository secret named `GOOGLE_ANALYTICS_ID`. The docs build will inject it at build time; if not present, analytics are off.
 
 # With specific features
 pip install tenets[ml]  # ML features
@@ -234,7 +275,7 @@ pyinstaller \
 
 Use GitHub Actions for multi-platform builds:
 - Linux: Ubuntu runner
-- macOS: macOS runner  
+- macOS: macOS runner
 - Windows: Windows runner
 
 ### Code Signing (Optional)
@@ -297,7 +338,7 @@ mike set-default --push latest
    ```bash
    # Check for vulnerabilities
    safety check
-   
+
    # Audit dependencies
    pip-audit
    ```

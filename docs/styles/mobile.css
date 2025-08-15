@@ -8,24 +8,14 @@
    ===================================================== */
 
 @media screen and (min-width: 1100px) {
-  .md-header-nav {
-    display: flex !important;
-  }
-  
+  .md-header-nav { display: flex !important; }
   /* Hide mobile-only elements on desktop */
   .md-header__button[for="__drawer"],
   .md-nav__toggle,
-  .md-overlay {
-    display: none !important;
-  }
-
-  /* Ensure primary sidebar/nav are visible on desktop */
+  .md-overlay { display: none !important; }
+  /* Do NOT force primary sidebar/nav visible; desktop uses header tabs only */
   .md-sidebar--primary,
-  .md-nav--primary {
-    display: block !important;
-  }
-  /* Reset any off-canvas transform from theme at desktop sizes */
-  .md-sidebar--primary { transform: none !important; }
+  .md-nav--primary { display: none !important; }
 }
 
 /* =====================================================
@@ -33,7 +23,7 @@
    ===================================================== */
 
 @media screen and (max-width: 1099px) {
-  
+
   /* Mobile header base styles */
   .md-header {
     height: 3.5rem;
@@ -43,7 +33,7 @@
   /* Ensure header (and search modal within it) stacks above page overlays */
   z-index: 24000;
   }
-  
+
   .md-header__inner {
   padding: 0 0.5rem;
     display: flex;
@@ -52,30 +42,19 @@
   /* Reserve space on the right for the fixed hamburger so controls don't crowd it */
   padding-right: 140px !important;
   }
-  
+
   /* Hide desktop nav on mobile */
   .md-header-nav {
     display: none !important;
   }
-  
-  /* Title - centered and flexible */
-  .md-header__title {
-    display: block !important;
-  flex: 1;
-  min-width: 0; /* allow title to shrink so controls remain visible */
-    text-align: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.25rem;
-    font-weight: 900;
-    color: #1a2332;
-    text-transform: lowercase;
-    order: 2;
-  }
-  
+
+  /* Hide header title on mobile to avoid duplication with content title */
+  .md-header__title { display: none !important; }
+
   [data-md-color-scheme="slate"] .md-header__title {
     color: #fbbf24;
   }
-  
+
   /* Hamburger menu button - left side */
   .md-header__button[for="__drawer"] {
     display: flex !important;
@@ -85,7 +64,7 @@
     justify-content: center;
     background: linear-gradient(145deg, #ffffff, #f0ede8);
     border-radius: 8px;
-    box-shadow: 
+    box-shadow:
       3px 3px 8px rgba(26, 35, 50, 0.08),
       -3px -3px 8px rgba(255, 255, 255, 0.9);
     cursor: pointer;
@@ -93,26 +72,26 @@
     position: relative;
     z-index: 10002;
   }
-  
+
   [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
     background: linear-gradient(145deg, #2a3542, #222c3a);
-    box-shadow: 
+    box-shadow:
       3px 3px 8px rgba(0, 0, 0, 0.3),
       -3px -3px 8px rgba(255, 255, 255, 0.03);
   }
-  
+
   .md-header__button[for="__drawer"] svg {
     fill: #f59e0b;
   }
-  
+
   /* Right side controls */
   label.md-header__button[for^="__palette_"] { display: flex !important; order: 2; }
-  
+
   /* Prefer inline .md-search on tablet; search icon on very small screens */
   .md-header__inner .md-search { order: 3; display: flex !important; align-items: center; }
   /* don't force-hide the search icon at all sizes; control via sub-breakpoints */
   .md-header__inner label.md-header__button[for="__search"] { display: none; }
-  
+
   .md-source { display: inline-flex !important; order: 4; }
 
   /* Keep GitHub inline next to theme toggle (no fixed positioning) */
@@ -125,7 +104,7 @@
   .md-sidebar--primary .md-source {
     display: none !important;
   }
-  
+
   /* Keep hamburger fixed at the top-right above other controls */
   .md-header__button[for="__drawer"] { position: fixed; top: 8px; right: 8px; order: 5; }
 
@@ -136,7 +115,7 @@
   /* hide the icon button on tablet when inline search is present */
   .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
   }
-  
+
   /* Mobile navigation drawer */
   .md-nav--primary,
   .md-sidebar--primary {
@@ -154,22 +133,36 @@
     z-index: 10010 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+  /* Prevent hidden drawer from intercepting clicks when off-canvas */
+  pointer-events: none;
   }
   
+  /* Custom header for injected drawer nav */
+  .tenets-drawer-header {
+    font-weight: 800; font-size: 0.95rem; padding: 1rem 1.25rem; color: #1a2332;
+    border-bottom: 1px solid rgba(26,35,50,0.08);
+  }
+  [data-md-color-scheme="slate"] .tenets-drawer-header { color: #fbbf24; border-color: rgba(251,191,36,0.15); }
+  .tenets-mobile-nav { padding: 0.25rem 0.5rem 1rem 0.5rem; }
+  .tenets-mobile-nav .md-nav__item { margin: 0.1rem 0; }
+  .tenets-mobile-nav .md-nav__item--nested > ul { margin-left: 0.75rem; }
+
   [data-md-color-scheme="slate"] .md-nav--primary,
   [data-md-color-scheme="slate"] .md-sidebar--primary {
     background: linear-gradient(180deg, #1a2332 0%, #263244 100%) !important;
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.4) !important;
   }
-  
+
   /* Show drawer when checkbox is checked */
   input[type="checkbox"]#__drawer:checked ~ .md-container .md-nav--primary,
   input[type="checkbox"]#__drawer:checked ~ .md-container .md-sidebar--primary,
   .md-toggle--drawer:checked ~ .md-container .md-nav--primary,
   .md-toggle--drawer:checked ~ .md-container .md-sidebar--primary {
     transform: translateX(0) !important;
+  /* Re-enable interactions only when visible */
+  pointer-events: auto !important;
   }
-  
+
   /* Mobile nav header with logo */
   .md-nav--primary .md-nav__title,
   .md-sidebar--primary .md-nav__title {
@@ -189,7 +182,7 @@
     top: 0;
     z-index: 10;
   }
-  
+
   /* Logo in drawer header */
   .md-nav--primary .md-nav__title::before,
   .md-sidebar--primary .md-nav__title::before {
@@ -201,12 +194,12 @@
     background-size: contain;
     flex-shrink: 0;
   }
-  
+
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title::before,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title::before {
     background-image: url('../logos/tenets_dark_icon_transparent.png');
   }
-  
+
   /* Navigation list container */
   .md-nav--primary .md-nav__list,
   .md-sidebar--primary .md-nav__list {
@@ -214,14 +207,14 @@
     margin: 0;
     list-style: none;
   }
-  
+
   /* Navigation items */
   .md-nav--primary .md-nav__item,
   .md-sidebar--primary .md-nav__item {
     border-bottom: 1px solid rgba(245, 158, 11, 0.06);
     margin: 0;
   }
-  
+
   .md-nav--primary .md-nav__link,
   .md-sidebar--primary .md-nav__link {
     padding: 0.9rem 1.25rem !important;
@@ -233,12 +226,12 @@
     text-decoration: none;
     position: relative;
   }
-  
+
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link {
     color: #d4ccb8;
   }
-  
+
   .md-nav--primary .md-nav__link:hover,
   .md-nav--primary .md-nav__link:active,
   .md-sidebar--primary .md-nav__link:hover,
@@ -247,7 +240,7 @@
     color: #f59e0b;
     padding-left: 1.75rem !important;
   }
-  
+
   .md-nav--primary .md-nav__link--active,
   .md-sidebar--primary .md-nav__link--active {
     background: rgba(245, 158, 11, 0.12);
@@ -255,7 +248,7 @@
     font-weight: 600;
     border-left: 3px solid #f59e0b;
   }
-  
+
   /* Ornate decoration on hover */
   .md-nav--primary .md-nav__link::after,
   .md-sidebar--primary .md-nav__link::after {
@@ -266,13 +259,13 @@
     color: #f59e0b;
     transition: all 0.3s ease;
   }
-  
+
   .md-nav--primary .md-nav__link:hover::after,
   .md-sidebar--primary .md-nav__link:hover::after {
     opacity: 0.5;
     transform: rotate(45deg);
   }
-  
+
   /* Blog/Contact special styling */
   .md-nav--primary .md-nav__link[href*="blog"],
   .md-nav--primary .md-nav__link[href*="contact"],
@@ -286,7 +279,7 @@
     border-radius: 12px;
     border: 1px solid rgba(245, 158, 11, 0.2);
   }
-  
+
   /* Mobile overlay */
   .md-overlay {
     display: block !important;
@@ -301,14 +294,16 @@
     transition: all 0.3s ease;
   /* Keep drawer overlay below header/search modal */
   z-index: 10005;
-    backdrop-filter: blur(5px);
+    /* Remove backdrop blur to prevent the drawer appearing blurry */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     pointer-events: none;
   }
-  
+
   [data-md-color-scheme="slate"] .md-overlay {
     background: rgba(0, 0, 0, 0.7);
   }
-  
+
   /* Show overlay when drawer is open */
   input[type="checkbox"]#__drawer:checked ~ .md-overlay,
   .md-toggle--drawer:checked ~ .md-overlay {
@@ -316,25 +311,27 @@
     visibility: visible !important;
     pointer-events: auto !important;
   }
-  
+
   /* Ensure search components are above everything on mobile and interactive */
   .md-search__overlay { z-index: 24050 !important; pointer-events: auto !important; }
 
   .md-search__inner[role="dialog"],
   .md-search[aria-expanded="true"],
   .md-search[data-md-state="active"] { z-index: 24060 !important; }
-  
+
   /* Center search dialog on mobile */
   .md-search[aria-expanded="true"] .md-search__inner,
   .md-search[data-md-state="active"] .md-search__inner {
     margin: 12vh auto 0 !important;
     max-width: min(92vw, 720px) !important;
   }
-  
-  /* Hide tabs and secondary sidebar on mobile */
-  .md-tabs,
-  .md-sidebar--secondary {
-    display: none !important;
+
+  /* Hide tabs on mobile; keep TOC except on very small screens */
+  .md-tabs { display: none !important; }
+
+  /* Phones only: hide the right-hand TOC */
+  @media screen and (max-width: 720px) {
+    .md-sidebar--secondary { display: none !important; }
   }
 
   /* Very small screens: show compact search icon and compact GitHub, hide inline search input */
@@ -429,54 +426,54 @@
    ===================================================== */
 
 @media screen and (max-width: 1099px) {
-  
+
   /* Content spacing to account for fixed header */
   .md-container {
     padding-top: 3.5rem;
   }
-  
+
   .md-content {
     padding: 1rem;
     max-width: 100%;
   }
-  
+
   .md-content__inner {
     margin: 0;
     padding: 0 0 2rem;
   }
-  
+
   /* Typography adjustments */
   .md-typeset h1 {
     font-size: 1.75rem;
     margin: 1.5rem 0 1rem;
   }
-  
+
   .md-typeset h2 {
     font-size: 1.375rem;
     margin: 1.25rem 0 0.75rem;
   }
-  
+
   .md-typeset h3 {
     font-size: 1.125rem;
     margin: 1rem 0 0.5rem;
   }
-  
+
   /* Terminal showcase on mobile */
   .terminal-showcase {
     margin: 1.5rem -1rem;
   }
-  
+
   .terminal {
     border-radius: 0;
   }
-  
+
   .terminal-body {
     padding: 1rem;
     font-size: 0.75rem;
     min-height: 200px;
     max-height: 350px;
   }
-  
+
   /* Hero adjustments */
   .victorian-hero,
   .hero-section {
@@ -484,49 +481,49 @@
     padding: 1.5rem 1rem;
     margin-top: 3.5rem;
   }
-  
+
   .lantern-container {
     width: 80px;
     height: 80px;
   }
-  
+
   .hero-title {
     font-size: 2.25rem;
   }
-  
+
   .hero-tagline {
     font-size: 1.1rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .btn-primary,
   .btn-secondary {
     width: 100%;
     max-width: 280px;
     margin: 0 auto;
   }
-  
+
   /* Features grid on mobile */
   .features-grid,
   .why-tenets-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   /* Workflow on mobile */
   .workflow-diagram {
     flex-direction: column;
   }
-  
+
   .workflow-arrow {
     transform: rotate(90deg);
     margin: 0.5rem 0;
   }
-  
+
   /* Prevent body scroll when drawer is open */
   body:has(#__drawer:checked),
   body:has(.md-toggle--drawer:checked) {
@@ -542,42 +539,42 @@
    ===================================================== */
 
 @media screen and (max-width: 480px) {
-  
+
   .md-header {
     height: 3rem;
   }
-  
+
   .md-header__title {
     font-size: 1.1rem;
   }
-  
+
   .md-header__button[for="__drawer"] {
     width: 2rem;
     height: 2rem;
   }
-  
+
   .md-nav--primary,
   .md-sidebar--primary {
     width: 90% !important;
     max-width: 280px !important;
   }
-  
+
   .hero-title {
     font-size: 1.875rem;
   }
-  
+
   .lantern-container {
     width: 60px;
     height: 60px;
   }
-  
+
   /* Adjust hero spacing for smaller header */
   .victorian-hero,
   .hero-section {
     margin-top: 3rem;
     min-height: calc(100vh - 3rem);
   }
-  
+
   /* Content spacing adjustment */
   .md-container {
     padding-top: 3rem;
