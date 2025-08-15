@@ -125,7 +125,10 @@ dev = [
     "safety>=2.3.0",
     "pre-commit>=3.4.0",
     "mkdocs>=1.5.0",
-    "mkdocs-material>=9.4.0",
+    # Optional: Imaging extras for Material social cards (cairosvg, pillow, etc.)
+    # Note: Rendering social cards needs native Cairo. Skip locally on Windows
+    # and enable only in CI or Linux if desired.
+    "mkdocs-material[imaging]>=9.5.0",
     "mkdocs-git-revision-date-localized-plugin>=1.2.0",
     "mkdocs-git-authors-plugin>=0.7.0",
     "mkdocs-awesome-pages-plugin>=2.9.0",
@@ -160,7 +163,9 @@ test = [
 # Documentation dependencies
 docs = [
     "mkdocs>=1.5.0",
-    "mkdocs-material>=9.5.0",
+    # Optional: Imaging extras for Material social cards (cairosvg, pillow, etc.)
+    # Requires native Cairo; safe to omit for local builds.
+    "mkdocs-material[imaging]>=9.5.0",
     "mkdocstrings[python]>=0.23.0",
     "mkdocs-minify-plugin>=0.7.0",
     "pymdown-extensions>=10.0",

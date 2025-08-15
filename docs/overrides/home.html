@@ -2,14 +2,20 @@
 
 {% block content %}
 <style>
-  /* Hide sidebars on homepage */
-  .md-sidebar { display: none; }
-  
+  /* Hide sidebars/nav on homepage (override global !important rules) */
+  .md-sidebar,
+  .md-sidebar--primary,
+  .md-nav--primary { display: none !important; }
+
   /* Remove extra top margin */
   .md-content {
     margin-top: 0 !important;
   }
-  
+  /* Keep homepage content padding tighter; global spacing handled in main.css */
+  .md-content__inner { margin: 0 !important; }
+  /* Ensure homepage uses full width without TOC centering constraints */
+  .md-content { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; }
+
   /* Hero positioning right after nav */
   .victorian-hero {
     min-height: calc(100vh - 118px);
@@ -35,35 +41,44 @@
       <rect width="100%" height="100%" fill="url(#victorian-pattern)"/>
     </svg>
   </div>
-  
+
   <div class="hero-content">
     <!-- Static cropped logo with iridescent lantern glow + particles behind it -->
     <div class="torch-container">
    <!-- Lantern animation layer (auto-initialized by js/lantern.js) -->
   <div class="lantern-layer" data-lantern data-flicker-speed="2600" data-glow-intensity="1.15" data-particle-count="8" data-iridescent="true" aria-hidden="true"></div>
    <!-- Theme-aware logo switching -->
-   <img src="{{ 'logos/tenets_dark_icon_transparent_cropped.png'}}" 
-     alt="tenets" 
+   <img src="{{ 'logos/tenets_dark_icon_transparent_cropped.png'}}"
+     alt="tenets"
      class="torch-logo-static dark-logo">
-   <img src="{{ 'logos/tenets_light_icon_transparent_cropped.png'}}" 
-     alt="tenets" 
+   <img src="{{ 'logos/tenets_light_icon_transparent_cropped.png'}}"
+     alt="tenets"
      class="torch-logo-static light-logo">
     </div><!-- /torch-container -->
     <p class="hero-tagline">Context that feeds your prompts</p>
-    
+
     <p class="hero-description">
       Intelligent code aggregation and analysis for modern development.<br>
       Surface relevant files. Build optimal context. Track velocity.<br>
       Examine code quality metrics. Evaluate and improve your codebase.<br>
       All processing stays local - your code never leaves your machine.
     </p>
-    
-    <!-- Quick Start and Examples buttons -->
+
+    <!-- Quick Start, API Docs, and Examples buttons -->
     <div class="hero-actions">
-      <a href="#quick-start" class="btn-primary scroll-to-start">
+      <!-- Link directly to Quick Start page -->
+      <a href="{{ 'quickstart/' | url }}" class="btn-primary">
         <span>Quick Start</span>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+      <!-- Link to API Reference -->
+      <a href="{{ 'api/' | url }}" class="btn-secondary">
+        <span>API Docs</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M16 18l6-6-6-6"/>
+          <path d="M8 6l-6 6 6 6"/>
         </svg>
       </a>
       <a href="#examples" class="btn-secondary scroll-to-examples">
@@ -73,7 +88,7 @@
         </svg>
       </a>
     </div>
-    
+
     <!-- Install commands right below buttons -->
 
   </div><!-- /hero-content -->
@@ -181,7 +196,12 @@
               <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
               <div class="see-title">Sessions</div>
             </div>
-            <div class="see-body"><pre><code class="language-bash">$ tenets session create payment-integration</code></pre></div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets session create payment-integration
+$ tenets tenet add "Always validate user input" --priority critical --category security
+$ tenets tenet add "Use type hints in Python" --priority high --category style
+$ tenets instill --session payment-integration
+$ tenets system-instruction set "Prefer small, safe diffs and add tests" --enable
+$ tenets distill "add OAuth2 refresh tokens" --session payment-integration --remove-comments --condense</code></pre></div>
           </div>
           <div class="see-output" data-caption="Sessions managing iterative context">
             <div class="see-header">
@@ -248,13 +268,13 @@
     </div>
   </div>
 </section>
-            
+
 
 <!-- Core Features Section -->
 <section class="features-section">
   <div class="section-container">
     <h2 class="section-title">Core Features</h2>
-    
+
     <div class="features-grid">
       <!-- Context Building -->
       <div class="feature-card-large">
@@ -293,7 +313,7 @@
           <li><strong>Lightweight Extras:</strong> Extras-based dependency architecture keeps core lean</li>
         </ul>
       </div>
-      
+
       <!-- Code Quality & Evaluation -->
       <div class="feature-card-large">
         <div class="feature-icon">
@@ -330,7 +350,7 @@
           <li><strong>Code Pattern Detection:</strong> Identify anti-patterns and best practices</li>
         </ul>
       </div>
-      
+
       <!-- Session Management & Prompting -->
       <div class="feature-card-large">
         <div class="feature-icon">
@@ -364,7 +384,7 @@
           <li><strong>SQLite Storage:</strong> Reliable local session persistence and history</li>
         </ul>
       </div>
-      
+
       <!-- Development Intelligence -->
       <div class="feature-card-large">
         <div class="feature-icon">
@@ -405,9 +425,9 @@
 
 <!-- How It Works Architecture -->
 <section class="architecture-section">
-  <div class="section-container">
+  <div class="section-container" style="max-width: none; padding-left: 0; padding-right: 0;">
     <h2 class="section-title">How Tenets Works</h2>
-    
+
     <div class="architecture-flow" data-arch-flow>
   <div class="arch-stage" data-stage="1" data-target="input" role="button" tabindex="0">
         <div class="stage-icon">
@@ -416,9 +436,9 @@
         <h3>Input</h3>
         <p>Natural language prompt<br>or specific query</p>
       </div>
-      
+
       <div class="arch-arrow">→</div>
-      
+
   <div class="arch-stage" data-stage="2" data-target="scan" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">2</span>
@@ -426,9 +446,9 @@
         <h3>Scan</h3>
         <p>Parallel file discovery<br>respecting .gitignore</p>
       </div>
-      
+
       <div class="arch-arrow">→</div>
-      
+
   <div class="arch-stage" data-stage="3" data-target="analyze" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">3</span>
@@ -436,9 +456,9 @@
         <h3>Analyze</h3>
         <p>Language analyzers & AST<br>structure and metrics</p>
       </div>
-      
+
       <div class="arch-arrow">→</div>
-      
+
   <div class="arch-stage" data-stage="4" data-target="rank" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">4</span>
@@ -446,9 +466,9 @@
         <h3>Rank</h3>
         <p>Multi-factor scoring<br>keywords, structure, git</p>
       </div>
-      
+
       <div class="arch-arrow">→</div>
-      
+
   <div class="arch-stage" data-stage="5" data-target="ml-optional" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">5</span>
@@ -581,7 +601,7 @@
 <section class="install-section">
   <div class="section-container">
     <h2 class="section-title">Installation Options</h2>
-    
+
     <div class="install-grid">
       <div class="install-card">
         <h3>Quick Install</h3>
@@ -591,7 +611,7 @@
         </div>
         <p class="install-note">Core features - lightweight, no ML dependencies</p>
       </div>
-      
+
       <div class="install-card">
         <h3>Full Features</h3>
         <div class="code-block">
@@ -628,8 +648,8 @@
         <p class="install-note">Graphs, plots, and visual dashboards</p>
       </div>
 
-      
-      
+
+
       <div class="install-card coming-soon" aria-disabled="true">
         <div class="coming-soon-badge" aria-hidden="true">Coming soon</div>
         <h3>Web Interface</h3>
@@ -639,7 +659,7 @@
         </div>
         <p class="install-note">FastAPI, Uvicorn, SSE, uploads</p>
       </div>
-      
+
       <div class="install-card">
         <h3>Install & Build from Source</h3>
         <div class="code-block code-block-multi">
@@ -660,7 +680,7 @@ cd tenets && pip install -e .</code>
         <p class="install-note">Official Docker image and compose examples coming soon</p>
       </div>
     </div>
-    
+
     <div class="install-cta">
       <a href="{{ 'installation/'}}" class="btn-primary large">
         View Installation Guide
@@ -696,6 +716,6 @@ cd tenets && pip install -e .</code>
       </a>
     </div>
   </section>
-  
+
   {{ super() }}
 {% endblock %}

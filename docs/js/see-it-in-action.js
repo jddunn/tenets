@@ -14,7 +14,7 @@
           frame.appendChild(cap);
         }
         // If a poster/static src and a data-gif is present, ensure we start with poster
-        if (img && img.dataset && img.dataset.gif) {
+  if (img && img.dataset && img.dataset.gif) {
           if (img.dataset.poster) {
             img.src = img.dataset.poster;
           }
@@ -36,6 +36,20 @@
         revealed = true;
       }
       out.addEventListener('click', reveal);
+
+      // If image fails to load, insert a friendly placeholder
+      const imgEl = out.querySelector('img');
+      if (imgEl) {
+        imgEl.addEventListener('error', () => {
+          const frame = out.querySelector('.shot-frame');
+          if (!frame) return;
+          const ph = document.createElement('div');
+          ph.className = 'see-placeholder';
+          ph.textContent = 'Preview not available in this build';
+          frame.innerHTML = '';
+          frame.appendChild(ph);
+        }, { once: true });
+      }
 
       // If image fails to load, show a styled placeholder so terminals still render
   // Intentionally do not replace missing images; allow 404s to show so markup remains visible
