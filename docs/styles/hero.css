@@ -236,9 +236,9 @@
 /* Feature Cards Grid - 2 columns always visible */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem; /* Tighter gap */
-  max-width: 1200px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; /* slightly larger to balance smaller text */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -248,6 +248,28 @@
   .features-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* Large screens: lock to 3 columns and widen container */
+@media screen and (min-width: 1100px) {
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1400px;
+  }
+}
+
+/* Extra large screens: keep 3 columns but allow more breathing room */
+@media screen and (min-width: 1600px) {
+  .features-grid {
+    max-width: 1600px;
+    gap: 2rem;
+  }
+}
+
+/* Ensure the features section container can grow wider */
+.features-section .section-container { max-width: 1400px; }
+@media screen and (min-width: 1600px) {
+  .features-section .section-container { max-width: 1600px; }
 }
 
 @media screen and (min-width: 960px) {
@@ -260,7 +282,7 @@
   padding: 1.5rem; /* Less padding */
   background: #fdfdf9;
   border-radius: 16px;
-  box-shadow: 
+  box-shadow:
     4px 4px 12px rgba(26, 35, 50, 0.06),
     -4px -4px 12px rgba(255, 255, 255, 0.8);
   transition: all 0.3s ease;
@@ -272,7 +294,7 @@
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 
+  box-shadow:
     6px 6px 20px rgba(245, 158, 11, 0.1),
     -6px -6px 20px rgba(255, 255, 255, 0.9);
 }
@@ -327,7 +349,7 @@
   background: #fdfdf9;
   border-radius: 16px;
   text-align: center;
-  box-shadow: 
+  box-shadow:
     4px 4px 12px rgba(26, 35, 50, 0.06),
     -4px -4px 12px rgba(255, 255, 255, 0.8);
   transition: all 0.3s ease;
@@ -377,7 +399,7 @@
   text-align: center;
   background: #fdfdf9;
   border-radius: 12px;
-  box-shadow: 
+  box-shadow:
     3px 3px 10px rgba(26, 35, 50, 0.05),
     -3px -3px 10px rgba(255, 255, 255, 0.7);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -397,7 +419,7 @@
   transform: translateY(-8px) scale(1.05);
   opacity: 1;
   background: linear-gradient(135deg, #fdfdf9 0%, #fbbf24 100%);
-  box-shadow: 
+  box-shadow:
     0 10px 30px rgba(245, 158, 11, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
@@ -426,7 +448,7 @@
   font-weight: 700;
   font-size: 1.125rem;
   color: #f59e0b;
-  box-shadow: 
+  box-shadow:
     2px 2px 6px rgba(26, 35, 50, 0.1),
     -2px -2px 6px rgba(255, 255, 255, 0.9);
   transition: all 0.3s ease;
@@ -475,7 +497,7 @@
   padding: 2rem;
   background: #fdfdf9;
   border-radius: 16px;
-  box-shadow: 
+  box-shadow:
     inset 2px 2px 8px rgba(26, 35, 50, 0.05),
     inset -2px -2px 8px rgba(255, 255, 255, 0.9);
 }
@@ -540,7 +562,7 @@
   text-align: center;
   background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
   border-radius: 20px;
-  box-shadow: 
+  box-shadow:
     8px 8px 24px rgba(26, 35, 50, 0.08),
     -8px -8px 24px rgba(255, 255, 255, 0.9);
 }
@@ -589,54 +611,54 @@
     padding: 1.5rem 1rem 1rem;
     margin-top: 64px;
   }
-  
+
   .lantern-container,
   .hero-logo {
     width: 70px;
     height: 70px;
     margin-bottom: 0.75rem;
   }
-  
+
   .hero-title {
     font-size: 2rem;
     margin: 0.25rem 0;
   }
-  
+
   .hero-tagline {
     font-size: 1rem;
     margin: 0.25rem 0 0.75rem;
   }
-  
+
   .hero-description {
     font-size: 0.875rem;
     margin-bottom: 1rem;
   }
-  
+
   .hero-actions {
     margin: 1rem 0;
   }
-  
+
   .terminal-showcase {
     margin: 1.5rem auto 0.5rem;
   }
-  
+
   .terminal-body {
     padding: 1rem;
     min-height: 180px;
     max-height: 300px;
     font-size: 0.75rem;
   }
-  
+
   .features-grid,
   .why-tenets-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .workflow-diagram {
     flex-direction: column;
   }
-  
+
   .workflow-arrow {
     transform: rotate(90deg);
   }

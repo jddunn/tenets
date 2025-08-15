@@ -18,7 +18,7 @@
   --tenets-amber-500: #f59e0b;
   --tenets-amber-400: #fbbf24;
   --tenets-amber-300: #fcd34d;
-  
+
   /* Spacing Scale */
   --md-spacing-unit: 0.25rem;
   --md-spacing-xs: calc(var(--md-spacing-unit) * 2);
@@ -26,7 +26,7 @@
   --md-spacing-md: calc(var(--md-spacing-unit) * 4);
   --md-spacing-lg: calc(var(--md-spacing-unit) * 6);
   --md-spacing-xl: calc(var(--md-spacing-unit) * 8);
-  
+
   /* Transitions */
   --md-transition-fast: 0.15s ease-in-out;
   --md-transition-default: 0.25s ease-in-out;
@@ -44,25 +44,25 @@
   --md-primary-fg-color--dark: #0f1721;
   --md-primary-bg-color: #ffffff;
   --md-primary-bg-color--light: #ffffff;
-  
+
   /* Accent Colors */
   --md-accent-fg-color: #f59e0b;
   --md-accent-fg-color--transparent: rgba(245, 158, 11, 0.1);
   --md-accent-bg-color: #f59e0b;
   --md-accent-bg-color--light: #fbbf24;
-  
+
   /* Text Colors */
   --md-default-fg-color: rgba(0, 0, 0, 0.87);
   --md-default-fg-color--light: rgba(0, 0, 0, 0.54);
   --md-default-fg-color--lighter: rgba(0, 0, 0, 0.32);
   --md-default-fg-color--lightest: rgba(0, 0, 0, 0.07);
-  
+
   /* Background Colors */
   --md-default-bg-color: #ffffff;
   --md-default-bg-color--light: #f5f5f5;
   --md-default-bg-color--lighter: #eeeeee;
   --md-default-bg-color--lightest: #e0e0e0;
-  
+
   /* Code Colors */
   --md-code-fg-color: #1a2332;
   --md-code-bg-color: #f5f5f5;
@@ -79,14 +79,14 @@
   --md-code-hl-comment-color: var(--md-default-fg-color--lighter);
   --md-code-hl-generic-color: var(--md-default-fg-color--lighter);
   --md-code-hl-variable-color: var(--md-default-fg-color);
-  
+
   /* Footer */
   --md-footer-fg-color: #ffffff;
   --md-footer-fg-color--light: rgba(255, 255, 255, 0.7);
   --md-footer-fg-color--lighter: rgba(255, 255, 255, 0.45);
   --md-footer-bg-color: #1a2332;
   --md-footer-bg-color--dark: #0f1721;
-  
+
   /* Shadows */
   --md-shadow-z1: 0 2px 4px rgba(0,0,0,0.1);
   --md-shadow-z2: 0 4px 8px rgba(0,0,0,0.12);
@@ -104,25 +104,25 @@
   --md-primary-fg-color--dark: #0f1721;
   --md-primary-bg-color: #1a2332;
   --md-primary-bg-color--light: #263244;
-  
+
   /* Accent Colors */
   --md-accent-fg-color: #fbbf24;
   --md-accent-fg-color--transparent: rgba(251, 191, 36, 0.1);
   --md-accent-bg-color: #fbbf24;
   --md-accent-bg-color--light: #fcd34d;
-  
+
   /* Text Colors - Enhanced for better readability */
   --md-default-fg-color: rgba(255, 255, 255, 0.95);
   --md-default-fg-color--light: rgba(255, 255, 255, 0.70);
   --md-default-fg-color--lighter: rgba(255, 255, 255, 0.45);
   --md-default-fg-color--lightest: rgba(255, 255, 255, 0.12);
-  
+
   /* Background Colors - Proper dark theme hierarchy */
   --md-default-bg-color: #1a2332;
   --md-default-bg-color--light: #263244;
   --md-default-bg-color--lighter: #364152;
   --md-default-bg-color--lightest: #475569;
-  
+
   /* Code Colors - Optimized for dark mode */
   --md-code-fg-color: #fbbf24;
   --md-code-bg-color: #263244;
@@ -139,14 +139,14 @@
   --md-code-hl-comment-color: #546e7a;
   --md-code-hl-generic-color: var(--md-default-fg-color--lighter);
   --md-code-hl-variable-color: #eeffff;
-  
+
   /* Footer */
   --md-footer-fg-color: #ffffff;
   --md-footer-fg-color--light: rgba(255, 255, 255, 0.7);
   --md-footer-fg-color--lighter: rgba(255, 255, 255, 0.45);
   --md-footer-bg-color: #0f1721;
   --md-footer-bg-color--dark: #000000;
-  
+
   /* Shadows - Stronger for dark mode */
   --md-shadow-z1: 0 2px 4px rgba(0,0,0,0.2);
   --md-shadow-z2: 0 4px 8px rgba(0,0,0,0.3);
@@ -422,18 +422,22 @@
   right: 0;
 }
 
-@media screen and (max-width: 76.1875em) {
+@media screen and (max-width: 68.6875em) { /* <= 1099px */
   .md-sidebar--primary {
-    transform: translateX(-100%);
+  transform: translateX(-100%);
+  /* prevent invisible off-canvas sidebar from blocking content */
+  pointer-events: none;
   }
-  
+
   .md-sidebar--primary[data-md-state="open"] {
     transform: translateX(0);
     box-shadow: var(--md-shadow-z3);
+  pointer-events: auto;
   }
 }
 
-@media screen and (max-width: 59.9375em) {
+/* Show TOC (secondary sidebar) on tablet/desktop; hide only on narrow phones */
+@media screen and (max-width: 44.9375em) { /* ~719px */
   .md-sidebar--secondary {
     display: none;
   }
@@ -543,12 +547,47 @@
 .md-content {
   max-width: 61rem;
   margin: 0 auto;
-  padding: 1.5rem;
+  /* slightly more breathing room for non-home pages */
+  padding: 2rem 2rem;
 }
 
 .md-content__inner {
-  margin: 0 1.5rem;
+  margin: 0 2rem;
   padding-bottom: 3rem;
+}
+
+/* On wider screens, increase the content max-width to reserve space for the right TOC
+   while keeping the page visually centered (avoid pushing content to the left) */
+@media screen and (min-width: 75em) { /* ~1200px */
+  .is-api .md-content {
+    max-width: calc(61rem + 16rem); /* content width + ~TOC width */
+    /* keep regular symmetric padding; no extra right padding that shifts center */
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+}
+
+/* Ensure homepage remains full-bleed and centered; override any wide layout constraints */
+@media screen and (min-width: 75em) {
+  .md-container:has(.victorian-hero) .md-content {
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+/* Desktop: hide the left sidebar entirely to avoid double sidebars */
+@media screen and (min-width: 1100px) {
+  .md-sidebar--primary { display: none !important; }
+  /* Ensure content is not offset when sidebar is hidden */
+  .md-container .md-content { margin-left: 0 !important; }
+}
+
+/* Right TOC visibility: hide by default, show only on API pages; still hide on phones */
+.md-sidebar--secondary { display: none; }
+.is-api .md-sidebar--secondary { display: block; }
+@media screen and (max-width: 44.9375em) { /* ~719px */
+  .md-sidebar--secondary { display: none !important; }
 }
 
 /* =====================================================
@@ -685,16 +724,16 @@
   .md-nav__toggle:checked ~ .md-nav {
     display: block;
   }
-  
+
   .md-nav--primary .md-nav__title {
     background-color: var(--md-primary-fg-color);
     color: white;
   }
-  
+
   .md-nav--primary .md-nav__title::before {
     color: white;
   }
-  
+
   .md-search__form {
     width: 100%;
   }
@@ -712,15 +751,15 @@
   .md-content {
     padding: 1rem;
   }
-  
+
   .md-typeset h1 {
     font-size: 1.75rem;
   }
-  
+
   .md-typeset h2 {
     font-size: 1.25rem;
   }
-  
+
   .md-typeset h3 {
     font-size: 1.125rem;
   }
@@ -758,7 +797,7 @@
   .md-footer {
     display: none;
   }
-  
+
   .md-content {
     padding: 0;
     margin: 0;

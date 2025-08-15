@@ -1,0 +1,42 @@
+# Lightweight dev config for fast mkdocs serve
+# Usage:
+#   mkdocs serve -f mkdocs.dev.yml --dirtyreload
+# If your MkDocs version doesn't support --dirtyreload, just omit it.
+
+INHERIT: mkdocs.yml
+
+# Keep only light/essential plugins for rapid reloads
+plugins:
+  - search:
+      enabled: true
+      lang:
+        - en
+  - awesome-pages:
+      collapse_single_pages: false
+      strict: false
+  - literate-nav:
+      nav_file: SUMMARY.md
+      implicit_index: true
+  - section-index
+
+# Disable heavy plugins during dev by not including them here:
+# - gen-files (docs/gen_api.py)
+# - mkdocstrings
+# - redirects
+# - tags
+# - git-revision-date-localized
+# - minify
+
+# Optionally trim theme features that add work during dev
+# (keeps the snappy ones only)
+theme:
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - header.autohide

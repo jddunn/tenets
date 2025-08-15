@@ -19,7 +19,9 @@
     inset 0 -1px 0 rgba(245, 158, 11, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   border-bottom: 1px solid rgba(245, 158, 11, 0.08);
-  backdrop-filter: blur(12px);
+  /* Reduce blur for better contrast of icons */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* When search is open, remove backdrop/filter to prevent creating a containing
@@ -29,6 +31,13 @@
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: none !important;
+}
+
+/* When mobile drawer is open, remove header backdrop blur so drawer content isn't blurred beneath it */
+input[type="checkbox"]#__drawer:checked ~ .md-header,
+.md-toggle--drawer:checked ~ .md-header {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 [data-md-color-scheme="slate"] .md-header {
@@ -99,12 +108,8 @@
   filter: drop-shadow(0 4px 16px rgba(245, 158, 11, 0.3));
 }
 
-/* Hide title on wider screens (above mobile threshold) */
-@media screen and (min-width: 601px) {
-  .md-header__title {
-    display: none !important;
-  }
-}
+/* Hide header title entirely to avoid duplicate titles on pages */
+.md-header__title { display: none !important; }
 
 /* Navigation Container */
 /* Navigation group - left aligned after logo */
@@ -182,6 +187,10 @@
   display: inline-flex;
   align-items: center;
 }
+
+/* Defensive: hide any empty tab links (prevents blank buttons) */
+.md-tabs__link:empty,
+.md-header-nav__link:empty { display: none !important; }
 
 [data-md-color-scheme="slate"] .md-header-nav__link,
 [data-md-color-scheme="slate"] .md-tabs__link {
@@ -423,14 +432,14 @@
 }
 
 /* Theme GitHub icon to match flame (amber) */
-.md-source__icon svg {
+.md-header .md-source__icon svg {
   width: 12px;
   height: 12px;
   fill: #f59e0b; /* amber in light mode */
   transition: all 0.3s ease;
 }
 
-[data-md-color-scheme="slate"] .md-source__icon svg {
+[data-md-color-scheme="slate"] .md-header .md-source__icon svg {
   fill: #fbbf24;
 }
 
@@ -461,6 +470,12 @@
   right: 8px;
   left: auto;
   z-index: 15000;
+  color: #1a2332; /* ensure visible in light */
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+}
+
+[data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
+  color: #fbbf24; /* amber for visibility on dark */
 }
 
 /* On desktop, keep drawer button in normal flow so it doesn't overlay other controls */
@@ -471,6 +486,7 @@
     right: auto;
     left: auto;
     z-index: auto;
+  filter: none;
   }
 }
 

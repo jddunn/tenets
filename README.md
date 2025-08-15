@@ -218,6 +218,52 @@ tenets tenet add "Include error handling"
 tenets instill # Apply tenets to the session
 ```
 
+### System Instruction (Global Prompt)
+
+Set a single “system” instruction that can be auto-injected at the top of distilled context (once per session by default):
+
+```bash
+# Set and enable a system instruction (persisted)
+tenets system-instruction set "You are a senior staff engineer. Prefer small, safe diffs; add tests; explain trade-offs." \
+  --enable --position top --format markdown
+
+# From a file
+tenets system-instruction set --file prompts/system.md --enable
+
+# Inspect / clear / dry-run
+tenets system-instruction show
+tenets system-instruction clear --yes
+tenets system-instruction test --session my-feature
+```
+
+### Real-world flow: system + tenets + sessions
+
+```bash
+# 1) Create a working session
+tenets session create payment-integration
+
+# 2) Add guiding principles (tenets)
+tenets tenet add "Always validate user input" --priority critical --category security
+tenets tenet add "Use type hints in Python" --priority high --category style
+tenets tenet add "Keep functions under 50 lines" --priority medium --category maintainability
+
+# 3) Apply tenets for this session (smart injection cadence)
+tenets instill --session payment-integration
+
+# 4) Set a global system instruction
+tenets system-instruction set "You are a precise coding assistant. Prefer incremental changes and defensive coding." --enable
+
+# 5) Build context using the session (tenets + system prompt applied)
+tenets distill "add OAuth2 refresh tokens" --session payment-integration --remove-comments --condense --stats
+
+# 6) Pin critical files as you discover them
+tenets instill --session payment-integration --add-file src/auth/service.py --add-folder src/auth/routes
+tenets instill --session payment-integration --list-pinned
+
+# 7) Iterate with narrower prompts leveraging the same session
+tenets distill "extract token rotation into helper" --session payment-integration
+```
+
 ### Code Intelligence & Visualization
 
 Understand your codebase at a glance:

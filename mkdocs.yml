@@ -9,10 +9,7 @@ site_description: Context that feeds your prompts - Intelligent code exploration
 site_url: https://tenets.dev
 site_author: Johnny Dunn
 copyright: >
-  Copyright &copy; 2024-2025 <a href="https://jddunn.github.io" target="_blank" rel="noopener">Johnny Dunn</a> | 
-
-# <a href="/privacy" rel="noopener">Privacy Policy</a> | 
-# <a href="/terms" rel="noopener">Terms of Service</a>
+  Copyright &copy; 2024-2025 <a href="https://jddunn.github.io" target="_blank" rel="noopener">Johnny Dunn</a>
 
 # ==============================================================================
 # DIRECTORIES
@@ -20,7 +17,7 @@ copyright: >
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
-strict: false  # Set to true in CI/CD for stricter validation
+strict: false
 
 # ==============================================================================
 # REPOSITORY
@@ -36,16 +33,16 @@ theme:
   name: material
   custom_dir: docs/overrides
   language: en
-  
+
   # Logo and Branding
   logo: logos/tenets_dark_icon_transparent.png
   favicon: favicon/favicon.ico
-  
+
   # Typography
   font:
     text: Inter
     code: JetBrains Mono
-  
+
   # Icons
   icon:
     repo: fontawesome/brands/github
@@ -63,28 +60,28 @@ theme:
       bug: octicons/bug-16
       example: octicons/beaker-16
       quote: octicons/quote-16
-  
-  # Color Schemes
+
+  # Color Schemes - USING CUSTOM PRIMARY
   palette:
     # Light mode
-    - media: "(prefers-color-scheme: light)"
+    - media: '(prefers-color-scheme: light)'
       scheme: default
-      primary: indigo
+      primary: custom # CRITICAL: Keep this as 'custom' for your theme
       accent: amber
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-    
+
     # Dark mode
-    - media: "(prefers-color-scheme: dark)"
+    - media: '(prefers-color-scheme: dark)'
       scheme: slate
-      primary: indigo
+      primary: custom # CRITICAL: Keep this as 'custom' for your theme
       accent: amber
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-  
-  # Features
+
+  # Features - NO HEADER AUTOHIDE
   features:
     # Navigation
     - navigation.instant
@@ -100,134 +97,95 @@ theme:
     - navigation.indexes
     - navigation.top
     - navigation.footer
-    
-    # Table of Contents
-    - toc.follow
-    - toc.integrate
-    
+
+    # Table of Contents - RIGHT SIDEBAR
+    - toc.follow # TOC follows scroll
+    # REMOVED toc.integrate - keeps TOC as right sidebar
+
     # Search
     - search.suggest
     - search.highlight
     - search.share
-    
+
     # Content
     - content.code.copy
     - content.code.select
     - content.code.annotate
     - content.tabs.link
     - content.tooltips
-    - content.action.edit
-    - content.action.view
-    
-    # Header
-    - header.autohide
-    
-    # Announce bar
-    - announce.dismiss
 
 # ==============================================================================
-# PLUGINS
+# PLUGINS - WITH API GENERATION
 # ==============================================================================
 plugins:
-  # Search functionality
+  # Search functionality (keep first)
   - search:
-      enabled: true
-      lang: 
-        - en
+      lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-      pipeline:
-        - stemmer
-        - stopWordFilter
-        - trimmer
-  
-  # Generate API documentation
+
+  # Generate API documentation files
   - gen-files:
       scripts:
-        - docs/gen_api.py
-  
-  # Literate navigation
+        - docs/gen_api.py # Make sure this script exists!
+
+  # Navigation plugins for API docs
   - literate-nav:
       nav_file: SUMMARY.md
       implicit_index: true
-  
-  # Section index pages
+
   - section-index
-  
-  # Awesome pages for custom ordering
-  - awesome-pages:
-      collapse_single_pages: false
-      strict: false
-  
-  # Docstring handling
+
+  # API Documentation from docstrings - FULL CONFIG
   - mkdocstrings:
       enabled: true
       default_handler: python
       handlers:
         python:
-          paths: ["."]
+          paths: ['.']
           setup_commands:
             - import os, sys
             - sys.path.insert(0, os.path.abspath('.'))
           options:
             # Display options
             show_source: true
-            show_source_summary: true
             show_root_heading: true
             show_root_toc_entry: true
             show_object_full_path: false
             show_category_heading: true
             show_symbol_type_heading: true
             show_symbol_type_toc: true
-            
+
             # Member options
             members_order: source
             group_by_category: true
             show_submodules: true
-            
+
             # Docstring options
             docstring_style: google
             docstring_section_style: table
             merge_init_into_class: true
             show_if_no_docstring: false
-            
+
             # Signature options
             separate_signature: true
             line_length: 80
             show_signature_annotations: true
             signature_crossrefs: true
-            
-            # Other options
-            filters: ["!^_"]
+
+            # Filtering
+            filters: ['!^_']
             inherited_members: true
             preload_modules: []
-  
-  # Redirects for moved pages
-  - redirects:
-      redirect_maps:
-        'getting-started.md': 'quickstart.md'
-        'installation.md': 'quickstart.md#installation'
-  
-  # Tags plugin
-  - tags:
-      tags_file: tags.md
-  
-  # Social cards generation
-  - social:
-      enabled: true
-      cards: true
-      cards_layout_options:
-        background_color: "#1e1e2e"
-        color: "#ffffff"
-        font_family: Inter
-  
-  # Git information
+
+  # Git information (optional - comment out if causing issues)
   - git-revision-date-localized:
       enabled: true
       type: timeago
       enable_creation_date: true
       fallback_to_build_date: true
-  
-  # Minification (should be last)
+      enable_git_follow: false
+
+  # Minification (must be last)
   - minify:
       minify_html: true
       minify_js: true
@@ -238,13 +196,9 @@ plugins:
         reduce_boolean_attributes: true
         remove_optional_attribute_quotes: false
       cache_safe: true
-      css_files:
-        - styles/*.css
-      js_files:
-        - js/*.js
 
 # ==============================================================================
-# MARKDOWN EXTENSIONS
+# MARKDOWN EXTENSIONS - FULL SET FOR API DOCS
 # ==============================================================================
 markdown_extensions:
   # Python Markdown
@@ -255,13 +209,6 @@ markdown_extensions:
   - footnotes
   - md_in_html
   - meta
-  - nl2br
-  - sane_lists
-  - smarty:
-      smart_quotes: true
-      smart_angled_quotes: true
-      smart_dashes: true
-      smart_ellipses: true
   - tables
   - toc:
       permalink: true
@@ -269,8 +216,8 @@ markdown_extensions:
       slugify: !!python/object/apply:pymdownx.slugs.slugify
         kwds:
           case: lower
-      toc_depth: 3
-  
+      toc_depth: 3 # Full depth for API docs
+
   # PyMdown Extensions
   - pymdownx.arithmatex:
       generic: true
@@ -283,13 +230,6 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-      options:
-        custom_icons:
-          - docs/overrides/.icons
-  - pymdownx.escapeall:
-      hardbreak: true
-      nbsp: true
-  - pymdownx.extra
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -299,29 +239,17 @@ markdown_extensions:
       linenums: true
       linenums_style: pymdownx-inline
   - pymdownx.inlinehilite
-  - pymdownx.keys:
-      separator: "+"
-      strict: false
-      camel_case: false
+  - pymdownx.keys
   - pymdownx.magiclink:
-      normalize_issue_symbols: true
       repo_url_shorthand: true
-      repo_url_shortener: true
-      social_url_shorthand: true
-      social_url_shortener: true
-      provider: github
       user: jddunn
       repo: tenets
   - pymdownx.mark
-  - pymdownx.progressbar
   - pymdownx.smartsymbols
   - pymdownx.snippets:
-      auto_append:
-        - docs/includes/abbreviations.md
       base_path:
         - docs
       check_paths: true
-      restrict_base_path: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -342,45 +270,14 @@ markdown_extensions:
 # EXTRA CONFIGURATION
 # ==============================================================================
 extra:
-  # Version provider
+  # Disable generator meta tag
+  generator: false
+
+  # Version provider (if using mike for versioning)
   version:
     provider: mike
     default: stable
-  
-  # Analytics
-  analytics:
-    provider: google
-    property: !ENV [GOOGLE_ANALYTICS_ID, ""]
-    feedback:
-      title: Was this page helpful?
-      ratings:
-        - icon: material/emoticon-happy-outline
-          name: This page was helpful
-          data: 1
-          note: >-
-            Thanks for your feedback!
-        - icon: material/emoticon-sad-outline
-          name: This page could be improved
-          data: 0
-          note: >-
-            Thanks for your feedback! Help us improve by
-            <a href="https://github.com/jddunn/tenets/issues/new/?title=[Feedback]+{title}" target="_blank" rel="noopener">
-              filing an issue
-            </a>
-  
-  # Consent
-  consent:
-    title: Cookie consent
-    description: >-
-      We use cookies to recognize your repeated visits and preferences, as well
-      as to measure the effectiveness of our documentation and whether users
-      find what they're searching for. With your consent, you're helping us to
-      make our documentation better.
-    actions:
-      - accept
-      - reject
-      - manage
-  
+
   # Social links
   social:
     - icon: fontawesome/brands/github
@@ -392,207 +289,79 @@ extra:
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/tenets/
       name: Tenets on PyPI
-    - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/r/jddunn/tenets
-      name: Tenets on Docker Hub
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/company/manic-agency-llc/
       name: Manic Agency on LinkedIn
     - icon: fontawesome/brands/x-twitter
       link: https://x.com/manicagency
       name: Follow @manicagency
+    - icon: fontawesome/brands/instagram
+      link: https://instagram.com/manic.agency
+      name: manic.agency on Instagram
     - icon: fontawesome/solid/envelope
       link: mailto:team@manic.agency
       name: Contact us
-    - icon: fontawesome/solid/rss
-      link: /feed_rss_created.xml
-      name: RSS Feed
-  
-  # Generator off
-  generator: false
-  
-  # Status badges
-  status:
-    new: Recently added
-    deprecated: Deprecated
-    beta: Beta
-    stable: Stable
-  
-  # Alternate languages
-  alternate:
-    - name: English
-      link: /en/
-      lang: en
-    # Add more languages as needed
-  
-  # Custom homepage
-  homepage: /
 
 # ==============================================================================
-# EXTRA CSS
+# EXTRA CSS - ORIGINAL FLAT STRUCTURE
 # ==============================================================================
 extra_css:
-  # Core styles
+  # Base styles
   - styles/variables.css
-  - styles/base.css
-  - styles/theme.css
-  
-  # Component styles
-  - styles/components/header.css
-  - styles/components/footer.css
-  - styles/components/navigation.css
-  - styles/components/search.css
-  - styles/components/buttons.css
-  - styles/components/cards.css
-  - styles/components/hero.css
-  - styles/components/terminal.css
-  - styles/components/back-to-top.css
-  - styles/components/see-it-in-action.css
-  
-  # Page-specific styles
-  - styles/pages/home.css
-  - styles/pages/docs.css
-  - styles/pages/api.css
-  
-  # Theme variations
-  - styles/themes/victorian.css
-  - styles/themes/neumorphic.css
-  
+  - styles/main.css
   # Animations
   - styles/animations.css
-  
-  # Responsive design
-  - styles/responsive.css
-  
-  # Print styles
-  - styles/print.css
-  
-  # Overrides (must be last)
+  # Theme styles
+  - styles/victorian.css
+  - styles/neumorphic.css
+  # Component styles
+  - styles/header.css
+  - styles/footer.css
+  - styles/buttons.css
+  - styles/cards.css
+  - styles/hero.css
+  - styles/terminal.css
+  - styles/back-to-top.css
+  - styles/see-it-in-action.css
+  - styles/search.css
+  # Responsive
+  - styles/mobile.css
+  # Final overrides (must be last)
   - styles/overrides.css
 
 # ==============================================================================
-# EXTRA JAVASCRIPT
+# EXTRA JAVASCRIPT - ORIGINAL FLAT STRUCTURE
 # ==============================================================================
 extra_javascript:
-  # MathJax for mathematical notation
-  - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-  
   # Core functionality
-  - js/config.js
   - js/main.js
-  - js/theme.js
-  
+  - js/page-flags.js
   # Components
-  - js/components/theme-toggle.js
-  - js/components/terminal.js
-  - js/components/mobile-menu.js
-  - js/components/copy-buttons.js
-  - js/components/back-to-top.js
-  - js/components/search-enhancements.js
-  - js/components/version-selector.js
-  
-  # Page-specific scripts
-  - js/pages/home.js
-  - js/pages/lantern.js
-  - js/pages/architecture-diagram.js
-  - js/pages/see-it-in-action.js
-  
-  # Analytics and tracking
-  - js/analytics.js
-  
+  - js/theme-toggle.js
+  - js/terminal.js
+  - js/mobile-menu.js
+  - js/copy-buttons.js
+  - js/back-to-top.js
+  # Homepage specific
+  - js/lantern.js
+  - js/home-animations.js
+  - js/architecture-diagram.js
+  - js/see-it-in-action.js
   # External libraries
   - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
-  - https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js
 
 # ==============================================================================
-# NAVIGATION STRUCTURE
+# NAVIGATION - KEEP SIMPLE BUT ADD API SECTION
 # ==============================================================================
 nav:
-  - Home:
-    - Welcome: index.md
-    - Why Tenets?: why-tenets.md
-    - Roadmap: roadmap.md
-  
-  - Getting Started:
-    - Quick Start: quickstart.md
-    - Installation: installation.md
-    - First Steps: first-steps.md
-    - Examples: examples.md
-  
-  - User Guide:
-    - Overview: guide/index.md
-    - Basic Usage: guide/basic-usage.md
-    - Advanced Features: guide/advanced-features.md
-    - Configuration: guide/configuration.md
-    - Workflows: guide/workflows.md
-    - Best Practices: guide/best-practices.md
-    - Troubleshooting: guide/troubleshooting.md
-  
-  - Features:
-    - Feature Overview: features/index.md
-    - Code Aggregation: features/code-aggregation.md
-    - Context Building: features/context-building.md
-    - Prompt Engineering: features/prompt-engineering.md
-    - Template System: features/templates.md
-    - Language Support: features/languages.md
-    - Integrations: features/integrations.md
-  
+  - Quick Start: quickstart.md
+  - Features: features.md
+  - Supported Languages: supported-languages.md
+  - Documentation: docs.md
   - Reference:
-    - CLI Reference: reference/cli.md
-    - Configuration: reference/config.md
-    - API Reference: reference/api/
-    - Architecture: reference/architecture.md
-    - File Formats: reference/file-formats.md
-    - Environment Variables: reference/env-vars.md
-  
-  - Integrations:
-    - Overview: integrations/index.md
-    - VS Code: integrations/vscode.md
-    - GitHub Actions: integrations/github-actions.md
-    - Pre-commit Hooks: integrations/pre-commit.md
-    - CI/CD Pipelines: integrations/ci-cd.md
-    - LLM Providers: integrations/llm-providers.md
-  
-  - Development:
-    - Contributing: development/contributing.md
-    - Development Setup: development/setup.md
-    - Testing: development/testing.md
-    - Plugin Development: development/plugins.md
-    - API Development: development/api.md
-  
-  - Resources:
-    - FAQ: resources/faq.md
-    - Glossary: resources/glossary.md
-    - Changelog: resources/changelog.md
-    - Migration Guide: resources/migration.md
-    - Security: resources/security.md
-    - License: resources/license.md
-  
-  - Community:
-    - Blog: https://manic.agency/blog
-    - Discord: https://discord.gg/DzNgXdYm
-    - GitHub Discussions: https://github.com/jddunn/tenets/discussions
-    - Contact: https://manic.agency/contact
-
-# ==============================================================================
-# WATCH CONFIGURATION
-# ==============================================================================
-watch:
-  - docs
-  - mkdocs.yml
-  - README.md
-
-# ==============================================================================
-# VALIDATION
-# ==============================================================================
-validation:
-  nav:
-    omitted_files: info
-    not_found: warn
-    absolute_links: info
-  links:
-    not_found: warn
-    absolute_links: info
-    unrecognized_links: info
+      - CLI Reference: CLI.md
+      - Configuration: CONFIG.md
+      - Architecture: ARCHITECTURE.md
+  - API Reference: api/
+  - Blog: https://manic.agency/blog
+  - Contact: https://manic.agency/contact

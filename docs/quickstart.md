@@ -1,3 +1,30 @@
+# Quickstart
+
+## Real-world flow: System instruction + Tenets + Sessions
+
+```bash
+# Create a working session
+tenets session create auth-refresh
+
+# Add guiding principles (tenets)
+tenets tenet add "Prefer small, safe diffs" --priority high --category style
+tenets tenet add "Always validate user input" --priority critical --category security
+
+# Apply tenets for this session
+tenets instill --session auth-refresh
+
+# Set a global system instruction
+tenets system-instruction set "You are a senior engineer. Add tests and document trade-offs." --enable
+
+# Build context with transformations for token efficiency
+tenets distill "add OAuth2 refresh tokens" --session auth-refresh --remove-comments --condense
+
+# Pin files as you learn what matters
+tenets instill --session auth-refresh --add-file src/auth/service.py --add-folder src/auth/routes
+tenets instill --session auth-refresh --list-pinned
+```
+
+See also: CLI > System Instruction Commands, Tenet Commands, and Instill.
 # Quick Start
 
 Get productive with Tenets in under 60 seconds.
