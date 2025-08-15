@@ -722,7 +722,7 @@ class Tenets:
         save: bool = False,
     ) -> None:
         """Set the system instruction for AI interactions.
-        
+
         Args:
             instruction: The system instruction text
             enable: Whether to auto-inject
@@ -734,15 +734,15 @@ class Tenets:
         self.config.tenet.system_instruction_enabled = enable
         self.config.tenet.system_instruction_position = position
         self.config.tenet.system_instruction_format = format
-        
+
         if save and getattr(self.config, "config_file", None):
             self.config.save()
-            
+
         self.logger.info(f"System instruction set ({len(instruction)} chars)")
 
     def get_system_instruction(self) -> Optional[str]:
         """Get the current system instruction.
-        
+
         Returns:
             The system instruction text or None
         """
@@ -750,16 +750,16 @@ class Tenets:
 
     def clear_system_instruction(self, save: bool = False) -> None:
         """Clear the system instruction.
-        
+
         Args:
             save: Whether to save to config file
         """
         self.config.tenet.system_instruction = None
         self.config.tenet.system_instruction_enabled = False
-        
+
         if save and getattr(self.config, "config_file", None):
             self.config.save()
-            
+
         self.logger.info("System instruction cleared")
 
 
