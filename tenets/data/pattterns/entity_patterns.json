@@ -1,0 +1,1317 @@
+{
+  "class": [
+    {
+      "pattern": "\\b(?:class|interface|trait|enum|struct)\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Class/interface/trait/enum definition"
+    },
+    {
+      "pattern": "\\b([A-Z][a-z0-9]+(?:[A-Z][a-z0-9]+)+)(?:\\s+class|\\s+interface)?",
+      "confidence": 0.85,
+      "description": "PascalCase class name"
+    },
+    {
+      "pattern": "\\bnew\\s+([A-Z][a-zA-Z0-9_]*)\\s*\\(",
+      "confidence": 0.9,
+      "description": "Class instantiation"
+    },
+    {
+      "pattern": "extends\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Class inheritance"
+    },
+    {
+      "pattern": "implements\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Interface implementation"
+    },
+    {
+      "pattern": ":\\s*([A-Z][a-zA-Z0-9_]*)\\s*(?:\\{|$)",
+      "confidence": 0.75,
+      "description": "Type annotation class"
+    },
+    {
+      "pattern": "@([A-Z][a-zA-Z0-9_]*)(?:\\(|\\s|$)",
+      "confidence": 0.8,
+      "description": "Decorator/Annotation class"
+    },
+    {
+      "pattern": "instanceof\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Instance check"
+    },
+    {
+      "pattern": "([A-Z][a-zA-Z0-9_]*)\\.prototype",
+      "confidence": 0.85,
+      "description": "Prototype reference"
+    },
+    {
+      "pattern": "abstract\\s+class\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Abstract class"
+    },
+    {
+      "pattern": "sealed\\s+class\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Sealed class"
+    },
+    {
+      "pattern": "data\\s+class\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Data class"
+    },
+    {
+      "pattern": "case\\s+class\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Case class"
+    },
+    {
+      "pattern": "record\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Record type"
+    },
+    {
+      "pattern": "protocol\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Swift protocol"
+    },
+    {
+      "pattern": "mixin\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Mixin class"
+    }
+  ],
+  "function": [
+    {
+      "pattern": "\\b(?:function|method|def|fn|func|procedure|sub)\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Function definition"
+    },
+    {
+      "pattern": "\\b([a-z_][a-zA-Z0-9_]*)\\s*\\([^)]*\\)\\s*(?:\\{|=>|->)",
+      "confidence": 0.8,
+      "description": "Function with body"
+    },
+    {
+      "pattern": "\\.([a-z_][a-zA-Z0-9_]*)\\s*\\(",
+      "confidence": 0.85,
+      "description": "Method call"
+    },
+    {
+      "pattern": "\\b(?:async|static|public|private|protected)\\s+([a-z_][a-zA-Z0-9_]*)\\s*\\(",
+      "confidence": 0.9,
+      "description": "Modified function"
+    },
+    {
+      "pattern": "\\b([a-z_][a-zA-Z0-9_]*)\\s*:\\s*\\([^)]*\\)\\s*=>",
+      "confidence": 0.85,
+      "description": "Arrow function property"
+    },
+    {
+      "pattern": "\\bconst\\s+([a-z_][a-zA-Z0-9_]*)\\s*=\\s*(?:async\\s+)?\\([^)]*\\)\\s*=>",
+      "confidence": 0.9,
+      "description": "Const arrow function"
+    },
+    {
+      "pattern": "\\blet\\s+([a-z_][a-zA-Z0-9_]*)\\s*=\\s*(?:async\\s+)?function",
+      "confidence": 0.9,
+      "description": "Function expression"
+    },
+    {
+      "pattern": "@([a-z_][a-zA-Z0-9_]*)\\s*\\(",
+      "confidence": 0.85,
+      "description": "Decorator function call"
+    },
+    {
+      "pattern": "\\b([a-z_][a-zA-Z0-9_]*)\\s*<[^>]+>\\s*\\(",
+      "confidence": 0.85,
+      "description": "Generic function call"
+    },
+    {
+      "pattern": "\\boverride\\s+(?:async\\s+)?(?:fun|func|def)\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Override method"
+    },
+    {
+      "pattern": "\\bgetter\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Getter method"
+    },
+    {
+      "pattern": "\\bsetter\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Setter method"
+    },
+    {
+      "pattern": "\\boperator\\s*([+\\-*/=<>!&|^%]+|\\[\\])",
+      "confidence": 0.9,
+      "description": "Operator overload"
+    },
+    {
+      "pattern": "\\b([a-z_][a-zA-Z0-9_]*)!\\(",
+      "confidence": 0.8,
+      "description": "Macro call"
+    },
+    {
+      "pattern": "\\bcoroutine\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Coroutine function"
+    },
+    {
+      "pattern": "\\blambda\\s*[^:]*:\\s*([^,\\)]+)",
+      "confidence": 0.85,
+      "description": "Lambda function"
+    }
+  ],
+  "variable": [
+    {
+      "pattern": "\\b(?:var|let|const|val|my|our)\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Variable declaration"
+    },
+    {
+      "pattern": "\\b([a-z_][a-zA-Z0-9_]*)\\s*(?:=|:=|<-)\\s*",
+      "confidence": 0.7,
+      "description": "Variable assignment"
+    },
+    {
+      "pattern": "\\$([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Shell/PHP/Perl variable"
+    },
+    {
+      "pattern": "@([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.8,
+      "description": "Instance variable"
+    },
+    {
+      "pattern": "@@([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Class variable"
+    },
+    {
+      "pattern": "%([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.75,
+      "description": "Hash/Dict variable"
+    },
+    {
+      "pattern": "\\b(?:auto|decltype\\(auto\\))\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Auto-typed variable"
+    },
+    {
+      "pattern": "\\bref\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Reference variable"
+    },
+    {
+      "pattern": "\\bmut\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Mutable variable"
+    },
+    {
+      "pattern": "\\blazy\\s+val\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Lazy variable"
+    },
+    {
+      "pattern": "\\batomic\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Atomic variable"
+    },
+    {
+      "pattern": "\\bvolatile\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Volatile variable"
+    },
+    {
+      "pattern": "\\bthread_local\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Thread-local variable"
+    },
+    {
+      "pattern": "\\bweak\\s+var\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Weak reference"
+    },
+    {
+      "pattern": "\\bunowned\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Unowned reference"
+    }
+  ],
+  "constant": [
+    {
+      "pattern": "\\b([A-Z_][A-Z0-9_]*)\\b",
+      "confidence": 0.75,
+      "description": "SCREAMING_SNAKE_CASE constant"
+    },
+    {
+      "pattern": "\\bconst\\s+([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Const declaration"
+    },
+    {
+      "pattern": "#define\\s+([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "C/C++ macro"
+    },
+    {
+      "pattern": "\\bfinal\\s+([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Final constant"
+    },
+    {
+      "pattern": "\\bstatic\\s+final\\s+([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Static final constant"
+    },
+    {
+      "pattern": "\\breadonly\\s+([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Readonly constant"
+    },
+    {
+      "pattern": "\\benum\\s+\\{[^}]*([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Enum value"
+    },
+    {
+      "pattern": "\\bENV\\[(['\"])([A-Z_][A-Z0-9_]*)\\1\\]",
+      "confidence": 0.9,
+      "description": "Environment variable"
+    },
+    {
+      "pattern": "process\\.env\\.([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Node env variable"
+    },
+    {
+      "pattern": "os\\.environ\\[(['\"])([A-Z_][A-Z0-9_]*)\\1\\]",
+      "confidence": 0.9,
+      "description": "Python env variable"
+    },
+    {
+      "pattern": "\\bObject\\.freeze\\(\\{[^}]*([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Frozen object constant"
+    },
+    {
+      "pattern": "\\bdefine\\((['\"])([A-Z_][A-Z0-9_]*)\\1",
+      "confidence": 0.9,
+      "description": "PHP define constant"
+    }
+  ],
+  "file": [
+    {
+      "pattern": "\\b([a-zA-Z0-9_\\-/]*[a-zA-Z0-9_\\-]+\\.(?:py|js|ts|tsx|jsx|java|cpp|c|h|hpp|go|rs|rb|php|cs|swift|kt|scala|dart|r|m|mm|sql|sh|bash|zsh|fish|ps1|psm1|psd1|yml|yaml|json|xml|toml|ini|cfg|conf|env|gitignore|dockerignore|md|rst|txt|csv|tsv|html|htm|css|scss|sass|less|vue|svelte))\\b",
+      "confidence": 0.95,
+      "description": "File with extension"
+    },
+    {
+      "pattern": "(?:from|import|require|include)\\s+['\"]([^'\"]+)['\"]",
+      "confidence": 0.9,
+      "description": "Imported file"
+    },
+    {
+      "pattern": "(?:open|read|write|load)\\s*\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "File operation"
+    },
+    {
+      "pattern": "\\b(?:src|href|url)\\s*=\\s*['\"]([^'\"]+\\.[a-z]{2,4})['\"]",
+      "confidence": 0.85,
+      "description": "Resource file reference"
+    },
+    {
+      "pattern": "\\bFile\\(['\"]([^'\"]+)['\"]\\)",
+      "confidence": 0.9,
+      "description": "File constructor"
+    },
+    {
+      "pattern": "\\bPath\\(['\"]([^'\"]+)['\"]\\)",
+      "confidence": 0.85,
+      "description": "Path reference"
+    },
+    {
+      "pattern": "__FILE__|__DIR__|__dirname|__filename",
+      "confidence": 0.9,
+      "description": "Magic file constant"
+    },
+    {
+      "pattern": "\\.\\./[a-zA-Z0-9_\\-/]+\\.[a-z]{2,4}",
+      "confidence": 0.85,
+      "description": "Relative parent path"
+    },
+    {
+      "pattern": "\\./[a-zA-Z0-9_\\-/]+\\.[a-z]{2,4}",
+      "confidence": 0.85,
+      "description": "Relative current path"
+    },
+    {
+      "pattern": "~/[a-zA-Z0-9_\\-/]+\\.[a-z]{2,4}",
+      "confidence": 0.85,
+      "description": "Home directory path"
+    },
+    {
+      "pattern": "/(?:etc|var|usr|opt|home)/[a-zA-Z0-9_\\-/]+",
+      "confidence": 0.8,
+      "description": "Unix system path"
+    },
+    {
+      "pattern": "[A-Z]:\\\\[^\\s]+\\.[a-z]{2,4}",
+      "confidence": 0.85,
+      "description": "Windows path"
+    },
+    {
+      "pattern": "\\*\\.([a-z]{2,4})",
+      "confidence": 0.8,
+      "description": "Wildcard file pattern"
+    },
+    {
+      "pattern": "\\{\\{\\s*([a-zA-Z0-9_\\-/]+\\.[a-z]{2,4})\\s*\\}\\}",
+      "confidence": 0.8,
+      "description": "Template file reference"
+    }
+  ],
+  "module": [
+    {
+      "pattern": "(?:import|from)\\s+([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*)",
+      "confidence": 0.9,
+      "description": "Python/JS module"
+    },
+    {
+      "pattern": "(?:use|using)\\s+([A-Z][a-zA-Z0-9_]*(?:::[A-Z][a-zA-Z0-9_]*)*)",
+      "confidence": 0.9,
+      "description": "Rust/C++ module"
+    },
+    {
+      "pattern": "package\\s+([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*)",
+      "confidence": 0.95,
+      "description": "Package declaration"
+    },
+    {
+      "pattern": "namespace\\s+([A-Z][a-zA-Z0-9_]*(?:\\\\[A-Z][a-zA-Z0-9_]*)*)",
+      "confidence": 0.95,
+      "description": "Namespace declaration"
+    },
+    {
+      "pattern": "module\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Module declaration"
+    },
+    {
+      "pattern": "require\\s*\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)",
+      "confidence": 0.9,
+      "description": "CommonJS require"
+    },
+    {
+      "pattern": "import\\s*\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)",
+      "confidence": 0.85,
+      "description": "Dynamic import"
+    },
+    {
+      "pattern": "\\bexport\\s+(?:default\\s+)?(?:from\\s+['\"]([^'\"]+)['\"])",
+      "confidence": 0.85,
+      "description": "Re-export module"
+    },
+    {
+      "pattern": "\\bmod\\s+([a-z_][a-z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Rust module"
+    },
+    {
+      "pattern": "\\binclude\\s+<([^>]+)>",
+      "confidence": 0.85,
+      "description": "C/C++ include"
+    },
+    {
+      "pattern": "\\bpod\\s+['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "CocoaPods dependency"
+    },
+    {
+      "pattern": "\\bimplementation\\s+['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "Gradle dependency"
+    },
+    {
+      "pattern": "\\bgem\\s+['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "Ruby gem"
+    },
+    {
+      "pattern": "<dependency>[^<]*<artifactId>([^<]+)</artifactId>",
+      "confidence": 0.9,
+      "description": "Maven dependency"
+    }
+  ],
+  "api_endpoint": [
+    {
+      "pattern": "(?:GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\\s+([/a-zA-Z0-9_\\-{}\\[\\]:]+)",
+      "confidence": 0.95,
+      "description": "REST endpoint"
+    },
+    {
+      "pattern": "@(?:Get|Post|Put|Delete|Patch|RequestMapping)\\s*\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.95,
+      "description": "Annotated endpoint"
+    },
+    {
+      "pattern": "(?:route|path)\\s*\\(['\"]([/a-zA-Z0-9_\\-{}\\[\\]:]+)['\"]",
+      "confidence": 0.9,
+      "description": "Route definition"
+    },
+    {
+      "pattern": "/api/[a-zA-Z0-9_\\-/]+",
+      "confidence": 0.8,
+      "description": "API path"
+    },
+    {
+      "pattern": "\\bapp\\.(?:get|post|put|delete|patch)\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.95,
+      "description": "Express route"
+    },
+    {
+      "pattern": "\\brouter\\.(?:get|post|put|delete|patch)\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.95,
+      "description": "Router endpoint"
+    },
+    {
+      "pattern": "@app\\.route\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.95,
+      "description": "Flask route"
+    },
+    {
+      "pattern": "\\bpath\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "Django path"
+    },
+    {
+      "pattern": "\\bmatch\\s+['\"]([^'\"]+)['\"]\\s+=>",
+      "confidence": 0.85,
+      "description": "Pattern match route"
+    },
+    {
+      "pattern": "\\b(?:query|mutation|subscription)\\s+([a-zA-Z][a-zA-Z0-9_]*)\\s*(?:\\(|\\{)",
+      "confidence": 0.85,
+      "description": "GraphQL operation"
+    },
+    {
+      "pattern": "\\brpc\\s+([a-zA-Z][a-zA-Z0-9_]*)\\s*\\(",
+      "confidence": 0.85,
+      "description": "RPC method"
+    },
+    {
+      "pattern": "\\bservice\\s+([a-zA-Z][a-zA-Z0-9_]*)\\s*\\{",
+      "confidence": 0.85,
+      "description": "gRPC service"
+    },
+    {
+      "pattern": "\\b([a-zA-Z0-9_]+)_url(?:_path)?",
+      "confidence": 0.75,
+      "description": "Rails URL helper"
+    },
+    {
+      "pattern": "\\baction:\\s*['\"]([^'\"]+)['\"]",
+      "confidence": 0.8,
+      "description": "Form action"
+    }
+  ],
+  "database": [
+    {
+      "pattern": "\\b(?:SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER)\\s+(?:FROM|INTO|TABLE)?\\s*([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "SQL table"
+    },
+    {
+      "pattern": "(?:collection|table|model)\\s*\\(['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]",
+      "confidence": 0.85,
+      "description": "Database collection/table"
+    },
+    {
+      "pattern": "\\.(?:find|insert|update|delete|save)\\s*\\(\\s*\\{['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]",
+      "confidence": 0.8,
+      "description": "NoSQL operation"
+    },
+    {
+      "pattern": "\\b(?:db|database)\\.([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.8,
+      "description": "Database reference"
+    },
+    {
+      "pattern": "\\bCREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Index creation"
+    },
+    {
+      "pattern": "\\bFOREIGN\\s+KEY\\s*\\(['\"]?([a-zA-Z_][a-zA-Z0-9_]*)['\"]?\\)",
+      "confidence": 0.9,
+      "description": "Foreign key"
+    },
+    {
+      "pattern": "\\bPRIMARY\\s+KEY\\s*\\(['\"]?([a-zA-Z_][a-zA-Z0-9_]*)['\"]?\\)",
+      "confidence": 0.9,
+      "description": "Primary key"
+    },
+    {
+      "pattern": "\\bJOIN\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s+ON",
+      "confidence": 0.9,
+      "description": "Join table"
+    },
+    {
+      "pattern": "\\bschema\\.([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Schema table"
+    },
+    {
+      "pattern": "\\bmigrate\\s*:\\s*([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Migration name"
+    },
+    {
+      "pattern": "\\b([a-zA-Z_][a-zA-Z0-9_]*)_id\\b",
+      "confidence": 0.75,
+      "description": "Foreign key field"
+    },
+    {
+      "pattern": "\\bCONSTRAINT\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Constraint name"
+    },
+    {
+      "pattern": "\\bTRIGGER\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Trigger name"
+    },
+    {
+      "pattern": "\\bVIEW\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "View name"
+    },
+    {
+      "pattern": "\\bSEQUENCE\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Sequence name"
+    }
+  ],
+  "config": [
+    {
+      "pattern": "(?:process\\.env\\.|os\\.environ\\[?['\"]?)([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Environment variable"
+    },
+    {
+      "pattern": "(?:config|settings|options)\\[?['\"]([a-zA-Z_][a-zA-Z0-9_\\.]*)['\"]?\\]?",
+      "confidence": 0.75,
+      "description": "Config key"
+    },
+    {
+      "pattern": "--([a-z\\-]+)(?:\\s+|=)([^\\s]+)?",
+      "confidence": 0.85,
+      "description": "CLI argument"
+    },
+    {
+      "pattern": "\\b([A-Z_][A-Z0-9_]*)_(?:KEY|TOKEN|SECRET|PASSWORD|API|URL|URI|HOST|PORT)\\b",
+      "confidence": 0.9,
+      "description": "Config constant pattern"
+    },
+    {
+      "pattern": "\\.env\\.([A-Z_][A-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Env property"
+    },
+    {
+      "pattern": "\\bget(?:env|Config|Setting|Option)\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "Config getter"
+    },
+    {
+      "pattern": "\\b(?:flag|arg)\\.([a-zA-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.8,
+      "description": "Flag/arg reference"
+    },
+    {
+      "pattern": "<appSettings>[^<]*<add\\s+key=['\"]([^'\"]+)['\"]",
+      "confidence": 0.9,
+      "description": ".NET config key"
+    },
+    {
+      "pattern": "\\bproperties\\.([a-zA-Z][a-zA-Z0-9_.]*)",
+      "confidence": 0.8,
+      "description": "Properties reference"
+    },
+    {
+      "pattern": "\\byaml\\[['\"]([^'\"]+)['\"]\\]",
+      "confidence": 0.85,
+      "description": "YAML config key"
+    },
+    {
+      "pattern": "\\bjson\\[['\"]([^'\"]+)['\"]\\]",
+      "confidence": 0.85,
+      "description": "JSON config key"
+    },
+    {
+      "pattern": "\\bini\\[['\"]([^'\"]+)['\"]\\]\\[['\"]([^'\"]+)['\"]\\]",
+      "confidence": 0.85,
+      "description": "INI config section/key"
+    }
+  ],
+  "url": [
+    {
+      "pattern": "https?://[a-zA-Z0-9\\-._~:/?#\\[\\]@!$&'()*+,;=]+",
+      "confidence": 0.95,
+      "description": "HTTP(S) URL"
+    },
+    {
+      "pattern": "(?:ftp|ssh|git|ws|wss)://[a-zA-Z0-9\\-._~:/?#\\[\\]@!$&'()*+,;=]+",
+      "confidence": 0.95,
+      "description": "Protocol URL"
+    },
+    {
+      "pattern": "[a-zA-Z0-9\\-]+\\.(?:com|org|net|io|dev|app|co|ai|ml|cloud|tech)\\b",
+      "confidence": 0.8,
+      "description": "Domain name"
+    },
+    {
+      "pattern": "\\b(?:localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)(?::\\d{1,5})?",
+      "confidence": 0.9,
+      "description": "Localhost URL"
+    },
+    {
+      "pattern": "\\b(?:api|cdn|static|assets|media|img|images)\\.([a-zA-Z0-9\\-]+\\.[a-z]{2,6})",
+      "confidence": 0.85,
+      "description": "Subdomain URL"
+    },
+    {
+      "pattern": "\\bmailto:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+      "confidence": 0.95,
+      "description": "Mailto link"
+    },
+    {
+      "pattern": "\\btel:\\+?[0-9\\-().\\s]+",
+      "confidence": 0.9,
+      "description": "Tel link"
+    },
+    {
+      "pattern": "\\b(?:s3|gs|azure)://[a-zA-Z0-9\\-._~/]+",
+      "confidence": 0.9,
+      "description": "Cloud storage URL"
+    },
+    {
+      "pattern": "\\b(?:mongodb|postgresql|mysql|redis)://[^\\s]+",
+      "confidence": 0.9,
+      "description": "Database connection URL"
+    },
+    {
+      "pattern": "\\b(?:\\d{1,3}\\.){3}\\d{1,3}(?::\\d{1,5})?",
+      "confidence": 0.85,
+      "description": "IP address"
+    },
+    {
+      "pattern": "\\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\\b",
+      "confidence": 0.85,
+      "description": "IPv6 address"
+    }
+  ],
+  "error": [
+    {
+      "pattern": "(?:Error|Exception|Fault|Failure):\\s*([A-Za-z0-9_]+(?:Error|Exception)?)",
+      "confidence": 0.9,
+      "description": "Error type"
+    },
+    {
+      "pattern": "([A-Z][a-zA-Z0-9]*(?:Error|Exception|Fault|Failure))\\b",
+      "confidence": 0.85,
+      "description": "Exception class"
+    },
+    {
+      "pattern": "(?:throw|raise|panic)\\s+(?:new\\s+)?([A-Z][a-zA-Z0-9]*)",
+      "confidence": 0.9,
+      "description": "Thrown exception"
+    },
+    {
+      "pattern": "\\bcatch\\s*\\(\\s*([A-Z][a-zA-Z0-9]*)\\s+",
+      "confidence": 0.9,
+      "description": "Caught exception"
+    },
+    {
+      "pattern": "\\b(?:errno|error_code|status_code)\\s*(?:==?|:)\\s*(\\d+)",
+      "confidence": 0.85,
+      "description": "Error code"
+    },
+    {
+      "pattern": "\\bHTTP_(?:4|5)\\d{2}_([A-Z_]+)",
+      "confidence": 0.85,
+      "description": "HTTP error constant"
+    },
+    {
+      "pattern": "\\bassert(?:Equals?|True|False|Null|NotNull|Throws)?\\s*\\(",
+      "confidence": 0.85,
+      "description": "Assertion"
+    },
+    {
+      "pattern": "\\b(?:fail|die|fatal|abort|exit)\\s*\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "Fatal error"
+    },
+    {
+      "pattern": "\\berr(?:or)?\\s*!=?\\s*nil",
+      "confidence": 0.85,
+      "description": "Go error check"
+    },
+    {
+      "pattern": "\\bResult<[^,]+,\\s*([A-Z][a-zA-Z0-9]*)>",
+      "confidence": 0.85,
+      "description": "Rust Result error type"
+    },
+    {
+      "pattern": "\\b(?:warning|warn|notice|info|debug|trace)\\s*\\(['\"]([^'\"]+)['\"]",
+      "confidence": 0.75,
+      "description": "Log level"
+    },
+    {
+      "pattern": "\\brescue\\s+([A-Z][a-zA-Z0-9]*)",
+      "confidence": 0.9,
+      "description": "Ruby rescue"
+    },
+    {
+      "pattern": "\\bexcept\\s+([A-Z][a-zA-Z0-9]*)\\s+as",
+      "confidence": 0.9,
+      "description": "Python except"
+    }
+  ],
+  "component": [
+    {
+      "pattern": "<([A-Z][a-zA-Z0-9]*)(?:\\s+[^>]*)?>",
+      "confidence": 0.9,
+      "description": "React/Vue component"
+    },
+    {
+      "pattern": "@Component\\s*\\(\\s*\\{[^}]*selector:\\s*['\"]([a-z\\-]+)['\"]",
+      "confidence": 0.95,
+      "description": "Angular component"
+    },
+    {
+      "pattern": "(?:Widget|Component|View|Controller)\\s+([A-Z][a-zA-Z0-9]*)",
+      "confidence": 0.85,
+      "description": "UI component"
+    },
+    {
+      "pattern": "\\brender(?:Component)?\\s*\\(\\s*([A-Z][a-zA-Z0-9]*)",
+      "confidence": 0.85,
+      "description": "Render component"
+    },
+    {
+      "pattern": "\\b([A-Z][a-zA-Z0-9]*)\\.(?:render|mount|unmount)\\s*\\(",
+      "confidence": 0.85,
+      "description": "Component lifecycle"
+    },
+    {
+      "pattern": "\\buseState<([^>]+)>",
+      "confidence": 0.85,
+      "description": "React hook type"
+    },
+    {
+      "pattern": "@(?:Input|Output|ViewChild|ContentChild)\\s*\\(\\)",
+      "confidence": 0.9,
+      "description": "Angular decorator"
+    },
+    {
+      "pattern": "\\b(?:props|state|context)\\.([a-zA-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.75,
+      "description": "Component property"
+    },
+    {
+      "pattern": "\\$(?:refs|slots|attrs|emit)\\.",
+      "confidence": 0.85,
+      "description": "Vue instance property"
+    },
+    {
+      "pattern": "\\bslot\\s+name=['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "Named slot"
+    },
+    {
+      "pattern": "\\b([A-Z][a-zA-Z0-9]*)\\.propTypes\\s*=",
+      "confidence": 0.9,
+      "description": "React prop types"
+    },
+    {
+      "pattern": "\\b([A-Z][a-zA-Z0-9]*)\\.defaultProps\\s*=",
+      "confidence": 0.9,
+      "description": "React default props"
+    },
+    {
+      "pattern": "@customElement\\(['\"]([a-z\\-]+)['\"]\\)",
+      "confidence": 0.9,
+      "description": "Web component"
+    }
+  ],
+  "package": [
+    {
+      "pattern": "\"name\"\\s*:\\s*['\"]([^'\"]+)['\"]",
+      "confidence": 0.85,
+      "description": "Package name in JSON"
+    },
+    {
+      "pattern": "\\b(?:npm|yarn|pnpm)\\s+(?:install|add|i)\\s+([a-z@][a-z0-9\\-./]*)",
+      "confidence": 0.9,
+      "description": "NPM package"
+    },
+    {
+      "pattern": "\\bpip\\s+install\\s+([a-z][a-z0-9\\-_]*)",
+      "confidence": 0.9,
+      "description": "Python package"
+    },
+    {
+      "pattern": "\\bgo\\s+get\\s+([a-z][a-z0-9\\-./]*)",
+      "confidence": 0.9,
+      "description": "Go package"
+    },
+    {
+      "pattern": "\\bcargo\\s+add\\s+([a-z][a-z0-9\\-_]*)",
+      "confidence": 0.9,
+      "description": "Rust crate"
+    },
+    {
+      "pattern": "\\bgem\\s+install\\s+([a-z][a-z0-9\\-_]*)",
+      "confidence": 0.9,
+      "description": "Ruby gem"
+    },
+    {
+      "pattern": "\\bcomposer\\s+require\\s+([a-z][a-z0-9\\-/]*)",
+      "confidence": 0.9,
+      "description": "PHP package"
+    },
+    {
+      "pattern": "<dependency>[^<]*<groupId>([^<]+)</groupId>",
+      "confidence": 0.9,
+      "description": "Maven group ID"
+    },
+    {
+      "pattern": "\\bimport\\s+['\"]([a-z@][a-z0-9\\-/]*)['\"]",
+      "confidence": 0.8,
+      "description": "Import package"
+    },
+    {
+      "pattern": "\\brequire\\s*\\(['\"]([a-z@][a-z0-9\\-/]*)['\"]\\)",
+      "confidence": 0.8,
+      "description": "Require package"
+    },
+    {
+      "pattern": "\\bpackage\\.json",
+      "confidence": 0.95,
+      "description": "Package manifest"
+    },
+    {
+      "pattern": "\\b([a-z][a-z0-9\\-]*)@\\d+\\.\\d+\\.\\d+",
+      "confidence": 0.9,
+      "description": "Versioned package"
+    }
+  ],
+  "type": [
+    {
+      "pattern": ":\\s*([A-Z][a-zA-Z0-9_]*)(?:<[^>]+>)?",
+      "confidence": 0.8,
+      "description": "Type annotation"
+    },
+    {
+      "pattern": "\\b(?:interface|type)\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.95,
+      "description": "Type definition"
+    },
+    {
+      "pattern": "<([A-Z][a-zA-Z0-9_]*)>",
+      "confidence": 0.75,
+      "description": "Generic type"
+    },
+    {
+      "pattern": "\\bas\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Type cast"
+    },
+    {
+      "pattern": "\\binstanceof\\s+([A-Z][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Type check"
+    },
+    {
+      "pattern": "\\btypeof\\s+[a-z]+\\s*===?\\s*['\"]([a-z]+)['\"]",
+      "confidence": 0.85,
+      "description": "Typeof check"
+    },
+    {
+      "pattern": "\\b([A-Z][a-zA-Z0-9_]*)\\[\\]",
+      "confidence": 0.85,
+      "description": "Array type"
+    },
+    {
+      "pattern": "\\bArray<([A-Z][a-zA-Z0-9_]*)>",
+      "confidence": 0.9,
+      "description": "Generic array"
+    },
+    {
+      "pattern": "\\bPromise<([A-Z][a-zA-Z0-9_]*)>",
+      "confidence": 0.9,
+      "description": "Promise type"
+    },
+    {
+      "pattern": "\\bOption<([A-Z][a-zA-Z0-9_]*)>",
+      "confidence": 0.85,
+      "description": "Option type"
+    },
+    {
+      "pattern": "\\bResult<([^,]+),\\s*([A-Z][a-zA-Z0-9_]*)>",
+      "confidence": 0.85,
+      "description": "Result type"
+    },
+    {
+      "pattern": "\\b(?:string|number|boolean|object|any|unknown|never|void|null|undefined)\\b",
+      "confidence": 0.7,
+      "description": "Primitive type"
+    }
+  ],
+  "annotation": [
+    {
+      "pattern": "@([A-Z][a-zA-Z0-9_]*)(?:\\([^)]*\\))?",
+      "confidence": 0.85,
+      "description": "Java/Kotlin annotation"
+    },
+    {
+      "pattern": "#\\[([a-z_][a-z0-9_]*)(?:\\([^)]*\\))?\\]",
+      "confidence": 0.85,
+      "description": "Rust attribute"
+    },
+    {
+      "pattern": "@([a-z_][a-z0-9_]*)(?:\\.[a-z_][a-z0-9_]*)*",
+      "confidence": 0.8,
+      "description": "Python decorator"
+    },
+    {
+      "pattern": "\\[<([A-Z][a-zA-Z0-9_]*)(?:\\([^)]*\\))?>\\]",
+      "confidence": 0.85,
+      "description": "F# attribute"
+    },
+    {
+      "pattern": "\\[([A-Z][a-zA-Z0-9_]*)(?:\\([^)]*\\))?\\]",
+      "confidence": 0.8,
+      "description": "C# attribute"
+    },
+    {
+      "pattern": "@available\\([^)]+\\)",
+      "confidence": 0.9,
+      "description": "Swift availability"
+    },
+    {
+      "pattern": "@objc(?:\\([^)]*\\))?",
+      "confidence": 0.9,
+      "description": "Swift Objective-C"
+    },
+    {
+      "pattern": "\\b__attribute__\\s*\\(\\([^)]+\\)\\)",
+      "confidence": 0.85,
+      "description": "GCC attribute"
+    },
+    {
+      "pattern": "\\[\\[([a-z_][a-z0-9_]*)(?:\\([^)]*\\))?\\]\\]",
+      "confidence": 0.85,
+      "description": "C++ attribute"
+    },
+    {
+      "pattern": "@pragma\\s+([a-z_][a-z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Pragma directive"
+    }
+  ],
+  "command": [
+    {
+      "pattern": "\\b(?:npm|yarn|pnpm)\\s+(?:run\\s+)?([a-z][a-z0-9\\-:]*)",
+      "confidence": 0.85,
+      "description": "NPM script"
+    },
+    {
+      "pattern": "\\bmake\\s+([a-z][a-z0-9\\-_]*)",
+      "confidence": 0.85,
+      "description": "Make target"
+    },
+    {
+      "pattern": "\\b(?:docker|docker-compose)\\s+([a-z][a-z0-9\\-]*)",
+      "confidence": 0.85,
+      "description": "Docker command"
+    },
+    {
+      "pattern": "\\bgit\\s+([a-z][a-z0-9\\-]*)",
+      "confidence": 0.85,
+      "description": "Git command"
+    },
+    {
+      "pattern": "\\bkubectl\\s+([a-z][a-z0-9\\-]*)",
+      "confidence": 0.85,
+      "description": "Kubectl command"
+    },
+    {
+      "pattern": "\\b(?:gradle|gradlew)\\s+([a-zA-Z][a-zA-Z0-9]*)",
+      "confidence": 0.85,
+      "description": "Gradle task"
+    },
+    {
+      "pattern": "\\brake\\s+([a-z][a-z0-9:_]*)",
+      "confidence": 0.85,
+      "description": "Rake task"
+    },
+    {
+      "pattern": "\\bcargo\\s+([a-z][a-z0-9\\-]*)",
+      "confidence": 0.85,
+      "description": "Cargo command"
+    },
+    {
+      "pattern": "\\bdotnet\\s+([a-z][a-z0-9\\-]*)",
+      "confidence": 0.85,
+      "description": "Dotnet command"
+    },
+    {
+      "pattern": "\\bphp\\s+([a-z][a-z0-9]*\\.php)",
+      "confidence": 0.85,
+      "description": "PHP script"
+    },
+    {
+      "pattern": "\\bpython\\s+([a-z][a-z0-9_]*\\.py)",
+      "confidence": 0.85,
+      "description": "Python script"
+    },
+    {
+      "pattern": "\\bnode\\s+([a-z][a-z0-9\\-]*\\.js)",
+      "confidence": 0.85,
+      "description": "Node script"
+    }
+  ],
+  "event": [
+    {
+      "pattern": "\\b(?:on|emit|trigger|dispatch|fire)([A-Z][a-zA-Z0-9]*)",
+      "confidence": 0.8,
+      "description": "Event name"
+    },
+    {
+      "pattern": "addEventListener\\(['\"]([a-z]+)['\"]",
+      "confidence": 0.9,
+      "description": "DOM event listener"
+    },
+    {
+      "pattern": "\\bon[A-Z][a-zA-Z]+\\s*=",
+      "confidence": 0.85,
+      "description": "Event handler"
+    },
+    {
+      "pattern": "@(?:click|change|input|submit|keyup|keydown|focus|blur)(?:\\.\\w+)*",
+      "confidence": 0.9,
+      "description": "Vue event"
+    },
+    {
+      "pattern": "\\((?:click|change|input|submit|keyup|keydown|focus|blur)\\)\\s*=",
+      "confidence": 0.9,
+      "description": "Angular event"
+    },
+    {
+      "pattern": "\\$emit\\(['\"]([a-z][a-z0-9\\-]*)['\"]",
+      "confidence": 0.9,
+      "description": "Vue emit"
+    },
+    {
+      "pattern": "\\beventEmitter\\.(?:emit|on|once)\\(['\"]([a-z][a-z0-9\\-]*)['\"]",
+      "confidence": 0.9,
+      "description": "Event emitter"
+    },
+    {
+      "pattern": "\\b(?:publish|subscribe)\\(['\"]([a-z][a-z0-9\\.\\-]*)['\"]",
+      "confidence": 0.85,
+      "description": "Pub/sub event"
+    },
+    {
+      "pattern": "\\b([A-Z][a-zA-Z0-9]*)Event\\b",
+      "confidence": 0.85,
+      "description": "Event class"
+    },
+    {
+      "pattern": "\\bCustomEvent\\(['\"]([a-z][a-z0-9\\-]*)['\"]",
+      "confidence": 0.9,
+      "description": "Custom event"
+    },
+    {
+      "pattern": "\\b(?:Signal|Slot)\\s*<([^>]+)>",
+      "confidence": 0.85,
+      "description": "Qt signal/slot"
+    }
+  ],
+  "property": [
+    {
+      "pattern": "\\bthis\\.([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Instance property"
+    },
+    {
+      "pattern": "\\bself\\.([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.85,
+      "description": "Self property"
+    },
+    {
+      "pattern": "\\.([a-z_][a-zA-Z0-9_]*)\\s*=",
+      "confidence": 0.75,
+      "description": "Property assignment"
+    },
+    {
+      "pattern": "\\b(?:get|set)\\s+([a-z_][a-zA-Z0-9_]*)\\s*\\(",
+      "confidence": 0.9,
+      "description": "Getter/setter"
+    },
+    {
+      "pattern": "@property\\s+(?:\\([^)]*\\)\\s+)?(?:def\\s+)?([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Python property"
+    },
+    {
+      "pattern": "\\battr_(?:reader|writer|accessor)\\s+:([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Ruby attribute"
+    },
+    {
+      "pattern": "\\b([a-z_][a-zA-Z0-9_]*)\\s*:\\s*\\{[^}]*(?:get|set)\\s*:",
+      "confidence": 0.85,
+      "description": "JS property descriptor"
+    },
+    {
+      "pattern": "\\bcomputed\\s*:\\s*\\{[^}]*([a-z_][a-zA-Z0-9_]*)\\s*\\(",
+      "confidence": 0.85,
+      "description": "Vue computed"
+    },
+    {
+      "pattern": "@Input\\(\\)\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Angular input"
+    },
+    {
+      "pattern": "@Output\\(\\)\\s+([a-z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "Angular output"
+    },
+    {
+      "pattern": "\\[([a-z][a-zA-Z0-9]*)\\]\\s*=",
+      "confidence": 0.8,
+      "description": "Property binding"
+    },
+    {
+      "pattern": "\\{\\{\\s*([a-z_][a-zA-Z0-9_.]*?)\\s*\\}\\}",
+      "confidence": 0.8,
+      "description": "Template property"
+    }
+  ],
+  "hook": [
+    {
+      "pattern": "\\buse([A-Z][a-zA-Z0-9]*)\\s*\\(",
+      "confidence": 0.95,
+      "description": "React hook"
+    },
+    {
+      "pattern": "\\b(?:componentDid|componentWill|shouldComponent)([A-Z][a-zA-Z]*)",
+      "confidence": 0.9,
+      "description": "React lifecycle"
+    },
+    {
+      "pattern": "\\b(?:ngOn|ngAfter|ngDo)([A-Z][a-zA-Z]*)",
+      "confidence": 0.9,
+      "description": "Angular lifecycle"
+    },
+    {
+      "pattern": "\\b(?:created|mounted|updated|destroyed|beforeCreate|beforeMount|beforeUpdate|beforeDestroy)\\s*\\(",
+      "confidence": 0.9,
+      "description": "Vue lifecycle"
+    },
+    {
+      "pattern": "\\b(?:onMount|onDestroy|beforeUpdate|afterUpdate)\\s*\\(",
+      "confidence": 0.9,
+      "description": "Svelte lifecycle"
+    },
+    {
+      "pattern": "\\b(?:connectedCallback|disconnectedCallback|attributeChangedCallback|adoptedCallback)\\s*\\(",
+      "confidence": 0.9,
+      "description": "Web component lifecycle"
+    },
+    {
+      "pattern": "\\b(?:before|after)_([a-z_]+)",
+      "confidence": 0.8,
+      "description": "Rails callback"
+    },
+    {
+      "pattern": "\\b(?:pre|post)([A-Z][a-zA-Z]*)",
+      "confidence": 0.8,
+      "description": "Mongoose hook"
+    },
+    {
+      "pattern": "\\b(?:setup|teardown|beforeEach|afterEach|beforeAll|afterAll)\\s*\\(",
+      "confidence": 0.85,
+      "description": "Test hook"
+    },
+    {
+      "pattern": "@(?:Before|After|BeforeClass|AfterClass|BeforeEach|AfterEach)",
+      "confidence": 0.9,
+      "description": "Test annotation hook"
+    }
+  ],
+  "schema": [
+    {
+      "pattern": "\\b(?:Schema|Model)\\.define\\(['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]",
+      "confidence": 0.9,
+      "description": "Schema definition"
+    },
+    {
+      "pattern": "\\bnew\\s+(?:Schema|Model)\\s*\\([^)]*['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]",
+      "confidence": 0.85,
+      "description": "Schema instantiation"
+    },
+    {
+      "pattern": "\\b([A-Z][a-zA-Z0-9]*)Schema\\b",
+      "confidence": 0.85,
+      "description": "Schema class"
+    },
+    {
+      "pattern": "\\bz\\.object\\s*\\(\\s*\\{",
+      "confidence": 0.85,
+      "description": "Zod schema"
+    },
+    {
+      "pattern": "\\byup\\.object\\s*\\(\\s*\\{",
+      "confidence": 0.85,
+      "description": "Yup schema"
+    },
+    {
+      "pattern": "\\bJoi\\.object\\s*\\(\\s*\\{",
+      "confidence": 0.85,
+      "description": "Joi schema"
+    },
+    {
+      "pattern": "\\btype\\s+([A-Z][a-zA-Z0-9]*)\\s*=\\s*\\{",
+      "confidence": 0.8,
+      "description": "TypeScript type schema"
+    },
+    {
+      "pattern": "\\binterface\\s+([A-Z][a-zA-Z0-9]*)\\s*\\{",
+      "confidence": 0.85,
+      "description": "Interface schema"
+    },
+    {
+      "pattern": "@Entity\\(['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]\\)",
+      "confidence": 0.9,
+      "description": "TypeORM entity"
+    },
+    {
+      "pattern": "\\bmodel\\s+([A-Z][a-zA-Z0-9]*)\\s*\\{",
+      "confidence": 0.85,
+      "description": "Prisma model"
+    },
+    {
+      "pattern": "\\bCREATE\\s+TYPE\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+      "confidence": 0.9,
+      "description": "SQL type"
+    }
+  ]
+}
