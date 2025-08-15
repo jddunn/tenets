@@ -8,7 +8,8 @@ parser.py and strategies.py.
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Set, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
+
 from tenets.utils.logger import get_logger
 
 

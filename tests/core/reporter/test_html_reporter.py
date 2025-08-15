@@ -4,18 +4,18 @@ import base64
 import json
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, mock_open, patch
 
 import pytest
 
 from tenets.config import TenetsConfig
+from tenets.core.reporting.generator import ReportConfig, ReportSection
 from tenets.core.reporting.html_reporter import (
     HTMLReporter,
     HTMLTemplate,
-    create_html_report,
     create_dashboard,
+    create_html_report,
 )
-from tenets.core.reporting.generator import ReportConfig, ReportSection
 
 
 @pytest.fixture

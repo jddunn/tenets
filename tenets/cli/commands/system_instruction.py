@@ -369,9 +369,9 @@ def edit_instruction(
         tenets system-instruction edit -e nano
     """
     try:
-        import tempfile
-        import subprocess
         import os
+        import subprocess
+        import tempfile
 
         config = TenetsConfig()
 
