@@ -49,6 +49,7 @@ if importlib.util.find_spec("bs4"):
 
 class IntentType(Enum):
     """Types of user intent detected in prompts."""
+
     IMPLEMENT = "implement"
     DEBUG = "debug"
     UNDERSTAND = "understand"
@@ -64,6 +65,7 @@ class IntentType(Enum):
 @dataclass
 class ParsedEntity:
     """An entity extracted from the prompt."""
+
     name: str
     type: str
     confidence: float
@@ -73,6 +75,7 @@ class ParsedEntity:
 @dataclass
 class TemporalContext:
     """Temporal context extracted from prompt."""
+
     timeframe: str
     since: Optional[datetime] = None
     until: Optional[datetime] = None
@@ -82,6 +85,7 @@ class TemporalContext:
 @dataclass
 class ExternalReference:
     """External reference found in prompt."""
+
     type: str
     url: str
     identifier: str
@@ -90,15 +94,15 @@ class ExternalReference:
 
 class PromptParser:
     """Parses and analyzes prompts using centralized NLP components.
-    
+
     This parser leverages the NLP package for all text processing:
     - Keyword extraction via KeywordExtractor
     - Tokenization via TextTokenizer
     - Stopword filtering via StopwordManager
     - Programming patterns via ProgrammingPatterns
-    
+
     No more duplicate pattern matching logic!
-    
+
     Attributes:
         config: TenetsConfig instance
         logger: Logger instance
@@ -110,7 +114,7 @@ class PromptParser:
 
     def __init__(self, config: TenetsConfig):
         """Initialize the prompt parser with NLP components.
-        
+
         Args:
             config: Tenets configuration with NLP settings
         """
@@ -119,23 +123,25 @@ class PromptParser:
 
         # Initialize NLP components
         self.keyword_extractor = KeywordExtractor(
-            use_yake=config.nlp.keyword_extraction_method in ['auto', 'yake'],
-            language='en',
+            use_yake=config.nlp.keyword_extraction_method in ["auto", "yake"],
+            language="en",
             use_stopwords=config.nlp.stopwords_enabled,
-            stopword_set='prompt'  # Use aggressive stopwords for prompts
+            stopword_set="prompt",  # Use aggressive stopwords for prompts
         )
-        
+
         self.tokenizer = TextTokenizer(use_stopwords=True)
         self.code_tokenizer = CodeTokenizer(use_stopwords=False)
         self.stopword_manager = StopwordManager()
-        
+
         # Load centralized programming patterns
         self.programming_patterns = get_programming_patterns()
 
         # Initialize patterns for intent detection
         self._init_patterns()
 
-        self.logger.info("PromptParser initialized with centralized NLP components and programming patterns")
+        self.logger.info(
+            "PromptParser initialized with centralized NLP components and programming patterns"
+        )
 
     def _init_patterns(self):
         """Initialize regex patterns for extraction (non-programming patterns only)."""
@@ -209,9 +215,24 @@ class PromptParser:
             },
             "absolute": r"\b(\d{4}-\d{2}-\d{2})\b",
             "indicators": [
-                "recent", "recently", "new", "newly", "latest", "current",
-                "yesterday", "today", "now", "just", "changed", "modified",
-                "updated", "last", "past", "previous", "ago", "since",
+                "recent",
+                "recently",
+                "new",
+                "newly",
+                "latest",
+                "current",
+                "yesterday",
+                "today",
+                "now",
+                "just",
+                "changed",
+                "modified",
+                "updated",
+                "last",
+                "past",
+                "previous",
+                "ago",
+                "since",
             ],
         }
 
@@ -227,12 +248,12 @@ class PromptParser:
 
     def parse(self, prompt: str) -> PromptContext:
         """Parse a prompt into structured context using NLP components.
-        
+
         Uses centralized NLP components for all text processing.
-        
+
         Args:
             prompt: The user's prompt text or URL
-            
+
         Returns:
             PromptContext with extracted information
         """
@@ -305,29 +326,27 @@ class PromptParser:
 
     def _extract_keywords_nlp(self, text: str) -> List[str]:
         """Extract keywords using centralized NLP components.
-        
+
         No more duplicate logic - uses centralized keyword extractor
         and programming patterns.
-        
+
         Args:
             text: Input text
-            
+
         Returns:
             List of keywords
         """
         # Use centralized keyword extractor
         keywords = self.keyword_extractor.extract(
-            text,
-            max_keywords=self.config.nlp.max_keywords,
-            include_scores=False
+            text, max_keywords=self.config.nlp.max_keywords, include_scores=False
         )
-        
+
         # Add programming-specific keywords using centralized patterns
         prog_keywords = self.programming_patterns.extract_programming_keywords(text)
-        
+
         # Combine and deduplicate
         all_keywords = list(keywords) + prog_keywords
-        
+
         # Deduplicate while preserving order
         seen = set()
         unique_keywords = []
@@ -335,15 +354,15 @@ class PromptParser:
             if kw.lower() not in seen:
                 seen.add(kw.lower())
                 unique_keywords.append(kw)
-        
-        return unique_keywords[:self.config.nlp.max_keywords]
+
+        return unique_keywords[: self.config.nlp.max_keywords]
 
     def _detect_intent(self, text: str) -> IntentType:
         """Detect the primary intent of the prompt.
-        
+
         Args:
             text: Prompt text
-            
+
         Returns:
             Detected IntentType
         """
@@ -525,16 +544,16 @@ class PromptParser:
         """Extract focus areas from text using centralized patterns."""
         focus_areas = set()
         text_lower = text.lower()
-        
+
         # Use programming patterns to identify focus areas
         pattern_categories = self.programming_patterns.get_pattern_categories()
-        
+
         for category in pattern_categories:
             keywords = self.programming_patterns.get_category_keywords(category)
             # Check if any category keywords appear in text
             if any(kw.lower() in text_lower for kw in keywords):
                 focus_areas.add(category)
-        
+
         # Add areas based on entities
         entity_types = set(e.type for e in entities)
         if "api_endpoint" in entity_types:
@@ -568,10 +587,7 @@ class PromptParser:
             if timeframe in text_lower:
                 now = datetime.now()
                 return TemporalContext(
-                    timeframe=timeframe,
-                    since=now - delta,
-                    until=now,
-                    is_relative=True
+                    timeframe=timeframe, since=now - delta, until=now, is_relative=True
                 )
 
         # Check for temporal indicators
@@ -605,7 +621,7 @@ class PromptParser:
             r"\b(?:in|for|of)\s+(?:the\s+)?([a-z][a-z0-9_]*)\s+(?:module|package|component)\b",
             r"\b(?:the\s+)?([a-z][a-z0-9_]*(?:ication|ization)?)\s+(?:module|package|component)\b",
         ]
-        
+
         modules: Set[str] = set()
         for pat in module_patterns:
             for m in re.findall(pat, text, re.IGNORECASE):
@@ -617,7 +633,7 @@ class PromptParser:
             r"(?:in|under|within)\s+(?:the\s+)?([a-zA-Z0-9_\-./]+)(?:\s+directory)?",
             r"\b([a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]*)\b",
         ]
-        
+
         directories = set()
         for pattern in dir_patterns:
             for match in re.findall(pattern, text):
@@ -630,12 +646,16 @@ class PromptParser:
         scope["specific_files"] = list(set(files))
 
         # Exclusion patterns
-        exclude_pattern = r"(?:except|exclude|not|ignore)\s+(?:anything\s+in\s+)?([a-zA-Z0-9_\-/*]+/?)"
+        exclude_pattern = (
+            r"(?:except|exclude|not|ignore)\s+(?:anything\s+in\s+)?([a-zA-Z0-9_\-/*]+/?)"
+        )
         exclusions = set(re.findall(exclude_pattern, text, re.IGNORECASE))
         scope["exclusions"] = list(exclusions)
 
         # Determine scope type
-        if any(word in text.lower() for word in ["entire", "whole", "all", "everything", "project"]):
+        if any(
+            word in text.lower() for word in ["entire", "whole", "all", "everything", "project"]
+        ):
             scope["is_global"] = True
         elif scope["modules"] or scope["directories"] or scope["specific_files"]:
             scope["is_specific"] = True
@@ -649,7 +669,9 @@ class PromptParser:
         # Add additional keywords
         if "keywords" in additional_info:
             prompt_context.keywords.extend(additional_info["keywords"])
-            prompt_context.keywords = list(set(prompt_context.keywords))[:self.config.nlp.max_keywords]
+            prompt_context.keywords = list(set(prompt_context.keywords))[
+                : self.config.nlp.max_keywords
+            ]
 
         # Add focus areas
         if "focus_areas" in additional_info:

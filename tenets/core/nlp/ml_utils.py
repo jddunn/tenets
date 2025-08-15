@@ -13,6 +13,7 @@ from tenets.utils.logger import get_logger
 try:
     from tenets.core.nlp.embeddings import LocalEmbeddings, SENTENCE_TRANSFORMERS_AVAILABLE
     from tenets.core.nlp.similarity import SemanticSimilarity, cosine_similarity
+
     ML_AVAILABLE = SENTENCE_TRANSFORMERS_AVAILABLE
 except ImportError:
     ML_AVAILABLE = False
@@ -23,7 +24,7 @@ except ImportError:
 
 class EmbeddingModel:
     """Wrapper for embedding models using NLP components.
-    
+
     Provides a unified interface for different embedding models
     with built-in caching and batch processing capabilities.
     """
@@ -55,11 +56,7 @@ class EmbeddingModel:
 
         # Load model using NLP package
         try:
-            self.model = LocalEmbeddings(
-                model_name=model_name,
-                device=device,
-                cache_dir=cache_dir
-            )
+            self.model = LocalEmbeddings(model_name=model_name, device=device, cache_dir=cache_dir)
             self.logger.info(f"Loaded embedding model: {model_name}")
         except Exception as e:
             self.logger.error(f"Failed to load embedding model: {e}")
@@ -86,11 +83,7 @@ class EmbeddingModel:
             # Fallback to TF-IDF
             return self._tfidf_fallback(texts)
 
-        return self.model.encode(
-            texts,
-            batch_size=batch_size,
-            show_progress=show_progress
-        )
+        return self.model.encode(texts, batch_size=batch_size, show_progress=show_progress)
 
     def _tfidf_fallback(self, texts: Union[str, List[str]]) -> list:
         """Fallback to TF-IDF when embeddings not available.
@@ -102,15 +95,13 @@ class EmbeddingModel:
             TF-IDF vectors as lists
         """
         from tenets.core.nlp.embeddings import FallbackEmbeddings
-        
+
         fallback = FallbackEmbeddings()
         return fallback.encode(texts).tolist()
 
 
 def load_embedding_model(
-    model_name: Optional[str] = None, 
-    cache_dir: Optional[Path] = None, 
-    device: Optional[str] = None
+    model_name: Optional[str] = None, cache_dir: Optional[Path] = None, device: Optional[str] = None
 ) -> Optional[EmbeddingModel]:
     """Load an embedding model.
 
@@ -137,10 +128,7 @@ def load_embedding_model(
 
 
 def compute_similarity(
-    model: EmbeddingModel, 
-    text1: str, 
-    text2: str, 
-    cache: Optional[Dict[str, Any]] = None
+    model: EmbeddingModel, text1: str, text2: str, cache: Optional[Dict[str, Any]] = None
 ) -> float:
     """Compute semantic similarity between two texts.
 
@@ -168,10 +156,7 @@ def compute_similarity(
 
 
 def batch_similarity(
-    model: EmbeddingModel, 
-    query: str, 
-    documents: List[str], 
-    batch_size: int = 32
+    model: EmbeddingModel, query: str, documents: List[str], batch_size: int = 32
 ) -> List[float]:
     """Compute similarity between query and multiple documents.
 
@@ -191,7 +176,7 @@ def batch_similarity(
         # Use NLP batch similarity
         similarity_calc = SemanticSimilarity(model.model)
         results = similarity_calc.compute_batch(query, documents)
-        
+
         # Convert to list of scores in original order
         score_dict = dict(results)
         return [score_dict.get(i, 0.0) for i in range(len(documents))]
@@ -218,27 +203,25 @@ class NeuralReranker:
         self.logger = get_logger(__name__)
         self.model_name = model_name
         self.model = None
-        
+
         if not ML_AVAILABLE:
             self.logger.warning("Cross-encoder reranking not available without ML dependencies")
             return
-            
+
         self._load_model()
 
     def _load_model(self):
         """Load the reranking model."""
         try:
             from sentence_transformers import CrossEncoder
+
             self.model = CrossEncoder(self.model_name)
             self.logger.info(f"Loaded reranking model: {self.model_name}")
         except Exception as e:
             self.logger.error(f"Failed to load reranking model: {e}")
 
     def rerank(
-        self, 
-        query: str, 
-        documents: List[Tuple[str, float]], 
-        top_k: int = 10
+        self, query: str, documents: List[Tuple[str, float]], top_k: int = 10
     ) -> List[Tuple[str, float]]:
         """Rerank documents using cross-encoder.
 
@@ -296,25 +279,28 @@ def check_ml_dependencies() -> Dict[str, bool]:
         "transformers": False,
         "sklearn": False,
     }
-    
+
     try:
         import torch
+
         deps["torch"] = True
     except ImportError:
         pass
-        
+
     try:
         import transformers
+
         deps["transformers"] = True
     except ImportError:
         pass
-        
+
     try:
         import sklearn
+
         deps["sklearn"] = True
     except ImportError:
         pass
-    
+
     return deps
 
 
@@ -328,13 +314,15 @@ def get_available_models() -> List[str]:
 
     if ML_AVAILABLE:
         # Common small models
-        models.extend([
-            "all-MiniLM-L6-v2",
-            "all-MiniLM-L12-v2", 
-            "all-mpnet-base-v2",
-            "multi-qa-MiniLM-L6-cos-v1",
-            "paraphrase-MiniLM-L6-v2",
-        ])
+        models.extend(
+            [
+                "all-MiniLM-L6-v2",
+                "all-MiniLM-L12-v2",
+                "all-mpnet-base-v2",
+                "multi-qa-MiniLM-L6-cos-v1",
+                "paraphrase-MiniLM-L6-v2",
+            ]
+        )
 
     # Always available fallback
     models.append("tfidf")
@@ -366,7 +354,7 @@ def estimate_embedding_memory(num_files: int, embedding_dim: int = 384) -> Dict[
 # Export key functions and classes
 __all__ = [
     "EmbeddingModel",
-    "NeuralReranker", 
+    "NeuralReranker",
     "load_embedding_model",
     "compute_similarity",
     "cosine_similarity",

@@ -153,7 +153,9 @@ def visualize_coupling(
     """
     config = ChartConfig(type=ChartType.NETWORK, title=title or "Module Coupling Network")
     viz = CouplingVisualizer(chart_config=config)
-    chart = viz.create_coupling_network(coupling_data, min_coupling=min_coupling, max_nodes=max_nodes)
+    chart = viz.create_coupling_network(
+        coupling_data, min_coupling=min_coupling, max_nodes=max_nodes
+    )
 
     if output:
         viz.export_chart(chart, Path(output), format=(format or "json"))

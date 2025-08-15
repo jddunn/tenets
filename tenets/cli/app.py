@@ -39,7 +39,11 @@ app.add_typer(tenet_app, name="tenet", help="Manage guiding principles (tenets)"
 app.add_typer(session_app, name="session", help="Manage development sessions")
 app.add_typer(viz_app, name="viz", help="Visualize codebase insights")
 app.add_typer(config_app, name="config", help="Configuration management")
-app.add_typer(system_instruction_app, name="system-instruction", help="Manage system instruction (system prompt)")
+app.add_typer(
+    system_instruction_app,
+    name="system-instruction",
+    help="Manage system instruction (system prompt)",
+)
 
 # Register main commands
 app.command()(distill_command.distill)
