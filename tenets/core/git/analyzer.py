@@ -193,6 +193,44 @@ class GitAnalyzer:
             return []
         return results
 
+    # Added to support Chronicle expectations
+    def get_commits_since(
+        self,
+        since: datetime,
+        max_count: int = 1000,
+        author: Optional[str] = None,
+        branch: Optional[str] = None,
+        include_merges: bool = True,
+    ) -> List[Any]:
+        """Return raw commit objects since a given datetime.
+
+        Args:
+            since: Start datetime (inclusive)
+            max_count: Maximum number of commits
+            author: Optional author filter
+            branch: Optional branch name
+            include_merges: Whether to include merge commits
+
+        Returns:
+            List of GitPython commit objects
+        """
+        if not self.repo:
+            return []
+        try:
+            rev = branch or None
+            kwargs: Dict[str, Any] = {
+                "since": int(since.timestamp()),
+                "max_count": max_count,
+            }
+            if author:
+                kwargs["author"] = author
+            commits = list(self.repo.iter_commits(rev, **kwargs))
+            if not include_merges:
+                commits = [c for c in commits if len(getattr(c, "parents", [])) <= 1]
+            return commits
+        except Exception:
+            return []
+
     # Existing APIs retained
     def recent_commits(
         self, limit: int = 50, paths: Optional[List[Path]] = None

@@ -60,6 +60,7 @@ def detect_language_from_extension(path: str) -> str:
         return ""
     mapping = {
         "py": "python",
+        "pyw": "python",
         "js": "javascript",
         "ts": "typescript",
         "jsx": "javascript",
@@ -108,18 +109,35 @@ def strip_comments(content: str, language: str) -> str:
     lines = content.splitlines()
     non_empty_before = sum(1 for l in lines if l.strip())
 
-    # Remove line comments (marker must appear before any code chars)
-    stripped_lines = []
-    for line in lines:
-        raw = line
-        for marker in line_markers:
-            idx = raw.find(marker)
-            if idx != -1:
-                # Ensure nothing but whitespace before marker
-                if raw[:idx].strip() == "":
-                    raw = raw[:idx]
-                    break
-        stripped_lines.append(raw)
+    # Helper: remove inline comments while preserving strings
+    def _strip_inline(line: str) -> str:
+        in_single = False
+        in_double = False
+        escaped = False
+        i = 0
+        while i < len(line):
+            ch = line[i]
+            # Toggle string states
+            if not escaped and ch == '"' and not in_single:
+                in_double = not in_double
+            elif not escaped and ch == "'" and not in_double:
+                in_single = not in_single
+            # Handle escapes within strings
+            escaped = (ch == "\\") and (in_single or in_double) and not escaped
+
+            if not in_single and not in_double:
+                for marker in line_markers:
+                    if line.startswith(marker, i):
+                        # Check if only whitespace before marker (full-line comment)
+                        if line[:i].strip() == "":
+                            return line[:i]
+                        else:
+                            # Inline comment: keep code before marker
+                            return line[:i].rstrip()
+            i += 1
+        return line
+
+    stripped_lines = [_strip_inline(l) for l in lines]
 
     text = "\n".join(stripped_lines)
 

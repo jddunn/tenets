@@ -18,6 +18,11 @@ from tenets.config import TenetsConfig
 from tenets.utils.logger import get_logger
 
 from .generator import ReportConfig, ReportSection
+# Re-export ReportGenerator for tests that patch via this module
+try:  # pragma: no cover
+    from .generator import ReportGenerator as ReportGenerator
+except Exception:  # pragma: no cover
+    ReportGenerator = None  # type: ignore
 
 
 class HTMLTemplate:
@@ -560,6 +565,7 @@ class HTMLTemplate:
         for section in sections:
             if section.visible:
                 icon = section.icon if section.icon else ""
+                # Preserve emoji/icons as-is; HTML is written as UTF-8
                 nav_items.append(f'<li><a href="#{section.id}">{icon} {section.title}</a></li>')
 
         return f"""
@@ -667,9 +673,18 @@ class HTMLReporter:
         # Generate HTML content
         html_content = self._generate_html(sections, metadata, report_config)
 
+        # Ensure output is ASCII-safe for environments that read with
+        # platform default encodings (e.g., cp1252 on Windows). Convert
+        # non-ASCII characters to HTML entities to avoid decode errors
+        # when tests read the file without specifying encoding.
+        try:
+            safe_content = html_content.encode("ascii", "xmlcharrefreplace").decode("ascii")
+        except Exception:
+            safe_content = html_content  # Fallback; still write as-is
+
         # Write to file
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
+            f.write(safe_content)
 
         self.logger.info(f"HTML report generated: {output_path}")
         return output_path
@@ -799,12 +814,12 @@ class HTMLReporter:
         collapsible_class = "collapsible" if section.collapsible else ""
 
         html = f"""
-    <section id="{section.id}" class="section">
-        <h{section.level} class="{collapsible_class}">
-            {icon} {section.title}
-        </h{section.level}>
-        <div class="{"collapsible-content" if section.collapsible else ""}">
-    """
+        <section id="{section.id}" class="section">
+            <h{section.level} class="{collapsible_class}">
+                {icon} {section.title}
+            </h{section.level}>
+            <div class="{"collapsible-content" if section.collapsible else ""}">
+        """
 
         # Section content
         if section.content:
@@ -829,9 +844,9 @@ class HTMLReporter:
             html += self._generate_section(subsection, report_config)
 
         html += """
-        </div>
-    </section>
-    """
+            </div>
+        </section>
+        """
 
         return html
 
@@ -1238,13 +1253,16 @@ def create_dashboard(
     if config is None:
         config = TenetsConfig()
 
-    from .generator import ReportGenerator
+    # Use module-level ReportGenerator symbol so tests can patch it via this module
+    generator = ReportGenerator(config) if ReportGenerator is not None else None
+    if generator is None:
+        # Fallback import if re-export failed for any reason
+        from .generator import ReportGenerator as _RG  # type: ignore
 
-    generator = ReportGenerator(config)
+        generator = _RG(config)
     report_config = ReportConfig(
         title="Code Analysis Dashboard",
         format="html",
-        template="dashboard",
         include_charts=True,
         include_toc=False,
     )
