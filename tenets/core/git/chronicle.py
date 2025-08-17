@@ -78,20 +78,26 @@ class CommitSummary:
         """
         message_lower = self.message.lower()
 
+        # Special types first
+        if self.is_merge or message_lower.startswith("merge "):
+            return "merge"
+        if self.is_revert or message_lower.startswith("revert "):
+            return "revert"
+
         # Check for conventional commit format
         match = re.match(r"^(\w+)(?:\(.+?\))?:", self.message)
         if match:
             return match.group(1)
 
-        # Heuristic-based detection
+        # Heuristic-based detection (order matters)
         if any(word in message_lower for word in ["fix", "bug", "patch"]):
             return "fix"
+        elif any(word in message_lower for word in ["test", "spec"]):
+            return "test"
         elif any(word in message_lower for word in ["feat", "add", "new"]):
             return "feat"
         elif any(word in message_lower for word in ["doc", "readme"]):
             return "docs"
-        elif any(word in message_lower for word in ["test", "spec"]):
-            return "test"
         elif any(word in message_lower for word in ["refactor", "clean"]):
             return "refactor"
         elif self.is_merge:

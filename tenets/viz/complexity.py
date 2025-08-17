@@ -380,13 +380,16 @@ class ComplexityVisualizer(BaseVisualizer):
         if len(path) <= max_length:
             return path
 
-        # Try to keep filename
+        # Try to keep filename while respecting max_length strictly
         parts = path.split("/")
-        if parts:
-            filename = parts[-1]
-            if len(filename) < max_length - 3:
-                remaining = max_length - len(filename) - 3
-                prefix = path[:remaining]
-                return f"{prefix}.../{filename}"
+        filename = parts[-1] if parts else path
+        # Reserve space for ellipsis and '/' if adding prefix
+        reserve = 4  # '.../'
+        if len(filename) + reserve < max_length:
+            prefix_len = max_length - len(filename) - reserve
+            prefix = path[:prefix_len]
+            result = f"{prefix}.../{filename}"
+            return result[:max_length]
 
-        return path[: max_length - 3] + "..."
+        # Fallback: plain truncation with ellipsis, capped
+        return (path[: max_length - 3] + "...")[:max_length]

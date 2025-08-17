@@ -202,7 +202,7 @@ class GitHubHandler(ExternalSourceHandler):
         parsed = urlparse(url)
         path_parts = parsed.path.strip("/").split("/")
 
-        metadata = {}
+        metadata = {"platform": "github"}
         identifier = ""
 
         if len(path_parts) >= 4:
@@ -554,27 +554,27 @@ class LinearHandler(ExternalSourceHandler):
 
         # GraphQL query to fetch issue details
         query = """
-        query GetIssue($id: String!) {
-            issue(id: $id) {
-                title
-                description
-                state {
-                    name
-                    type
-                }
-                assignee {
-                    name
-                }
-                priority
-                labels {
-                    nodes {
+        query GetIssue($id: ID!) {
+                issue(id: $id) {
+                    title
+                    description
+                    state {
+                        name
+                        type
+                    }
+                    assignee {
                         name
                     }
+                    priority
+                    labels {
+                        nodes {
+                            name
+                        }
+                    }
+                    createdAt
+                    updatedAt
                 }
-                createdAt
-                updatedAt
             }
-        }
         """
 
         try:

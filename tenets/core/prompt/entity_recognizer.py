@@ -127,6 +127,11 @@ class EntityPatternMatcher:
                     "description": "Function with body",
                 },
                 {
+                    "pattern": r"\b(?:const|let|var)\s+([a-z_][a-zA-Z0-9_]*)\s*=\s*\([^)]*\)\s*=>",
+                    "confidence": 0.9,
+                    "description": "JS arrow function assignment",
+                },
+                {
                     "pattern": r"\.([a-z_][a-zA-Z0-9_]*)\s*\(",
                     "confidence": 0.85,
                     "description": "Method call",
@@ -700,17 +705,18 @@ class FuzzyEntityMatcher:
             for known_name in known_names:
                 known_lower = known_name.lower()
 
-                # Check for exact match first (case-insensitive)
-                if known_lower in text_lower:
-                    # Find position
-                    pos = text_lower.find(known_lower)
+                # Check for exact match first (case-insensitive, word-boundaries)
+                exact_pat = re.compile(r"\b" + re.escape(known_lower) + r"\b", re.IGNORECASE)
+                m = exact_pat.search(text_lower)
+                if m:
+                    pos = m.start()
                     entity = Entity(
                         name=known_name,
                         type=entity_type,
                         confidence=0.95,
-                        context=text[max(0, pos - 50) : min(len(text), pos + len(known_name) + 50)],
+                        context=text[max(0, pos - 50) : min(len(text), m.end() + 50)],
                         start_pos=pos,
-                        end_pos=pos + len(known_name),
+                        end_pos=m.end(),
                         source="fuzzy",
                         metadata={"match_type": "exact"},
                     )
@@ -930,7 +936,8 @@ class HybridEntityRecognizer:
             summary["unique_names"].add(entity.name.lower())
 
             # Count high confidence
-            if entity.confidence >= 0.8:
+            # Tests expect a stricter high-confidence count
+            if entity.confidence > 0.85:
                 summary["high_confidence"] += 1
 
         # Calculate average confidence

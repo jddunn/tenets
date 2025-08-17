@@ -25,6 +25,28 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 import yaml
 
+# Compatibility: pytest.Any was added in newer pytest versions.
+# Provide a lightweight fallback so tests using pytest.Any(str) work.
+if not hasattr(pytest, "Any"):
+    class _Any:  # pragma: no cover - trivial shim
+        def __init__(self, typ=object):
+            self.typ = typ
+
+        def __eq__(self, other):
+            try:
+                return isinstance(other, self.typ)
+            except Exception:
+                return True
+
+        def __repr__(self) -> str:
+            try:
+                name = getattr(self.typ, "__name__", str(self.typ))
+            except Exception:
+                name = "object"
+            return f"Any({name})"
+
+    pytest.Any = _Any  # type: ignore[attr-defined]
+
 # Set environment variables for testing
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
@@ -184,6 +206,22 @@ def mock_ml_model():
     mock_model.encode.side_effect = encode_side_effect
 
     return mock_model
+
+
+@pytest.fixture
+def mock_cache_manager():
+    """Provide a simple mock cache manager usable across tests.
+
+    This mirrors the per-module fixtures some tests define, but makes it
+    globally available so classes without a local fixture (e.g.,
+    TestConvenienceFunctions) can request it.
+    """
+    manager = MagicMock()
+    # Ensure a .general namespace with common methods used by tests
+    manager.general.get.return_value = None
+    manager.general.put.return_value = None
+    manager.general.clear.return_value = None
+    return manager
 
 
 @pytest.fixture(autouse=True)

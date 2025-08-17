@@ -285,6 +285,10 @@ class Summarizer:
             summary = self._simple_truncate(text, target_ratio, max_length)
             strategy_name = "truncate"
 
+        # Enforce min_length: if requested min_length exceeds original, do not make it shorter
+        if min_length and min_length > len(text) and len(text) > 0 and len(summary) < len(text):
+            summary = text
+
         # Create result
         result = SummarizationResult(
             original_text=text,
@@ -407,12 +411,42 @@ class Summarizer:
             for func in file.structure.functions[:10]:  # Limit to top 10 functions
                 if hasattr(func, "signature"):
                     summary_lines.append(func.signature)
-                    if hasattr(func, "docstring") and func.docstring:
+                    doc = getattr(func, "docstring", None)
+                    if isinstance(doc, str) and doc:
                         # Include first line of docstring
-                        doc_first = func.docstring.split("\n")[0]
+                        doc_first = doc.split("\n")[0]
                         summary_lines.append(f'    """{doc_first}"""')
                     summary_lines.append("    # ... implementation ...")
                     summary_lines.append("")
+
+        # If structure is missing, fall back to AST/regex extraction to include signatures
+        if not file.structure:
+            try:
+                # Python-specific AST parse for function/class signatures
+                if file.language == "python":
+                    module = ast.parse(file.content)
+                    for node in module.body:
+                        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                            args = [a.arg for a in node.args.args]
+                            summary_lines.append(f"def {node.name}({', '.join(args)}): ...")
+                        elif isinstance(node, ast.ClassDef):
+                            summary_lines.append(f"class {node.name}:")
+                            summary_lines.append("    ...")
+                    if summary_lines:
+                        summary_lines.append("")
+                else:
+                    # Generic regex fallback for other languages
+                    import re
+                    lines = file.content.splitlines()
+                    pattern_defs = re.compile(r"\b(class|def|function)\b")
+                    for line in lines[:200]:
+                        if pattern_defs.search(line):
+                            summary_lines.append(line.strip())
+                    if summary_lines:
+                        summary_lines.append("")
+            except Exception:
+                # Ignore parse errors and continue
+                pass
 
         # If still too long, apply text summarization to comments/docstrings
         current_summary = "\n".join(summary_lines)

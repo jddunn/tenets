@@ -56,6 +56,17 @@ def Instiller(*args, **kwargs):  # type: ignore[override]
     return _Instiller(*args, **kwargs)
 
 
+def CodeAnalyzer(*args, **kwargs):  # type: ignore[override]
+    """Lightweight, patchable factory for the code analyzer.
+
+    Tests patch this symbol at the package level (tenets.CodeAnalyzer),
+    so expose a simple wrapper that imports on demand.
+    """
+    from tenets.core.analysis.analyzer import CodeAnalyzer as _CodeAnalyzer
+
+    return _CodeAnalyzer(*args, **kwargs)
+
+
 # Type-checking only imports (no runtime side-effects)
 if TYPE_CHECKING:  # pragma: no cover - used only for typing
     from tenets.core.analysis.analyzer import CodeAnalyzer

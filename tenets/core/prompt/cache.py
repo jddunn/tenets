@@ -151,12 +151,19 @@ class PromptCache:
             elif metadata.get("source") == "notion":
                 ttl = int(ttl * self.TTL_MODIFIERS["notion_page"])
 
-            # Confidence-based modifiers
-            confidence = metadata.get("confidence", 0)
-            if confidence >= 0.8:
-                ttl = int(ttl * self.TTL_MODIFIERS["high_confidence"])
-            elif confidence < 0.5:
-                ttl = int(ttl * self.TTL_MODIFIERS["low_confidence"])
+            # Confidence-based modifiers (only if explicitly provided)
+            if "confidence" in metadata:
+                confidence = metadata.get("confidence")
+                if confidence is not None:
+                    try:
+                        conf_val = float(confidence)
+                    except (TypeError, ValueError):
+                        conf_val = None
+                    if conf_val is not None:
+                        if conf_val >= 0.8:
+                            ttl = int(ttl * self.TTL_MODIFIERS["high_confidence"])
+                        elif conf_val < 0.5:
+                            ttl = int(ttl * self.TTL_MODIFIERS["low_confidence"])
 
         # Ensure reasonable bounds
         min_ttl = 60  # 1 minute minimum

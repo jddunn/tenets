@@ -236,16 +236,24 @@ class FileScanner:
             except OSError:
                 return False
 
-        # Check include patterns
+        # Check include patterns (match against both full path and filename)
         if include_patterns:
-            filename = file_path.name
-            if not any(fnmatch.fnmatch(filename, pattern) for pattern in include_patterns):
+            full = str(file_path)
+            base = file_path.name
+            if not any(
+                fnmatch.fnmatch(full, pattern) or fnmatch.fnmatch(base, pattern)
+                for pattern in include_patterns
+            ):
                 return False
 
-        # Check exclude patterns
+        # Check exclude patterns (match against both full path and filename)
         if exclude_patterns:
-            filename = file_path.name
-            if any(fnmatch.fnmatch(filename, pattern) for pattern in exclude_patterns):
+            full = str(file_path)
+            base = file_path.name
+            if any(
+                fnmatch.fnmatch(full, pattern) or fnmatch.fnmatch(base, pattern)
+                for pattern in exclude_patterns
+            ):
                 return False
 
         # Check default ignore patterns
