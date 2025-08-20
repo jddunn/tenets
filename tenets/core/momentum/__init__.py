@@ -59,6 +59,7 @@ __version__ = "0.1.0"
 __all__ = [
     # Main tracker
     "VelocityTracker",
+    "MomentumTracker",
     "MomentumReport",
     "track_momentum",
     "track_team_velocity",
@@ -75,6 +76,17 @@ __all__ = [
     "analyze_team_productivity",
     "predict_completion",
 ]
+
+
+# Backward-compatible alias expected by CLI: MomentumTracker wraps VelocityTracker
+class MomentumTracker(VelocityTracker):
+    """Compatibility alias for VelocityTracker.
+
+    The CLI historically imported MomentumTracker; we now unify to VelocityTracker
+    but keep this subclass alias to preserve API without duplicating logic.
+    """
+
+    pass
 
 
 def analyze_sprint_velocity(

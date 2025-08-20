@@ -208,6 +208,15 @@ class ReportGenerator:
         if config.include_summary:
             self.sections.append(self._create_summary_section(data))
 
+        # Add file overview section
+        if "metrics" in data:
+            self.sections.append(self._create_file_overview_section(data, config))
+
+        # Add README section if available
+        readme_content = self._find_readme(data)
+        if readme_content:
+            self.sections.append(self._create_readme_section(readme_content))
+
         # Add analysis sections based on available data
         if "complexity" in data:
             self.sections.append(self._create_complexity_section(data["complexity"], config))
@@ -316,6 +325,7 @@ class ReportGenerator:
         )
 
         summary = self.metadata.get("analysis_summary", {})
+        metrics = data.get("metrics", {})
 
         # Build summary content
         health_score = summary.get("health_score", 0)
@@ -353,14 +363,45 @@ class ReportGenerator:
             f"- 📊 Analyzed **{summary.get('total_files', 0)} files** with **{summary.get('total_lines', 0):,} lines** of code"
         )
 
+        # Add language distribution info
+        if metrics.get("languages"):
+            lang_dict = metrics["languages"]
+            if isinstance(lang_dict, dict):
+                top_langs = sorted(
+                    lang_dict.items(), key=lambda x: x[1].get("lines", 0), reverse=True
+                )[:3]
+                if top_langs:
+                    content.append("")
+                    content.append("### Primary Languages")
+                    for lang, info in top_langs:
+                        lines = info.get("lines", 0)
+                        files = info.get("files", 0)
+                        content.append(
+                            f"- **{lang.title()}**: {lines:,} lines across {files} files"
+                        )
+
+        # Add test coverage if available
+        if metrics.get("test_coverage", 0) > 0:
+            coverage = metrics["test_coverage"] * 100
+            content.append("")
+            content.append(f"### Test Coverage: {coverage:.1f}%")
+
         section.content = content
 
-        # Add summary metrics
+        # Enhanced summary metrics
         section.metrics = {
             "Health Score": f"{health_score:.1f}/100",
             "Files Analyzed": summary.get("total_files", 0),
             "Total Lines": f"{summary.get('total_lines', 0):,}",
-            "Critical Issues": summary.get("critical_issues", 0),
+            "Functions": metrics.get("total_functions", 0),
+            "Classes": metrics.get("total_classes", 0),
+            "Test Coverage": (
+                f"{metrics.get('test_coverage', 0) * 100:.1f}%"
+                if metrics.get("test_coverage", 0) > 0
+                else "N/A"
+            ),
+            "Languages": len(data.get("languages", [])),
+            "Avg File Size": f"{metrics.get('avg_file_size', 0):.0f} lines",
         }
 
         return section
@@ -378,7 +419,7 @@ class ReportGenerator:
             ReportSection: Complexity section
         """
         section = ReportSection(
-            id="complexity", title="Complexity Analysis", level=1, order=2, icon="🔍"
+            id="complexity", title="Complexity Analysis", level=1, order=3, icon="🔍"
         )
 
         # Use ComplexityVisualizer for charts
@@ -394,6 +435,20 @@ class ReportGenerator:
 
         # Add distribution chart if requested
         if config.include_charts:
+            # Ensure we have distribution data
+            if (
+                "complexity_distribution" not in complexity_data
+                or not complexity_data["complexity_distribution"]
+            ):
+                # Create a default distribution from the data we have
+                complexity_data["complexity_distribution"] = {
+                    "simple (1-5)": complexity_data.get("total_functions", 0)
+                    - complexity_data.get("complex_functions", 0),
+                    "moderate (6-10)": 0,
+                    "complex (11-20)": 0,
+                    "very complex (21+)": complexity_data.get("complex_functions", 0),
+                }
+
             chart = viz.create_distribution_chart(complexity_data)
             section.add_chart(chart)
 
@@ -687,6 +742,107 @@ class ReportGenerator:
 
         return section
 
+    def _create_file_overview_section(
+        self, data: Dict[str, Any], config: ReportConfig
+    ) -> ReportSection:
+        """Create file overview section with detailed metrics.
+
+        Args:
+            data: Analysis data
+            config: Report configuration
+
+        Returns:
+            ReportSection: File overview section
+        """
+        section = ReportSection(
+            id="file_overview", title="File Analysis Overview", level=1, order=2, icon="📁"
+        )
+
+        metrics = data.get("metrics", {})
+
+        # Language breakdown table
+        if metrics.get("languages"):
+            lang_dict = metrics["languages"]
+            if isinstance(lang_dict, dict):
+                headers = ["Language", "Files", "Lines", "Avg Size", "Functions", "Classes"]
+                rows = []
+                for lang, info in sorted(
+                    lang_dict.items(), key=lambda x: x[1].get("lines", 0), reverse=True
+                ):
+                    rows.append(
+                        [
+                            lang.title(),
+                            info.get("files", 0),
+                            f"{info.get('lines', 0):,}",
+                            f"{info.get('avg_file_size', 0):.0f}",
+                            info.get("functions", 0),
+                            info.get("classes", 0),
+                        ]
+                    )
+                section.add_table({"headers": headers, "rows": rows})
+
+        # File size distribution chart
+        if config.include_charts and metrics.get("size_distribution"):
+            from tenets.viz import ChartBuilder
+
+            builder = ChartBuilder()
+            dist = metrics["size_distribution"]
+            chart = builder.create_chart(
+                "bar",
+                {
+                    "labels": list(dist.keys()),
+                    "values": list(dist.values()),
+                    "title": "File Size Distribution",
+                },
+                {},
+            )
+            section.add_chart(chart)
+
+        # Largest files table
+        if metrics.get("largest_files"):
+            headers = ["File", "Lines", "Language"]
+            rows = []
+            for file_info in metrics["largest_files"][:10]:
+                rows.append(
+                    [
+                        file_info.get("name", "Unknown"),
+                        f"{file_info.get('lines', 0):,}",
+                        file_info.get("language", "Unknown"),
+                    ]
+                )
+            section.add_table({"headers": headers, "rows": rows})
+
+        return section
+
+    def _find_readme(self, data: Dict[str, Any]) -> Optional[str]:
+        """Find and read README content if available.
+
+        Args:
+            data: Analysis data
+
+        Returns:
+            Optional[str]: README content if found
+        """
+        # This would be implemented to actually find and read README
+        # For now, return None
+        return None
+
+    def _create_readme_section(self, readme_content: str) -> ReportSection:
+        """Create README section.
+
+        Args:
+            readme_content: Content of README file
+
+        Returns:
+            ReportSection: README section
+        """
+        section = ReportSection(id="readme", title="Project README", level=1, order=1.5, icon="📖")
+
+        section.content = [readme_content]
+        section.collapsible = True
+
+        return section
+
     def _create_recommendations_section(self, data: Dict[str, Any]) -> ReportSection:
         """Create recommendations section.
 
@@ -757,7 +913,9 @@ class ReportGenerator:
             icon = (
                 "🚨"
                 if rec["priority"] == "critical"
-                else "⚠️" if rec["priority"] == "high" else "💡"
+                else "⚠️"
+                if rec["priority"] == "high"
+                else "💡"
             )
             content.append(f"{icon} **{rec['action']}**")
             content.append(f"   Impact: {rec['impact']}")

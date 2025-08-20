@@ -317,7 +317,7 @@ class OwnershipReport:
         # Some tests expect total_files_analyzed when no repo
         if not data.get("total_files_analyzed") and hasattr(self, "total_files_analyzed"):
             try:
-                data["total_files_analyzed"] = int(getattr(self, "total_files_analyzed"))
+                data["total_files_analyzed"] = int(self.total_files_analyzed)
             except Exception:
                 pass
         return data
@@ -424,6 +424,20 @@ class OwnershipTracker:
         )
 
         return report
+
+    def analyze_ownership(self, repo_path: Path, **kwargs) -> OwnershipReport:
+        """Analyze ownership for a repository path.
+
+        This is an alias for the track() method to maintain backward compatibility.
+
+        Args:
+            repo_path: Path to repository
+            **kwargs: Additional arguments passed to track()
+
+        Returns:
+            OwnershipReport: Comprehensive ownership analysis
+        """
+        return self.track(repo_path, **kwargs)
 
     # === Helper methods (moved into class for test access) ===
     def _analyze_contributors(self, report: OwnershipReport, since_days: int) -> None:

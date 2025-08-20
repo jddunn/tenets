@@ -3,8 +3,9 @@
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
+import click
 import typer
 from rich import print
 from rich.console import Console
@@ -12,16 +13,23 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from tenets import Tenets
-from tenets.models.llm import get_model_pricing
 
 console = Console()
+
+# Expose a module-level pyperclip symbol so tests can patch it even if it's not installed
+try:  # pragma: no cover - optional dependency presence varies by env
+    import pyperclip as _pyperclip  # type: ignore
+
+    pyperclip = _pyperclip
+except Exception:  # pragma: no cover
+    pyperclip = None  # type: ignore
 
 
 def distill(
     prompt: str = typer.Argument(
         ..., help="Your query or task (can be text or URL to GitHub issue, etc.)"
     ),
-    path: Path = typer.Argument(Path("."), help="Path to analyze (directory or files)"),
+    path: Path = typer.Argument(Path(), help="Path to analyze (directory or files)"),
     # Output options
     format: str = typer.Option(
         "markdown", "--format", "-f", help="Output format: markdown, xml, json"
@@ -85,7 +93,6 @@ def distill(
         help="Copy distilled context to clipboard (also enabled automatically if config.output.copy_on_distill)",
     ),
     # Context options
-    ctx: typer.Context = typer.Context,
 ):
     """
     Distill relevant context from your codebase for any prompt.
@@ -111,8 +118,16 @@ def distill(
         tenets distill "debug login" -o context.md --model gpt-4o --estimate-cost
     """
     # Get verbosity from context
-    verbose = ctx.obj.get("verbose", False)
-    quiet = ctx.obj.get("quiet", False)
+    ctx_obj_local = {}
+    try:
+        _ctx = click.get_current_context(silent=True)
+        if _ctx and _ctx.obj:
+            ctx_obj_local = _ctx.obj
+    except Exception:
+        ctx_obj_local = {}
+    state = ctx_obj_local or {}
+    verbose = state.get("verbose", False)
+    quiet = state.get("quiet", False)
 
     try:
         # Initialize tenets
@@ -169,10 +184,15 @@ def distill(
             )
 
         # Prepare metadata and interactivity flags
-        metadata = getattr(result, "metadata", {}) or {}
+        raw_meta = getattr(result, "metadata", {})
+        metadata = raw_meta if isinstance(raw_meta, dict) else {}
         files_included = metadata.get("files_included", 0)
         files_analyzed = metadata.get("files_analyzed", 0)
         token_count = getattr(result, "token_count", 0)
+        try:
+            token_count = int(token_count)
+        except Exception:
+            token_count = 0
         interactive = (output is None) and (not quiet) and sys.stdout.isatty()
 
         # Format output
@@ -193,7 +213,7 @@ def distill(
             console.print(
                 Panel(
                     f"[bold]Prompt[/bold]: {str(prompt)[:80]}\n"
-                    f"Path: {str(path)}\n"
+                    f"Path: {path!s}\n"
                     f"Mode: {metadata.get('mode', 'unknown')}  •  Format: {format}\n"
                     f"Full: {metadata.get('full_mode', full)}  •  Condense: {metadata.get('condense', condense)}  •  Remove Comments: {metadata.get('remove_comments', remove_comments)}\n"
                     f"Files: {files_included}/{files_analyzed}  •  Tokens: {token_count:,} / {max_tokens_display}\n"
@@ -210,16 +230,16 @@ def distill(
             output.write_text(output_text, encoding="utf-8")
             if not quiet:
                 console.print(f"[green]✓[/green] Context saved to {output}")
+        elif format == "json":
+            # Emit pure JSON without Rich formatting to keep stdout clean for parsers/tests
+            print(output_text)
         else:
-            if format == "json":
-                console.print_json(output_text)
-            else:
-                # Draw clear context boundaries in interactive TTY only
-                if interactive:
-                    console.rule("Context")
-                print(output_text)
-                if interactive:
-                    console.rule("End")
+            # Draw clear context boundaries in interactive TTY only
+            if interactive:
+                console.rule("Context")
+            print(output_text)
+            if interactive:
+                console.rule("End")
 
         # Clipboard copy (after output so piping still works)
         do_copy = copy
@@ -237,10 +257,11 @@ def distill(
             )
             # Try pyperclip first
             try:  # pragma: no cover - environment dependent
-                import pyperclip
-
-                pyperclip.copy(text_to_copy)
-                copied = True
+                if pyperclip is not None:
+                    pyperclip.copy(text_to_copy)  # type: ignore[attr-defined]
+                    copied = True
+                else:
+                    raise RuntimeError("no pyperclip")
             except Exception:
                 # Fallbacks by platform
                 try:
@@ -297,21 +318,31 @@ def distill(
                     )
                 )
 
-        # If no files included, provide actionable suggestions (interactive only)
-        if interactive and files_included == 0:
-            console.print(
-                Panel(
-                    "No files were included in the context.\n\n"
-                    "Try: \n"
-                    "• Increase --max-tokens\n"
-                    "• Relax filters: remove or adjust --include/--exclude\n"
-                    "• Use --mode thorough for deeper analysis\n"
-                    "• Run with --verbose to see why files were skipped\n"
-                    "• Add --stats to view generation metrics",
-                    title="Suggestions",
-                    border_style="red",
+        # If no files included, provide actionable suggestions. Avoid contaminating JSON stdout.
+        if files_included == 0 and format != "json" and output is None:
+            if interactive:
+                console.print(
+                    Panel(
+                        "No files were included in the context.\n\n"
+                        "Try: \n"
+                        "• Increase --max-tokens\n"
+                        "• Relax filters: remove or adjust --include/--exclude\n"
+                        "• Use --mode thorough for deeper analysis\n"
+                        "• Run with --verbose to see why files were skipped\n"
+                        "• Add --stats to view generation metrics",
+                        title="Suggestions",
+                        border_style="red",
+                    )
                 )
-            )
+            else:
+                # Plain output for non-interactive (piped) environments
+                print("No files were included in the context.")
+                print("Suggestions")
+                print("- Increase --max-tokens")
+                print("- Relax filters: remove or adjust --include/--exclude")
+                print("- Use --mode thorough for deeper analysis")
+                print("- Run with --verbose to see why files were skipped")
+                print("- Add --stats to view generation metrics")
 
         # Show statistics if requested
         if show_stats and not quiet:
@@ -329,7 +360,7 @@ def distill(
             )
 
     except Exception as e:
-        console.print(f"[red]Error:[/red] {str(e)}")
+        console.print(f"[red]Error:[/red] {e!s}")
         if verbose:
             console.print_exception()
         raise typer.Exit(1)

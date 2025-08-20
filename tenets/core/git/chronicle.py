@@ -994,3 +994,113 @@ def create_chronicle(
 
     chronicle = Chronicle(config)
     return chronicle.analyze(repo_path, since=since, **kwargs)
+
+
+class ChronicleBuilder:
+    """High-level builder that assembles a simple chronicle dict for CLI.
+
+    This composes the existing Chronicle and GitAnalyzer without duplicating
+    analysis logic. It converts inputs to what Chronicle expects and returns a
+    compact, CLI-friendly dictionary.
+
+    The CLI tests patch this class, but we provide a functional default for
+    real usage.
+    """
+
+    def __init__(self, config: Optional[TenetsConfig] = None) -> None:
+        self.config = config or TenetsConfig()
+        self.logger = get_logger(__name__)
+
+    def build_chronicle(
+        self,
+        repo_path: Path,
+        *,
+        since: Optional[object] = None,
+        until: Optional[object] = None,
+        branch: Optional[str] = None,
+        authors: Optional[List[str]] = None,
+        include_merges: bool = True,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Build a chronicle summary for the given repository.
+
+        Args:
+            repo_path: Path to a git repository
+            since: Start time (datetime or relative/ISO string)
+            until: End time (datetime or relative/ISO string)
+            branch: Branch name to analyze
+            authors: Optional author filters (currently advisory)
+            include_merges: Include merge commits
+            limit: Max commits to analyze (advisory to Chronicle)
+
+        Returns:
+            A dictionary with keys expected by the CLI views.
+        """
+
+        # Normalize time parameters to strings for Chronicle
+        def _to_str(t: Optional[object]) -> Optional[str]:
+            if t is None:
+                return None
+            if isinstance(t, str):
+                return t
+            try:
+                from datetime import datetime as _dt
+
+                if isinstance(t, _dt):
+                    return t.isoformat()
+            except Exception:
+                pass
+            # Fallback to string repr
+            return str(t)
+
+        since_s = _to_str(since)
+        until_s = _to_str(until)
+
+        # Run detailed analysis via Chronicle
+        chron = Chronicle(self.config)
+        report = chron.analyze(
+            repo_path,
+            since=since_s,
+            until=until_s,
+            author=(authors[0] if authors else None),  # basic filter support
+            branch=branch,
+            include_merges=include_merges,
+            include_stats=True,
+            max_commits=limit or 1000,
+        )
+
+        # Summarize fields commonly displayed by CLI
+        period = (
+            f"{report.period_start.date().isoformat()} to {report.period_end.date().isoformat()}"
+        )
+        files_changed = (
+            len({p[0] for p in report.file_change_frequency}) if report.file_change_frequency else 0
+        )
+
+        # Lightweight activity signal (placeholder using totals)
+        activity = {
+            "trend": 0.0,  # real trend computation is beyond this builder
+            "current_velocity": report.total_commits,
+            "commits_this_week": (
+                sum(d.total_commits for d in report.daily_activity[-7:])
+                if report.daily_activity
+                else 0
+            ),
+        }
+
+        return {
+            "period": period,
+            "total_commits": report.total_commits,
+            "files_changed": files_changed,
+            "activity": activity,
+            # Include a small slice of richer data for reports
+            "commit_types": report.commit_type_distribution,
+            "top_files": report.file_change_frequency[:10],
+            "top_contributors": sorted(
+                ((a, s.get("commits", 0)) for a, s in report.contributor_stats.items()),
+                key=lambda x: x[1],
+                reverse=True,
+            )[:5],
+            # Preserve the original report for advanced formatting if needed
+            "_report": report,
+        }

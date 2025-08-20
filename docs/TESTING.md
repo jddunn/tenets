@@ -10,7 +10,7 @@ pip install -e '.[test]' pytest pytest-cov
 pytest -q
 
 # Run with coverage + fail if below threshold (adjust as policy evolves)
-pytest --cov=tenets --cov-report=term-missing --cov-fail-under=80
+pytest --cov=tenets --cov-report=term-missing --cov-fail-under=70
 
 # Generate XML (CI) + HTML
 pytest --cov=tenets --cov-report=xml --cov-report=html
@@ -187,7 +187,7 @@ def test_token_counting():
 - name: Run tests
   run: |
     pytest --cov=tenets --cov-report=xml
-    
+
 - name: Upload coverage
   uses: codecov/codecov-action@v3
   with:

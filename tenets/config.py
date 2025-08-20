@@ -32,11 +32,11 @@ from tenets.utils.logger import get_logger
 @dataclass
 class NLPConfig:
     """Configuration for centralized NLP (Natural Language Processing) system.
-    
+
     Controls all text processing operations including tokenization, keyword
     extraction, stopword filtering, embeddings, and similarity computation.
     All NLP operations are centralized in the tenets.core.nlp package.
-    
+
     Attributes:
         enabled: Whether NLP features are enabled globally
         stopwords_enabled: Whether to use stopword filtering
@@ -71,59 +71,59 @@ class NLPConfig:
         multiprocessing_workers: Number of workers (None = cpu_count)
         multiprocessing_chunk_size: Chunk size for parallel processing
     """
-    
+
     # Core settings
     enabled: bool = True
-    
+
     # Stopword configuration
     stopwords_enabled: bool = True
-    code_stopword_set: str = "minimal"      # Minimal for code search
-    prompt_stopword_set: str = "aggressive" # Aggressive for prompt parsing
+    code_stopword_set: str = "minimal"  # Minimal for code search
+    prompt_stopword_set: str = "aggressive"  # Aggressive for prompt parsing
     custom_stopword_files: List[str] = field(default_factory=list)
-    
+
     # Tokenization configuration
     tokenization_mode: str = "auto"  # 'code', 'text', or 'auto'
     preserve_original_tokens: bool = True
     split_camelcase: bool = True
     split_snakecase: bool = True
     min_token_length: int = 2
-    
+
     # Keyword extraction configuration
     keyword_extraction_method: str = "auto"  # 'auto', 'yake', 'tfidf', 'frequency'
     max_keywords: int = 30
     ngram_size: int = 3
     yake_dedup_threshold: float = 0.7
-    
+
     # TF-IDF configuration
     tfidf_use_sublinear: bool = True
     tfidf_use_idf: bool = True
     tfidf_norm: str = "l2"
-    
+
     # BM25 configuration
     bm25_k1: float = 1.2
     bm25_b: float = 0.75
-    
+
     # Embeddings configuration (ML features)
     embeddings_enabled: bool = False
     embeddings_model: str = "all-MiniLM-L6-v2"
     embeddings_device: str = "auto"  # 'auto', 'cpu', 'cuda'
     embeddings_cache: bool = True
     embeddings_batch_size: int = 32
-    
+
     # Similarity configuration
     similarity_metric: str = "cosine"  # 'cosine', 'euclidean', 'manhattan'
     similarity_threshold: float = 0.7
-    
+
     # Cache configuration for NLP
     cache_embeddings_ttl_days: int = 30
     cache_tfidf_ttl_days: int = 7
     cache_keywords_ttl_days: int = 7
-    
+
     # Performance optimization
     multiprocessing_enabled: bool = True
     multiprocessing_workers: Optional[int] = None  # None = cpu_count()
     multiprocessing_chunk_size: int = 100
-    
+
     def __post_init__(self):
         """Validate NLP configuration after initialization."""
         # Validate stopword sets
@@ -132,28 +132,32 @@ class NLPConfig:
             raise ValueError(f"Invalid code stopword set: {self.code_stopword_set}")
         if self.prompt_stopword_set not in valid_stopword_sets:
             raise ValueError(f"Invalid prompt stopword set: {self.prompt_stopword_set}")
-            
+
         # Validate tokenization mode
         valid_modes = ["code", "text", "auto"]
         if self.tokenization_mode not in valid_modes:
             raise ValueError(f"Invalid tokenization mode: {self.tokenization_mode}")
-            
+
         # Validate keyword extraction method
         valid_methods = ["auto", "yake", "tfidf", "frequency"]
         if self.keyword_extraction_method not in valid_methods:
             raise ValueError(f"Invalid keyword extraction method: {self.keyword_extraction_method}")
-            
+
         # Validate similarity metric
         valid_metrics = ["cosine", "euclidean", "manhattan"]
         if self.similarity_metric not in valid_metrics:
             raise ValueError(f"Invalid similarity metric: {self.similarity_metric}")
-            
+
         # Validate thresholds
         if not 0.0 <= self.similarity_threshold <= 1.0:
-            raise ValueError(f"Similarity threshold must be between 0 and 1, got {self.similarity_threshold}")
+            raise ValueError(
+                f"Similarity threshold must be between 0 and 1, got {self.similarity_threshold}"
+            )
         if not 0.0 < self.yake_dedup_threshold <= 1.0:
-            raise ValueError(f"YAKE dedup threshold must be between 0 and 1, got {self.yake_dedup_threshold}")
-            
+            raise ValueError(
+                f"YAKE dedup threshold must be between 0 and 1, got {self.yake_dedup_threshold}"
+            )
+
         # Validate BM25 parameters
         if self.bm25_k1 < 0:
             raise ValueError(f"BM25 k1 must be non-negative, got {self.bm25_k1}")
@@ -554,7 +558,7 @@ class TenetConfig:
         prefer_natural_breaks: Whether to inject at natural break points
         storage_path: Where to store tenet database
         collections_enabled: Whether to enable tenet collections
-        
+
         # Smart injection frequency settings
         injection_frequency: How often to inject tenets ('always', 'periodic', 'adaptive', 'manual')
         injection_interval: Numeric interval for periodic injection (e.g., every 3rd distill)
@@ -564,23 +568,23 @@ class TenetConfig:
         track_injection_history: Track injection history per session for smarter decisions
         decay_rate: How quickly tenet importance decays (0-1, higher = faster decay)
         reinforcement_interval: How often to reinforce critical tenets (every N injections)
-        
+
         # Session tracking settings
         session_aware: Enable session-aware injection patterns
         session_memory_limit: Max sessions to track in memory
         persist_session_history: Save session histories to disk
-        
+
         # Advanced injection settings
         complexity_weight: Weight given to complexity in injection decisions (0-1)
         priority_boost_critical: Boost factor for critical priority tenets
         priority_boost_high: Boost factor for high priority tenets
         skip_low_priority_on_complex: Skip low priority tenets when complexity > threshold
-        
+
         # Metrics and analysis
         track_effectiveness: Track tenet effectiveness metrics
         effectiveness_window_days: Days to consider for effectiveness analysis
         min_compliance_score: Minimum compliance score before reinforcement
-        
+
     # System instruction (system prompt) configuration
     system_instruction: Optional text to inject as foundational context
     system_instruction_enabled: Enable auto-injection when instruction exists
@@ -598,7 +602,7 @@ class TenetConfig:
     prefer_natural_breaks: bool = True
     storage_path: Optional[Path] = None
     collections_enabled: bool = True
-    
+
     # Smart injection frequency settings
     injection_frequency: str = "adaptive"  # 'always', 'periodic', 'adaptive', 'manual'
     injection_interval: int = 3  # Every Nth distill for periodic mode
@@ -608,30 +612,30 @@ class TenetConfig:
     track_injection_history: bool = True  # Track per-session injection patterns
     decay_rate: float = 0.1  # How quickly tenet importance decays (0=never, 1=immediate)
     reinforcement_interval: int = 10  # Reinforce critical tenets every N injections
-    
+
     # Session tracking settings
     session_aware: bool = True  # Enable session-aware patterns
     session_memory_limit: int = 100  # Max concurrent sessions to track
     persist_session_history: bool = True  # Save histories to disk
-    
+
     # Advanced injection settings
     complexity_weight: float = 0.5  # Weight for complexity in decisions
     priority_boost_critical: float = 2.0  # Boost for critical tenets
     priority_boost_high: float = 1.5  # Boost for high priority tenets
     skip_low_priority_on_complex: bool = True  # Skip low priority when complex
-    
+
     # Metrics and analysis
     track_effectiveness: bool = True  # Track effectiveness metrics
     effectiveness_window_days: int = 30  # Analysis window
     min_compliance_score: float = 0.6  # Minimum before reinforcement
-    
+
     # System instruction (system prompt) configuration
     system_instruction: Optional[str] = None
     system_instruction_enabled: bool = False
     system_instruction_position: str = "top"  # 'top', 'after_header', 'before_content'
     system_instruction_format: str = "markdown"  # 'markdown', 'xml', 'comment', 'plain'
     system_instruction_once_per_session: bool = True
-    
+
     def __post_init__(self):
         """Validate tenet configuration after initialization."""
         # Validate injection frequency
@@ -641,7 +645,7 @@ class TenetConfig:
                 f"Invalid injection_frequency: {self.injection_frequency}. "
                 f"Must be one of {valid_frequencies}"
             )
-            
+
         # Validate injection strategy
         valid_strategies = ["strategic", "top", "distributed", "uniform", "random"]
         if self.injection_strategy not in valid_strategies:
@@ -649,50 +653,52 @@ class TenetConfig:
                 f"Invalid injection_strategy: {self.injection_strategy}. "
                 f"Must be one of {valid_strategies}"
             )
-            
+
         # Validate numeric ranges
         if not 0.0 <= self.session_complexity_threshold <= 1.0:
             raise ValueError(
                 f"session_complexity_threshold must be between 0 and 1, "
                 f"got {self.session_complexity_threshold}"
             )
-            
+
         if not 0.0 <= self.decay_rate <= 1.0:
             raise ValueError(f"decay_rate must be between 0 and 1, got {self.decay_rate}")
-            
+
         if not 0.0 <= self.complexity_weight <= 1.0:
             raise ValueError(
                 f"complexity_weight must be between 0 and 1, got {self.complexity_weight}"
             )
-            
+
         if not 0.0 <= self.min_compliance_score <= 1.0:
             raise ValueError(
                 f"min_compliance_score must be between 0 and 1, got {self.min_compliance_score}"
             )
-            
+
         if self.injection_interval < 1:
-            raise ValueError(f"injection_interval must be at least 1, got {self.injection_interval}")
-            
+            raise ValueError(
+                f"injection_interval must be at least 1, got {self.injection_interval}"
+            )
+
         if self.min_session_length < 0:
             raise ValueError(
                 f"min_session_length must be non-negative, got {self.min_session_length}"
             )
-            
+
         if self.reinforcement_interval < 1:
             raise ValueError(
                 f"reinforcement_interval must be at least 1, got {self.reinforcement_interval}"
             )
-            
+
         if self.session_memory_limit < 1:
             raise ValueError(
                 f"session_memory_limit must be at least 1, got {self.session_memory_limit}"
             )
-            
+
         if self.effectiveness_window_days < 1:
             raise ValueError(
                 f"effectiveness_window_days must be at least 1, got {self.effectiveness_window_days}"
             )
-        
+
         # Validate system instruction options
         valid_positions = ["top", "after_header", "before_content"]
         if self.system_instruction_position not in valid_positions:
@@ -706,7 +712,7 @@ class TenetConfig:
                 f"Invalid system_instruction_format: {self.system_instruction_format}. "
                 f"Must be one of {valid_formats}"
             )
-            
+
     @property
     def injection_config(self) -> Dict[str, Any]:
         """Get injection configuration as dictionary for TenetInjector."""
@@ -866,6 +872,8 @@ class TenetsConfig:
     # Derived attributes (not in config files)
     _logger: Any = field(default=None, init=False, repr=False)
     _resolved_paths: Dict[str, Path] = field(default_factory=dict, init=False, repr=False)
+    # Track whether config_file was discovered automatically (not user-provided)
+    _config_file_discovered: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self):
         """Initialize configuration after creation.
@@ -887,7 +895,9 @@ class TenetsConfig:
 
         # Find and load config file if not specified
         if not self.config_file:
-            self.config_file = self._find_config_file()
+            discovered = self._find_config_file()
+            self.config_file = discovered
+            self._config_file_discovered = bool(discovered)
         else:
             # Normalize explicit path
             self.config_file = Path(self.config_file)
@@ -1083,7 +1093,7 @@ class TenetsConfig:
                             provider = parts_lower[3]
                             self.llm.api_keys[provider] = env_value
                             continue
-                            
+
                     # Special handling for NLP settings
                     if subsystem == "nlp":
                         attr = "_".join(parts_lower[1:])
@@ -1243,9 +1253,13 @@ class TenetsConfig:
         Raises:
             ValueError: If no path specified and config_file not set
         """
-        save_path = path or self.config_file
-        if not save_path:
-            raise ValueError("No path specified for saving configuration")
+        # Only allow implicit save to config_file if it was explicitly provided
+        if path is None:
+            if not self.config_file or self._config_file_discovered:
+                raise ValueError("No path specified for saving configuration")
+            save_path = self.config_file
+        else:
+            save_path = path
 
         save_path = Path(save_path)
         config_dict = self.to_dict()
@@ -1462,30 +1476,30 @@ class TenetsConfig:
             Model name
         """
         return self.llm.get_model(task, provider)
-    
+
     @property
     def nlp_enabled(self) -> bool:
         """Whether NLP features are enabled."""
         return self.nlp.enabled
-    
+
     @nlp_enabled.setter
     def nlp_enabled(self, value: bool) -> None:
         """Set whether NLP features are enabled.
-        
+
         Args:
             value: New value
         """
         self.nlp.enabled = bool(value)
-    
+
     @property
     def nlp_embeddings_enabled(self) -> bool:
         """Whether NLP embeddings are enabled."""
         return self.nlp.embeddings_enabled
-    
+
     @nlp_embeddings_enabled.setter
     def nlp_embeddings_enabled(self, value: bool) -> None:
         """Set whether NLP embeddings are enabled.
-        
+
         Args:
             value: New value
         """
