@@ -44,6 +44,7 @@ from .blame import (
 )
 from .chronicle import (
     Chronicle,
+    ChronicleBuilder,
     ChronicleReport,
     CommitSummary,
     DayActivity,
@@ -75,6 +76,7 @@ __all__ = [
     "get_file_ownership",
     # Chronicle generation
     "Chronicle",
+    "ChronicleBuilder",
     "ChronicleReport",
     "CommitSummary",
     "DayActivity",

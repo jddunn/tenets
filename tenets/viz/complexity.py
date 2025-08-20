@@ -46,6 +46,10 @@ class ComplexityVisualizer(BaseVisualizer):
         """
         distribution = complexity_data.get("distribution", {})
 
+        # Try alternate key
+        if not distribution:
+            distribution = complexity_data.get("complexity_distribution", {})
+
         # Default distribution if not provided
         if not distribution:
             distribution = {
@@ -55,13 +59,56 @@ class ComplexityVisualizer(BaseVisualizer):
                 "very_high": complexity_data.get("very_high_complexity_count", 0),
             }
 
+        # Handle different key formats
         labels = ["Low (1-5)", "Medium (6-10)", "High (11-20)", "Very High (>20)"]
-        values = [
-            distribution.get("low", 0),
-            distribution.get("medium", 0),
-            distribution.get("high", 0),
-            distribution.get("very_high", 0),
-        ]
+        values = []
+
+        # Check for formatted keys first
+        if "simple (1-5)" in distribution or "Low (1-5)" in distribution:
+            # Already formatted keys
+            for label in labels:
+                found = False
+                for key in distribution:
+                    if (
+                        (
+                            "Low" in label
+                            and ("simple" in key.lower() or "low" in key.lower() or "1-5" in key)
+                        )
+                        or (
+                            "Medium" in label
+                            and (
+                                "moderate" in key.lower()
+                                or "medium" in key.lower()
+                                or "6-10" in key
+                            )
+                        )
+                        or (
+                            "High" in label
+                            and "Very" not in label
+                            and (
+                                ("complex" in key.lower() and "very" not in key.lower())
+                                or "high" in key.lower()
+                                or "11-20" in key
+                            )
+                        )
+                        or (
+                            "Very High" in label
+                            and ("very" in key.lower() or "21" in key or ">20" in key)
+                        )
+                    ):
+                        values.append(distribution[key])
+                        found = True
+                        break
+                if not found:
+                    values.append(0)
+        else:
+            # Simple keys
+            values = [
+                distribution.get("low", 0) + distribution.get("simple", 0),
+                distribution.get("medium", 0) + distribution.get("moderate", 0),
+                distribution.get("high", 0) + distribution.get("complex", 0),
+                distribution.get("very_high", 0) + distribution.get("very_complex", 0),
+            ]
 
         # Use severity colors for complexity levels
         colors = [

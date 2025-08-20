@@ -56,12 +56,18 @@ def list_cmd():
     table.add_column("Created", style="green")
     table.add_column("Metadata", style="magenta")
     for s in sessions:
-        is_active = "yes" if s.metadata.get("active") else ""
+        # Coerce potential MagicMocks to plain serializable types for display
+        meta = s.metadata if isinstance(s.metadata, dict) else {}
+        is_active = "yes" if meta.get("active") else ""
         table.add_row(
-            s.name,
-            is_active,
-            s.created_at.isoformat(timespec="seconds"),
-            json.dumps(s.metadata),
+            str(s.name),
+            str(is_active),
+            str(
+                getattr(s.created_at, "isoformat", lambda **_: str(s.created_at))(
+                    timespec="seconds"
+                )
+            ),
+            json.dumps(meta),
         )
     console.print(table)
 

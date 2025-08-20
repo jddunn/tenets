@@ -115,7 +115,7 @@ theme:
     - content.tooltips
 
 # ==============================================================================
-# PLUGINS - WITH API GENERATION
+# PLUGINS - PRODUCTION READY
 # ==============================================================================
 plugins:
   # Search functionality (keep first)
@@ -123,19 +123,22 @@ plugins:
       lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
 
-  # Generate API documentation files
+  # Auto-generated API docs - ENABLED FOR PRODUCTION
   - gen-files:
       scripts:
-        - docs/gen_api.py # Make sure this script exists!
+        - docs/gen_api.py
 
-  # Navigation plugins for API docs
   - literate-nav:
       nav_file: SUMMARY.md
       implicit_index: true
 
   - section-index
 
-  # API Documentation from docstrings - FULL CONFIG
+  # Optional: For better page organization (uncomment if needed)
+  # - awesome-pages:
+  #     collapse_single_pages: false
+  #     strict: false
+
   - mkdocstrings:
       enabled: true
       default_handler: python
@@ -146,7 +149,6 @@ plugins:
             - import os, sys
             - sys.path.insert(0, os.path.abspath('.'))
           options:
-            # Display options
             show_source: true
             show_root_heading: true
             show_root_toc_entry: true
@@ -154,30 +156,22 @@ plugins:
             show_category_heading: true
             show_symbol_type_heading: true
             show_symbol_type_toc: true
-
-            # Member options
             members_order: source
             group_by_category: true
             show_submodules: true
-
-            # Docstring options
             docstring_style: google
             docstring_section_style: table
             merge_init_into_class: true
             show_if_no_docstring: false
-
-            # Signature options
             separate_signature: true
             line_length: 80
             show_signature_annotations: true
             signature_crossrefs: true
-
-            # Filtering
             filters: ['!^_']
             inherited_members: true
             preload_modules: []
 
-  # Git information (optional - comment out if causing issues)
+  # Git revision dates
   - git-revision-date-localized:
       enabled: true
       type: timeago
@@ -185,7 +179,7 @@ plugins:
       fallback_to_build_date: true
       enable_git_follow: false
 
-  # Minification (must be last)
+  # Minification for production
   - minify:
       minify_html: true
       minify_js: true
@@ -221,15 +215,18 @@ markdown_extensions:
   # PyMdown Extensions
   - pymdownx.arithmatex:
       generic: true
+
   - pymdownx.betterem:
       smart_enable: all
+
   - pymdownx.caret
-  - pymdownx.critic:
-      mode: view
+  - pymdownx.critic
   - pymdownx.details
+
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -238,32 +235,40 @@ markdown_extensions:
       auto_title: true
       linenums: true
       linenums_style: pymdownx-inline
+
   - pymdownx.inlinehilite
   - pymdownx.keys
+
   - pymdownx.magiclink:
       repo_url_shorthand: true
       user: jddunn
       repo: tenets
+
   - pymdownx.mark
   - pymdownx.smartsymbols
+
   - pymdownx.snippets:
       base_path:
         - docs
       check_paths: true
+
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+
   - pymdownx.tabbed:
       alternate_style: true
       combine_header_slug: true
       slugify: !!python/object/apply:pymdownx.slugs.slugify
         kwds:
           case: lower
+
   - pymdownx.tasklist:
       custom_checkbox: true
       clickable_checkbox: true
+
   - pymdownx.tilde
 
 # ==============================================================================
@@ -273,48 +278,60 @@ extra:
   # Disable generator meta tag
   generator: false
 
-  # Version provider (if using mike for versioning)
-  # Disabled in local dev to avoid versions.json 404; re-enable when using mike
+  # Version provider (optional - uncomment if needed)
   # version:
   #   provider: mike
   #   default: stable
+
+  # Analytics (add your tracking ID)
+  # analytics:
+  #   provider: google
+  #   property: G-XXXXXXXXXX
+  #   feedback:
+  #     title: Was this page helpful?
+  #     ratings:
+  #       - icon: material/emoticon-happy-outline
+  #         name: This page was helpful
+  #         data: 1
+  #         note: Thanks for your feedback!
+  #       - icon: material/emoticon-sad-outline
+  #         name: This page could be improved
+  #         data: 0
+  #         note: Thanks for your feedback!
 
   # Social links
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/jddunn/tenets
       name: Tenets on GitHub
+      color: '#FFD600' # Torch yellow
     - icon: fontawesome/brands/discord
       link: https://discord.gg/DzNgXdYm
       name: Join our Discord
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/tenets/
       name: Tenets on PyPI
-    - icon: fontawesome/brands/linkedin
-      link: https://www.linkedin.com/company/manic-agency-llc/
-      name: Manic Agency on LinkedIn
-    - icon: fontawesome/brands/x-twitter
-      link: https://x.com/manicagency
-      name: Follow @manicagency
-    - icon: fontawesome/brands/instagram
-      link: https://instagram.com/manic.agency
-      name: manic.agency on Instagram
-    - icon: fontawesome/solid/envelope
-      link: mailto:team@manic.agency
-      name: Contact us
+
+  # Feature flags (optional)
+  # feature:
+  #   tabs: true
+  #   instant: true
 
 # ==============================================================================
-# EXTRA CSS - ORIGINAL FLAT STRUCTURE
+# EXTRA CSS - ORGANIZED STRUCTURE
 # ==============================================================================
 extra_css:
   # Base styles
   - styles/variables.css
   - styles/main.css
+
   # Animations
   - styles/animations.css
+
   # Theme styles
   - styles/victorian.css
   - styles/neumorphic.css
+
   # Component styles
   - styles/header.css
   - styles/footer.css
@@ -325,43 +342,63 @@ extra_css:
   - styles/back-to-top.css
   - styles/see-it-in-action.css
   - styles/search.css
+
   # Responsive
   - styles/mobile.css
+
   # Final overrides (must be last)
   - styles/overrides.css
 
 # ==============================================================================
-# EXTRA JAVASCRIPT - ORIGINAL FLAT STRUCTURE
+# EXTRA JAVASCRIPT - ORGANIZED STRUCTURE
 # ==============================================================================
 extra_javascript:
+  # MathJax support (optional - uncomment if needed)
+  # - javascripts/mathjax.js
+  # - https://polyfill.io/v3/polyfill.min.js?features=es6
+  # - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
   # Core functionality
   - js/main.js
   - js/page-flags.js
+
   # Components
   - js/theme-toggle.js
   - js/terminal.js
   - js/mobile-menu.js
   - js/copy-buttons.js
   - js/back-to-top.js
+
   # Homepage specific
   - js/lantern.js
   - js/architecture-diagram.js
   - js/see-it-in-action.js
+
   # External libraries
   - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
 
 # ==============================================================================
-# NAVIGATION - KEEP SIMPLE BUT ADD API SECTION
+# NAVIGATION - COMPLETE STRUCTURE
 # ==============================================================================
 nav:
-  - Quick Start: quickstart.md
-  - Features: features.md
-  - Supported Languages: supported-languages.md
-  - Documentation: docs.md
-  - Reference:
+  - Getting Started:
+      - Quick Start: quickstart.md
+      - Installation: installation.md
+      - First Steps: first-steps.md
+  - User Guide:
       - CLI Reference: CLI.md
-      - Configuration: CONFIG.md
-      - Architecture: ARCHITECTURE.md
-  - API Reference: api/
+      - Supported Languages: supported-languages.md
+      - Best Practices: best-practices.md
+      - Examples: examples.md
+  - Architecture: ARCHITECTURE.md
+  - API Docs: api/index.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
+
+# ==============================================================================
+# WATCH - Development auto-reload
+# ==============================================================================
+watch:
+  - docs
+  - README.md
+  - CHANGELOG.md

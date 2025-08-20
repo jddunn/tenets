@@ -18,6 +18,7 @@ from tenets.config import TenetsConfig
 from tenets.utils.logger import get_logger
 
 from .generator import ReportConfig, ReportSection
+
 # Re-export ReportGenerator for tests that patch via this module
 try:  # pragma: no cover
     from .generator import ReportGenerator as ReportGenerator
@@ -825,6 +826,10 @@ class HTMLReporter:
         if section.content:
             html += self._render_content(section.content)
 
+        # Metrics
+        if hasattr(section, "metrics") and section.metrics:
+            html += self._render_metrics(section.metrics)
+
         # Tables
         for table in section.tables:
             html += self._render_table(table)
@@ -860,12 +865,94 @@ class HTMLReporter:
             str: Rendered HTML
         """
         if isinstance(content, list):
-            items = "".join(f"<li>{item}</li>" for item in content)
-            return f"<ul>{items}</ul>"
+            # Process list items - handle markdown-like content
+            html_parts = []
+            in_list = False
+
+            for item in content:
+                item_str = str(item)
+
+                # Handle empty lines
+                if not item_str.strip():
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append("<br>")
+                    continue
+
+                # Handle headers (markdown style)
+                if item_str.startswith("###"):
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append(f"<h3>{item_str[3:].strip()}</h3>")
+                elif item_str.startswith("##"):
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append(f"<h2>{item_str[2:].strip()}</h2>")
+                elif item_str.startswith("#"):
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append(f"<h1>{item_str[1:].strip()}</h1>")
+                # Handle list items
+                elif item_str.startswith("- ") or item_str.startswith("* "):
+                    if not in_list:
+                        html_parts.append("<ul>")
+                        in_list = True
+                    # Process markdown bold
+                    processed = self._process_markdown(item_str[2:])
+                    html_parts.append(f"<li>{processed}</li>")
+                # Handle indented content (continuation of previous item)
+                elif item_str.startswith("   "):
+                    processed = self._process_markdown(item_str.strip())
+                    html_parts.append(
+                        f"<div style='margin-left: 20px; color: var(--text-secondary);'>{processed}</div>"
+                    )
+                else:
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    # Regular paragraph
+                    processed = self._process_markdown(item_str)
+                    html_parts.append(f"<p>{processed}</p>")
+
+            if in_list:
+                html_parts.append("</ul>")
+
+            return "\n".join(html_parts)
         elif isinstance(content, dict):
             return self._render_metrics(content)
         else:
-            return f"<p>{content}</p>"
+            return f"<p>{self._process_markdown(str(content))}</p>"
+
+    def _process_markdown(self, text: str) -> str:
+        """Process basic markdown formatting.
+
+        Args:
+            text: Text with markdown formatting
+
+        Returns:
+            str: HTML formatted text
+        """
+        # Escape HTML first
+        text = self._escape_html(text)
+
+        # Bold text
+        import re
+
+        text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+        text = re.sub(r"__(.+?)__", r"<strong>\1</strong>", text)
+
+        # Italic text
+        text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
+        text = re.sub(r"_(.+?)_", r"<em>\1</em>", text)
+
+        # Inline code
+        text = re.sub(r"`(.+?)`", r"<code>\1</code>", text)
+
+        return text
 
     def _render_table(self, table_data: Dict[str, Any]) -> str:
         """Render a table.

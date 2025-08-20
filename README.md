@@ -20,7 +20,7 @@ See docs locally: [docs/](./docs/) • Live site: https://tenets.dev/docs
 
 Think of it as intelligent context aggregation. You give it a prompt or query, and it:
 
-- 🔍 **Finds** all relevant files automatically 
+- 🔍 **Finds** all relevant files automatically
 - 🎯 **Ranks** them by importance using multiple factors
 - 📦 **Aggregates** them within your token budget
 - 📋 **Formats** perfectly for any use case
@@ -29,8 +29,8 @@ Think of it as intelligent context aggregation. You give it a prompt or query, a
 
 Plus powerful development intelligence:
 
-- **Visualize** dependencies and architecture 
-- **Track** velocity and code evolution  
+- **Visualize** dependencies and architecture
+- **Track** velocity and code evolution
 - **Identify** hotspots and technical debt
 - **Understand** team patterns and expertise
 
@@ -51,7 +51,7 @@ pip install tenets[ml]     # Adds deep learning models (large dependencies)
 pip install tenets[all]
 ```
 
-### Install with Poetry 
+### Install with Poetry
 
 ```bash
 # Clone the repository
@@ -98,7 +98,7 @@ When AI pair programming and working with large codebase, you usually have to do
 
 ```bash
 # Old way: Manual search and copy
-$ grep -r "payment" . 
+$ grep -r "payment" .
 $ cat payment.py api.py models.py  # Did I miss anything?
 # Copy... paste... hope for the best
 
@@ -113,21 +113,27 @@ $ tenets distill "fix payment processing bug"
 Tenets uses a sophisticated multi-stage pipeline to understand your code:
 
 ### 1. Intelligent Parsing
+
 When you provide a prompt like "implement OAuth2 authentication", Tenets:
+
 - Extracts key concepts (OAuth2, authentication)
 - Identifies intent (implementation/feature)
 - Detects any file patterns or specific mentions
 - Understands temporal context ("recent changes")
 
 ### 2. Code Analysis
+
 For each file in your codebase, Tenets analyzes:
+
 - **Structure**: Classes, functions, imports, exports
 - **Dependencies**: What files import this, what it imports
 - **Patterns**: Common code patterns (auth, API, database)
 - **Metadata**: Language, size, complexity
 
 ### 3. Relevance Ranking
+
 Files are scored using multiple factors:
+
 - **Semantic Understanding** (25%): ML-based similarity to your prompt
 - **Keyword Matching** (15%): Direct term matching
 - **Statistical Relevance** (15%): TF-IDF scoring
@@ -138,7 +144,9 @@ Files are scored using multiple factors:
 All factors are configurable - you can disable git integration, adjust weights, or add custom factors.
 
 ### 4. Context Optimization
+
 Finally, Tenets:
+
 - Selects files that score above threshold
 - Fits them within token limits
 - Summarizes large files if needed
@@ -152,28 +160,28 @@ Create `.tenets.yml` in your project:
 
 ```yaml
 ranking:
-  algorithm: ml  # Use ML-based ranking
-  threshold: 0.1  # Lower threshold for more files
-  
+  algorithm: ml # Use ML-based ranking
+  threshold: 0.1 # Lower threshold for more files
+
   # Disable git factors for stable codebases
   use_git: false
-  
+
   # Custom weights
   weights:
-    semantic_similarity: 0.40  # Increase ML weight
+    semantic_similarity: 0.40 # Increase ML weight
     keyword_match: 0.20
     import_centrality: 0.20
     path_relevance: 0.20
 
   # Performance tuning
   cache:
-    embeddings: true  # Cache ML embeddings
-    ttl_days: 30     # Longer cache lifetime
-    max_size_mb: 2000  # More cache space
+    embeddings: true # Cache ML embeddings
+    ttl_days: 30 # Longer cache lifetime
+    max_size_mb: 2000 # More cache space
 
   ranking:
-    workers: 8  # More parallel workers
-    batch_size: 100  # Larger batches for ML
+    workers: 8 # More parallel workers
+    batch_size: 100 # Larger batches for ML
 ```
 
 ## Key Features
@@ -302,29 +310,29 @@ Works instantly with smart defaults, fully configurable when needed:
 ```yaml
 # .tenets.yml (optional)
 context:
-  ranking: balanced  # fast | balanced | thorough | ml
-  include_git: true  # Use git signals for relevance (not shown in output)
+  ranking: balanced # fast | balanced | thorough | ml
+  include_git: true # Use git signals for relevance (not shown in output)
   max_tokens: 100000
   # Transformations are enabled per-invocation (CLI flags):
   #   --full, --remove-comments, --condense
 
 ignore:
   - vendor/
-  - "*.generated.*"
-  
+  - '*.generated.*'
+
 output:
-  format: markdown  # markdown, json, xml
+  format: markdown # markdown, json, xml
 ```
 
 ### Content Transformation Flags
 
 Optimize token usage or force raw context inclusion when needed:
 
-| Flag | Purpose | Notes |
-|------|---------|-------|
-| `--full` | Include full file contents (no summarization) until token budget exhausted | Good for audits; may reduce breadth |
-| `--remove-comments` | Strip line & block comments (language-aware heuristics) | Safety: aborts if >60% of non-empty lines would be removed |
-| `--condense` | Collapse 3+ blank lines to 1, trim trailing spaces | Lossless for logic; pairs well with `--remove-comments` |
+| Flag                | Purpose                                                                    | Notes                                                      |
+| ------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `--full`            | Include full file contents (no summarization) until token budget exhausted | Good for audits; may reduce breadth                        |
+| `--remove-comments` | Strip line & block comments (language-aware heuristics)                    | Safety: aborts if >60% of non-empty lines would be removed |
+| `--condense`        | Collapse 3+ blank lines to 1, trim trailing spaces                         | Lossless for logic; pairs well with `--remove-comments`    |
 
 Order: comments removed first, whitespace condensed second. Both affect token counting and packing decisions.
 
@@ -343,23 +351,26 @@ Pinned files are stored in session metadata (SQLite) and automatically reloaded�
 
 ### Feature Sets Explained
 
-| Feature Set | Includes | Use When |
-|-------------|----------|----------|
-| **core** (default) | Basic file scanning, keyword matching, git integration | You want fast, lightweight context building |
-| **light** | + numpy, scikit-learn, YAKE keyword extraction, TF-IDF ranking | Better keyword/TF‑IDF relevance without heavy ML |
-| **viz** | + matplotlib, networkx, dependency graphs, complexity charts | You want to visualize your codebase |
-| **ml** | + PyTorch, transformers, semantic search, embeddings | You want state-of-the-art ranking (slower, 2GB+ dependencies) |
-| **web** | + FastAPI, web UI (coming soon) | You want to run tenets as a service |
-| **all** | Everything above | You want all features |
+| Feature Set        | Includes                                                       | Use When                                                      |
+| ------------------ | -------------------------------------------------------------- | ------------------------------------------------------------- |
+| **core** (default) | Basic file scanning, keyword matching, git integration         | You want fast, lightweight context building                   |
+| **light**          | + numpy, scikit-learn, YAKE keyword extraction, TF-IDF ranking | Better keyword/TF‑IDF relevance without heavy ML              |
+| **viz**            | + matplotlib, networkx, dependency graphs, complexity charts   | You want to visualize your codebase                           |
+| **ml**             | + PyTorch, transformers, semantic search, embeddings           | You want state-of-the-art ranking (slower, 2GB+ dependencies) |
+| **web**            | + FastAPI, web UI (coming soon)                                | You want to run tenets as a service                           |
+| **all**            | Everything above                                               | You want all features                                         |
 
 #### Makefile Shortcuts
+
 Common tasks are wrapped in the Makefile:
+
 ```bash
 make dev      # editable install with all + dev extras
 make install  # core editable install
 make test     # run full test suite with coverage
 make build    # build sdist + wheel
 ```
+
 ### Working with AI Assistants
 
 ```bash
@@ -398,6 +409,50 @@ tenets viz deps . --cluster-by directory
 # Find complex areas
 tenets examine . --complexity --threshold 10
 ```
+
+## Examination & Reports
+
+Analyze complexity, hotspots, and ownership from the CLI, and export rich reports.
+
+Basic terminal summary:
+
+```bash
+tenets examine .
+```
+
+Ownership and hotspots in terminal:
+
+```bash
+tenets examine . --ownership --hotspots --show-details
+```
+
+Generate an HTML report (opens well in a browser):
+
+```bash
+tenets examine . -f html -o code_report.html --ownership --hotspots --show-details
+```
+
+Other formats:
+
+```bash
+# JSON (for automation)
+tenets examine . -f json -o report.json
+
+# Markdown (for docs/PRs)
+tenets examine . -f markdown -o report.md
+```
+
+Useful options:
+
+- Filtering: `-i/--include "*.py,src/**/*.js"`, `-e/--exclude "tests/**,**/*.min.js"`
+- Complexity threshold: `-t/--threshold 12`
+- Depth limit: `--max-depth 6`
+- Pick metrics explicitly: `-m cyclomatic -m cognitive`
+
+Notes:
+
+- If `-o/--output` is omitted with `-f html|markdown|json`, the file defaults to `examination_report.<format>` in the current directory.
+- Sections shown include Complexity Analysis, Hotspot Analysis, Code Ownership, Overall Metrics, and a summary/health score when available.
 
 ## Advanced Features
 
@@ -452,6 +507,7 @@ make docs-deploy
 # Or directly:
 mkdocs gh-deploy
 ```
+
 ## Configuration (quick start)
 
 - Create a starter file: `tenets config init` (writes `.tenets.yml` at project root)
@@ -464,7 +520,7 @@ ranking:
   use_tfidf: true
   use_stopwords: false
 output:
-  copy_on_distill: false  # set true to always copy distilled context to clipboard
+  copy_on_distill: false # set true to always copy distilled context to clipboard
 ```
 
 - Or set environment variables for one run:
@@ -509,44 +565,45 @@ The analyzer includes specialized parsers for many languages and formats. Files 
 
 ### Languages with dedicated analyzers
 
-| Language | Analyzer | Extensions |
-|---|---|---|
-| Python | PythonAnalyzer | .py, .pyw, .pyi |
-| JavaScript/TypeScript | JavaScriptAnalyzer | .js, .jsx, .ts, .tsx, .mjs, .cjs |
-| HTML + Vue SFC | HTMLAnalyzer | .html, .htm, .xhtml, .vue |
-| CSS/SCSS/Sass/Less | CSSAnalyzer | .css, .scss, .sass, .less, .styl, .stylus, .pcss, .postcss |
-| Go | GoAnalyzer | .go |
-| Java | JavaAnalyzer | .java |
-| C/C++ | CppAnalyzer | .c, .cc, .cpp, .cxx, .c++, .h, .hh, .hpp, .hxx, .h++ |
-| Ruby | RubyAnalyzer | .rb, .rake, .gemspec, .ru |
-| PHP | PhpAnalyzer | .php, .phtml, .inc, .php3, .php4, .php5, .phps |
-| Rust | RustAnalyzer | .rs |
-| Dart (Flutter aware) | DartAnalyzer | .dart |
-| Kotlin | KotlinAnalyzer | .kt, .kts |
-| Scala | ScalaAnalyzer | .scala, .sc |
-| Swift | SwiftAnalyzer | .swift |
-| C# | CSharpAnalyzer | .cs, .csx |
-| GDScript (Godot) | GDScriptAnalyzer | .gd, .tres, .tscn |
+| Language              | Analyzer           | Extensions                                                 |
+| --------------------- | ------------------ | ---------------------------------------------------------- |
+| Python                | PythonAnalyzer     | .py, .pyw, .pyi                                            |
+| JavaScript/TypeScript | JavaScriptAnalyzer | .js, .jsx, .ts, .tsx, .mjs, .cjs                           |
+| HTML + Vue SFC        | HTMLAnalyzer       | .html, .htm, .xhtml, .vue                                  |
+| CSS/SCSS/Sass/Less    | CSSAnalyzer        | .css, .scss, .sass, .less, .styl, .stylus, .pcss, .postcss |
+| Go                    | GoAnalyzer         | .go                                                        |
+| Java                  | JavaAnalyzer       | .java                                                      |
+| C/C++                 | CppAnalyzer        | .c, .cc, .cpp, .cxx, .c++, .h, .hh, .hpp, .hxx, .h++       |
+| Ruby                  | RubyAnalyzer       | .rb, .rake, .gemspec, .ru                                  |
+| PHP                   | PhpAnalyzer        | .php, .phtml, .inc, .php3, .php4, .php5, .phps             |
+| Rust                  | RustAnalyzer       | .rs                                                        |
+| Dart (Flutter aware)  | DartAnalyzer       | .dart                                                      |
+| Kotlin                | KotlinAnalyzer     | .kt, .kts                                                  |
+| Scala                 | ScalaAnalyzer      | .scala, .sc                                                |
+| Swift                 | SwiftAnalyzer      | .swift                                                     |
+| C#                    | CSharpAnalyzer     | .cs, .csx                                                  |
+| GDScript (Godot)      | GDScriptAnalyzer   | .gd, .tres, .tscn                                          |
 
 ### Configuration, docs, and structured text (GenericAnalyzer)
 
 These formats are analyzed with GenericAnalyzer. YAML files include heuristics for common ecosystems.
 
-| Category | Examples | Extensions / Filenames | Notes |
-|---|---|---|---|
-| YAML (Compose/K8s/etc.) | docker-compose.yml, deployment.yaml, chart.yaml, kustomization.yaml, .github/workflows/*.yml | .yaml, .yml | Detects Docker Compose (services, images), Kubernetes (apiVersion/kind, images, refs), hints Helm, Kustomize, GitHub Actions |
-| TOML | pyproject.toml, Cargo.toml | .toml | Extracts top-level keys |
-| INI/CFG/CONF | app.ini, settings.cfg, nginx.conf, my.cnf | .ini, .cfg, .conf, .cnf | Sections and keys parsed |
-| Properties | application.properties | .properties, .props | Key/value parsing |
-| ENV files | .env, .env.local, .env.production | .env, .env.* | Routed to Generic by filename |
-| JSON/XML | package.json, config.json, pom.xml | .json, .xml | JSON deps/keys detected |
-| Markdown | README.md, docs/*.mdx | .md, .markdown, .mdx, .mdown, .mkd, .mkdn, .mdwn | Sections and headings extracted |
-| SQL | schema.sql, queries.sql | .sql | Basic metrics only |
-| Lock/HashiCorp | yarn.lock, *.tf, *.tfvars, *.hcl | .lock, .tf, .tfvars, .hcl | Routed to Generic |
-| Shell scripts | build.sh, hooks/*.bash | .sh, .bash, .zsh, .fish | Routed to Generic |
-| Special files | Dockerfile, Makefile, CMakeLists.txt, .gitignore, .editorconfig, .npmrc, .yarnrc, .nvmrc | by name | Routed to Generic by special-name handling |
+| Category                | Examples                                                                                      | Extensions / Filenames                           | Notes                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| YAML (Compose/K8s/etc.) | docker-compose.yml, deployment.yaml, chart.yaml, kustomization.yaml, .github/workflows/\*.yml | .yaml, .yml                                      | Detects Docker Compose (services, images), Kubernetes (apiVersion/kind, images, refs), hints Helm, Kustomize, GitHub Actions |
+| TOML                    | pyproject.toml, Cargo.toml                                                                    | .toml                                            | Extracts top-level keys                                                                                                      |
+| INI/CFG/CONF            | app.ini, settings.cfg, nginx.conf, my.cnf                                                     | .ini, .cfg, .conf, .cnf                          | Sections and keys parsed                                                                                                     |
+| Properties              | application.properties                                                                        | .properties, .props                              | Key/value parsing                                                                                                            |
+| ENV files               | .env, .env.local, .env.production                                                             | .env, .env.\*                                    | Routed to Generic by filename                                                                                                |
+| JSON/XML                | package.json, config.json, pom.xml                                                            | .json, .xml                                      | JSON deps/keys detected                                                                                                      |
+| Markdown                | README.md, docs/\*.mdx                                                                        | .md, .markdown, .mdx, .mdown, .mkd, .mkdn, .mdwn | Sections and headings extracted                                                                                              |
+| SQL                     | schema.sql, queries.sql                                                                       | .sql                                             | Basic metrics only                                                                                                           |
+| Lock/HashiCorp          | yarn.lock, _.tf, _.tfvars, \*.hcl                                                             | .lock, .tf, .tfvars, .hcl                        | Routed to Generic                                                                                                            |
+| Shell scripts           | build.sh, hooks/\*.bash                                                                       | .sh, .bash, .zsh, .fish                          | Routed to Generic                                                                                                            |
+| Special files           | Dockerfile, Makefile, CMakeLists.txt, .gitignore, .editorconfig, .npmrc, .yarnrc, .nvmrc      | by name                                          | Routed to Generic by special-name handling                                                                                   |
 
 Notes
+
 - JSX/TSX are owned by JavaScriptAnalyzer; HTMLAnalyzer focuses on HTML and Vue SFCs.
 - YAML heuristics set structure.framework (e.g., docker-compose, kubernetes) and populate modules with services/resources.
 - Generic analyzer extracts imports/references from config where possible (images, depends_on, ConfigMaps/Secrets, etc.).
@@ -561,4 +618,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*Development sponsored by [manic.agency](https://manic.agency)*
+_Development sponsored by [manic.agency](https://manic.agency)_
