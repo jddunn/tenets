@@ -398,9 +398,12 @@
   color: rgba(255, 255, 255, 1);
 }
 
+/* Tabs: keep background transparent; highlight via underline/glow only */
 .md-tabs__link--active {
-  color: rgba(255, 255, 255, 1);
-  border-bottom-color: var(--md-accent-fg-color);
+  color: var(--md-default-fg-color) !important;
+  background: transparent !important;
+  border-bottom: 2px solid var(--md-accent-fg-color) !important;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--md-accent-fg-color) 35%, transparent);
 }
 
 /* Sidebar navigation */

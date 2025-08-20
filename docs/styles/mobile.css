@@ -13,9 +13,9 @@
   .md-header__button[for="__drawer"],
   .md-nav__toggle,
   .md-overlay { display: none !important; }
-  /* Do NOT force primary sidebar/nav visible; desktop uses header tabs only */
+  /* Do not render drawer on desktop; use header tabs only */
   .md-sidebar--primary,
-  .md-nav--primary { display: none !important; }
+  .md-nav--primary { display: none; }
 }
 
 /* =====================================================
@@ -89,8 +89,8 @@
 
   /* Prefer inline .md-search on tablet; search icon on very small screens */
   .md-header__inner .md-search { order: 3; display: flex !important; align-items: center; }
-  /* don't force-hide the search icon at all sizes; control via sub-breakpoints */
-  .md-header__inner label.md-header__button[for="__search"] { display: none; }
+  /* let theme decide search icon visibility except tiny screens */
+  .md-header__inner label.md-header__button[for="__search"] { display: inline-flex; }
 
   .md-source { display: inline-flex !important; order: 4; }
 
@@ -137,15 +137,7 @@
   pointer-events: none;
   }
   
-  /* Custom header for injected drawer nav */
-  .tenets-drawer-header {
-    font-weight: 800; font-size: 0.95rem; padding: 1rem 1.25rem; color: #1a2332;
-    border-bottom: 1px solid rgba(26,35,50,0.08);
-  }
-  [data-md-color-scheme="slate"] .tenets-drawer-header { color: #fbbf24; border-color: rgba(251,191,36,0.15); }
-  .tenets-mobile-nav { padding: 0.25rem 0.5rem 1rem 0.5rem; }
-  .tenets-mobile-nav .md-nav__item { margin: 0.1rem 0; }
-  .tenets-mobile-nav .md-nav__item--nested > ul { margin-left: 0.75rem; }
+  /* Use theme-provided nav; no custom header injection */
 
   [data-md-color-scheme="slate"] .md-nav--primary,
   [data-md-color-scheme="slate"] .md-sidebar--primary {

@@ -1,3 +1,4 @@
+
 // Lantern Glow and Animation Effects
 // Creates the iridescent flame effect for logos
 
@@ -14,7 +15,7 @@
             this.options = {
                 glowIntensity: options.glowIntensity || 1,
                 flickerSpeed: options.flickerSpeed || 3000,
-                particleCount: options.particleCount || 8,
+                particleCount: options.particleCount || 10,
                 particleSize: options.particleSize || 4,
                 particleOpacity: options.particleOpacity || 0.5,
                 interactive: options.interactive !== false,
@@ -25,31 +26,24 @@
             this.mousePosition = { x: 0, y: 0 };
             this.isHovered = false;
             this.particles = [];
-            this.particlesContainer = null;
-            this.active = true;
-            this.allowRespawn = true;
-            this.flickerTimer = null;
-            this.inViewport = true;
-            this.observer = null;
-            // Respect prefers-reduced-motion
-            try {
-                if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                    this.options.flickerSpeed = Math.max(5000, this.options.flickerSpeed);
-                    this.options.particleCount = 0; // disable particles for reduced motion
-                }
-            } catch (_) {}
             
             this.init();
         }
         
         init() {
+            const isApi = document.body && document.body.classList.contains('is-api');
+            if (isApi) {
+                return; // skip all DOM work on API pages
+            }
             this.createStructure();
-            this.setupAnimations();
-            this.setupInteractions();
-            // Only dots + flicker; no iridescent radiance
-            this.startParticles();
-            // Optimize: pause when off-screen or tab hidden
-            this.setupVisibilityControls();
+            if (!isApi) {
+                this.setupAnimations();
+                this.setupInteractions();
+                if (this.options.iridescent) {
+                    this.startIridescentEffect();
+                }
+                this.startParticles();
+            }
         }
         
         // ============================================
@@ -96,13 +90,40 @@
             
             svg.appendChild(defs);
             
-            // Subtle inner light only (no concentric circles or rays)
+            // Create multiple glow circles for layered effect
+            this.glowLayers = [];
+            for (let i = 0; i < 5; i++) {
+                const glowCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                glowCircle.setAttribute('cx', '100');
+                glowCircle.setAttribute('cy', '100');
+                glowCircle.setAttribute('r', 60 + i * 10);
+                glowCircle.setAttribute('fill', `url(#${colors[i].id})`);
+                glowCircle.setAttribute('class', `lantern-glow-${i}`);
+                glowCircle.style.opacity = 0.3 - i * 0.05;
+                glowCircle.style.mixBlendMode = 'screen';
+                svg.appendChild(glowCircle);
+                this.glowLayers.push(glowCircle);
+            }
+            
+            // Create rays with gradient colors
+            const raysGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            raysGroup.setAttribute('class', 'lantern-rays');
+            raysGroup.setAttribute('transform', 'translate(100,100)');
+            
+            for (let i = 0; i < 12; i++) {
+                const ray = this.createRay(i * 30, colors[i % colors.length].id);
+                raysGroup.appendChild(ray);
+            }
+            
+            svg.appendChild(raysGroup);
+            
+            // Inner light circle
             const innerLight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             innerLight.setAttribute('cx', '100');
             innerLight.setAttribute('cy', '100');
-            innerLight.setAttribute('r', '18');
-            innerLight.setAttribute('fill', '#f59e0b');
-            innerLight.setAttribute('opacity', '0.25');
+            innerLight.setAttribute('r', '25');
+            innerLight.setAttribute('fill', '#ffffff');
+            innerLight.setAttribute('opacity', '0.9');
             innerLight.setAttribute('class', 'lantern-inner-light');
             svg.appendChild(innerLight);
             
@@ -110,6 +131,7 @@
             
             // Store references
             this.svg = svg;
+            this.raysGroup = raysGroup;
             this.innerLight = innerLight;
         }
         
@@ -147,63 +169,114 @@
         // Iridescent Effect
         // ============================================
         
-    // Removed iridescent radiance effect
+        startIridescentEffect() {
+            let hue = 0;
+            const animate = () => {
+                hue = (hue + 0.3) % 360; // slower cycle to be less distracting
+                
+                // Animate each glow layer with different hues
+                this.glowLayers.forEach((layer, index) => {
+                    const layerHue = (hue + index * 72) % 360;
+                    layer.style.fill = `hsl(${layerHue}, 100%, 50%)`;
+                });
+                
+                requestAnimationFrame(animate);
+            };
+            
+            animate();
+        }
         
         // ============================================
         // Animations
         // ============================================
         
         setupAnimations() {
-            // Flicker animation only
+            // Flicker animation
             this.startFlicker();
+            
+            // Ray rotation
+            this.startRayRotation();
+            
+            // Pulse animation
+            this.startPulse();
         }
         
         startFlicker() {
             const flicker = () => {
-                if (!this.active) { return; }
                 const intensity = 0.55 + Math.random() * 0.45; // wider range
                 const duration = 80 + Math.random() * 180; // snappier flicker
                 
-                // Inner light subtle flicker
-                this.innerLight.style.transition = `opacity ${duration}ms ease`;
-                this.innerLight.style.opacity = 0.18 + Math.random() * 0.22;
-                // Slight radius pulse to accent flicker (keep small)
-                const rBase = 18;
-                const rPulse = rBase + (Math.random() * 2 - 1) * 0.8; // +/- 0.8
-                this.innerLight.setAttribute('r', String(Math.max(14, Math.min(20, rPulse))));
+                this.glowLayers.forEach((layer, index) => {
+                    layer.style.transition = `opacity ${duration}ms ease`;
+                    const base = 0.28 - index * 0.05;
+                    layer.style.opacity = Math.max(0, base) * intensity * this.options.glowIntensity;
+                });
                 
-                this.flickerTimer = setTimeout(flicker, duration + Math.random() * this.options.flickerSpeed);
+                // Inner light: stronger presence
+                this.innerLight.style.transition = `opacity ${duration}ms ease`;
+                this.innerLight.style.opacity = 0.75 + Math.random() * 0.35;
+                // Slight radius pulse to accent flicker
+                const rBase = 25;
+                const rPulse = rBase + (Math.random() * 2 - 1) * 1.2; // +/- 1.2
+                this.innerLight.setAttribute('r', String(Math.max(22, Math.min(28, rPulse))));
+                
+                setTimeout(flicker, duration + Math.random() * this.options.flickerSpeed);
             };
             
             flicker();
         }
         
-    // Removed ray rotation and pulsing radiance
+        startRayRotation() {
+            let rotation = 0;
+            const rotate = () => {
+                rotation += 0.5;
+                this.raysGroup.setAttribute('transform', 
+                    `translate(100,100) rotate(${rotation})`
+                );
+                requestAnimationFrame(rotate);
+            };
+            
+            rotate();
+        }
+        
+        startPulse() {
+            const pulse = () => {
+                const scale = 1 + Math.sin(Date.now() / 1000) * 0.05;
+                this.glowLayers.forEach((layer, index) => {
+                    const layerScale = scale + index * 0.01;
+                    layer.setAttribute('transform', 
+                        `translate(100,100) scale(${layerScale}) translate(-100,-100)`
+                    );
+                });
+                requestAnimationFrame(pulse);
+            };
+            
+            pulse();
+        }
         
         // ============================================
         // Particles
         // ============================================
         
-    startParticles() {
+        startParticles() {
             const particlesContainer = document.createElement('div');
             particlesContainer.className = 'lantern-particles';
             particlesContainer.style.cssText = `
                 position: absolute;
-                bottom: 0;
+                top: 0;
                 left: 0;
                 width: 100%;
-                height: 38%; /* confine to bottom area */
+                height: 100%;
                 pointer-events: none;
-                z-index: 1;
+                z-index: 3;
             `;
             
             this.element.appendChild(particlesContainer);
-        this.particlesContainer = particlesContainer;
             
-            // Create subtle amber dots along the bottom
-        for (let i = 0; i < this.options.particleCount; i++) {
+            // Create colorful particles
+            for (let i = 0; i < this.options.particleCount; i++) {
                 setTimeout(() => {
-            if (this.active) this.createParticle(particlesContainer);
+                    this.createParticle(particlesContainer);
                 }, i * 200);
             }
         }
@@ -212,25 +285,29 @@
             const particle = document.createElement('div');
             particle.className = 'lantern-particle';
             
-            // Subtle amber hue
-            const hue = 42 + Math.random() * 8; // around amber
+            // Random color from rainbow spectrum
+            const hue = Math.random() * 360;
             
-            // Start near bottom edge, random horizontal position
-            const x = 5 + Math.random() * 90;  // percent
-            const y = 90 + Math.random() * 8;  // near bottom
+            // Random starting position
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 30 + Math.random() * 20;
+            const x = 50 + Math.cos(angle) * distance;
+            const y = 50 + Math.sin(angle) * distance;
             
             particle.style.cssText = `
                 position: absolute;
-                width: ${Math.max(2, this.options.particleSize - 1)}px;
-                height: ${Math.max(2, this.options.particleSize - 1)}px;
-                background: hsla(${hue}, 85%, 55%, ${Math.min(0.5, this.options.particleOpacity)});
+                width: ${this.options.particleSize}px;
+                height: ${this.options.particleSize}px;
+                background: radial-gradient(circle, 
+                    hsla(${hue}, 90%, 55%, 0.9) 0%, 
+                    transparent 70%);
                 border-radius: 50%;
                 left: ${x}%;
                 top: ${y}%;
                 pointer-events: none;
                 opacity: 0;
-                filter: blur(0.4px);
-                box-shadow: 0 0 3px hsla(${hue}, 85%, 55%, ${Math.min(0.35, this.options.particleOpacity)});
+                filter: blur(0.5px);
+                box-shadow: 0 0 6px hsla(${hue}, 90%, 55%, ${this.options.particleOpacity});
             `;
             
             container.appendChild(particle);
@@ -238,26 +315,21 @@
         }
         
         animateParticle(particle, container) {
-            const duration = 3500 + Math.random() * 2400; // longer, calmer drift
+            const duration = 2600 + Math.random() * 1600; // slightly shorter life
             const startY = parseFloat(particle.style.top);
-            const endY = startY + (Math.random() * 4 - 2); // slight vertical wobble
+            const endY = startY - 24 - Math.random() * 16; // less travel
             const startX = parseFloat(particle.style.left);
-            const endX = startX + (Math.random() - 0.5) * 24; // horizontal drift
+            const endX = startX + (Math.random() - 0.5) * 14; // less drift
             
             const startTime = Date.now();
             
             const animate = () => {
-                if (!this.active) { return; }
                 const now = Date.now();
                 const progress = (now - startTime) / duration;
                 
                 if (progress >= 1) {
-                    if (particle.parentNode) {
-                        container.removeChild(particle);
-                    }
-                    if (this.active && this.allowRespawn) {
-                        this.createParticle(container);
-                    }
+                    container.removeChild(particle);
+                    this.createParticle(container);
                     return;
                 }
                 
@@ -275,9 +347,10 @@
                     particle.style.opacity = 1;
                 }
                 
-                // Slight scale pulse, no rotation
-                const scale = 1 + Math.sin(progress * Math.PI) * 0.12;
-                particle.style.transform = `scale(${scale})`;
+                // Scale and rotate
+                const scale = 1 + Math.sin(progress * Math.PI) * 0.3; // smaller scale pulse
+                const rotation = progress * 180; // slower rotation
+                particle.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
                 
                 requestAnimationFrame(animate);
             };
@@ -308,77 +381,60 @@
         }
         
         onHoverStart() {
-            // Slightly brighten inner light on hover
-            this.innerLight.style.transition = 'opacity 0.3s ease, r 0.3s ease';
-            this.innerLight.style.opacity = 0.28;
-            this.innerLight.setAttribute('r', '19');
+            this.glowLayers.forEach((layer, index) => {
+                layer.style.transition = 'all 0.3s ease';
+                const newRadius = 60 + index * 10 + 10;
+                layer.setAttribute('r', newRadius);
+            });
+            
+            this.raysGroup.style.animation = 'spin 2s linear infinite';
         }
         
         onHoverEnd() {
-            this.innerLight.style.opacity = 0.2;
-            this.innerLight.setAttribute('r', '18');
+            this.glowLayers.forEach((layer, index) => {
+                const originalRadius = 60 + index * 10;
+                layer.setAttribute('r', originalRadius);
+            });
+            
+            this.raysGroup.style.animation = 'none';
         }
         
         onLanternClick() {
-            // No burst
+            this.createBurst();
         }
         
-        // Removed burst visual
-        
-        // ============================================
-        // Visibility/Performance Controls
-        // ============================================
-        setupVisibilityControls() {
-            // Pause when tab hidden
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    this.pauseAnimations();
-                } else if (this.inViewport) {
-                    this.resumeAnimations();
-                }
+        createBurst() {
+            const burst = document.createElement('div');
+            burst.className = 'lantern-burst';
+            
+            const hue = Math.random() * 360;
+            
+            burst.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 200%;
+                height: 200%;
+                transform: translate(-50%, -50%) scale(0);
+                background: radial-gradient(circle, 
+                    hsla(${hue}, 100%, 50%, 0.4) 0%, 
+                    transparent 50%);
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 0;
+            `;
+            
+            this.element.appendChild(burst);
+            
+            requestAnimationFrame(() => {
+                burst.style.transition = 'transform 0.6s ease-out, opacity 0.6s ease-out';
+                burst.style.transform = 'translate(-50%, -50%) scale(1)';
+                burst.style.opacity = '0';
             });
-            // Pause when element off-screen
-            if ('IntersectionObserver' in window) {
-                const io = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        this.inViewport = entry.isIntersecting && entry.intersectionRatio > 0;
-                        if (this.inViewport && !document.hidden) {
-                            this.resumeAnimations();
-                        } else {
-                            this.pauseAnimations();
-                        }
-                    });
-                }, { root: null, threshold: 0.05 });
-                io.observe(this.element);
-                this.observer = io;
-            }
-        }
-        
-        pauseAnimations() {
-            if (!this.active) return;
-            this.active = false;
-            this.allowRespawn = false;
-            if (this.flickerTimer) {
-                clearTimeout(this.flickerTimer);
-                this.flickerTimer = null;
-            }
-        }
-        
-        resumeAnimations() {
-            if (this.active) return;
-            this.active = true;
-            this.allowRespawn = true;
-            if (!this.flickerTimer) {
-                this.startFlicker();
-            }
-            // Restart particles if container exists but few/no children
-            if (this.particlesContainer) {
-                // Clear stale particles
-                this.particlesContainer.innerHTML = '';
-                for (let i = 0; i < this.options.particleCount; i++) {
-                    this.createParticle(this.particlesContainer);
-                }
-            }
+            
+            setTimeout(() => {
+                this.element.removeChild(burst);
+            }, 600);
         }
     }
     
@@ -387,13 +443,13 @@
     // ============================================
     
     document.addEventListener('DOMContentLoaded', () => {
-    const lanternElements = document.querySelectorAll('.lantern-container, [data-lantern]');
+        const lanternElements = document.querySelectorAll('.lantern-container, [data-lantern]');
         
         lanternElements.forEach(element => {
             const options = {
                 glowIntensity: parseFloat(element.dataset.glowIntensity) || 1,
                 flickerSpeed: parseInt(element.dataset.flickerSpeed) || 3000,
-        particleCount: parseInt(element.dataset.particleCount) || 8,
+                particleCount: parseInt(element.dataset.particleCount) || 20,
                 interactive: element.dataset.interactive !== 'false',
                 iridescent: element.dataset.iridescent !== 'false'
             };
@@ -407,6 +463,11 @@
     // Add required CSS
     const style = document.createElement('style');
     style.textContent = `
+        @keyframes spin {
+            from { transform: translate(100,100) rotate(0deg); }
+            to { transform: translate(100,100) rotate(360deg); }
+        }
+        
         .lantern-container {
             position: relative;
             width: 100%;
