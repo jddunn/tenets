@@ -163,3 +163,12 @@ label.md-header__button[for="__search"] { display: none !important; }
   background: linear-gradient(135deg, #fca5a5, #ef4444);
   color: #0d1117;
 }
+
+/* Drawer visibility safety: when the drawer toggle is checked, force primary nav visible */
+@media screen and (max-width: 1099px){
+  .md-toggle--drawer:checked ~ .md-container .md-sidebar--primary,
+  #__drawer:checked ~ .md-container .md-sidebar--primary{
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+  }
+}
