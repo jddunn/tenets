@@ -69,6 +69,9 @@ class ExaminationResult:
     duration: float = 0.0
     config: Optional[TenetsConfig] = None
     errors: List[str] = field(default_factory=list)
+    excluded_files: List[str] = field(default_factory=list)
+    excluded_count: int = 0
+    ignored_patterns: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert examination results to dictionary.
@@ -93,6 +96,9 @@ class ExaminationResult:
             "timestamp": self.timestamp.isoformat(),
             "duration": self.duration,
             "errors": self.errors,
+            "excluded_files": self.excluded_files,
+            "excluded_count": self.excluded_count,
+            "ignored_patterns": self.ignored_patterns,
         }
 
     def to_json(self, indent: int = 2) -> str:
@@ -131,23 +137,27 @@ class ExaminationResult:
         Returns:
             float: Health score between 0 and 100
         """
-        score = 100.0
+        # If we have a hotspot report with its own health score, use it as a base
+        # Otherwise start with a more realistic baseline
+        if self.hotspots and hasattr(self.hotspots, 'health_score'):
+            # Use hotspot health score as base (already factors in many issues)
+            score = self.hotspots.health_score
+        else:
+            # Start with a more realistic baseline when no deep analysis done
+            score = 85.0
 
-        # Deduct for high complexity
-        if self.complexity:
-            complexity_penalty = min(30, self.complexity.high_complexity_count * 2)
+        # Additional adjustments based on other metrics
+        
+        # Deduct for high complexity (if not already factored into hotspots)
+        if self.complexity and not self.hotspots:
+            complexity_penalty = min(15, self.complexity.high_complexity_count * 1.5)
             score -= complexity_penalty
-
-        # Deduct for hotspots
-        if self.hotspots:
-            hotspot_penalty = min(20, self.hotspots.critical_count * 5)
-            score -= hotspot_penalty
 
         # Deduct for errors
         error_penalty = min(10, len(self.errors) * 2)
         score -= error_penalty
 
-        # Boost for good metrics
+        # Adjust for test coverage
         if self.metrics:
             # Accept coverage as percent or ratio
             coverage = getattr(self.metrics, "test_coverage", 0)
@@ -157,14 +167,22 @@ class ExaminationResult:
                 coverage_val = 0.0
             if coverage_val <= 1:
                 coverage_val *= 100
+            
+            # Adjust score based on coverage
             if coverage_val > 80:
-                score += 10
+                score += 5
+            elif coverage_val < 50:
+                score -= 10
+            elif coverage_val < 70:
+                score -= 5
+                
+            # Documentation bonus
             try:
                 doc_ratio = float(getattr(self.metrics, "documentation_ratio", 0))
             except Exception:
                 doc_ratio = 0.0
             if doc_ratio > 0.3:
-                score += 5
+                score += 3
 
         return max(0, min(100, score))
 
@@ -299,6 +317,17 @@ class Examiner:
                 exclude_patterns=exclude_patterns,
                 max_files=max_files,
             )
+            
+            # Track excluded files and patterns for reporting
+            all_files = list(path.rglob("*"))
+            all_file_paths = [f for f in all_files if f.is_file()]
+            included_paths = set(files)
+            excluded_files = [str(f) for f in all_file_paths if f not in included_paths]
+            
+            # Store excluded file information
+            result.excluded_files = excluded_files[:1000]  # Limit to prevent huge lists
+            result.excluded_count = len(excluded_files)
+            result.ignored_patterns = exclude_patterns or []
 
             if not files:
                 self.logger.warning("No files found to examine")

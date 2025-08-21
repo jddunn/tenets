@@ -321,11 +321,60 @@ class HotspotReport:
         Returns:
             Dict[str, Any]: Dictionary representation
         """
+        # Generate detailed hotspot data with reasons
+        hotspot_files = []
+        for h in self.file_hotspots:
+            # Build reasons list based on metrics
+            reasons = []
+            if h.metrics.change_frequency > 20:
+                reasons.append(f"High change frequency ({h.metrics.change_frequency})")
+            elif h.metrics.change_frequency > 10:
+                reasons.append(f"Frequent changes ({h.metrics.change_frequency})")
+                
+            if h.metrics.complexity > 20:
+                reasons.append(f"Very high complexity ({h.metrics.complexity:.1f})")
+            elif h.metrics.complexity > 10:
+                reasons.append(f"High complexity ({h.metrics.complexity:.1f})")
+                
+            if h.metrics.author_count > 10:
+                reasons.append(f"Many contributors ({h.metrics.author_count})")
+                
+            if h.metrics.bug_fix_commits > 5:
+                reasons.append(f"Frequent bug fixes ({h.metrics.bug_fix_commits})")
+                
+            if h.metrics.coupling > 10:
+                reasons.append(f"High coupling ({h.metrics.coupling} files)")
+                
+            if h.size > 1000:
+                reasons.append(f"Large file ({h.size} lines)")
+                
+            # Add problem indicators as reasons too
+            reasons.extend(h.problem_indicators)
+            
+            hotspot_files.append({
+                "file": h.path,
+                "name": h.name,
+                "risk_score": h.metrics.hotspot_score,
+                "risk_level": h.metrics.risk_level,
+                "change_frequency": h.metrics.change_frequency,
+                "complexity": h.metrics.complexity,
+                "commit_count": h.metrics.commit_count,
+                "author_count": h.metrics.author_count,
+                "bug_fixes": h.metrics.bug_fix_commits,
+                "coupling": h.metrics.coupling,
+                "size": h.size,
+                "language": h.language,
+                "issues": h.problem_indicators,
+                "reasons": reasons[:5],  # Limit to top 5 reasons
+                "recommended_actions": h.recommended_actions,
+            })
+        
         return {
             "total_files_analyzed": self.total_files_analyzed,
             "total_hotspots": self.total_hotspots,
             "critical_count": self.critical_count,
             "high_count": self.high_count,
+            "hotspot_files": hotspot_files,  # Full detailed list
             "hotspot_summary": [
                 {
                     "path": h.path,
@@ -370,7 +419,9 @@ class HotspotReport:
                 return 0.0
 
         if self.total_files_analyzed == 0:
-            return 100.0
+            # When no files are analyzed, return a neutral score instead of perfect
+            # This prevents showing 100% health when no analysis was performed
+            return 75.0
 
         # Start with perfect score
         score = 100.0

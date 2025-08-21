@@ -359,11 +359,44 @@ class HTMLTemplate:
             border-radius: 8px;
             text-align: center;
             transition: transform 0.3s;
+            position: relative;
         }
 
         .metric-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 20px var(--shadow);
+        }
+        
+        /* Tooltip styles */
+        .metric-card[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            margin-bottom: 10px;
+            max-width: 250px;
+            white-space: normal;
+            text-align: left;
+            line-height: 1.4;
+        }
+        
+        .metric-card[data-tooltip]:hover::before {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+            margin-bottom: 4px;
+            z-index: 1000;
         }
 
         .metric-value {
@@ -1052,12 +1085,32 @@ class HTMLReporter:
         Returns:
             str: Metrics HTML
         """
+        # Define tooltips for common metrics
+        metric_tooltips = {
+            "Total Hotspots": "Files with high risk scores based on change frequency, complexity, and size",
+            "Critical": "Files requiring immediate attention (risk score > 80)",
+            "High Risk": "Files that should be addressed soon (risk score 60-80)",
+            "Files Analyzed": "Total number of files examined for potential issues",
+            "Average Complexity": "Mean cyclomatic complexity across all functions",
+            "Maximum Complexity": "Highest cyclomatic complexity found in any function",
+            "Complex Functions": "Number of functions with complexity > 10",
+            "Total Functions": "Total number of functions analyzed",
+            "Health Score": "Overall codebase health rating (0-100)",
+            "Test Coverage": "Percentage of code covered by tests",
+            "Excluded Files": "Files ignored during analysis",
+            "Ignored Patterns": "File patterns excluded from analysis",
+            "Bus Factor": "Minimum number of contributors who could derail the project if unavailable",
+        }
+        
         cards = []
 
         for key, value in metrics.items():
+            tooltip = metric_tooltips.get(key, "")
+            tooltip_attr = f'data-tooltip="{tooltip}"' if tooltip else ""
+            
             cards.append(
                 f"""
-            <div class="metric-card">
+            <div class="metric-card" {tooltip_attr}>
                 <div class="metric-label">{key}</div>
                 <div class="metric-value">{value}</div>
             </div>
