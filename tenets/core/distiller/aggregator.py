@@ -41,15 +41,16 @@ class ContextAggregator:
         self.summarizer = Summarizer(config)
 
         # Define aggregation strategies
+        # Note: min_relevance should be <= ranking threshold (default 0.1) to avoid filtering out ranked files
         self.strategies = {
             "greedy": AggregationStrategy(
-                name="greedy", max_full_files=20, summarize_threshold=0.6, min_relevance=0.2
+                name="greedy", max_full_files=20, summarize_threshold=0.6, min_relevance=0.05
             ),
             "balanced": AggregationStrategy(
-                name="balanced", max_full_files=10, summarize_threshold=0.7, min_relevance=0.3
+                name="balanced", max_full_files=10, summarize_threshold=0.7, min_relevance=0.08
             ),
             "conservative": AggregationStrategy(
-                name="conservative", max_full_files=5, summarize_threshold=0.8, min_relevance=0.4
+                name="conservative", max_full_files=5, summarize_threshold=0.8, min_relevance=0.15
             ),
         }
 
@@ -91,6 +92,13 @@ class ContextAggregator:
         included_files = []
         summarized_files = []
         total_tokens = 0
+        
+        # Track rejection reasons for verbose mode
+        rejection_reasons = {
+            "below_min_relevance": 0,
+            "token_budget_exceeded": 0,
+            "insufficient_tokens_for_summary": 0,
+        }
 
         # Full mode: attempt to include full content for all files (still respecting token budget)
         for i, file in enumerate(files):
@@ -99,6 +107,7 @@ class ContextAggregator:
                 self.logger.debug(
                     f"Skipping {file.path} (relevance {file.relevance_score:.2f} < {strat.min_relevance})"
                 )
+                rejection_reasons["below_min_relevance"] += 1
                 continue
 
             # Estimate tokens for this file
@@ -141,6 +150,7 @@ class ContextAggregator:
                     self.logger.debug(
                         f"Skipping {file.path} (token budget exceeded in full mode: {total_tokens + file_tokens} > {available_tokens})"
                     )
+                    rejection_reasons["token_budget_exceeded"] += 1
                 continue
 
             if (
@@ -169,31 +179,40 @@ class ContextAggregator:
                 )
 
                 if summary_tokens > 100:  # Worth summarizing
+                    # Calculate target ratio based on desired token reduction
+                    target_ratio = min(0.5, summary_tokens / file_tokens)
+                    
                     summary = self.summarizer.summarize_file(
                         file=file,
-                        max_tokens=summary_tokens,
-                        preserve_sections=["imports", "exports", "class_signatures"],
+                        target_ratio=target_ratio,
+                        preserve_structure=True,
                     )
 
+                    # Get actual token count of summary
+                    summary_content = summary.summary if hasattr(summary, 'summary') else str(summary)
+                    actual_summary_tokens = count_tokens(summary_content, model)
+                    
                     summarized_files.append(
                         {
                             "file": file,
-                            "content": summary.content,
-                            "tokens": summary.summary_tokens,
+                            "content": summary_content,
+                            "tokens": actual_summary_tokens,
                             "summarized": True,
                             "summary": summary,
                             "transformations": transformed_stats,
                         }
                     )
-                    total_tokens += summary.summary_tokens
+                    total_tokens += actual_summary_tokens
                 else:
                     self.logger.debug(
                         f"Skipping {file.path} summary (insufficient remaining tokens: {remaining_tokens})"
                     )
+                    rejection_reasons["insufficient_tokens_for_summary"] += 1
             else:
                 self.logger.debug(
                     f"Skipping {file.path} (token budget exceeded: {total_tokens + file_tokens} > {available_tokens})"
                 )
+                rejection_reasons["token_budget_exceeded"] += 1
 
         # Combine full and summarized files
         all_files = included_files + summarized_files
@@ -207,6 +226,9 @@ class ContextAggregator:
             "total_tokens": total_tokens,
             "available_tokens": available_tokens,
             "git_context": git_context,  # include for tests/consumers
+            "strategy": strategy,
+            "min_relevance": strat.min_relevance,
+            "rejection_reasons": rejection_reasons,
             "statistics": {
                 "files_analyzed": len(files),
                 "files_included": len(included_files),

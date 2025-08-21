@@ -145,8 +145,10 @@ class ContextFormatter:
                 file = file_info["file"]
                 summary = file_info.get("summary")
 
+                # Get token count from file_info (already calculated in aggregator)
+                token_count = file_info.get("tokens", 0)
                 lines.append(
-                    f"#### {file.path} (Summary: {file.lines} → {summary.summary_tokens if summary else '?'} tokens)"
+                    f"#### {file.path} (Summary: {file.lines} lines → {token_count} tokens)"
                 )
                 lines.append(f"*Language: {file.language} | Relevance: {file.relevance_score:.2f}*")
                 lines.append("")
@@ -155,9 +157,10 @@ class ContextFormatter:
                 lines.append(file_info["content"])
                 lines.append("```")
 
-                if summary and summary.instructions:
+                # Add any metadata about the summary if available
+                if summary and hasattr(summary, 'metadata') and summary.metadata:
                     lines.append("")
-                    lines.append("*" + " ".join(summary.instructions) + "*")
+                    lines.append(f"*Summary strategy: {summary.strategy_used}*")
 
                 lines.append("")
 
