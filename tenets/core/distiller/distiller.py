@@ -170,20 +170,60 @@ class Distiller:
             session_name=session_name,
         )
 
-        # 9. Build final result
+        # 9. Build final result with debug information
+        metadata = {
+            "mode": mode,
+            "files_analyzed": len(files),
+            "files_included": len(aggregated["included_files"]),
+            "model": model,
+            "session": session_name,
+            "prompt": prompt,
+            "full_mode": full,
+            "condense": condense,
+            "remove_comments": remove_comments,
+        }
+        
+        # Add debug information for verbose mode
+        # Add prompt parsing details
+        metadata["prompt_context"] = {
+            "task_type": prompt_context.task_type,
+            "intent": prompt_context.intent,
+            "keywords": prompt_context.keywords,
+            "synonyms": getattr(prompt_context, 'synonyms', []),
+            "entities": prompt_context.entities,
+        }
+        
+        # Add ranking details
+        metadata["ranking_details"] = {
+            "algorithm": mode,
+            "threshold": self.config.ranking.threshold,
+            "files_ranked": len(analyzed_files),
+            "files_above_threshold": len(ranked_files),
+            "top_files": [
+                {
+                    "path": str(f.path),
+                    "score": f.relevance_score,
+                    "match_details": {
+                        "keywords_matched": getattr(f, 'keywords_matched', []),
+                        "semantic_score": getattr(f, 'semantic_score', 0),
+                    }
+                }
+                for f in ranked_files[:10]  # Top 10 files
+            ]
+        }
+        
+        # Add aggregation details
+        metadata["aggregation_details"] = {
+            "strategy": aggregated.get("strategy", "unknown"),
+            "min_relevance": aggregated.get("min_relevance", 0),
+            "files_considered": len(ranked_files),
+            "files_rejected": len(ranked_files) - len(aggregated["included_files"]),
+            "rejection_reasons": aggregated.get("rejection_reasons", {}),
+        }
+        
         return self._build_result(
             formatted=formatted,
-            metadata={
-                "mode": mode,
-                "files_analyzed": len(files),
-                "files_included": len(aggregated["included_files"]),
-                "model": model,
-                "session": session_name,
-                "prompt": prompt,
-                "full_mode": full,
-                "condense": condense,
-                "remove_comments": remove_comments,
-            },
+            metadata=metadata,
         )
 
     def _parse_prompt(self, prompt: str) -> PromptContext:

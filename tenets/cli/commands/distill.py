@@ -59,9 +59,6 @@ def distill(
     ),
     # Features
     no_git: bool = typer.Option(False, "--no-git", help="Disable git context inclusion"),
-    use_stopwords: bool = typer.Option(
-        False, "--use-stopwords", help="Enable stopword filtering for keyword analysis"
-    ),
     full: bool = typer.Option(
         False,
         "--full",
@@ -86,6 +83,9 @@ def distill(
     ),
     show_stats: bool = typer.Option(
         False, "--stats", help="Show statistics about context generation"
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show detailed debug information including keyword matching"
     ),
     copy: bool = typer.Option(
         False,
@@ -117,7 +117,7 @@ def distill(
         # Save to file with cost estimate
         tenets distill "debug login" -o context.md --model gpt-4o --estimate-cost
     """
-    # Get verbosity from context
+    # Get verbosity from context (but parameter takes precedence)
     ctx_obj_local = {}
     try:
         _ctx = click.get_current_context(silent=True)
@@ -126,7 +126,7 @@ def distill(
     except Exception:
         ctx_obj_local = {}
     state = ctx_obj_local or {}
-    verbose = state.get("verbose", False)
+    # Use the verbose parameter directly (it overrides context)
     quiet = state.get("quiet", False)
 
     try:
@@ -156,7 +156,6 @@ def distill(
                     max_tokens=max_tokens,
                     mode=mode,
                     include_git=not no_git,
-                    use_stopwords=use_stopwords,
                     session_name=session,
                     include_patterns=include_patterns,
                     exclude_patterns=exclude_patterns,
@@ -174,7 +173,6 @@ def distill(
                 max_tokens=max_tokens,
                 mode=mode,
                 include_git=not no_git,
-                use_stopwords=use_stopwords,
                 session_name=session,
                 include_patterns=include_patterns,
                 exclude_patterns=exclude_patterns,
@@ -186,6 +184,54 @@ def distill(
         # Prepare metadata and interactivity flags
         raw_meta = getattr(result, "metadata", {})
         metadata = raw_meta if isinstance(raw_meta, dict) else {}
+        
+        # Show verbose debug information if requested
+        if verbose and not quiet:
+            console.print("\n[yellow]═══ Verbose Debug Information ═══[/yellow]")
+            
+            # Show parsing details
+            if "prompt_context" in metadata:
+                pc = metadata["prompt_context"]
+                console.print("\n[cyan]Prompt Parsing:[/cyan]")
+                console.print(f"  Task Type: {pc.get('task_type', 'unknown')}")
+                console.print(f"  Intent: {pc.get('intent', 'unknown')}")
+                console.print(f"  Keywords: {pc.get('keywords', [])}")
+                console.print(f"  Synonyms: {pc.get('synonyms', [])}")
+                console.print(f"  Entities: {pc.get('entities', [])}")
+                
+            # Show ranking details
+            if "ranking_details" in metadata:
+                rd = metadata["ranking_details"]
+                console.print("\n[cyan]Ranking Details:[/cyan]")
+                console.print(f"  Algorithm: {rd.get('algorithm', 'unknown')}")
+                console.print(f"  Threshold: {rd.get('threshold', 0.1)}")
+                console.print(f"  Files Ranked: {rd.get('files_ranked', 0)}")
+                console.print(f"  Files Above Threshold: {rd.get('files_above_threshold', 0)}")
+                
+                # Show top ranked files
+                if "top_files" in rd:
+                    console.print("\n[cyan]Top Ranked Files:[/cyan]")
+                    for i, file_info in enumerate(rd["top_files"][:10], 1):
+                        console.print(f"  {i}. {file_info['path']} (score: {file_info['score']:.3f})")
+                        if "match_details" in file_info:
+                            md = file_info["match_details"]
+                            console.print(f"      Keywords matched: {md.get('keywords_matched', [])}")
+                            console.print(f"      Semantic score: {md.get('semantic_score', 0):.3f}")
+                            
+            # Show aggregation details
+            if "aggregation_details" in metadata:
+                ad = metadata["aggregation_details"]
+                console.print("\n[cyan]Aggregation Details:[/cyan]")
+                console.print(f"  Strategy: {ad.get('strategy', 'unknown')}")
+                console.print(f"  Min Relevance: {ad.get('min_relevance', 0)}")
+                console.print(f"  Files Considered: {ad.get('files_considered', 0)}")
+                console.print(f"  Files Rejected: {ad.get('files_rejected', 0)}")
+                if "rejection_reasons" in ad:
+                    console.print("\n  [yellow]Rejection Reasons:[/yellow]")
+                    for reason, count in ad["rejection_reasons"].items():
+                        console.print(f"    {reason}: {count} files")
+                        
+            console.print("\n[yellow]═════════════════════════════[/yellow]\n")
         files_included = metadata.get("files_included", 0)
         files_analyzed = metadata.get("files_analyzed", 0)
         token_count = getattr(result, "token_count", 0)
