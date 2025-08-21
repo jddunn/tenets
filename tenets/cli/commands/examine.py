@@ -8,6 +8,7 @@ directly using Typer's CliRunner, so we expose a Typer app via a
 callback rather than a bare Click command.
 """
 
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -166,6 +167,9 @@ def _run_examination(
             else:
                 examination_results["ownership"] = dict(_own_report or {})
 
+        # Add the examined path to results for filename generation
+        examination_results["path"] = str(target_path)
+        
         # Display or save results based on format
         if output_format.lower() == "terminal":
             _display_terminal_results(examination_results, show_details)
@@ -320,6 +324,46 @@ def _display_ownership_results(
             )
 
 
+def generate_auto_filename(path: str, format: str, timestamp: Optional[datetime] = None) -> str:
+    """Generate an automatic filename for reports.
+    
+    Args:
+        path: The path that was examined
+        format: The output format (html, json, markdown, etc.)
+        timestamp: Optional timestamp to use (defaults to current time)
+        
+    Returns:
+        Generated filename like: tenets_report_{path}_{timestamp}.{format}
+    """
+    # Use provided timestamp or current time
+    ts = timestamp or datetime.now()
+    
+    # Extract base name from path
+    if str(path) in [".", ""]:
+        # Handle current directory or empty path
+        safe_path_name = "project"
+    elif isinstance(path, Path):
+        examined_path = path.name if path.name else "project"
+        safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(examined_path))
+    elif "/" in str(path) or "\\" in str(path):
+        path_obj = Path(path)
+        examined_path = path_obj.name if path_obj.name else "project"
+        safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(examined_path))
+    else:
+        # Just a name, not a path
+        safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(path))
+    
+    # Handle edge cases where the name becomes empty or just underscores
+    if not safe_path_name or all(c == "_" for c in safe_path_name):
+        safe_path_name = "project"
+    
+    # Generate timestamp string
+    timestamp_str = ts.strftime("%Y%m%d_%H%M%S")
+    
+    # Create filename: tenets_report_{path}_{timestamp}.{format}
+    return f"tenets_report_{safe_path_name}_{timestamp_str}.{format}"
+
+
 def _generate_report(
     results: Dict[str, Any], format: str, output: Optional[str], config: Any
 ) -> None:
@@ -376,7 +420,13 @@ def _generate_report(
             ]
 
     # Generate report using viz modules for charts
-    output_path = Path(output) if output else Path(f"examination_report.{format}")
+    if output:
+        output_path = Path(output)
+    else:
+        # Auto-generate filename with path info and timestamp
+        examined_path = results.get("path", "project")
+        auto_filename = generate_auto_filename(examined_path, format)
+        output_path = Path(auto_filename)
 
     # The generator will internally use viz modules
     generator.generate(data=results, output_path=output_path, config=report_config)
