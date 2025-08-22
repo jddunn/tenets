@@ -68,27 +68,30 @@ Generate optimized context for LLMs from your codebase.
 tenets distill <prompt> [path] [options]
 ```
 
+
 **Arguments:**
-- `prompt`: Your query or task description (can be text or URL)
-- `path`: Directory or files to analyze (default: current directory)
+
+- **prompt**: Your query or task description (can be text or URL)
+- **path**: Directory or files to analyze (default: current directory)
 
 **Options:**
-- `--format, -f`: Output format: `markdown` (default), `xml`, `json`
-- `--model, -m`: Target LLM model (e.g., `gpt-4o`, `claude-3-opus`)
-- `--output, -o`: Save to file instead of stdout
+
+- `--format`, `-f`: Output format: markdown (default), xml, json
+- `--model`, `-m`: Target LLM model (e.g., gpt-4o, claude-3-opus)
+- `--output`, `-o`: Save to file instead of stdout
 - `--max-tokens`: Maximum tokens for context
-- `--mode`: Analysis mode: `fast`, `balanced` (default), `thorough`
+- `--mode`: Analysis mode: fast, balanced (default), thorough
 - `--no-git`: Disable git context inclusion
 - `--use-stopwords`: Enable stopword filtering for keyword analysis
-- `--include, -i`: Include file patterns (e.g., "*.py,*.js")
-- `--exclude, -e`: Exclude file patterns (e.g., "test_*,*.backup")
-- `--session, -s`: Use a named session for stateful context
+- `--include`, `-i`: Include file patterns (e.g., ".py,.js")
+- `--exclude`, `-e`: Exclude file patterns (e.g., "test_,.backup")
+- `--session`, `-s`: Use a named session for stateful context
 - `--estimate-cost`: Show token usage and cost estimate
-- `--verbose, -v`: Show detailed analysis info
+- `--verbose`, `-v`: Show detailed analysis info
 - `--full`: Include full content for all ranked files (no summarization) until token budget reached
 - `--condense`: Condense whitespace (collapse large blank runs, trim trailing spaces) before token counting
 - `--remove-comments`: Strip comments (heuristic, language-aware) before token counting
- - `--copy`: Copy distilled context directly to clipboard (or set `output.copy_on_distill: true` in config)
+- `--copy`: Copy distilled context directly to clipboard (or set output.copy_on_distill: true in config)
 
 **Examples:**
 
@@ -229,8 +232,35 @@ tenets examine --complexity --hotspots
 # Export full analysis as JSON
 tenets examine --output analysis.json --format json
 
-# Analyze specific directory
+# Generate HTML examination report
+tenets examine --format html --output examination_report.html
+
+# Generate detailed HTML report with all analyses
+tenets examine --ownership --hotspots --show-details --format html -o report.html
+
+# Analyze specific directory with ownership tracking
 tenets examine ./src --ownership
+
+# Generate multiple format reports
+tenets examine --format json -o analysis.json
+tenets examine --format html -o analysis.html
+tenets examine --format markdown -o analysis.md
+```
+
+**Coverage Reports:**
+
+```bash
+# Run tests with coverage and generate HTML report
+pytest --cov=tenets --cov-report=html
+
+# View HTML coverage report (opens htmlcov/index.html)
+python -m webbrowser htmlcov/index.html
+
+# Run tests with multiple coverage formats
+pytest --cov=tenets --cov-report=html --cov-report=xml --cov-report=term
+
+# Run specific test module with coverage
+pytest tests/cli/commands/test_examine.py --cov=tenets.cli.commands.examine --cov-report=html
 ```
 
 **Output Example (Table Format):**

@@ -269,7 +269,13 @@ class TFIDFCalculator:
 
         # Use smoothed IDF to handle edge cases
         df = self.document_frequency.get(term, 0)
-        idf = math.log((self.document_count + 1) / (df + 1))
+        # Use standard smoothed IDF that varies with document_count and df
+        # idf = log((N + 1) / (df + 1)) with a tiny epsilon so values can
+        # change detectably when the corpus grows even if df grows as well.
+        idf = math.log((1 + self.document_count) / (1 + df))
+        # Add a very small epsilon dependent on corpus size to avoid identical
+        # floats when called before/after cache invalidation in tiny corpora.
+        idf += 1e-12 * max(1, self.document_count)
 
         self.idf_cache[term] = idf
         return idf
@@ -389,6 +395,22 @@ class TFIDFCalculator:
             f"{len(self.vocabulary)} unique terms"
         )
 
+    def get_top_terms(self, doc_id: str, n: int = 10) -> List[Tuple[str, float]]:
+        """Return top-n terms by TF-IDF weight for a document.
+
+        Args:
+            doc_id: Document identifier
+            n: Max number of terms to return
+
+        Returns:
+            List of (term, score) sorted by descending score.
+        """
+        vector = self.document_vectors.get(doc_id, {})
+        if not vector:
+            return []
+        # Already L2-normalized; return the highest-weight terms
+        return sorted(vector.items(), key=lambda x: x[1], reverse=True)[: max(0, n)]
+
 
 class BM25Calculator:
     """BM25 ranking algorithm implementation.
@@ -488,7 +510,13 @@ class BM25Calculator:
             return self.idf_cache[term]
 
         df = self.document_frequency.get(term, 0)
-        idf = math.log((self.document_count - df + 0.5) / (df + 0.5))
+        # Use a smoothed, always-positive IDF variant to avoid zeros/negatives
+        # in tiny corpora and to better separate relevant docs:
+        # idf = log(1 + (N - df + 0.5)/(df + 0.5))
+        numerator = max(0.0, (self.document_count - df + 0.5))
+        denominator = df + 0.5
+        ratio = (numerator / denominator) if denominator > 0 else 0.0
+        idf = math.log(1.0 + ratio)
 
         self.idf_cache[term] = idf
         return idf

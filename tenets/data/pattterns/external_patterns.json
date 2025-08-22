@@ -1,0 +1,673 @@
+{
+  "github": {
+    "patterns": [
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/issues/(\\d+)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/pull/(\\d+)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/discussions/(\\d+)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/commit/([a-f0-9]{7,40})",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/tree/([^/]+)(?:/(.*))?",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/blob/([^/]+)/(.+)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/releases/tag/([^/]+)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/compare/([^.]+)\\.\\.\\.(.*)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/wiki(?:/(.*))?",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/projects/(\\d+)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/actions/runs/(\\d+)",
+      "https?://github\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/security/advisories/([A-Z0-9\\-]+)",
+      "https?://gist\\.github\\.com/([a-zA-Z0-9\\-]+)/([a-f0-9]{32})",
+      "https?://raw\\.githubusercontent\\.com/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)/([^/]+)/(.+)",
+      "([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)#(\\d+)",
+      "gh:(\\w+)/(\\w+)(?:#(\\d+))?",
+      "github\\.com:([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)(?:\\.git)?",
+      "git@github\\.com:([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-_.]+)(?:\\.git)?"
+    ],
+    "api_endpoints": {
+      "issue": "/repos/{owner}/{repo}/issues/{number}",
+      "pull_request": "/repos/{owner}/{repo}/pulls/{number}",
+      "commit": "/repos/{owner}/{repo}/commits/{sha}",
+      "release": "/repos/{owner}/{repo}/releases/tags/{tag}",
+      "discussion": "/repos/{owner}/{repo}/discussions/{number}",
+      "workflow_run": "/repos/{owner}/{repo}/actions/runs/{run_id}",
+      "gist": "/gists/{gist_id}",
+      "file_content": "/repos/{owner}/{repo}/contents/{path}",
+      "user": "/users/{username}",
+      "org": "/orgs/{org}",
+      "search_issues": "/search/issues",
+      "search_repos": "/search/repositories",
+      "search_code": "/search/code",
+      "search_users": "/search/users"
+    },
+    "metadata_fields": [
+      "title", "body", "state", "labels", "assignees", "milestone",
+      "created_at", "updated_at", "closed_at", "merged_at", "comments",
+      "user", "author", "committer", "reactions", "review_comments",
+      "commits", "additions", "deletions", "changed_files", "draft",
+      "base", "head", "mergeable", "mergeable_state", "rebaseable"
+    ]
+  },
+  
+  "gitlab": {
+    "patterns": [
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/issues/(\\d+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/merge_requests/(\\d+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/commit/([a-f0-9]{7,40})",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/tree/([^/]+)(?:/(.*))?",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/blob/([^/]+)/(.+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/pipelines/(\\d+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/jobs/(\\d+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/wikis/(.+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/snippets/(\\d+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/releases/([^/]+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/environments/(\\d+)",
+      "https?://gitlab\\.com/([^/]+)/([^/]+)/-/boards/(\\d+)",
+      "https?://([^/]+)/([^/]+)/([^/]+)/-/issues/(\\d+)",
+      "https?://([^/]+)/([^/]+)/([^/]+)/-/merge_requests/(\\d+)",
+      "gl:([^/]+)/([^/]+)(?:#(\\d+))?",
+      "git@gitlab\\.com:([^/]+)/([^/]+)(?:\\.git)?",
+      "([^/]+)/([^/]+)!(\\d+)",
+      "([^/]+)/([^/]+)%(\\d+)"
+    ],
+    "api_endpoints": {
+      "issue": "/projects/{id}/issues/{issue_iid}",
+      "merge_request": "/projects/{id}/merge_requests/{merge_request_iid}",
+      "commit": "/projects/{id}/repository/commits/{sha}",
+      "pipeline": "/projects/{id}/pipelines/{pipeline_id}",
+      "job": "/projects/{id}/jobs/{job_id}",
+      "snippet": "/projects/{id}/snippets/{snippet_id}",
+      "release": "/projects/{id}/releases/{tag_name}",
+      "wiki": "/projects/{id}/wikis/{slug}",
+      "branch": "/projects/{id}/repository/branches/{branch}",
+      "tag": "/projects/{id}/repository/tags/{tag_name}",
+      "file": "/projects/{id}/repository/files/{file_path}",
+      "user": "/users/{id}",
+      "group": "/groups/{id}"
+    },
+    "metadata_fields": [
+      "title", "description", "state", "labels", "assignee", "assignees",
+      "author", "milestone", "created_at", "updated_at", "closed_at",
+      "merged_at", "merge_status", "merge_commit_sha", "squash_commit_sha",
+      "discussion_locked", "upvotes", "downvotes", "due_date", "web_url",
+      "references", "time_stats", "has_conflicts", "blocking_discussions_resolved"
+    ]
+  },
+  
+  "jira": {
+    "patterns": [
+      "https?://([^/]+)\\.atlassian\\.net/browse/([A-Z][A-Z0-9]*-\\d+)",
+      "https?://([^/]+)\\.atlassian\\.net/projects/([A-Z][A-Z0-9]*)/issues/([A-Z][A-Z0-9]*-\\d+)",
+      "https?://([^/]+)\\.atlassian\\.net/jira/software/projects/([A-Z][A-Z0-9]*)/boards/\\d+\\?selectedIssue=([A-Z][A-Z0-9]*-\\d+)",
+      "https?://([^/]+)\\.atlassian\\.net/secure/RapidBoard\\.jspa\\?.*selectedIssue=([A-Z][A-Z0-9]*-\\d+)",
+      "https?://jira\\.([^/]+)/browse/([A-Z][A-Z0-9]*-\\d+)",
+      "https?://([^/]+)/jira/browse/([A-Z][A-Z0-9]*-\\d+)",
+      "\\b([A-Z][A-Z0-9]{1,9}-\\d{1,6})\\b",
+      "jira:([A-Z][A-Z0-9]*-\\d+)",
+      "JIRA-([A-Z][A-Z0-9]*-\\d+)",
+      "\\[([A-Z][A-Z0-9]*-\\d+)\\]",
+      "ticket:([A-Z][A-Z0-9]*-\\d+)",
+      "issue:([A-Z][A-Z0-9]*-\\d+)"
+    ],
+    "api_endpoints": {
+      "issue": "/rest/api/3/issue/{issueIdOrKey}",
+      "search": "/rest/api/3/search",
+      "project": "/rest/api/3/project/{projectIdOrKey}",
+      "user": "/rest/api/3/user",
+      "comment": "/rest/api/3/issue/{issueIdOrKey}/comment",
+      "worklog": "/rest/api/3/issue/{issueIdOrKey}/worklog",
+      "attachment": "/rest/api/3/attachment/{id}",
+      "transition": "/rest/api/3/issue/{issueIdOrKey}/transitions",
+      "watchers": "/rest/api/3/issue/{issueIdOrKey}/watchers",
+      "votes": "/rest/api/3/issue/{issueIdOrKey}/votes",
+      "board": "/rest/agile/1.0/board/{boardId}",
+      "sprint": "/rest/agile/1.0/sprint/{sprintId}",
+      "epic": "/rest/agile/1.0/epic/{epicIdOrKey}"
+    },
+    "metadata_fields": [
+      "summary", "description", "status", "priority", "assignee", "reporter",
+      "created", "updated", "resolved", "duedate", "components", "labels",
+      "fixVersions", "affectedVersions", "issuelinks", "subtasks", "parent",
+      "project", "issuetype", "resolution", "environment", "votes", "watches",
+      "comment", "worklog", "attachment", "timeestimate", "timeoriginalestimate",
+      "timespent", "aggregatetimeestimate", "aggregatetimeoriginalestimate",
+      "aggregatetimespent", "progress", "aggregateprogress", "sprint", "epic"
+    ],
+    "issue_types": [
+      "Bug", "Task", "Story", "Epic", "Sub-task", "Improvement",
+      "New Feature", "Technical Debt", "Spike", "Test", "Change Request",
+      "Incident", "Problem", "Service Request", "Support", "Documentation"
+    ],
+    "priorities": [
+      "Blocker", "Critical", "Major", "Minor", "Trivial",
+      "Highest", "High", "Medium", "Low", "Lowest"
+    ],
+    "statuses": [
+      "Open", "In Progress", "In Review", "Testing", "Done", "Closed",
+      "To Do", "Backlog", "Selected for Development", "Ready for Test",
+      "Ready for Release", "Released", "Blocked", "On Hold", "Cancelled",
+      "Reopened", "Resolved", "Verified", "Won't Fix", "Duplicate"
+    ]
+  },
+  
+  "linear": {
+    "patterns": [
+      "https?://linear\\.app/([^/]+)/issue/([A-Z]+-\\d+)",
+      "https?://linear\\.app/([^/]+)/project/([^/]+)/issue/([A-Z]+-\\d+)",
+      "https?://linear\\.app/([^/]+)/team/([^/]+)/issue/([A-Z]+-\\d+)",
+      "https?://linear\\.app/([^/]+)/cycle/([^/]+)/issue/([A-Z]+-\\d+)",
+      "https?://linear\\.app/([^/]+)/view/([^/]+)",
+      "https?://linear\\.app/([^/]+)/document/([a-f0-9\\-]{36})",
+      "https?://linear\\.app/([^/]+)/roadmap/([a-f0-9\\-]{36})",
+      "linear:([A-Z]+-\\d+)",
+      "LIN-([A-Z]+-\\d+)",
+      "\\b([A-Z]{2,5}-\\d{1,5})\\b"
+    ],
+    "api_endpoints": {
+      "issue": "query { issue(id: \"{id}\") { ... } }",
+      "issues": "query { issues { ... } }",
+      "project": "query { project(id: \"{id}\") { ... } }",
+      "team": "query { team(id: \"{id}\") { ... } }",
+      "cycle": "query { cycle(id: \"{id}\") { ... } }",
+      "user": "query { user(id: \"{id}\") { ... } }",
+      "organization": "query { organization { ... } }",
+      "roadmap": "query { roadmap(id: \"{id}\") { ... } }",
+      "document": "query { document(id: \"{id}\") { ... } }",
+      "comment": "query { comment(id: \"{id}\") { ... } }",
+      "attachment": "query { attachment(id: \"{id}\") { ... } }"
+    },
+    "metadata_fields": [
+      "title", "description", "state", "priority", "assignee", "creator",
+      "createdAt", "updatedAt", "completedAt", "canceledAt", "archivedAt",
+      "dueDate", "estimate", "project", "team", "cycle", "parent", "children",
+      "labels", "comments", "attachments", "subscribers", "reactions",
+      "previousIdentifiers", "branchName", "customerTicketCount", "url",
+      "identifier", "number", "priorityLabel", "slaStartedAt", "slaBreachesAt"
+    ],
+    "states": [
+      "Backlog", "Todo", "In Progress", "In Review", "Done", "Canceled",
+      "Duplicate", "Triage", "Unplanned", "Started", "Completed"
+    ],
+    "priorities": {
+      "0": "No priority",
+      "1": "Urgent",
+      "2": "High",
+      "3": "Medium",
+      "4": "Low"
+    }
+  },
+  
+  "asana": {
+    "patterns": [
+      "https?://app\\.asana\\.com/0/(\\d+)/(\\d+)",
+      "https?://app\\.asana\\.com/0/(\\d+)/(\\d+)/f",
+      "https?://app\\.asana\\.com/0/portfolio/(\\d+)/(\\d+)",
+      "https?://app\\.asana\\.com/0/project/(\\d+)/(\\d+)",
+      "https?://app\\.asana\\.com/0/search/(\\d+)/(\\d+)",
+      "https?://app\\.asana\\.com/0/inbox/(\\d+)/(\\d+)",
+      "asana:(\\d+)",
+      "task:(\\d+)",
+      "project:(\\d+)"
+    ],
+    "api_endpoints": {
+      "task": "/tasks/{task-gid}",
+      "project": "/projects/{project-gid}",
+      "portfolio": "/portfolios/{portfolio-gid}",
+      "tag": "/tags/{tag-gid}",
+      "user": "/users/{user-gid}",
+      "workspace": "/workspaces/{workspace-gid}",
+      "team": "/teams/{team-gid}",
+      "attachment": "/attachments/{attachment-gid}",
+      "story": "/stories/{story-gid}",
+      "section": "/sections/{section-gid}",
+      "custom_field": "/custom_fields/{custom-field-gid}",
+      "goal": "/goals/{goal-gid}",
+      "status_update": "/status_updates/{status-update-gid}"
+    },
+    "metadata_fields": [
+      "name", "notes", "completed", "completed_at", "created_at", "modified_at",
+      "due_on", "due_at", "start_on", "start_at", "assignee", "assignee_status",
+      "followers", "projects", "tags", "workspace", "parent", "hearts", "likes",
+      "num_hearts", "num_likes", "dependencies", "dependents", "attachments",
+      "custom_fields", "memberships", "html_notes", "is_rendered_as_separator",
+      "resource_subtype", "approval_status", "completed_by", "external"
+    ]
+  },
+  
+  "notion": {
+    "patterns": [
+      "https?://www\\.notion\\.so/([^/]+)/([a-f0-9]{32})",
+      "https?://www\\.notion\\.so/([a-f0-9]{32})",
+      "https?://([^/]+)\\.notion\\.site/([^/]+)-([a-f0-9]{32})",
+      "https?://([^/]+)\\.notion\\.site/([a-f0-9]{32})",
+      "notion://([a-f0-9]{32})",
+      "notion:([a-f0-9]{32})",
+      "https?://www\\.notion\\.so/([^/]+)\\?v=([a-f0-9]{32})",
+      "https?://www\\.notion\\.so/([^/]+)/([^/]+)-([a-f0-9]{32})\\?v=([a-f0-9]{32})"
+    ],
+    "api_endpoints": {
+      "page": "/pages/{page_id}",
+      "block": "/blocks/{block_id}",
+      "database": "/databases/{database_id}",
+      "user": "/users/{user_id}",
+      "search": "/search",
+      "block_children": "/blocks/{block_id}/children",
+      "database_query": "/databases/{database_id}/query",
+      "page_properties": "/pages/{page_id}/properties/{property_id}",
+      "comments": "/comments"
+    },
+    "metadata_fields": [
+      "object", "id", "created_time", "last_edited_time", "created_by",
+      "last_edited_by", "cover", "icon", "parent", "archived", "properties",
+      "url", "public_url", "type", "title", "description", "is_inline",
+      "text", "annotations", "plain_text", "href", "equation", "mention",
+      "date", "emoji", "file", "external", "checkbox", "has_children"
+    ],
+    "block_types": [
+      "paragraph", "heading_1", "heading_2", "heading_3", "bulleted_list_item",
+      "numbered_list_item", "to_do", "toggle", "child_page", "child_database",
+      "code", "callout", "quote", "divider", "table_of_contents", "breadcrumb",
+      "column_list", "column", "link_preview", "synced_block", "template",
+      "link_to_page", "table", "table_row", "embed", "bookmark", "image",
+      "video", "pdf", "file", "audio", "equation"
+    ],
+    "property_types": [
+      "title", "rich_text", "number", "select", "multi_select", "date",
+      "people", "files", "checkbox", "url", "email", "phone_number",
+      "formula", "relation", "rollup", "created_time", "created_by",
+      "last_edited_time", "last_edited_by", "status", "button", "unique_id",
+      "verification", "select_groups"
+    ]
+  },
+  
+  "trello": {
+    "patterns": [
+      "https?://trello\\.com/c/([a-zA-Z0-9]+)",
+      "https?://trello\\.com/c/([a-zA-Z0-9]+)/[^/]+",
+      "https?://trello\\.com/b/([a-zA-Z0-9]+)",
+      "https?://trello\\.com/b/([a-zA-Z0-9]+)/[^/]+",
+      "trello:([a-zA-Z0-9]+)",
+      "card:([a-zA-Z0-9]+)",
+      "board:([a-zA-Z0-9]+)"
+    ],
+    "api_endpoints": {
+      "card": "/cards/{id}",
+      "board": "/boards/{id}",
+      "list": "/lists/{id}",
+      "member": "/members/{id}",
+      "organization": "/organizations/{id}",
+      "action": "/actions/{id}",
+      "checklist": "/checklists/{id}",
+      "label": "/labels/{id}",
+      "attachment": "/cards/{id}/attachments",
+      "comment": "/cards/{id}/actions/comments"
+    },
+    "metadata_fields": [
+      "name", "desc", "closed", "idBoard", "idList", "idMembers", "labels",
+      "due", "dueComplete", "dateLastActivity", "attachments", "badges",
+      "checkItemStates", "checklists", "comments", "customFieldItems",
+      "idAttachmentCover", "manualCoverAttachment", "pos", "shortLink",
+      "shortUrl", "subscribed", "url", "cover", "isTemplate", "cardRole"
+    ]
+  },
+  
+  "slack": {
+    "patterns": [
+      "https?://([^/]+)\\.slack\\.com/archives/([A-Z0-9]+)/p(\\d+)",
+      "https?://([^/]+)\\.slack\\.com/archives/([A-Z0-9]+)",
+      "https?://app\\.slack\\.com/client/([A-Z0-9]+)/([A-Z0-9]+)",
+      "https?://app\\.slack\\.com/client/([A-Z0-9]+)/([A-Z0-9]+)/thread/([A-Z0-9]+)-(\\d+)",
+      "slack://channel\\?team=([A-Z0-9]+)&id=([A-Z0-9]+)",
+      "slack://user\\?team=([A-Z0-9]+)&id=([A-Z0-9]+)",
+      "slack://file\\?team=([A-Z0-9]+)&id=([A-Z0-9]+)",
+      "#([a-z0-9\\-_]+)",
+      "@([A-Z0-9]+)",
+      "<@([A-Z0-9]+)>",
+      "<#([A-Z0-9]+)>",
+      "<!(everyone|channel|here)>"
+    ],
+    "api_endpoints": {
+      "conversations_list": "/conversations.list",
+      "conversations_history": "/conversations.history",
+      "conversations_info": "/conversations.info",
+      "conversations_members": "/conversations.members",
+      "chat_postMessage": "/chat.postMessage",
+      "users_info": "/users.info",
+      "users_list": "/users.list",
+      "files_info": "/files.info",
+      "files_list": "/files.list",
+      "search_messages": "/search.messages",
+      "team_info": "/team.info"
+    },
+    "metadata_fields": [
+      "ts", "thread_ts", "text", "user", "username", "channel", "type",
+      "subtype", "attachments", "blocks", "reactions", "replies", "reply_count",
+      "reply_users", "latest_reply", "is_starred", "pinned_to", "permalink",
+      "team", "edited", "files", "upload", "parent_user_id", "inviter"
+    ]
+  },
+  
+  "confluence": {
+    "patterns": [
+      "https?://([^/]+)\\.atlassian\\.net/wiki/spaces/([^/]+)/pages/(\\d+)",
+      "https?://([^/]+)\\.atlassian\\.net/wiki/spaces/([^/]+)/pages/(\\d+)/([^/]+)",
+      "https?://([^/]+)\\.atlassian\\.net/wiki/display/([^/]+)/([^/]+)",
+      "https?://confluence\\.([^/]+)/display/([^/]+)/([^/]+)",
+      "https?://confluence\\.([^/]+)/pages/viewpage\\.action\\?pageId=(\\d+)",
+      "https?://([^/]+)/confluence/display/([^/]+)/([^/]+)",
+      "confluence:([^/]+)/([^/]+)",
+      "wiki:([^/]+)/([^/]+)",
+      "page:(\\d+)"
+    ],
+    "api_endpoints": {
+      "content": "/wiki/rest/api/content/{id}",
+      "space": "/wiki/rest/api/space/{spaceKey}",
+      "search": "/wiki/rest/api/search",
+      "content_children": "/wiki/rest/api/content/{id}/child",
+      "content_comments": "/wiki/rest/api/content/{id}/child/comment",
+      "content_attachments": "/wiki/rest/api/content/{id}/child/attachment",
+      "content_history": "/wiki/rest/api/content/{id}/history",
+      "content_version": "/wiki/rest/api/content/{id}/version",
+      "user": "/wiki/rest/api/user"
+    },
+    "metadata_fields": [
+      "id", "type", "status", "title", "space", "history", "version",
+      "ancestors", "operations", "children", "descendants", "container",
+      "body", "metadata", "extensions", "restrictions", "_links",
+      "createdDate", "createdBy", "lastUpdated", "lastUpdatedBy"
+    ]
+  },
+  
+  "bitbucket": {
+    "patterns": [
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/pull-requests/(\\d+)",
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/issues/(\\d+)",
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/commits/([a-f0-9]{7,40})",
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/branch/([^/]+)",
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/src/([^/]+)/(.+)",
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/downloads/([^/]+)",
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/wiki/(.+)",
+      "https?://bitbucket\\.org/([^/]+)/([^/]+)/addon/pipelines/home",
+      "bb:([^/]+)/([^/]+)(?:#(\\d+))?",
+      "bitbucket:([^/]+)/([^/]+)(?:#(\\d+))?",
+      "git@bitbucket\\.org:([^/]+)/([^/]+)(?:\\.git)?"
+    ],
+    "api_endpoints": {
+      "repository": "/2.0/repositories/{workspace}/{repo_slug}",
+      "pullrequest": "/2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pull_request_id}",
+      "issue": "/2.0/repositories/{workspace}/{repo_slug}/issues/{issue_id}",
+      "commit": "/2.0/repositories/{workspace}/{repo_slug}/commit/{commit}",
+      "branch": "/2.0/repositories/{workspace}/{repo_slug}/refs/branches/{name}",
+      "tag": "/2.0/repositories/{workspace}/{repo_slug}/refs/tags/{name}",
+      "src": "/2.0/repositories/{workspace}/{repo_slug}/src/{commit}/{path}",
+      "downloads": "/2.0/repositories/{workspace}/{repo_slug}/downloads",
+      "pipelines": "/2.0/repositories/{workspace}/{repo_slug}/pipelines",
+      "user": "/2.0/users/{selected_user}",
+      "workspace": "/2.0/workspaces/{workspace}"
+    },
+    "metadata_fields": [
+      "title", "description", "state", "author", "source", "destination",
+      "merge_commit", "closed_by", "reason", "created_on", "updated_on",
+      "edited_on", "type", "id", "task_count", "comment_count", "links",
+      "summary", "content", "priority", "kind", "milestone", "component",
+      "votes", "watchers", "assignee", "reporter", "participants", "reviewers"
+    ]
+  },
+  
+  "azure_devops": {
+    "patterns": [
+      "https?://dev\\.azure\\.com/([^/]+)/([^/]+)/_workitems/edit/(\\d+)",
+      "https?://dev\\.azure\\.com/([^/]+)/([^/]+)/_git/([^/]+)/pullrequest/(\\d+)",
+      "https?://dev\\.azure\\.com/([^/]+)/([^/]+)/_git/([^/]+)/commit/([a-f0-9]{7,40})",
+      "https?://dev\\.azure\\.com/([^/]+)/([^/]+)/_build/results\\?buildId=(\\d+)",
+      "https?://dev\\.azure\\.com/([^/]+)/([^/]+)/_release\\?releaseId=(\\d+)",
+      "https?://dev\\.azure\\.com/([^/]+)/([^/]+)/_test/runs\\?runId=(\\d+)",
+      "https?://([^/]+)\\.visualstudio\\.com/([^/]+)/_workitems/edit/(\\d+)",
+      "https?://([^/]+)\\.visualstudio\\.com/([^/]+)/_git/([^/]+)/pullrequest/(\\d+)",
+      "azure:([^/]+)/([^/]+)#(\\d+)",
+      "ado:([^/]+)/([^/]+)#(\\d+)",
+      "vsts:([^/]+)/([^/]+)#(\\d+)"
+    ],
+    "api_endpoints": {
+      "work_item": "/{organization}/{project}/_apis/wit/workitems/{id}",
+      "pull_request": "/{organization}/{project}/_apis/git/repositories/{repositoryId}/pullrequests/{pullRequestId}",
+      "commit": "/{organization}/{project}/_apis/git/repositories/{repositoryId}/commits/{commitId}",
+      "build": "/{organization}/{project}/_apis/build/builds/{buildId}",
+      "release": "/{organization}/{project}/_apis/release/releases/{releaseId}",
+      "test_run": "/{organization}/{project}/_apis/test/runs/{runId}",
+      "pipeline": "/{organization}/{project}/_apis/pipelines/{pipelineId}",
+      "repository": "/{organization}/{project}/_apis/git/repositories/{repositoryId}",
+      "project": "/{organization}/_apis/projects/{projectId}",
+      "team": "/{organization}/_apis/teams/{teamId}"
+    },
+    "metadata_fields": [
+      "System.Title", "System.Description", "System.State", "System.AssignedTo",
+      "System.CreatedDate", "System.ChangedDate", "System.WorkItemType",
+      "System.AreaPath", "System.IterationPath", "System.Tags", "System.History",
+      "Microsoft.VSTS.Common.Priority", "Microsoft.VSTS.Common.Severity",
+      "Microsoft.VSTS.Common.Activity", "Microsoft.VSTS.Common.StateChangeDate",
+      "Microsoft.VSTS.Common.ResolvedDate", "Microsoft.VSTS.Common.ClosedDate"
+    ],
+    "work_item_types": [
+      "Bug", "Task", "User Story", "Feature", "Epic", "Test Case",
+      "Test Suite", "Test Plan", "Issue", "Impediment", "Product Backlog Item",
+      "Technical Debt", "Change Request", "Risk", "Review", "Spike"
+    ]
+  },
+  
+  "monday": {
+    "patterns": [
+      "https?://([^/]+)\\.monday\\.com/boards/(\\d+)",
+      "https?://([^/]+)\\.monday\\.com/boards/(\\d+)/pulses/(\\d+)",
+      "https?://([^/]+)\\.monday\\.com/boards/(\\d+)/views/(\\d+)",
+      "https?://([^/]+)\\.monday\\.com/docs/([\\d]+)",
+      "https?://([^/]+)\\.monday\\.com/workspaces/([\\d]+)",
+      "monday:board:(\\d+)",
+      "monday:item:(\\d+)",
+      "monday:doc:(\\d+)"
+    ],
+    "api_endpoints": {
+      "boards": "query { boards { ... } }",
+      "board": "query { boards(ids: {board_id}) { ... } }",
+      "items": "query { items(ids: {item_ids}) { ... } }",
+      "updates": "query { updates(ids: {update_ids}) { ... } }",
+      "users": "query { users { ... } }",
+      "teams": "query { teams { ... } }",
+      "workspaces": "query { workspaces { ... } }",
+      "tags": "query { tags { ... } }",
+      "activity_logs": "query { activity_logs { ... } }"
+    },
+    "metadata_fields": [
+      "id", "name", "description", "state", "board_kind", "items", "groups",
+      "columns", "creator", "owners", "subscribers", "tags", "top_group",
+      "updated_at", "created_at", "workspace", "views", "activity_logs",
+      "column_values", "updates", "assets", "subitems", "subscribers"
+    ]
+  },
+  
+  "clickup": {
+    "patterns": [
+      "https?://app\\.clickup\\.com/t/([a-z0-9]+)",
+      "https?://app\\.clickup\\.com/(\\d+)/t/([a-z0-9]+)",
+      "https?://app\\.clickup\\.com/(\\d+)/d/([a-z0-9]+)",
+      "https?://app\\.clickup\\.com/(\\d+)/v/([a-z0-9]+)",
+      "https?://sharing\\.clickup\\.com/([a-z0-9]+)",
+      "clickup:([a-z0-9]+)",
+      "cu:([a-z0-9]+)",
+      "task#([a-z0-9]+)"
+    ],
+    "api_endpoints": {
+      "task": "/task/{task_id}",
+      "list": "/list/{list_id}",
+      "folder": "/folder/{folder_id}",
+      "space": "/space/{space_id}",
+      "team": "/team/{team_id}",
+      "view": "/view/{view_id}",
+      "goal": "/goal/{goal_id}",
+      "comment": "/task/{task_id}/comment",
+      "attachment": "/task/{task_id}/attachment",
+      "time_tracking": "/task/{task_id}/time"
+    },
+    "metadata_fields": [
+      "id", "name", "description", "status", "priority", "assignees",
+      "creator", "due_date", "start_date", "date_created", "date_updated",
+      "date_closed", "archived", "tags", "custom_fields", "dependencies",
+      "linked_tasks", "team_id", "url", "sharing", "permission_level",
+      "list", "folder", "space", "attachments", "time_estimate", "time_spent"
+    ]
+  },
+  
+  "basecamp": {
+    "patterns": [
+      "https?://3\\.basecamp\\.com/(\\d+)/buckets/(\\d+)/todos/(\\d+)",
+      "https?://3\\.basecamp\\.com/(\\d+)/buckets/(\\d+)/messages/(\\d+)",
+      "https?://3\\.basecamp\\.com/(\\d+)/buckets/(\\d+)/documents/(\\d+)",
+      "https?://3\\.basecamp\\.com/(\\d+)/buckets/(\\d+)/schedules/(\\d+)",
+      "https?://3\\.basecamp\\.com/(\\d+)/buckets/(\\d+)/chats/(\\d+)",
+      "https?://basecamp\\.com/(\\d+)/projects/(\\d+)",
+      "bc:([\\d]+)/([\\d]+)",
+      "basecamp:([\\d]+)"
+    ],
+    "api_endpoints": {
+      "project": "/projects/{project_id}.json",
+      "todo": "/buckets/{project_id}/todos/{todo_id}.json",
+      "message": "/buckets/{project_id}/messages/{message_id}.json",
+      "document": "/buckets/{project_id}/documents/{document_id}.json",
+      "schedule": "/buckets/{project_id}/schedule_entries/{entry_id}.json",
+      "campfire": "/buckets/{project_id}/chats/{chat_id}.json",
+      "recording": "/buckets/{project_id}/recordings/{recording_id}.json",
+      "person": "/people/{person_id}.json",
+      "company": "/companies/{company_id}.json"
+    },
+    "metadata_fields": [
+      "id", "status", "created_at", "updated_at", "title", "content",
+      "creator", "bucket", "parent", "type", "url", "app_url", "bookmark_url",
+      "completed", "completed_at", "due_on", "starts_on", "ends_on",
+      "assignees", "completion_subscribers", "comments_count", "position"
+    ]
+  },
+  
+  "shortcut": {
+    "patterns": [
+      "https?://app\\.shortcut\\.com/([^/]+)/story/(\\d+)",
+      "https?://app\\.shortcut\\.com/([^/]+)/epic/(\\d+)",
+      "https?://app\\.shortcut\\.com/([^/]+)/iteration/(\\d+)",
+      "https?://app\\.shortcut\\.com/([^/]+)/project/(\\d+)",
+      "https?://app\\.shortcut\\.com/([^/]+)/objective/(\\d+)",
+      "shortcut:story:(\\d+)",
+      "shortcut:epic:(\\d+)",
+      "sc:([\\d]+)",
+      "ch(\\d+)"
+    ],
+    "api_endpoints": {
+      "story": "/stories/{story_id}",
+      "epic": "/epics/{epic_id}",
+      "iteration": "/iterations/{iteration_id}",
+      "project": "/projects/{project_id}",
+      "member": "/members/{member_id}",
+      "workflow": "/workflows/{workflow_id}",
+      "label": "/labels/{label_id}",
+      "category": "/categories/{category_id}",
+      "milestone": "/milestones/{milestone_id}",
+      "objective": "/objectives/{objective_id}"
+    },
+    "metadata_fields": [
+      "id", "name", "description", "story_type", "workflow_state_id",
+      "created_at", "updated_at", "completed_at", "archived_at", "started_at",
+      "estimate", "epic_id", "project_id", "iteration_id", "labels",
+      "owner_ids", "follower_ids", "requested_by_id", "comments", "tasks",
+      "files", "linked_files", "external_tickets", "branches", "commits",
+      "pull_requests", "cycle_time", "lead_time", "blocker", "blocked"
+    ]
+  },
+  
+  "zendesk": {
+    "patterns": [
+      "https?://([^/]+)\\.zendesk\\.com/agent/tickets/(\\d+)",
+      "https?://([^/]+)\\.zendesk\\.com/hc/([^/]+)/requests/(\\d+)",
+      "https?://([^/]+)\\.zendesk\\.com/hc/([^/]+)/articles/(\\d+)",
+      "zendesk:ticket:(\\d+)",
+      "zendesk:article:(\\d+)",
+      "zd:(\\d+)",
+      "ticket#(\\d+)"
+    ],
+    "api_endpoints": {
+      "ticket": "/api/v2/tickets/{id}.json",
+      "user": "/api/v2/users/{id}.json",
+      "organization": "/api/v2/organizations/{id}.json",
+      "group": "/api/v2/groups/{id}.json",
+      "article": "/api/v2/help_center/articles/{id}.json",
+      "section": "/api/v2/help_center/sections/{id}.json",
+      "category": "/api/v2/help_center/categories/{id}.json",
+      "comment": "/api/v2/tickets/{ticket_id}/comments.json",
+      "attachment": "/api/v2/attachments/{id}.json",
+      "macro": "/api/v2/macros/{id}.json"
+    },
+    "metadata_fields": [
+      "id", "subject", "description", "status", "priority", "type",
+      "requester_id", "submitter_id", "assignee_id", "organization_id",
+      "group_id", "created_at", "updated_at", "due_at", "tags", "via",
+      "custom_fields", "satisfaction_rating", "brand_id", "ticket_form_id",
+      "comments", "attachments", "followers", "email_ccs", "is_public"
+    ]
+  },
+  
+  "phabricator": {
+    "patterns": [
+      "https?://([^/]+)/D(\\d+)",
+      "https?://([^/]+)/T(\\d+)",
+      "https?://([^/]+)/P(\\d+)",
+      "https?://([^/]+)/M(\\d+)",
+      "https?://([^/]+)/F(\\d+)",
+      "https?://([^/]+)/diffusion/([^/]+)/browse/([^/]+)/([^/]+)",
+      "https?://([^/]+)/r([A-Z]+)([a-f0-9]{7,40})",
+      "D(\\d+)",
+      "T(\\d+)",
+      "P(\\d+)",
+      "r([A-Z]+)([a-f0-9]{7,40})"
+    ],
+    "api_endpoints": {
+      "differential": "/api/differential.query",
+      "maniphest": "/api/maniphest.query",
+      "paste": "/api/paste.query",
+      "phriction": "/api/phriction.info",
+      "diffusion": "/api/diffusion.querycommits",
+      "user": "/api/user.query",
+      "project": "/api/project.query",
+      "file": "/api/file.info",
+      "repository": "/api/repository.query"
+    },
+    "metadata_fields": [
+      "id", "phid", "title", "uri", "status", "summary", "author", "authorPHID",
+      "dateCreated", "dateModified", "lineCount", "reviewers", "ccs",
+      "commits", "sourcePath", "branch", "bookmark", "repositoryPHID",
+      "description", "testPlan", "priority", "owner", "projects", "auxiliary"
+    ]
+  },
+  
+  "youtrack": {
+    "patterns": [
+      "https?://([^/]+)\\.myjetbrains\\.com/youtrack/issue/([A-Z][A-Z0-9]*-\\d+)",
+      "https?://([^/]+)/youtrack/issue/([A-Z][A-Z0-9]*-\\d+)",
+      "https?://youtrack\\.([^/]+)/issue/([A-Z][A-Z0-9]*-\\d+)",
+      "youtrack:([A-Z][A-Z0-9]*-\\d+)",
+      "yt:([A-Z][A-Z0-9]*-\\d+)",
+      "issue:([A-Z][A-Z0-9]*-\\d+)"
+    ],
+    "api_endpoints": {
+      "issue": "/api/issues/{issueId}",
+      "issues": "/api/issues",
+      "project": "/api/admin/projects/{projectId}",
+      "user": "/api/users/{userId}",
+      "comment": "/api/issues/{issueId}/comments",
+      "attachment": "/api/issues/{issueId}/attachments",
+      "workItem": "/api/issues/{issueId}/timeTracking/workItems",
+      "tag": "/api/issues/{issueId}/tags",
+      "link": "/api/issues/{issueId}/links",
+      "command": "/api/commands"
+    },
+    "metadata_fields": [
+      "idReadable", "summary", "description", "created", "updated", "resolved",
+      "reporter", "assignee", "state", "priority", "type", "project",
+      "subsystem", "affectsVersions", "fixVersions", "links", "subtasks",
+      "votes", "watchers", "comments", "commentsCount", "tags", "attachments",
+      "workItems", "visibility", "customFields", "sprint", "estimation"
+    ]
+  }
+}

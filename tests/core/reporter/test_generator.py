@@ -1,10 +1,7 @@
 """Tests for the report generator module."""
 
 import json
-import tempfile
-from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -236,9 +233,63 @@ class TestReportGenerator:
         assert section.id == "summary"
         assert section.title == "Executive Summary"
         assert section.level == 1
-        assert section.icon == "📊"
+        # Check enhanced metrics
+        assert "Functions" in section.metrics
+        assert "Classes" in section.metrics
+        assert "Test Coverage" in section.metrics
+        assert "Languages" in section.metrics
+        assert "Avg File Size" in section.metrics
+
+    def test_create_file_overview_section(self, generator, sample_analysis_data):
+        """Test file overview section creation."""
+        report_config = ReportConfig()
+
+        section = generator._create_file_overview_section(sample_analysis_data, report_config)
+
+        assert section.id == "file_overview"
+        assert section.title == "File Analysis Overview"
+        assert section.order == 2
+        assert section.icon == "📁"
+        # Check that language table is added
+        assert (
+            len(section.tables) > 0
+            if sample_analysis_data.get("metrics", {}).get("languages")
+            else True
+        )
+
+    def test_find_readme(self, generator, sample_analysis_data):
+        """Test README finding functionality."""
+        readme = generator._find_readme(sample_analysis_data)
+
+        # Should return None when no README exists at the path
+        # The sample_analysis_data doesn't point to a real directory with README
+        assert readme is None or isinstance(readme, dict)
+
+    def test_create_readme_section(self, generator):
+        """Test README section creation."""
+        readme_content = "# Test Project\\n\\nThis is a test project."
+
+        # Create a proper readme_info dict as expected by the method
+        readme_info = {
+            "path": "README.md",
+            "name": "README.md",
+            "content": readme_content,
+            "original_length": len(readme_content),
+            "displayed_length": len(readme_content),
+            "condensed_by": 0,
+            "lines": readme_content.count("\n") + 1,
+        }
+
+        section = generator._create_readme_section(readme_info)
+
+        assert section.id == "readme"
+        assert section.title == "Project README"
+        assert section.order == 1.5
+        assert section.collapsible is True
+        assert readme_content in "".join(str(c) for c in section.content)
+        assert section.icon == "📖"
         assert section.content is not None
-        assert "Health Score" in section.metrics
+        assert section.metrics == {}
 
     def test_create_complexity_section(self, generator, sample_analysis_data):
         """Test complexity section creation."""

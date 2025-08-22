@@ -10,7 +10,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from git import InvalidGitRepositoryError, NoSuchPathError, Repo  # type: ignore
+try:
+    from git import InvalidGitRepositoryError, NoSuchPathError, Repo  # type: ignore
+
+    GIT_AVAILABLE = True
+except ImportError as e:
+    GIT_AVAILABLE = False
+
+    # Create dummy classes for type checking
+    class InvalidGitRepositoryError(Exception):  # type: ignore
+        pass
+
+    class NoSuchPathError(Exception):  # type: ignore
+        pass
+
+    class Repo:  # type: ignore
+        pass
+
+    git_import_error = str(e)
 
 from tenets.utils.logger import get_logger
 
@@ -42,6 +59,15 @@ class GitAnalyzer:
         self._ensure_repo()
 
     def _ensure_repo(self) -> None:
+        if not GIT_AVAILABLE:
+            self.repo = None
+            logger.warning(
+                "Git is not available. Install git and ensure it's in your PATH. "
+                "Git-related features will be disabled. "
+                "Non-git features will continue to work normally."
+            )
+            return
+
         try:
             self.repo = Repo(self.root, search_parent_directories=True)
             # Normalize root to the repo working tree directory
@@ -52,6 +78,9 @@ class GitAnalyzer:
         except (InvalidGitRepositoryError, NoSuchPathError):
             self.repo = None
             logger.debug("No git repository detected at %s", self.root)
+        except Exception as e:
+            self.repo = None
+            logger.debug("Failed to initialize git repository: %s", str(e))
 
     def is_repo(self) -> bool:
         return self.repo is not None
@@ -160,6 +189,96 @@ class GitAnalyzer:
             # Detached HEAD or other issue
             return "HEAD"
 
+    def current_branch(self) -> str:
+        """Alias for get_current_branch() for backward compatibility."""
+        return self.get_current_branch()
+
+    def get_tracked_files(self) -> List[str]:
+        """Return list of tracked files in the repository."""
+        if not self.repo:
+            return []
+        try:
+            # Get all tracked files from git ls-files
+            tracked = self.repo.git.ls_files().splitlines()
+            return [f for f in tracked if f.strip()]
+        except Exception:
+            return []
+
+    def get_file_history(self, file_path: str) -> List[Any]:
+        """Return commit history for a specific file."""
+        if not self.repo:
+            return []
+        try:
+            # Get commits that touched this file
+            commits = list(self.repo.iter_commits(paths=file_path))
+            return commits
+        except Exception:
+            return []
+
+    def commit_count(self) -> int:
+        """Return total number of commits in the repository."""
+        if not self.repo:
+            return 0
+        try:
+            return len(list(self.repo.iter_commits()))
+        except Exception:
+            return 0
+
+    def list_authors(self) -> List[str]:
+        """Return list of unique authors in the repository."""
+        if not self.repo:
+            return []
+        try:
+            authors = set()
+            for commit in self.repo.iter_commits():
+                author = getattr(commit.author, "name", "")
+                if author:
+                    authors.add(author)
+            return list(authors)
+        except Exception:
+            return []
+
+    def author_stats(self) -> Dict[str, Dict[str, Any]]:
+        """Return statistics by author."""
+        if not self.repo:
+            return {}
+        try:
+            stats: Dict[str, Dict[str, Any]] = {}
+            for commit in self.repo.iter_commits():
+                author = getattr(commit.author, "name", "")
+                if not author:
+                    continue
+
+                if author not in stats:
+                    stats[author] = {
+                        "commits": 0,
+                        "lines_added": 0,
+                        "lines_removed": 0,
+                        "files_touched": set(),
+                    }
+
+                stats[author]["commits"] += 1
+
+                # Try to get stats if available
+                if hasattr(commit, "stats") and commit.stats:
+                    try:
+                        stats[author]["lines_added"] += commit.stats.total.get("insertions", 0)
+                        stats[author]["lines_removed"] += commit.stats.total.get("deletions", 0)
+                        if hasattr(commit.stats, "files"):
+                            stats[author]["files_touched"].update(commit.stats.files.keys())
+                    except Exception:
+                        pass
+
+            # Convert sets to counts for serialization
+            for author_stats in stats.values():
+                if "files_touched" in author_stats:
+                    author_stats["files_count"] = len(author_stats["files_touched"])
+                    del author_stats["files_touched"]
+
+            return stats
+        except Exception:
+            return {}
+
     def get_changes_since(
         self,
         path: Optional[Path] = None,
@@ -192,6 +311,44 @@ class GitAnalyzer:
         except Exception:
             return []
         return results
+
+    # Added to support Chronicle expectations
+    def get_commits_since(
+        self,
+        since: datetime,
+        max_count: int = 1000,
+        author: Optional[str] = None,
+        branch: Optional[str] = None,
+        include_merges: bool = True,
+    ) -> List[Any]:
+        """Return raw commit objects since a given datetime.
+
+        Args:
+            since: Start datetime (inclusive)
+            max_count: Maximum number of commits
+            author: Optional author filter
+            branch: Optional branch name
+            include_merges: Whether to include merge commits
+
+        Returns:
+            List of GitPython commit objects
+        """
+        if not self.repo:
+            return []
+        try:
+            rev = branch or None
+            kwargs: Dict[str, Any] = {
+                "since": int(since.timestamp()),
+                "max_count": max_count,
+            }
+            if author:
+                kwargs["author"] = author
+            commits = list(self.repo.iter_commits(rev, **kwargs))
+            if not include_merges:
+                commits = [c for c in commits if len(getattr(c, "parents", [])) <= 1]
+            return commits
+        except Exception:
+            return []
 
     # Existing APIs retained
     def recent_commits(

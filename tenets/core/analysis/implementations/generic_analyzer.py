@@ -2,12 +2,13 @@
 
 This module provides basic analysis capabilities for files that don't have
 a specific language analyzer. It performs text-based analysis and pattern
-matching to extract basic information.
+matching to extract basic information. Enhanced with context-aware documentation
+analysis for smart summarization based on prompt/query relevance.
 """
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Tuple
 
 from tenets.models.analysis import (
     ClassInfo,
@@ -478,8 +479,7 @@ class GenericAnalyzer(LanguageAnalyzer):
             max_depth = max(max_depth, current_depth)
 
             # Reset if negative (mismatched brackets)
-            if current_depth < 0:
-                current_depth = 0
+            current_depth = max(current_depth, 0)
 
         # Also check indentation depth
         indent_depth = self._calculate_max_indent(lines)
@@ -953,8 +953,7 @@ class GenericAnalyzer(LanguageAnalyzer):
             if not ln.strip():
                 continue
             leading = len(ln) - len(ln.lstrip(" \t"))
-            if leading > max_indent:
-                max_indent = leading
+            max_indent = max(max_indent, leading)
             if ln.startswith("\t"):
                 tabs += 1
             elif ln.startswith(" "):
@@ -999,6 +998,742 @@ class GenericAnalyzer(LanguageAnalyzer):
             else:
                 spaces = len(ln) - len(ln.lstrip(" "))
                 level = spaces // indent_unit if indent_unit else 0
-            if level > max_level:
-                max_level = level
+            max_level = max(max_level, level)
         return max_level
+
+    def extract_context_relevant_sections(
+        self,
+        content: str,
+        file_path: Path,
+        prompt_keywords: List[str],
+        search_depth: int = 2,
+        min_confidence: float = 0.6,
+        max_sections: int = 10,
+    ) -> Dict[str, Any]:
+        """Extract sections of documentation that reference prompt keywords/concepts.
+
+        This method identifies and extracts the most relevant parts of documentation
+        files based on direct references and semantic similarity to prompt keywords.
+
+        Args:
+            content: File content
+            file_path: Path to the file being analyzed
+            prompt_keywords: Keywords/phrases from the user's prompt
+            search_depth: How deep to search (1=direct, 2=semantic, 3=deep analysis)
+            min_confidence: Minimum confidence threshold for relevance (0.0-1.0)
+            max_sections: Maximum number of contextual sections to preserve
+
+        Returns:
+            Dictionary containing relevant sections with metadata
+        """
+        if not prompt_keywords:
+            return {
+                "relevant_sections": [],
+                "metadata": {"total_sections": 0, "matched_sections": 0},
+            }
+
+        file_type = self._detect_file_type(file_path)
+
+        # Extract sections based on file type
+        sections = self._extract_document_sections(content, file_path, file_type)
+
+        # Score sections based on relevance to prompt keywords
+        scored_sections = []
+        for section in sections:
+            score, matches = self._calculate_section_relevance(
+                section, prompt_keywords, search_depth
+            )
+
+            if score >= min_confidence:
+                scored_sections.append(
+                    {
+                        **section,
+                        "relevance_score": score,
+                        "keyword_matches": matches,
+                        "context_type": self._determine_context_type(section, matches),
+                    }
+                )
+
+        # Sort by relevance and limit to max_sections
+        scored_sections.sort(key=lambda x: x["relevance_score"], reverse=True)
+        relevant_sections = scored_sections[:max_sections]
+
+        # Extract code examples and references within relevant sections
+        for section in relevant_sections:
+            section["code_examples"] = self._extract_code_examples_from_section(section)
+            section["api_references"] = self._extract_api_references_from_section(section)
+            section["config_references"] = self._extract_config_references_from_section(section)
+
+        metadata = {
+            "total_sections": len(sections),
+            "matched_sections": len(scored_sections),
+            "relevant_sections": len(relevant_sections),
+            "file_type": file_type,
+            "search_depth": search_depth,
+            "min_confidence": min_confidence,
+            "avg_relevance_score": (
+                sum(s["relevance_score"] for s in relevant_sections) / len(relevant_sections)
+                if relevant_sections
+                else 0.0
+            ),
+        }
+
+        return {"relevant_sections": relevant_sections, "metadata": metadata}
+
+    def _extract_document_sections(
+        self, content: str, file_path: Path, file_type: str
+    ) -> List[Dict[str, Any]]:
+        """Extract logical sections from different document types."""
+        sections = []
+        lines = content.splitlines()
+
+        if file_type in ["markdown", "markup", "documentation"]:
+            sections = self._extract_markdown_sections(content, lines)
+        elif file_type == "configuration":
+            sections = self._extract_config_sections(content, lines, file_path)
+        elif file_path.suffix.lower() in [".txt", ".text"]:
+            sections = self._extract_text_sections(content, lines)
+        else:
+            # Fallback: split by blank lines or common delimiters
+            sections = self._extract_generic_sections(content, lines)
+
+        return sections
+
+    def _extract_markdown_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
+        """Extract sections from Markdown documents."""
+        sections = []
+        current_section = None
+        current_content = []
+
+        for i, line in enumerate(lines, 1):
+            # Check for headers
+            header_match = re.match(r"^(#{1,6})\s+(.+)$", line)
+            if header_match:
+                # Save previous section if exists
+                if current_section:
+                    current_section["content"] = "\n".join(current_content)
+                    current_section["end_line"] = i - 1
+                    sections.append(current_section)
+
+                # Start new section
+                level = len(header_match.group(1))
+                title = header_match.group(2).strip()
+                current_section = {
+                    "title": title,
+                    "level": level,
+                    "start_line": i,
+                    "section_type": "header",
+                    "raw_content": line,
+                }
+                current_content = [line]
+            elif current_content:
+                current_content.append(line)
+
+        # Don't forget the last section
+        if current_section:
+            current_section["content"] = "\n".join(current_content)
+            current_section["end_line"] = len(lines)
+            sections.append(current_section)
+
+        return sections
+
+    def _extract_config_sections(
+        self, content: str, lines: List[str], file_path: Path
+    ) -> List[Dict[str, Any]]:
+        """Extract sections from configuration files."""
+        sections = []
+        suffix = file_path.suffix.lower()
+
+        if suffix in [".yaml", ".yml"]:
+            sections = self._extract_yaml_sections(content, lines)
+        elif suffix == ".json":
+            sections = self._extract_json_sections(content, lines)
+        elif suffix in [".ini", ".cfg", ".conf"]:
+            sections = self._extract_ini_sections(content, lines)
+        elif suffix == ".toml":
+            sections = self._extract_toml_sections(content, lines)
+
+        return sections
+
+    def _extract_yaml_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
+        """Extract sections from YAML files."""
+        sections = []
+        current_section = None
+        current_content = []
+
+        for i, line in enumerate(lines, 1):
+            # Top-level keys (no leading spaces)
+            if re.match(r"^[a-zA-Z0-9_-]+\s*:", line) and not line.startswith(" "):
+                # Save previous section
+                if current_section:
+                    current_section["content"] = "\n".join(current_content)
+                    current_section["end_line"] = i - 1
+                    sections.append(current_section)
+
+                # Start new section
+                key = line.split(":")[0].strip()
+                current_section = {
+                    "title": key,
+                    "level": 1,
+                    "start_line": i,
+                    "section_type": "yaml_key",
+                    "raw_content": line,
+                }
+                current_content = [line]
+            elif current_content:
+                current_content.append(line)
+
+        # Last section
+        if current_section:
+            current_section["content"] = "\n".join(current_content)
+            current_section["end_line"] = len(lines)
+            sections.append(current_section)
+
+        return sections
+
+    def _extract_json_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
+        """Extract sections from JSON files."""
+        sections = []
+
+        # Find top-level keys using regex
+        for match in re.finditer(r'^\s*"([^"]+)"\s*:\s*', content, re.MULTILINE):
+            key = match.group(1)
+            start_line = content[: match.start()].count("\n") + 1
+
+            # Find the end of this key's value (naive approach)
+            start_pos = match.end()
+            brace_count = 0
+            bracket_count = 0
+            in_string = False
+            end_pos = start_pos
+
+            for j, char in enumerate(content[start_pos:], start_pos):
+                if char == '"' and (j == 0 or content[j - 1] != "\\"):
+                    in_string = not in_string
+                elif not in_string:
+                    if char == "{":
+                        brace_count += 1
+                    elif char == "}":
+                        brace_count -= 1
+                    elif char == "[":
+                        bracket_count += 1
+                    elif char == "]":
+                        bracket_count -= 1
+                    elif char == "," and brace_count == 0 and bracket_count == 0:
+                        end_pos = j
+                        break
+
+            end_line = content[:end_pos].count("\n") + 1
+            section_content = content[match.start() : end_pos]
+
+            sections.append(
+                {
+                    "title": key,
+                    "level": 1,
+                    "start_line": start_line,
+                    "end_line": end_line,
+                    "section_type": "json_key",
+                    "content": section_content,
+                    "raw_content": content[match.start() : match.end()],
+                }
+            )
+
+        return sections
+
+    def _extract_ini_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
+        """Extract sections from INI files."""
+        sections = []
+        current_section = None
+        current_content = []
+
+        for i, line in enumerate(lines, 1):
+            # Section headers like [section_name]
+            section_match = re.match(r"^\s*\[([^\]]+)\]", line)
+            if section_match:
+                # Save previous section
+                if current_section:
+                    current_section["content"] = "\n".join(current_content)
+                    current_section["end_line"] = i - 1
+                    sections.append(current_section)
+
+                # Start new section
+                section_name = section_match.group(1)
+                current_section = {
+                    "title": section_name,
+                    "level": 1,
+                    "start_line": i,
+                    "section_type": "ini_section",
+                    "raw_content": line,
+                }
+                current_content = [line]
+            elif current_content:
+                current_content.append(line)
+
+        # Last section
+        if current_section:
+            current_section["content"] = "\n".join(current_content)
+            current_section["end_line"] = len(lines)
+            sections.append(current_section)
+
+        return sections
+
+    def _extract_toml_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
+        """Extract sections from TOML files."""
+        sections = []
+        current_section = None
+        current_content = []
+
+        for i, line in enumerate(lines, 1):
+            # Section headers like [section] or [[array_section]]
+            section_match = re.match(r"^\s*\[\[?([^\]]+)\]\]?", line)
+            if section_match:
+                # Save previous section
+                if current_section:
+                    current_section["content"] = "\n".join(current_content)
+                    current_section["end_line"] = i - 1
+                    sections.append(current_section)
+
+                # Start new section
+                section_name = section_match.group(1)
+                current_section = {
+                    "title": section_name,
+                    "level": 1,
+                    "start_line": i,
+                    "section_type": "toml_section",
+                    "raw_content": line,
+                }
+                current_content = [line]
+            elif current_content:
+                current_content.append(line)
+
+        # Last section
+        if current_section:
+            current_section["content"] = "\n".join(current_content)
+            current_section["end_line"] = len(lines)
+            sections.append(current_section)
+
+        return sections
+
+    def _extract_text_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
+        """Extract sections from plain text files."""
+        sections = []
+        current_section = None
+        current_content = []
+        section_count = 0
+
+        for i, line in enumerate(lines, 1):
+            # Look for section-like patterns (lines that might be headers)
+            if line.strip() and (
+                line.isupper()  # ALL CAPS lines
+                or line.endswith(":")  # Lines ending with colon
+                or re.match(r"^\d+\.\s+", line)  # Numbered items
+                or re.match(r"^[A-Z][^a-z]*$", line.strip())
+            ):  # Title case without lowercase
+                # Save previous section
+                if current_section:
+                    current_section["content"] = "\n".join(current_content)
+                    current_section["end_line"] = i - 1
+                    sections.append(current_section)
+
+                # Start new section
+                section_count += 1
+                current_section = {
+                    "title": line.strip() or f"Section {section_count}",
+                    "level": 1,
+                    "start_line": i,
+                    "section_type": "text_section",
+                    "raw_content": line,
+                }
+                current_content = [line]
+            elif line.strip() == "" and current_section and len(current_content) > 5:
+                # Long sections might be split by blank lines
+                current_section["content"] = "\n".join(current_content)
+                current_section["end_line"] = i
+                sections.append(current_section)
+                current_section = None
+                current_content = []
+            elif current_content:
+                current_content.append(line)
+            elif line.strip():  # Start first section with any non-empty line
+                section_count += 1
+                current_section = {
+                    "title": f"Section {section_count}",
+                    "level": 1,
+                    "start_line": i,
+                    "section_type": "text_section",
+                    "raw_content": line,
+                }
+                current_content = [line]
+
+        # Last section
+        if current_section:
+            current_section["content"] = "\n".join(current_content)
+            current_section["end_line"] = len(lines)
+            sections.append(current_section)
+
+        return sections
+
+    def _extract_generic_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
+        """Fallback section extraction for unknown file types."""
+        sections = []
+        current_content = []
+        section_count = 0
+
+        for i, line in enumerate(lines, 1):
+            if line.strip() == "":
+                if current_content and len(current_content) > 2:
+                    section_count += 1
+                    sections.append(
+                        {
+                            "title": f"Section {section_count}",
+                            "level": 1,
+                            "start_line": i - len(current_content),
+                            "end_line": i - 1,
+                            "section_type": "generic_section",
+                            "content": "\n".join(current_content),
+                            "raw_content": current_content[0] if current_content else "",
+                        }
+                    )
+                current_content = []
+            else:
+                current_content.append(line)
+
+        # Last section
+        if current_content:
+            section_count += 1
+            sections.append(
+                {
+                    "title": f"Section {section_count}",
+                    "level": 1,
+                    "start_line": len(lines) - len(current_content) + 1,
+                    "end_line": len(lines),
+                    "section_type": "generic_section",
+                    "content": "\n".join(current_content),
+                    "raw_content": current_content[0] if current_content else "",
+                }
+            )
+
+        return sections
+
+    def _calculate_section_relevance(
+        self, section: Dict[str, Any], prompt_keywords: List[str], search_depth: int
+    ) -> Tuple[float, List[Dict[str, Any]]]:
+        """Calculate how relevant a section is to the prompt keywords."""
+        content = section.get("content", "")
+        title = section.get("title", "")
+
+        matches = []
+        score = 0.0
+
+        # Normalize content for searching
+        content_lower = content.lower()
+        title_lower = title.lower()
+
+        for keyword in prompt_keywords:
+            keyword_lower = keyword.lower()
+            keyword_score = 0.0
+
+            # Direct matches in title (highest weight)
+            title_matches = len(re.findall(re.escape(keyword_lower), title_lower))
+            if title_matches > 0:
+                keyword_score += title_matches * 0.5
+                matches.append(
+                    {
+                        "keyword": keyword,
+                        "match_type": "title_direct",
+                        "count": title_matches,
+                        "locations": [
+                            m.start() for m in re.finditer(re.escape(keyword_lower), title_lower)
+                        ],
+                    }
+                )
+
+            # Direct matches in content
+            content_matches = len(re.findall(re.escape(keyword_lower), content_lower))
+            if content_matches > 0:
+                keyword_score += content_matches * 0.3
+                matches.append(
+                    {
+                        "keyword": keyword,
+                        "match_type": "content_direct",
+                        "count": content_matches,
+                        "locations": [
+                            m.start() for m in re.finditer(re.escape(keyword_lower), content_lower)
+                        ],
+                    }
+                )
+
+            # Partial/fuzzy matches if search_depth >= 2
+            if search_depth >= 2:
+                # Word boundary matches
+                word_pattern = r"\b" + re.escape(keyword_lower) + r"\b"
+                word_matches = len(re.findall(word_pattern, content_lower))
+                if word_matches > 0:
+                    keyword_score += word_matches * 0.4
+                    matches.append(
+                        {
+                            "keyword": keyword,
+                            "match_type": "word_boundary",
+                            "count": word_matches,
+                            "locations": [
+                                m.start() for m in re.finditer(word_pattern, content_lower)
+                            ],
+                        }
+                    )
+
+                # Related terms (simple stemming/variants)
+                related_terms = self._generate_related_terms(keyword)
+                for term in related_terms:
+                    term_matches = len(re.findall(re.escape(term.lower()), content_lower))
+                    if term_matches > 0:
+                        keyword_score += term_matches * 0.2
+                        matches.append(
+                            {
+                                "keyword": keyword,
+                                "match_type": "related_term",
+                                "term": term,
+                                "count": term_matches,
+                                "locations": [
+                                    m.start()
+                                    for m in re.finditer(re.escape(term.lower()), content_lower)
+                                ],
+                            }
+                        )
+
+            # Context analysis if search_depth >= 3
+            if search_depth >= 3:
+                context_score = self._analyze_semantic_context(content, keyword)
+                keyword_score += context_score
+                if context_score > 0:
+                    matches.append(
+                        {
+                            "keyword": keyword,
+                            "match_type": "semantic_context",
+                            "score": context_score,
+                        }
+                    )
+
+            score += keyword_score
+
+        # Normalize score based on content length and keyword count
+        if prompt_keywords:
+            score = score / len(prompt_keywords)
+            # Bonus for shorter, more focused sections
+            if len(content) < 500:
+                score *= 1.2
+            elif len(content) > 2000:
+                score *= 0.8
+
+        return min(score, 1.0), matches
+
+    def _generate_related_terms(self, keyword: str) -> List[str]:
+        """Generate related terms for a keyword (simple approach)."""
+        related = []
+
+        # Simple pluralization/singularization
+        if keyword.endswith("s") and len(keyword) > 3:
+            related.append(keyword[:-1])  # Remove 's'
+        else:
+            related.append(keyword + "s")  # Add 's'
+
+        # Common programming variations
+        variations = [
+            keyword.replace("_", ""),
+            keyword.replace("-", ""),
+            keyword.replace("_", "-"),
+            keyword.replace("-", "_"),
+            keyword.upper(),
+            keyword.title(),
+            keyword.capitalize(),
+        ]
+
+        # Add variations that are different from original
+        for var in variations:
+            if var != keyword and var not in related:
+                related.append(var)
+
+        return related[:5]  # Limit to avoid too many false matches
+
+    def _analyze_semantic_context(self, content: str, keyword: str) -> float:
+        """Simple semantic context analysis."""
+        # This is a simplified version - in practice, you might use NLP libraries
+        # for more sophisticated semantic analysis
+
+        keyword_lower = keyword.lower()
+        content_lower = content.lower()
+
+        # Look for common context patterns
+        context_patterns = [
+            rf"\b{re.escape(keyword_lower)}\b[^.]*\b(config|setting|option|parameter)\b",
+            rf"\b(config|setting|option|parameter)\b[^.]*\b{re.escape(keyword_lower)}\b",
+            rf"\b{re.escape(keyword_lower)}\b[^.]*\b(example|usage|how to|tutorial)\b",
+            rf"\b(example|usage|how to|tutorial)\b[^.]*\b{re.escape(keyword_lower)}\b",
+            rf"\b{re.escape(keyword_lower)}\b[^.]*\b(api|endpoint|method|function)\b",
+            rf"\b(api|endpoint|method|function)\b[^.]*\b{re.escape(keyword_lower)}\b",
+        ]
+
+        context_score = 0.0
+        for pattern in context_patterns:
+            matches = len(re.findall(pattern, content_lower))
+            context_score += matches * 0.1
+
+        return min(context_score, 0.5)  # Cap at 0.5
+
+    def _determine_context_type(
+        self, section: Dict[str, Any], matches: List[Dict[str, Any]]
+    ) -> str:
+        """Determine what type of context this section provides."""
+        content = section.get("content", "").lower()
+        title = section.get("title", "").lower()
+
+        # Check for different types of content
+        if any(word in content for word in ["example", "tutorial", "how to", "guide"]):
+            return "tutorial"
+        elif any(word in content for word in ["api", "endpoint", "method", "function", "class"]):
+            return "api_reference"
+        elif any(word in content for word in ["config", "setting", "option", "parameter"]):
+            return "configuration"
+        elif any(word in content for word in ["install", "setup", "getting started"]):
+            return "setup"
+        elif "```" in content or re.search(r"^\s{4,}", content, re.MULTILINE):
+            return "code_example"
+        elif any(word in title for word in ["faq", "troubleshoot", "problem", "issue"]):
+            return "troubleshooting"
+        else:
+            return "general"
+
+    def _extract_code_examples_from_section(self, section: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract code examples from a section."""
+        content = section.get("content", "")
+        examples = []
+
+        # Markdown code blocks
+        code_block_pattern = r"```(\w+)?\n(.*?)\n```"
+        for match in re.finditer(code_block_pattern, content, re.DOTALL):
+            language = match.group(1) or "text"
+            code = match.group(2)
+            examples.append(
+                {
+                    "type": "code_block",
+                    "language": language,
+                    "code": code,
+                    "start_pos": match.start(),
+                    "end_pos": match.end(),
+                }
+            )
+
+        # Indented code blocks (4+ spaces)
+        lines = content.split("\n")
+        in_code_block = False
+        current_code = []
+        start_line = 0
+
+        for i, line in enumerate(lines):
+            if re.match(r"^\s{4,}", line) and line.strip():
+                if not in_code_block:
+                    in_code_block = True
+                    start_line = i
+                    current_code = [line]
+                else:
+                    current_code.append(line)
+            else:
+                if in_code_block and current_code:
+                    examples.append(
+                        {
+                            "type": "indented_code",
+                            "language": "text",
+                            "code": "\n".join(current_code),
+                            "start_line": start_line,
+                            "end_line": i - 1,
+                        }
+                    )
+                in_code_block = False
+                current_code = []
+
+        # Handle last code block
+        if in_code_block and current_code:
+            examples.append(
+                {
+                    "type": "indented_code",
+                    "language": "text",
+                    "code": "\n".join(current_code),
+                    "start_line": start_line,
+                    "end_line": len(lines) - 1,
+                }
+            )
+
+        return examples
+
+    def _extract_api_references_from_section(self, section: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract API references from a section."""
+        content = section.get("content", "")
+        references = []
+
+        # HTTP endpoints
+        endpoint_pattern = r"\b(GET|POST|PUT|DELETE|PATCH)\s+([/\w\-{}:]+)"
+        for match in re.finditer(endpoint_pattern, content):
+            references.append(
+                {
+                    "type": "http_endpoint",
+                    "method": match.group(1),
+                    "path": match.group(2),
+                    "position": match.start(),
+                }
+            )
+
+        # Function/method calls
+        function_pattern = r"\b(\w+)\s*\([^)]*\)"
+        for match in re.finditer(function_pattern, content):
+            if match.group(1).lower() not in ["if", "for", "while", "switch"]:  # Exclude keywords
+                references.append(
+                    {
+                        "type": "function_call",
+                        "name": match.group(1),
+                        "full_match": match.group(0),
+                        "position": match.start(),
+                    }
+                )
+
+        # Class/object references
+        class_pattern = r"\b([A-Z][a-zA-Z0-9]*(?:\.[A-Z][a-zA-Z0-9]*)*)\b"
+        for match in re.finditer(class_pattern, content):
+            references.append(
+                {"type": "class_reference", "name": match.group(1), "position": match.start()}
+            )
+
+        return references
+
+    def _extract_config_references_from_section(
+        self, section: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Extract configuration references from a section."""
+        content = section.get("content", "")
+        references = []
+
+        # Configuration keys (key: value or key = value)
+        config_pattern = r"^\s*([a-zA-Z_][a-zA-Z0-9_.-]*)\s*[:=]\s*(.*)$"
+        for match in re.finditer(config_pattern, content, re.MULTILINE):
+            references.append(
+                {
+                    "type": "config_key",
+                    "key": match.group(1),
+                    "value": match.group(2).strip(),
+                    "position": match.start(),
+                }
+            )
+
+        # Environment variables
+        env_pattern = r"\$\{?([A-Z_][A-Z0-9_]*)\}?"
+        for match in re.finditer(env_pattern, content):
+            references.append(
+                {"type": "environment_variable", "name": match.group(1), "position": match.start()}
+            )
+
+        # File paths
+        path_pattern = r"\b([./][\w\-./]+\.\w+)\b"
+        for match in re.finditer(path_pattern, content):
+            references.append(
+                {"type": "file_path", "path": match.group(1), "position": match.start()}
+            )
+
+        return references

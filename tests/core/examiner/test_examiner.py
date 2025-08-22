@@ -134,20 +134,22 @@ class TestExaminationResult:
         """Test health_score calculation."""
         result = ExaminationResult(root_path=Path())
 
-        # Perfect health
-        assert result.health_score == 100.0
+        # Base health score (no analysis done yet)
+        # Should start at 85.0 when no hotspot analysis is available
+        assert result.health_score == 85.0
 
-        # Add complexity issues
+        # Add complexity issues (only applies when no hotspots)
         result.complexity = Mock(high_complexity_count=10)
         score_with_complexity = result.health_score
-        assert score_with_complexity < 100.0
+        assert score_with_complexity < 85.0
 
-        # Add hotspots
-        result.hotspots = Mock(critical_count=3)
+        # Add hotspots with their own health score
+        # When hotspots exist, we use their health score as base
+        result.hotspots = Mock(critical_count=3, health_score=75.0)
         score_with_hotspots = result.health_score
-        assert score_with_hotspots < score_with_complexity
+        assert score_with_hotspots == 75.0  # Uses hotspot's health score as base
 
-        # Add errors
+        # Add errors (these always apply)
         result.errors = ["Error 1", "Error 2"]
         score_with_errors = result.health_score
         assert score_with_errors < score_with_hotspots

@@ -315,8 +315,12 @@
         }
         
         init() {
-            this.bindAnchorLinks();
-            this.setupScrollEffects();
+            // Avoid heavy anchor binding on large API reference pages
+            const isApi = document.body && document.body.classList.contains('is-api');
+            if (!isApi) {
+                this.bindAnchorLinks();
+                this.setupScrollEffects();
+            }
             // Back-to-top handled by dedicated module (js/back-to-top.js)
             console.log('✅ Smooth scroll initialized');
         }
@@ -705,7 +709,14 @@
         initializeCoreModules() {
             // Register core modules
             this.moduleLoader.register('smooth-scroll', new SmoothScrollHandler());
-            this.moduleLoader.register('animations', new AnimationObserver());
+            // Skip heavy intersection observers on API pages
+            const isApi = document.body && document.body.classList.contains('is-api');
+            if (!isApi) {
+                this.moduleLoader.register('animations', new AnimationObserver());
+            } else {
+                // Ensure any existing observers are not running when arriving via instant nav
+                try { this.destroyAnimations && this.destroyAnimations(); } catch(_) {}
+            }
             this.moduleLoader.register('performance', this.performanceMonitor);
             
             // These will be loaded from external files
@@ -717,7 +728,7 @@
             this.moduleLoader.register('search', { init: () => {} });
         }
         
-        setupGlobalHandlers() {
+    setupGlobalHandlers() {
             // Handle resize events
             let resizeTimer;
             window.addEventListener('resize', () => {
@@ -766,6 +777,23 @@
             window.addEventListener('afterprint', () => {
                 document.body.classList.remove('is-printing');
             });
+
+            // Listen for page flag changes (e.g., API docs via navigation.instant)
+            document.addEventListener('tenets:page-flags', (e) => {
+                const isApi = !!(e && e.detail && e.detail.isApi);
+                if (isApi) {
+                    this.destroyAnimations();
+                }
+            });
+        }
+
+        destroyAnimations() {
+            try {
+                const mod = this.moduleLoader && this.moduleLoader.get('animations');
+                if (mod && typeof mod.destroy === 'function') {
+                    mod.destroy();
+                }
+            } catch (_) {}
         }
         
         handleInitError(error) {

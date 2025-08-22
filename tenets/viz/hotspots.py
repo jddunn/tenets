@@ -324,6 +324,10 @@ class HotspotVisualizer(BaseVisualizer):
         # Display header
         self.terminal_display.display_header("Hotspot Analysis", style="double")
 
+        if hotspot_data is None:
+            self.terminal_display.echo("No hotspot data available")
+            return
+
         # Display summary metrics
         summary_data = {
             "Total Hotspots": hotspot_data.get("total_hotspots", 0),

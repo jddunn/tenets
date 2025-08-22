@@ -330,7 +330,7 @@ $ tenets make-context "implement OAuth2 authentication"
       </div>
       <div class="see-body">
         <div class="shot-frame">
-          <img src="assets/images/screenshots/context-building.png" alt="Context building screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/context-building.png" data-gif="assets/images/screenshots/context-building.gif" />
+          <img src="assets/images/screenshots/context-building.png" alt="Context building screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/context-building.png" data-gif="assets/images/screenshots/context-building.gif" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
           <span class="see-hint">Click to reveal</span>
         </div>
       </div>
@@ -373,7 +373,7 @@ print(result.summary)
       </div>
       <div class="see-body">
         <div class="shot-frame">
-          <img src="assets/images/screenshots/python-summary.png" alt="Python API result screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/python-summary.png" data-gif="assets/images/screenshots/python-summary.gif" />
+          <img src="assets/images/screenshots/python-summary.png" alt="Python API result screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/python-summary.png" data-gif="assets/images/screenshots/python-summary.gif" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
           <span class="see-hint">Click to reveal</span>
         </div>
       </div>
@@ -413,7 +413,7 @@ ctx = session.make_context("add refund support")
       </div>
       <div class="see-body">
         <div class="shot-frame">
-          <img src="assets/images/screenshots/sessions-flow.png" alt="Sessions flow screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/sessions-flow.png" data-gif="assets/images/screenshots/sessions-flow.gif" />
+          <img src="assets/images/screenshots/sessions-flow.png" alt="Sessions flow screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/sessions-flow.png" data-gif="assets/images/screenshots/sessions-flow.gif" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
           <span class="see-hint">Click to reveal</span>
         </div>
       </div>

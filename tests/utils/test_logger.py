@@ -2,10 +2,7 @@
 
 import logging
 import os
-import sys
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from tenets.utils.logger import _configure_root, get_logger
 
@@ -197,16 +194,17 @@ class TestLogger:
 
     def test_logger_with_exception(self, caplog):
         """Test logging with exception information."""
-        logger = get_logger("test", level=logging.ERROR)
+        with caplog.at_level(logging.ERROR):
+            logger = get_logger("test", level=logging.ERROR)
 
-        try:
-            raise ValueError("Test exception")
-        except ValueError:
-            logger.error("Error occurred", exc_info=True)
+            try:
+                raise ValueError("Test exception")
+            except ValueError:
+                logger.error("Error occurred", exc_info=True)
 
-        assert "Error occurred" in caplog.text
-        assert "ValueError: Test exception" in caplog.text
-        assert "Traceback" in caplog.text
+            assert "Error occurred" in caplog.text
+            assert "ValueError: Test exception" in caplog.text
+            assert "Traceback" in caplog.text
 
     @patch("tenets.utils.logger._RICH_INSTALLED", False)
     def test_format_string_without_rich(self):

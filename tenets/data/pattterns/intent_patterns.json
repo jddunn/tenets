@@ -1,0 +1,378 @@
+{
+  "implement": {
+    "patterns": [
+      "\\b(?:implement|add|create|build|develop|make|write|code|program)\\b",
+      "\\b(?:new|feature|functionality|capability|component|module|system)\\b",
+      "\\b(?:setup|initialize|establish|construct|design|architect)\\b",
+      "\\b(?:introduce|integrate|incorporate|enable|provision|deploy)\\b",
+      "\\b(?:scaffold|bootstrap|generate|spawn|instantiate)\\b"
+    ],
+    "keywords": [
+      "implement", "add", "create", "build", "feature", "new", "develop",
+      "setup", "initialize", "design", "integrate", "enable", "deploy"
+    ],
+    "examples": [
+      "implement user authentication system",
+      "add new feature for data export",
+      "create REST API endpoints",
+      "build notification service",
+      "develop payment integration",
+      "setup CI/CD pipeline",
+      "enable two-factor authentication",
+      "deploy microservices architecture"
+    ],
+    "weight": 1.0,
+    "priority": "high"
+  },
+  
+  "debug": {
+    "patterns": [
+      "\\b(?:debug|fix|solve|resolve|troubleshoot|investigate|diagnose)\\b",
+      "\\b(?:bug|issue|problem|error|exception|crash|fail|failure|fault)\\b",
+      "\\b(?:not\\s+working|broken|wrong|incorrect|invalid|corrupted)\\b",
+      "\\b(?:stack\\s+trace|traceback|error\\s+message|exception\\s+thrown)\\b",
+      "\\b(?:regression|defect|glitch|malfunction|anomaly)\\b",
+      "\\b(?:reproduce|isolate|identify|locate|trace)\\b"
+    ],
+    "keywords": [
+      "debug", "fix", "bug", "error", "issue", "problem", "broken",
+      "troubleshoot", "investigate", "resolve", "crash", "exception"
+    ],
+    "examples": [
+      "fix authentication bug",
+      "debug memory leak issue",
+      "resolve database connection error",
+      "investigate crash on startup",
+      "troubleshoot API timeout",
+      "fix null pointer exception",
+      "solve performance regression",
+      "debug race condition"
+    ],
+    "weight": 1.2,
+    "priority": "critical"
+  },
+  
+  "understand": {
+    "patterns": [
+      "\\b(?:understand|explain|how|what|where|why|when|show|describe)\\b",
+      "\\b(?:works?|does|flow|architecture|structure|design|logic)\\b",
+      "\\b(?:documentation|docs|guide|tutorial|explanation|overview)\\b",
+      "\\b(?:learn|study|analyze|examine|explore|review|inspect)\\b",
+      "\\b(?:walkthrough|breakdown|clarify|elaborate|detail)\\b",
+      "\\b(?:concept|principle|mechanism|process|workflow)\\b"
+    ],
+    "keywords": [
+      "understand", "explain", "how", "what", "why", "works", "documentation",
+      "analyze", "explore", "review", "workflow", "architecture"
+    ],
+    "examples": [
+      "explain how authentication works",
+      "understand the caching mechanism",
+      "show me the data flow",
+      "what does this function do",
+      "describe the system architecture",
+      "walkthrough the deployment process",
+      "how does the algorithm work",
+      "analyze code structure"
+    ],
+    "weight": 0.9,
+    "priority": "medium"
+  },
+  
+  "refactor": {
+    "patterns": [
+      "\\b(?:refactor|restructure|reorganize|improve|clean|cleanup)\\b",
+      "\\b(?:optimize|simplify|modernize|update|upgrade|migrate)\\b",
+      "\\b(?:technical\\s+debt|code\\s+smell|legacy|deprecated|outdated)\\b",
+      "\\b(?:modular|decouple|split|consolidate|extract|inline)\\b",
+      "\\b(?:rewrite|redesign|rearchitect|reimplement|revise)\\b",
+      "\\b(?:standardize|normalize|unify|harmonize)\\b"
+    ],
+    "keywords": [
+      "refactor", "restructure", "improve", "optimize", "clean", "modernize",
+      "decouple", "extract", "rewrite", "redesign", "simplify", "migrate"
+    ],
+    "examples": [
+      "refactor authentication module",
+      "clean up database queries",
+      "modernize legacy code",
+      "improve code organization",
+      "extract common functionality",
+      "decouple services",
+      "simplify complex logic",
+      "migrate to new framework"
+    ],
+    "weight": 1.0,
+    "priority": "medium"
+  },
+  
+  "test": {
+    "patterns": [
+      "\\b(?:test|testing|unit\\s+test|integration\\s+test|e2e|end-to-end)\\b",
+      "\\b(?:coverage|spec|suite|assertion|mock|stub|spy)\\b",
+      "\\b(?:TDD|BDD|test-driven|behavior-driven)\\b",
+      "\\b(?:pytest|jest|mocha|jasmine|junit|testng|rspec)\\b",
+      "\\b(?:validate|verify|check|ensure|confirm|assert)\\b",
+      "\\b(?:regression\\s+test|smoke\\s+test|acceptance\\s+test|stress\\s+test)\\b"
+    ],
+    "keywords": [
+      "test", "testing", "coverage", "unit", "integration", "spec",
+      "validate", "verify", "assert", "mock", "e2e", "TDD"
+    ],
+    "examples": [
+      "write unit tests for auth module",
+      "add integration tests",
+      "improve test coverage",
+      "create test suite",
+      "setup e2e testing",
+      "implement regression tests",
+      "add test mocks",
+      "verify API endpoints"
+    ],
+    "weight": 1.0,
+    "priority": "high"
+  },
+  
+  "document": {
+    "patterns": [
+      "\\b(?:document|documentation|docs|readme|comment|annotate)\\b",
+      "\\b(?:describe|explain|clarify|detail|specify|outline)\\b",
+      "\\b(?:API\\s+docs|user\\s+guide|developer\\s+guide|manual)\\b",
+      "\\b(?:docstring|javadoc|jsdoc|rustdoc|godoc)\\b",
+      "\\b(?:wiki|knowledge\\s+base|runbook|playbook)\\b",
+      "\\b(?:diagram|flowchart|schema|specification)\\b"
+    ],
+    "keywords": [
+      "document", "documentation", "readme", "comment", "docs",
+      "describe", "explain", "guide", "manual", "wiki", "diagram"
+    ],
+    "examples": [
+      "document API endpoints",
+      "add code comments",
+      "write README",
+      "create user guide",
+      "update documentation",
+      "add inline comments",
+      "create architecture diagram",
+      "write developer guide"
+    ],
+    "weight": 0.8,
+    "priority": "low"
+  },
+  
+  "review": {
+    "patterns": [
+      "\\b(?:review|check|audit|inspect|analyze|assess|evaluate)\\b",
+      "\\b(?:code\\s+review|pr\\s+review|pull\\s+request|merge\\s+request)\\b",
+      "\\b(?:feedback|suggestions|improvements|recommendations)\\b",
+      "\\b(?:security\\s+review|performance\\s+review|quality\\s+check)\\b",
+      "\\b(?:approve|reject|comment|annotate|critique)\\b",
+      "\\b(?:compliance|standards|best\\s+practices|guidelines)\\b"
+    ],
+    "keywords": [
+      "review", "check", "audit", "inspect", "analyze", "feedback",
+      "approve", "evaluate", "assess", "compliance", "quality"
+    ],
+    "examples": [
+      "review pull request",
+      "code review for auth module",
+      "security audit",
+      "performance review",
+      "check code quality",
+      "review architecture design",
+      "assess technical debt",
+      "evaluate implementation"
+    ],
+    "weight": 0.9,
+    "priority": "medium"
+  },
+  
+  "optimize": {
+    "patterns": [
+      "\\b(?:optimize|performance|speed|faster|slower|latency|throughput)\\b",
+      "\\b(?:memory|cpu|resource|efficient|efficiency|bottleneck)\\b",
+      "\\b(?:cache|caching|lazy|eager|async|parallel|concurrent)\\b",
+      "\\b(?:profile|profiling|benchmark|metrics|monitoring)\\b",
+      "\\b(?:scale|scaling|load\\s+balance|distribute|shard)\\b",
+      "\\b(?:reduce|minimize|decrease|improve|enhance|boost)\\b"
+    ],
+    "keywords": [
+      "optimize", "performance", "speed", "efficient", "cache", "bottleneck",
+      "profile", "benchmark", "scale", "async", "parallel", "improve"
+    ],
+    "examples": [
+      "optimize database queries",
+      "improve performance",
+      "reduce memory usage",
+      "fix performance bottleneck",
+      "implement caching",
+      "profile application",
+      "scale horizontally",
+      "optimize algorithm complexity"
+    ],
+    "weight": 1.1,
+    "priority": "high"
+  },
+  
+  "integrate": {
+    "patterns": [
+      "\\b(?:integrate|connect|interface|api|webhook|plugin|extension)\\b",
+      "\\b(?:third.party|external|service|library|package|module)\\b",
+      "\\b(?:oauth|sso|authentication|authorization|middleware)\\b",
+      "\\b(?:import|export|sync|synchronize|communicate)\\b",
+      "\\b(?:adapter|connector|bridge|gateway|proxy)\\b",
+      "\\b(?:interop|compatibility|protocol|standard)\\b"
+    ],
+    "keywords": [
+      "integrate", "connect", "api", "webhook", "third-party", "service",
+      "oauth", "sync", "import", "export", "adapter", "gateway"
+    ],
+    "examples": [
+      "integrate with Stripe API",
+      "connect to external service",
+      "add OAuth provider",
+      "implement webhook handler",
+      "setup API gateway",
+      "integrate payment processor",
+      "connect to messaging queue",
+      "add third-party library"
+    ],
+    "weight": 1.0,
+    "priority": "medium"
+  },
+  
+  "migrate": {
+    "patterns": [
+      "\\b(?:migrate|upgrade|port|move|transfer|transition)\\b",
+      "\\b(?:version|legacy|old|new|deprecated|update)\\b",
+      "\\b(?:database\\s+migration|schema\\s+change|data\\s+migration)\\b",
+      "\\b(?:backward\\s+compatible|breaking\\s+change|compatibility)\\b",
+      "\\b(?:convert|transform|translate|adapt|modernize)\\b",
+      "\\b(?:rollback|rollforward|versioning|release)\\b"
+    ],
+    "keywords": [
+      "migrate", "upgrade", "port", "transfer", "version", "legacy",
+      "convert", "transform", "compatibility", "rollback", "modernize"
+    ],
+    "examples": [
+      "migrate to new framework",
+      "upgrade database schema",
+      "port to Python 3",
+      "transfer data to new system",
+      "migrate from MongoDB to PostgreSQL",
+      "upgrade dependencies",
+      "convert legacy code",
+      "database migration script"
+    ],
+    "weight": 1.0,
+    "priority": "high"
+  },
+  
+  "configure": {
+    "patterns": [
+      "\\b(?:configure|config|setup|settings|options|preferences)\\b",
+      "\\b(?:environment|env|variable|parameter|argument|flag)\\b",
+      "\\b(?:yml|yaml|json|ini|toml|properties|conf)\\b",
+      "\\b(?:deployment|deploy|CI/CD|pipeline|workflow)\\b",
+      "\\b(?:provision|orchestrate|automate|script)\\b",
+      "\\b(?:install|uninstall|enable|disable|activate)\\b"
+    ],
+    "keywords": [
+      "configure", "config", "setup", "settings", "environment", "deploy",
+      "pipeline", "workflow", "provision", "install", "enable", "automate"
+    ],
+    "examples": [
+      "configure CI/CD pipeline",
+      "setup development environment",
+      "update config files",
+      "deploy to production",
+      "configure database connection",
+      "setup Docker environment",
+      "enable feature flags",
+      "automate deployment"
+    ],
+    "weight": 0.9,
+    "priority": "medium"
+  },
+  
+  "analyze": {
+    "patterns": [
+      "\\b(?:analyze|analysis|examine|investigate|explore|study)\\b",
+      "\\b(?:metrics|statistics|data|insights|patterns|trends)\\b",
+      "\\b(?:report|dashboard|visualization|chart|graph|plot)\\b",
+      "\\b(?:logs|logging|monitoring|observability|telemetry)\\b",
+      "\\b(?:trace|track|measure|quantify|evaluate|assess)\\b",
+      "\\b(?:diagnostic|forensic|root\\s+cause|deep\\s+dive)\\b"
+    ],
+    "keywords": [
+      "analyze", "analysis", "metrics", "data", "insights", "report",
+      "dashboard", "logs", "monitoring", "trace", "measure", "diagnostic"
+    ],
+    "examples": [
+      "analyze performance metrics",
+      "examine error logs",
+      "create usage report",
+      "investigate data patterns",
+      "build monitoring dashboard",
+      "analyze user behavior",
+      "track system metrics",
+      "perform root cause analysis"
+    ],
+    "weight": 0.9,
+    "priority": "medium"
+  },
+  
+  "design": {
+    "patterns": [
+      "\\b(?:design|architect|plan|model|blueprint|schema)\\b",
+      "\\b(?:pattern|approach|strategy|solution|methodology)\\b",
+      "\\b(?:UML|diagram|flowchart|wireframe|mockup|prototype)\\b",
+      "\\b(?:specification|requirements|proposal|RFC)\\b",
+      "\\b(?:system\\s+design|architecture\\s+design|API\\s+design)\\b",
+      "\\b(?:scalable|maintainable|extensible|modular|flexible)\\b"
+    ],
+    "keywords": [
+      "design", "architect", "plan", "model", "pattern", "diagram",
+      "specification", "requirements", "proposal", "scalable", "modular"
+    ],
+    "examples": [
+      "design system architecture",
+      "create API design",
+      "plan database schema",
+      "design microservices",
+      "create UML diagram",
+      "propose solution architecture",
+      "design scalable system",
+      "model data relationships"
+    ],
+    "weight": 1.0,
+    "priority": "high"
+  },
+  
+  "secure": {
+    "patterns": [
+      "\\b(?:secure|security|protect|encrypt|decrypt|hash)\\b",
+      "\\b(?:vulnerability|exploit|threat|risk|attack|breach)\\b",
+      "\\b(?:authentication|authorization|permission|access\\s+control)\\b",
+      "\\b(?:SSL|TLS|HTTPS|certificate|key|token|secret)\\b",
+      "\\b(?:sanitize|validate|escape|filter|whitelist|blacklist)\\b",
+      "\\b(?:audit|compliance|GDPR|HIPAA|SOC|PCI)\\b"
+    ],
+    "keywords": [
+      "secure", "security", "protect", "encrypt", "vulnerability",
+      "authentication", "authorization", "SSL", "sanitize", "validate", "audit"
+    ],
+    "examples": [
+      "secure API endpoints",
+      "implement authentication",
+      "fix security vulnerability",
+      "add encryption",
+      "setup SSL certificate",
+      "validate user input",
+      "implement access control",
+      "security audit"
+    ],
+    "weight": 1.2,
+    "priority": "critical"
+  }
+}

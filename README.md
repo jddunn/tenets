@@ -20,7 +20,7 @@ See docs locally: [docs/](./docs/) • Live site: https://tenets.dev/docs
 
 Think of it as intelligent context aggregation. You give it a prompt or query, and it:
 
-- 🔍 **Finds** all relevant files automatically 
+- 🔍 **Finds** all relevant files automatically
 - 🎯 **Ranks** them by importance using multiple factors
 - 📦 **Aggregates** them within your token budget
 - 📋 **Formats** perfectly for any use case
@@ -29,8 +29,8 @@ Think of it as intelligent context aggregation. You give it a prompt or query, a
 
 Plus powerful development intelligence:
 
-- **Visualize** dependencies and architecture 
-- **Track** velocity and code evolution  
+- **Visualize** dependencies and architecture
+- **Track** velocity and code evolution
 - **Identify** hotspots and technical debt
 - **Understand** team patterns and expertise
 
@@ -51,7 +51,7 @@ pip install tenets[ml]     # Adds deep learning models (large dependencies)
 pip install tenets[all]
 ```
 
-### Install with Poetry 
+### Install with Poetry
 
 ```bash
 # Clone the repository
@@ -82,6 +82,14 @@ tenets distill "implement OAuth2" ./src --copy
 tenets distill "implement OAuth2" ./src > context.md
 # (equivalent: tenets distill "implement OAuth2" ./src -o context.md)
 
+# Generate interactive HTML report
+tenets distill "analyze authentication" --format html -o report.html
+
+# Choose your speed/accuracy trade-off
+tenets distill "find bug" --mode fast         # <5s, keyword matching
+tenets distill "fix feature" --mode balanced  # 10-30s, TF-IDF ranking (default)
+tenets distill "refactor API" --mode thorough # 30-60s+, semantic analysis
+
 # Make copying the default (in .tenets.yml)
 # output:\n#   copy_on_distill: true
 ```
@@ -98,7 +106,7 @@ When AI pair programming and working with large codebase, you usually have to do
 
 ```bash
 # Old way: Manual search and copy
-$ grep -r "payment" . 
+$ grep -r "payment" .
 $ cat payment.py api.py models.py  # Did I miss anything?
 # Copy... paste... hope for the best
 
@@ -113,21 +121,27 @@ $ tenets distill "fix payment processing bug"
 Tenets uses a sophisticated multi-stage pipeline to understand your code:
 
 ### 1. Intelligent Parsing
+
 When you provide a prompt like "implement OAuth2 authentication", Tenets:
+
 - Extracts key concepts (OAuth2, authentication)
 - Identifies intent (implementation/feature)
 - Detects any file patterns or specific mentions
 - Understands temporal context ("recent changes")
 
 ### 2. Code Analysis
+
 For each file in your codebase, Tenets analyzes:
+
 - **Structure**: Classes, functions, imports, exports
 - **Dependencies**: What files import this, what it imports
 - **Patterns**: Common code patterns (auth, API, database)
 - **Metadata**: Language, size, complexity
 
 ### 3. Relevance Ranking
+
 Files are scored using multiple factors:
+
 - **Semantic Understanding** (25%): ML-based similarity to your prompt
 - **Keyword Matching** (15%): Direct term matching
 - **Statistical Relevance** (15%): TF-IDF scoring
@@ -138,7 +152,9 @@ Files are scored using multiple factors:
 All factors are configurable - you can disable git integration, adjust weights, or add custom factors.
 
 ### 4. Context Optimization
+
 Finally, Tenets:
+
 - Selects files that score above threshold
 - Fits them within token limits
 - Summarizes large files if needed
@@ -152,28 +168,28 @@ Create `.tenets.yml` in your project:
 
 ```yaml
 ranking:
-  algorithm: ml  # Use ML-based ranking
-  threshold: 0.1  # Lower threshold for more files
-  
+  algorithm: ml # Use ML-based ranking
+  threshold: 0.1 # Lower threshold for more files
+
   # Disable git factors for stable codebases
   use_git: false
-  
+
   # Custom weights
   weights:
-    semantic_similarity: 0.40  # Increase ML weight
+    semantic_similarity: 0.40 # Increase ML weight
     keyword_match: 0.20
     import_centrality: 0.20
     path_relevance: 0.20
 
   # Performance tuning
   cache:
-    embeddings: true  # Cache ML embeddings
-    ttl_days: 30     # Longer cache lifetime
-    max_size_mb: 2000  # More cache space
+    embeddings: true # Cache ML embeddings
+    ttl_days: 30 # Longer cache lifetime
+    max_size_mb: 2000 # More cache space
 
   ranking:
-    workers: 8  # More parallel workers
-    batch_size: 100  # Larger batches for ML
+    workers: 8 # More parallel workers
+    batch_size: 100 # Larger batches for ML
 ```
 
 ## Key Features
@@ -181,6 +197,44 @@ ranking:
 ### Intelligent Context Distillation
 
 Like repomix on steroids - smart filters, automatic relevance ranking, and configurable aggregation:
+
+### Analysis Modes (Presets)
+
+Tenets offers three ranking modes that balance speed vs. accuracy:
+
+| Mode         | Speed          | Accuracy | Use Case                                | What It Does                                                                                                        |
+| ------------ | -------------- | -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **fast**     | ⚡ <5s         | Good     | Quick exploration, simple queries       | • Keyword & path matching<br>• Basic file type relevance<br>• No deep analysis                                      |
+| **balanced** | ⚡⚡ 10-30s    | Better   | Most use cases (default)                | • TF-IDF corpus analysis<br>• BM25 relevance scoring<br>• Structure analysis<br>• Import/export tracking            |
+| **thorough** | ⚡⚡⚡ 30-60s+ | Best     | Complex refactoring, deep understanding | • Everything from balanced<br>• Semantic similarity (ML)<br>• Code pattern detection<br>• Dependency graph analysis |
+
+**Mode Examples:**
+
+```bash
+# Fast mode - Quick keyword search (best for simple queries)
+tenets distill "find login function" --mode fast
+# ✅ Great for: Finding specific functions/files, quick exploration
+# ❌ Skip for: Understanding complex flows, architecture analysis
+
+# Balanced mode - Smart ranking with corpus analysis (default)
+tenets distill "implement caching layer" --mode balanced
+# ✅ Great for: Feature implementation, bug fixes, code reviews
+# ❌ Skip for: When you need semantic understanding
+
+# Thorough mode - Deep analysis with ML (when accuracy matters)
+tenets distill "refactor authentication system" --mode thorough --max-tokens 100000
+# ✅ Great for: Major refactoring, security reviews, understanding complex systems
+# ❌ Skip for: Quick lookups, simple tasks, large codebases (>1000 files)
+```
+
+**Performance Tips:**
+
+- Start with `fast` for exploration, upgrade to `balanced/thorough` as needed
+- Use `--stats` to see ranking performance metrics
+- Combine with `--include/--exclude` to reduce file count before ranking
+- Cache is shared across modes - second run is always faster
+
+### Filtering and Targeting
 
 ```bash
 # Distill by file types (include only Python & JS; exclude tests)
@@ -204,6 +258,18 @@ tenets instill --session new-feature --list-pinned
 # 5) Force raw content (no summarization) or shrink tokens
 tenets distill "investigate slow queries" --session new-feature --full
 tenets distill "summarize public API" --session new-feature --remove-comments --condense
+
+# Working without explicit sessions (uses "default" session automatically)
+tenets tenet add "Always validate inputs"
+tenets instill  # Applies to default session
+tenets distill "implement validation"  # Uses default session
+
+# Save the default session with a meaningful name later
+tenets session save validation-feature --delete-source
+
+# Generate interactive HTML report with visualizations
+tenets distill "analyze authentication flow" --format html -o report.html
+# HTML reports include: search, copy buttons, export to JSON/Markdown, file charts
 ```
 
 ### Guiding Principles (Tenets)
@@ -302,31 +368,67 @@ Works instantly with smart defaults, fully configurable when needed:
 ```yaml
 # .tenets.yml (optional)
 context:
-  ranking: balanced  # fast | balanced | thorough | ml
-  include_git: true  # Use git signals for relevance (not shown in output)
+  ranking: balanced # fast | balanced | thorough | ml
+  include_git: true # Use git signals for relevance (not shown in output)
   max_tokens: 100000
   # Transformations are enabled per-invocation (CLI flags):
   #   --full, --remove-comments, --condense
 
 ignore:
   - vendor/
-  - "*.generated.*"
-  
+  - '*.generated.*'
+
 output:
-  format: markdown  # markdown, json, xml
+  format: markdown # markdown, json, xml
 ```
 
 ### Content Transformation Flags
 
 Optimize token usage or force raw context inclusion when needed:
 
-| Flag | Purpose | Notes |
-|------|---------|-------|
-| `--full` | Include full file contents (no summarization) until token budget exhausted | Good for audits; may reduce breadth |
-| `--remove-comments` | Strip line & block comments (language-aware heuristics) | Safety: aborts if >60% of non-empty lines would be removed |
-| `--condense` | Collapse 3+ blank lines to 1, trim trailing spaces | Lossless for logic; pairs well with `--remove-comments` |
+| Flag                | Purpose                                                                    | Notes                                                      |
+| ------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `--full`            | Include full file contents (no summarization) until token budget exhausted | Good for audits; may reduce breadth                        |
+| `--remove-comments` | Strip line & block comments (language-aware heuristics)                    | Safety: aborts if >60% of non-empty lines would be removed |
+| `--condense`        | Collapse 3+ blank lines to 1, trim trailing spaces                         | Lossless for logic; pairs well with `--remove-comments`    |
 
 Order: comments removed first, whitespace condensed second. Both affect token counting and packing decisions.
+
+### Session Management
+
+Sessions help organize your work and maintain context across commands:
+
+**Default Session Behavior:**
+
+- When no `--session` is specified, commands use a persistent "default" session
+- The default session saves tenets, pinned files, and context just like named sessions
+- You can save the default session with a meaningful name later
+
+```bash
+# Working without explicit sessions (uses "default" automatically)
+tenets tenet add "Use dependency injection"
+tenets instill --add-file src/core/container.py
+tenets distill "refactor service layer"
+
+# Later, save your work with a proper name
+tenets session save dependency-refactor
+tenets session save di-work --delete-source  # Save and clean up default
+```
+
+**Session Commands:**
+
+```bash
+# Session lifecycle
+tenets session create my-feature    # Create new session
+tenets session list                  # Show all sessions
+tenets session resume my-feature     # Switch to session
+tenets session exit                  # Mark current as inactive
+tenets session delete my-feature     # Remove session
+
+# Save sessions with new names
+tenets session save production --from debug-session
+tenets session save final --from default --delete-source
+```
 
 ### Pinned Files (Session Persistence)
 
@@ -343,23 +445,26 @@ Pinned files are stored in session metadata (SQLite) and automatically reloaded�
 
 ### Feature Sets Explained
 
-| Feature Set | Includes | Use When |
-|-------------|----------|----------|
-| **core** (default) | Basic file scanning, keyword matching, git integration | You want fast, lightweight context building |
-| **light** | + numpy, scikit-learn, YAKE keyword extraction, TF-IDF ranking | Better keyword/TF‑IDF relevance without heavy ML |
-| **viz** | + matplotlib, networkx, dependency graphs, complexity charts | You want to visualize your codebase |
-| **ml** | + PyTorch, transformers, semantic search, embeddings | You want state-of-the-art ranking (slower, 2GB+ dependencies) |
-| **web** | + FastAPI, web UI (coming soon) | You want to run tenets as a service |
-| **all** | Everything above | You want all features |
+| Feature Set        | Includes                                                       | Use When                                                      |
+| ------------------ | -------------------------------------------------------------- | ------------------------------------------------------------- |
+| **core** (default) | Basic file scanning, keyword matching, git integration         | You want fast, lightweight context building                   |
+| **light**          | + numpy, scikit-learn, YAKE keyword extraction, TF-IDF ranking | Better keyword/TF‑IDF relevance without heavy ML              |
+| **viz**            | + matplotlib, networkx, dependency graphs, complexity charts   | You want to visualize your codebase                           |
+| **ml**             | + PyTorch, transformers, semantic search, embeddings           | You want state-of-the-art ranking (slower, 2GB+ dependencies) |
+| **web**            | + FastAPI, web UI (coming soon)                                | You want to run tenets as a service                           |
+| **all**            | Everything above                                               | You want all features                                         |
 
 #### Makefile Shortcuts
+
 Common tasks are wrapped in the Makefile:
+
 ```bash
 make dev      # editable install with all + dev extras
 make install  # core editable install
 make test     # run full test suite with coverage
 make build    # build sdist + wheel
 ```
+
 ### Working with AI Assistants
 
 ```bash
@@ -383,6 +488,114 @@ tenets distill "malloc|alloc" --include "*.c" --session debug-memory-leak
 tenets distill "free|cleanup" --include "*.c" --session debug-memory-leak
 ```
 
+### Common Usage Patterns
+
+```bash
+# Quick exploration with fast mode
+tenets distill "database models" --mode fast --copy
+
+# Standard development with balanced mode (default)
+tenets distill "implement user registration" -o context.md
+
+# Deep analysis with thorough mode
+tenets distill "security vulnerabilities" --mode thorough --max-tokens 150000
+
+# Generate interactive HTML report for sharing
+tenets distill "API architecture review" --format html -o api-review.html
+# Open in browser for search, charts, and export features
+
+# Combine modes with sessions for iterative work
+tenets session create oauth-impl
+tenets distill "OAuth2 flow" --mode fast --session oauth-impl  # Quick overview
+tenets distill "refresh token handling" --mode thorough --session oauth-impl  # Deep dive
+
+# Export context in different formats
+tenets distill "payment processing" --format json | jq '.files[].path'  # List files
+tenets distill "error handling" --format xml > context.xml  # For Claude
+tenets distill "test coverage" --format html -o report.html  # Interactive report
+```
+
+### Test File Handling
+
+Tenets intelligently handles test files to improve context relevance:
+
+**Default Behavior (Recommended):**
+
+- Test files are **excluded by default** for most prompts
+- Tests are **automatically included** when prompt mentions testing
+- Improves context quality by focusing on production code
+
+```bash
+# These prompts exclude tests (better context for understanding):
+tenets distill "explain authentication flow"
+tenets distill "how does user registration work"
+tenets distill "debug payment processing"
+
+# These prompts automatically include tests (detected by intent):
+tenets distill "write unit tests for auth module"
+tenets distill "fix failing tests"
+tenets distill "improve test coverage"
+tenets distill "debug test_user_registration.py"
+```
+
+**Manual Override:**
+
+```bash
+# Force include tests even for non-test prompts
+tenets distill "understand auth flow" --include-tests
+
+# Force exclude tests even for test-related prompts
+tenets distill "fix failing tests" --exclude-tests
+
+# Traditional manual filtering (still works)
+tenets distill "review code" --exclude "test_*,*_test.py,tests/**"
+```
+
+**Configuration:**
+
+```yaml
+# .tenets.yml - customize test patterns for your project
+scanner:
+  exclude_tests_by_default: true # default
+  test_patterns:
+    - 'test_*.py' # Python
+    - '*_test.py'
+    - '*.test.js' # JavaScript
+    - '*.spec.ts' # TypeScript
+    - '*Test.java' # Java
+  test_directories:
+    - 'tests'
+    - '__tests__'
+    - 'spec'
+```
+
+### Output Formats
+
+Tenets supports multiple output formats for different use cases:
+
+```bash
+# Default markdown format (optimized for AI assistants)
+tenets distill "implement OAuth2" --format markdown
+
+# XML format (optimized for Claude)
+tenets distill "implement OAuth2" --format xml -o context.xml
+
+# JSON for programmatic use
+tenets distill "implement OAuth2" --format json | jq .files[0]
+
+# Interactive HTML report with visualizations
+tenets distill "implement OAuth2" --format html -o report.html
+```
+
+**HTML Reports** include:
+
+- 🔍 Live search to filter files
+- 📋 Copy buttons for individual files
+- 📥 Export to JSON/Markdown
+- 📊 Interactive charts (file distribution, token usage)
+- 🔄 Expand/collapse for full file content
+- 📱 Responsive design for any screen size
+
 ### Exploration & Analysis
 
 ```bash
@@ -398,6 +611,50 @@ tenets viz deps . --cluster-by directory
 # Find complex areas
 tenets examine . --complexity --threshold 10
 ```
+
+## Examination & Reports
+
+Analyze complexity, hotspots, and ownership from the CLI, and export rich reports.
+
+Basic terminal summary:
+
+```bash
+tenets examine .
+```
+
+Ownership and hotspots in terminal:
+
+```bash
+tenets examine . --ownership --hotspots --show-details
+```
+
+Generate an HTML report (opens well in a browser):
+
+```bash
+tenets examine . -f html -o code_report.html --ownership --hotspots --show-details
+```
+
+Other formats:
+
+```bash
+# JSON (for automation)
+tenets examine . -f json -o report.json
+
+# Markdown (for docs/PRs)
+tenets examine . -f markdown -o report.md
+```
+
+Useful options:
+
+- Filtering: `-i/--include "*.py,src/**/*.js"`, `-e/--exclude "tests/**,**/*.min.js"`
+- Complexity threshold: `-t/--threshold 12`
+- Depth limit: `--max-depth 6`
+- Pick metrics explicitly: `-m cyclomatic -m cognitive`
+
+Notes:
+
+- If `-o/--output` is omitted with `-f html|markdown|json`, the file defaults to `examination_report.<format>` in the current directory.
+- Sections shown include Complexity Analysis, Hotspot Analysis, Code Ownership, Overall Metrics, and a summary/health score when available.
 
 ## Advanced Features
 
@@ -418,6 +675,36 @@ When files exceed token budgets, tenets intelligently preserves:
 - Complex logic blocks
 - Recent changes
 - Documentation
+
+#### Context-Aware Documentation Summarization
+
+For documentation files (Markdown, config files, API docs), tenets provides intelligent context-aware summarization:
+
+- **Smart Section Selection**: Automatically identifies and prioritizes sections containing references to your prompt keywords
+- **Multi-level Relevance**: Uses direct keyword matches, semantic similarity, and contextual analysis
+- **In-place Context Preservation**: Maintains relevant context sections within the summary for better understanding
+- **Code Example Preservation**: Always preserves code snippets and configuration examples from relevant sections
+- **Multi-format Support**: Works with Markdown, YAML, JSON, TOML, INI files, and more
+
+```bash
+# Documentation summarization automatically activates for docs files
+tenets distill "configure OAuth2 authentication" docs/
+# Returns focused summary with auth-related sections and code examples
+
+# Works with API documentation
+tenets distill "user management endpoints" api-docs.md
+# Highlights relevant API endpoints and request/response examples
+
+# Configuration file analysis
+tenets distill "database connection settings" config/
+# Shows relevant config sections with actual values and comments
+```
+
+**Benefits**:
+- **Focused Context**: Get exactly the documentation sections you need
+- **Preserved Examples**: Code snippets and configs stay intact
+- **Intelligent Filtering**: Irrelevant sections are filtered out
+- **Configurable**: Adjust search depth, confidence thresholds, and section limits
 
 ## 📚 Documentation
 
@@ -452,6 +739,7 @@ make docs-deploy
 # Or directly:
 mkdocs gh-deploy
 ```
+
 ## Configuration (quick start)
 
 - Create a starter file: `tenets config init` (writes `.tenets.yml` at project root)
@@ -464,7 +752,7 @@ ranking:
   use_tfidf: true
   use_stopwords: false
 output:
-  copy_on_distill: false  # set true to always copy distilled context to clipboard
+  copy_on_distill: false # set true to always copy distilled context to clipboard
 ```
 
 - Or set environment variables for one run:
@@ -509,47 +797,101 @@ The analyzer includes specialized parsers for many languages and formats. Files 
 
 ### Languages with dedicated analyzers
 
-| Language | Analyzer | Extensions |
-|---|---|---|
-| Python | PythonAnalyzer | .py, .pyw, .pyi |
-| JavaScript/TypeScript | JavaScriptAnalyzer | .js, .jsx, .ts, .tsx, .mjs, .cjs |
-| HTML + Vue SFC | HTMLAnalyzer | .html, .htm, .xhtml, .vue |
-| CSS/SCSS/Sass/Less | CSSAnalyzer | .css, .scss, .sass, .less, .styl, .stylus, .pcss, .postcss |
-| Go | GoAnalyzer | .go |
-| Java | JavaAnalyzer | .java |
-| C/C++ | CppAnalyzer | .c, .cc, .cpp, .cxx, .c++, .h, .hh, .hpp, .hxx, .h++ |
-| Ruby | RubyAnalyzer | .rb, .rake, .gemspec, .ru |
-| PHP | PhpAnalyzer | .php, .phtml, .inc, .php3, .php4, .php5, .phps |
-| Rust | RustAnalyzer | .rs |
-| Dart (Flutter aware) | DartAnalyzer | .dart |
-| Kotlin | KotlinAnalyzer | .kt, .kts |
-| Scala | ScalaAnalyzer | .scala, .sc |
-| Swift | SwiftAnalyzer | .swift |
-| C# | CSharpAnalyzer | .cs, .csx |
-| GDScript (Godot) | GDScriptAnalyzer | .gd, .tres, .tscn |
+| Language              | Analyzer           | Extensions                                                 |
+| --------------------- | ------------------ | ---------------------------------------------------------- |
+| Python                | PythonAnalyzer     | .py, .pyw, .pyi                                            |
+| JavaScript/TypeScript | JavaScriptAnalyzer | .js, .jsx, .ts, .tsx, .mjs, .cjs                           |
+| HTML + Vue SFC        | HTMLAnalyzer       | .html, .htm, .xhtml, .vue                                  |
+| CSS/SCSS/Sass/Less    | CSSAnalyzer        | .css, .scss, .sass, .less, .styl, .stylus, .pcss, .postcss |
+| Go                    | GoAnalyzer         | .go                                                        |
+| Java                  | JavaAnalyzer       | .java                                                      |
+| C/C++                 | CppAnalyzer        | .c, .cc, .cpp, .cxx, .c++, .h, .hh, .hpp, .hxx, .h++       |
+| Ruby                  | RubyAnalyzer       | .rb, .rake, .gemspec, .ru                                  |
+| PHP                   | PhpAnalyzer        | .php, .phtml, .inc, .php3, .php4, .php5, .phps             |
+| Rust                  | RustAnalyzer       | .rs                                                        |
+| Dart (Flutter aware)  | DartAnalyzer       | .dart                                                      |
+| Kotlin                | KotlinAnalyzer     | .kt, .kts                                                  |
+| Scala                 | ScalaAnalyzer      | .scala, .sc                                                |
+| Swift                 | SwiftAnalyzer      | .swift                                                     |
+| C#                    | CSharpAnalyzer     | .cs, .csx                                                  |
+| GDScript (Godot)      | GDScriptAnalyzer   | .gd, .tres, .tscn                                          |
 
 ### Configuration, docs, and structured text (GenericAnalyzer)
 
 These formats are analyzed with GenericAnalyzer. YAML files include heuristics for common ecosystems.
 
-| Category | Examples | Extensions / Filenames | Notes |
-|---|---|---|---|
-| YAML (Compose/K8s/etc.) | docker-compose.yml, deployment.yaml, chart.yaml, kustomization.yaml, .github/workflows/*.yml | .yaml, .yml | Detects Docker Compose (services, images), Kubernetes (apiVersion/kind, images, refs), hints Helm, Kustomize, GitHub Actions |
-| TOML | pyproject.toml, Cargo.toml | .toml | Extracts top-level keys |
-| INI/CFG/CONF | app.ini, settings.cfg, nginx.conf, my.cnf | .ini, .cfg, .conf, .cnf | Sections and keys parsed |
-| Properties | application.properties | .properties, .props | Key/value parsing |
-| ENV files | .env, .env.local, .env.production | .env, .env.* | Routed to Generic by filename |
-| JSON/XML | package.json, config.json, pom.xml | .json, .xml | JSON deps/keys detected |
-| Markdown | README.md, docs/*.mdx | .md, .markdown, .mdx, .mdown, .mkd, .mkdn, .mdwn | Sections and headings extracted |
-| SQL | schema.sql, queries.sql | .sql | Basic metrics only |
-| Lock/HashiCorp | yarn.lock, *.tf, *.tfvars, *.hcl | .lock, .tf, .tfvars, .hcl | Routed to Generic |
-| Shell scripts | build.sh, hooks/*.bash | .sh, .bash, .zsh, .fish | Routed to Generic |
-| Special files | Dockerfile, Makefile, CMakeLists.txt, .gitignore, .editorconfig, .npmrc, .yarnrc, .nvmrc | by name | Routed to Generic by special-name handling |
+| Category                | Examples                                                                                      | Extensions / Filenames                           | Notes                                                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| YAML (Compose/K8s/etc.) | docker-compose.yml, deployment.yaml, chart.yaml, kustomization.yaml, .github/workflows/\*.yml | .yaml, .yml                                      | Detects Docker Compose (services, images), Kubernetes (apiVersion/kind, images, refs), hints Helm, Kustomize, GitHub Actions |
+| TOML                    | pyproject.toml, Cargo.toml                                                                    | .toml                                            | Extracts top-level keys                                                                                                      |
+| INI/CFG/CONF            | app.ini, settings.cfg, nginx.conf, my.cnf                                                     | .ini, .cfg, .conf, .cnf                          | Sections and keys parsed                                                                                                     |
+| Properties              | application.properties                                                                        | .properties, .props                              | Key/value parsing                                                                                                            |
+| ENV files               | .env, .env.local, .env.production                                                             | .env, .env.\*                                    | Routed to Generic by filename                                                                                                |
+| JSON/XML                | package.json, config.json, pom.xml                                                            | .json, .xml                                      | JSON deps/keys detected                                                                                                      |
+| Markdown                | README.md, docs/\*.mdx                                                                        | .md, .markdown, .mdx, .mdown, .mkd, .mkdn, .mdwn | Sections and headings extracted                                                                                              |
+| SQL                     | schema.sql, queries.sql                                                                       | .sql                                             | Basic metrics only                                                                                                           |
+| Lock/HashiCorp          | yarn.lock, _.tf, _.tfvars, \*.hcl                                                             | .lock, .tf, .tfvars, .hcl                        | Routed to Generic                                                                                                            |
+| Shell scripts           | build.sh, hooks/\*.bash                                                                       | .sh, .bash, .zsh, .fish                          | Routed to Generic                                                                                                            |
+| Special files           | Dockerfile, Makefile, CMakeLists.txt, .gitignore, .editorconfig, .npmrc, .yarnrc, .nvmrc      | by name                                          | Routed to Generic by special-name handling                                                                                   |
 
 Notes
+
 - JSX/TSX are owned by JavaScriptAnalyzer; HTMLAnalyzer focuses on HTML and Vue SFCs.
 - YAML heuristics set structure.framework (e.g., docker-compose, kubernetes) and populate modules with services/resources.
 - Generic analyzer extracts imports/references from config where possible (images, depends_on, ConfigMaps/Secrets, etc.).
+
+## Python API
+
+Use Tenets programmatically in your Python projects:
+
+```python
+from tenets import Tenets
+from pathlib import Path
+
+# Initialize
+tenets = Tenets()
+
+# Basic context extraction (uses default session)
+result = tenets.distill("implement user authentication")
+print(f"Generated {result.token_count} tokens")
+print(result.context[:500])  # First 500 chars
+
+# Generate interactive HTML report
+result = tenets.distill("review API design", format="html")
+Path("api-review.html").write_text(result.context)
+
+# Add guiding principles
+tenets.add_tenet("Use type hints", priority="high")
+tenets.add_tenet("Follow SOLID principles", category="architecture")
+tenets.instill_tenets()
+
+# Pin critical files
+tenets.pin_file("src/core/auth.py")
+tenets.pin_folder("src/api/")
+
+# Named sessions for organized work
+result = tenets.distill(
+    "implement OAuth2",
+    session_name="oauth-feature",
+    mode="thorough",
+    max_tokens=100000
+)
+
+# Custom configuration
+from tenets.config import TenetsConfig
+
+config = TenetsConfig(
+    max_tokens=150000,
+    ranking_algorithm="thorough",
+    model="claude-3-opus"
+)
+tenets = Tenets(config)
+
+# Analyze codebase
+analysis = tenets.examine("./src")
+print(f"Health Score: {analysis.health_score}")
+print(f"Complexity Issues: {analysis.complexity.high_complexity_count}")
+```
 
 ## Contributing
 
@@ -561,4 +903,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*Development sponsored by [manic.agency](https://manic.agency)*
+_Development sponsored by [manic.agency](https://manic.agency)_

@@ -289,6 +289,7 @@ class BaseVisualizer:
         # Route to specific chart creator
         creators = {
             ChartType.BAR: self._create_bar_chart,
+            ChartType.HORIZONTAL_BAR: self._create_horizontal_bar_chart,
             ChartType.LINE: self._create_line_chart,
             ChartType.PIE: self._create_pie_chart,
             ChartType.SCATTER: self._create_scatter_chart,
@@ -302,6 +303,36 @@ class BaseVisualizer:
 
         creator = creators.get(chart_type, self._create_bar_chart)
         return creator(data, config)
+
+    def _create_horizontal_bar_chart(
+        self, data: Dict[str, Any], config: ChartConfig
+    ) -> Dict[str, Any]:
+        """Create horizontal bar chart configuration.
+
+        Args:
+            data: Chart data with 'labels' and 'values'
+            config: Chart configuration
+
+        Returns:
+            Dict[str, Any]: Horizontal bar chart configuration
+        """
+        colors = config.colors or self.color_palette
+        return {
+            "type": "horizontal_bar",
+            "data": {
+                "labels": data.get("labels", []),
+                "datasets": [
+                    {
+                        "label": config.title,
+                        "data": data.get("values", []),
+                        "backgroundColor": colors,
+                        "borderColor": colors,
+                        "borderWidth": 1,
+                    }
+                ],
+            },
+            "options": self._get_chart_options(config),
+        }
 
     def _create_bar_chart(self, data: Dict[str, Any], config: ChartConfig) -> Dict[str, Any]:
         """Create bar chart configuration.
@@ -696,9 +727,11 @@ class BaseVisualizer:
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- Powered by Chart.js -->
     <canvas id="chart"></canvas>
     <script>
         new Chart(document.getElementById('chart'), {json.dumps(chart_config)});
     </script>
+    <!-- Chart.js -->
 </body>
 </html>"""
