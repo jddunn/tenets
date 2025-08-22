@@ -525,7 +525,8 @@ class ThoroughRankingStrategy(RankingStrategy):
         # Optional embedding model for semantic similarity; tests patch the
         # constructor in ranker module, so import from there.
         try:  # pragma: no cover - optional dependency
-            from .ranker import SentenceTransformer as _ST, cosine_similarity as _cos
+            from .ranker import SentenceTransformer as _ST
+            from .ranker import cosine_similarity as _cos
 
             self._cosine_similarity = _cos
             if _ST is not None:

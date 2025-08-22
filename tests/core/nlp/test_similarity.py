@@ -1,14 +1,15 @@
 """Tests for similarity computation utilities."""
 
-import pytest
-import numpy as np
 from unittest.mock import Mock, patch
 
+import numpy as np
+import pytest
+
 from tenets.core.nlp.similarity import (
+    SemanticSimilarity,
     cosine_similarity,
     euclidean_distance,
     manhattan_distance,
-    SemanticSimilarity,
 )
 
 

@@ -834,7 +834,7 @@ class ReportGenerator:
 
         # File size distribution chart
         if config.include_charts and metrics.get("size_distribution"):
-            from tenets.viz import create_chart, ChartType
+            from tenets.viz import ChartType, create_chart
 
             dist = metrics["size_distribution"]
             chart = create_chart(

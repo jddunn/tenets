@@ -6,7 +6,8 @@ No external API calls are made - everything runs locally.
 
 import hashlib
 from pathlib import Path
-from typing import List, Optional, Union, Dict, Any
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 
 from tenets.utils.logger import get_logger
