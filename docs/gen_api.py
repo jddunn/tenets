@@ -41,24 +41,24 @@ def should_document_module(module_name: str) -> bool:
     # Skip if in skip list
     if module_name in SKIP_MODULES:
         return False
-    
+
     # Skip if any part of the module path starts with private prefix
     parts = module_name.split(".")
     for part in parts:
         if any(part.startswith(prefix) for prefix in PRIVATE_PREFIXES):
             return False
-    
+
     # Skip if it's a test module
     if any(x in module_name for x in ["test", "tests", "testing"]):
         return False
-    
+
     return True
 
 
 def iter_modules(package_name: str) -> Iterator[Tuple[str, bool]]:
     """
     Iterate through all modules in a package.
-    
+
     Yields:
         Tuple of (module_name, is_package)
     """
@@ -70,13 +70,13 @@ def iter_modules(package_name: str) -> Iterator[Tuple[str, bool]]:
     except Exception as e:
         logger.error(f"Unexpected error importing {package_name}: {e}")
         return
-    
+
     if not hasattr(pkg, "__path__"):
         logger.debug(f"{package_name} is not a package (no __path__)")
         return
-    
+
     prefix = pkg.__name__ + "."
-    
+
     # Walk through the package
     for finder, mod_name, ispkg in pkgutil.walk_packages(
         pkg.__path__, prefix, onerror=lambda x: None
@@ -89,7 +89,7 @@ def get_module_doc_path(mod_name: str, is_pkg: bool) -> Path:
     """Get the documentation file path for a module."""
     # Convert module name to path: tenets.core.ranking -> api/tenets/core/ranking
     rel_dir = API_DIR / Path(*mod_name.split("."))
-    
+
     # Packages get index.md, modules get module_name.md
     if is_pkg:
         return rel_dir / "index.md"
@@ -100,12 +100,12 @@ def get_module_doc_path(mod_name: str, is_pkg: bool) -> Path:
 def write_module_page(mod_name: str, is_pkg: bool) -> None:
     """Write the documentation page for a module."""
     out_path = get_module_doc_path(mod_name, is_pkg)
-    
+
     # Create a nice title (last part of module name, capitalized)
     parts = mod_name.split(".")
     title = parts[-1].replace("_", " ").title()
     full_title = f"{title} {'Package' if is_pkg else 'Module'}"
-    
+
     # Build the page content
     content = f"""---
 title: {title}
@@ -135,26 +135,26 @@ title: {title}
         signature_crossrefs: true
         summary: true
 """
-    
+
     # Add filters for non-package modules to hide private members
     if not is_pkg:
         content += """        filters:
           - "!^_"
           - "!^test"
 """
-    
+
     logger.info(f"Writing {out_path}")
-    
+
     with mkdocs_gen_files.open(out_path.as_posix(), "w") as fd:
         fd.write(content)
-    
+
     # Set edit path for the generated file
     # This allows "Edit" button to point to the source file
     if is_pkg:
         src_path = Path(PACKAGE_NAME) / Path(*parts[1:]) / "__init__.py"
     else:
         src_path = Path(PACKAGE_NAME) / Path(*parts[1:]).with_suffix(".py")
-    
+
     if src_path.exists():
         mkdocs_gen_files.set_edit_path(out_path, src_path)
 
@@ -168,10 +168,10 @@ arrange:
   - tenets
 collapse_single_pages: false
 """
-    
+
     with mkdocs_gen_files.open((API_DIR / ".pages").as_posix(), "w") as fd:
         fd.write(pages_yaml)
-    
+
     # Package-level .pages file for better organization
     tenets_pages = """title: Tenets Package
 arrange:
@@ -183,7 +183,7 @@ arrange:
   - cli
   - ...
 """
-    
+
     with mkdocs_gen_files.open((API_DIR / "tenets" / ".pages").as_posix(), "w") as fd:
         fd.write(tenets_pages)
 
@@ -273,7 +273,7 @@ For information on contributing to Tenets, please see the [Contributing Guide](.
 - [Discord Community](https://discord.gg/DzNgXdYm)
 - [Documentation](https://tenets.dev)
 """
-    
+
     with mkdocs_gen_files.open((API_DIR / "index.md").as_posix(), "w") as fd:
         fd.write(index_content)
 
@@ -290,7 +290,7 @@ def write_nav_file() -> None:
     * [parsers](tenets/parsers/index.md)
     * [cli](tenets/cli/index.md)
 """
-    
+
     with mkdocs_gen_files.open((API_DIR / "SUMMARY.md").as_posix(), "w") as fd:
         fd.write(nav_content)
 
@@ -301,31 +301,32 @@ def main():
     package_root = ROOT.parent
     if str(package_root) not in sys.path:
         sys.path.insert(0, str(package_root))
-    
+
     logger.info(f"Generating API documentation for {PACKAGE_NAME}")
     logger.info(f"Package root: {package_root}")
-    
+
     # Write root files
     write_root_index()
     write_nav_file()
-    
+
     # Check if using awesome-pages plugin
     try:
         import mkdocs_awesome_pages_plugin
+
         write_pages_files()
         logger.info("Writing .pages files for awesome-pages plugin")
     except ImportError:
         logger.info("awesome-pages plugin not found, skipping .pages files")
-    
+
     # Document the main package
     write_module_page(PACKAGE_NAME, True)
-    
+
     # Document all submodules and subpackages
     documented_count = 0
     for name, is_pkg in iter_modules(PACKAGE_NAME):
         write_module_page(name, is_pkg)
         documented_count += 1
-    
+
     logger.info(f"Generated documentation for {documented_count} modules/packages")
 
 

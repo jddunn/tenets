@@ -545,8 +545,8 @@ class HybridIntentDetector:
         self,
         text: str,
         combine_method: str = "weighted",
-    pattern_weight: float = 0.75,
-    ml_weight: float = 0.25,
+        pattern_weight: float = 0.75,
+        ml_weight: float = 0.25,
         min_confidence: float = 0.3,
     ) -> Intent:
         """Detect the primary intent from text.
@@ -574,10 +574,10 @@ class HybridIntentDetector:
             all_intents.extend(ml_intents)
             self.logger.debug(f"ML detection found {len(ml_intents)} intents")
 
-    # 3. Extract keywords for all intents
+        # 3. Extract keywords for all intents
         keywords = self.keyword_extractor.extract(text, max_keywords=10)
 
-    # 4. Combine and score intents
+        # 4. Combine and score intents
         combined_intents = self._combine_intents(
             all_intents,
             keywords,
@@ -596,11 +596,19 @@ class HybridIntentDetector:
             cues = text.lower()
             if re.search(r"\b(implement|add|create|build|develop|make|write|code)\b", cues):
                 bias_order.append("implement")
-            if re.search(r"\b(debug|fix|solve|resolve|troubleshoot|investigate|diagnose|bug|issue|error|crash|fails?\b)", cues):
+            if re.search(
+                r"\b(debug|fix|solve|resolve|troubleshoot|investigate|diagnose|bug|issue|error|crash|fails?\b)",
+                cues,
+            ):
                 bias_order.append("debug")
-            if re.search(r"\b(refactor|restructure|clean\s*up|modernize|simplify|reorganize)\b", cues):
+            if re.search(
+                r"\b(refactor|restructure|clean\s*up|modernize|simplify|reorganize)\b", cues
+            ):
                 bias_order.append("refactor")
-            if re.search(r"\b(optimize|performance|faster|latency|throughput|reduce\s+memory|improve\s+performance)\b", cues):
+            if re.search(
+                r"\b(optimize|performance|faster|latency|throughput|reduce\s+memory|improve\s+performance)\b",
+                cues,
+            ):
                 bias_order.append("optimize")
             if re.search(r"\b(explain|what|how|show|understand)\b", cues):
                 bias_order.append("understand")
@@ -618,8 +626,10 @@ class HybridIntentDetector:
             # 1) Prefer implement over integrate when very close
             if len(filtered_intents) > 1:
                 second = filtered_intents[1]
-                if top.type == "integrate" and second.type == "implement" and (
-                    top.confidence - second.confidence <= 0.12
+                if (
+                    top.type == "integrate"
+                    and second.type == "implement"
+                    and (top.confidence - second.confidence <= 0.12)
                 ):
                     chosen = second
                 else:
@@ -628,29 +638,43 @@ class HybridIntentDetector:
                     #    tie dominance on generic texts and picks the intent
                     #    with explicit lexical signals (e.g., "implement").
                     epsilon = 0.2
-                    top_sources = set(top.metadata.get("sources", [])) if isinstance(top.metadata, dict) else set()
+                    top_sources = (
+                        set(top.metadata.get("sources", []))
+                        if isinstance(top.metadata, dict)
+                        else set()
+                    )
                     if "pattern" not in top_sources and top.source != "pattern":
                         for contender in filtered_intents[1:]:
-                            contender_sources = set(contender.metadata.get("sources", [])) if isinstance(contender.metadata, dict) else set()
-                            if ("pattern" in contender_sources or contender.source == "pattern") and (
-                                top.confidence - contender.confidence <= epsilon
-                            ):
+                            contender_sources = (
+                                set(contender.metadata.get("sources", []))
+                                if isinstance(contender.metadata, dict)
+                                else set()
+                            )
+                            if (
+                                "pattern" in contender_sources or contender.source == "pattern"
+                            ) and (top.confidence - contender.confidence <= epsilon):
                                 chosen = contender
                                 break
                 # Prefer optimize over refactor when performance cues present
-                perf_cues = re.search(r"\b(optimize|performance|faster|latency|throughput|memory|cpu|speed)\b", cues)
+                perf_cues = re.search(
+                    r"\b(optimize|performance|faster|latency|throughput|memory|cpu|speed)\b", cues
+                )
                 if perf_cues and top.type == "refactor" and second.type == "optimize":
                     if (top.confidence - second.confidence) <= 0.25:
                         chosen = second
 
             # 3) Apply cue-based bias if present and a biased intent exists in candidates
             if bias_order:
-                preferred = next((b for b in bias_order if any(i.type == b for i in filtered_intents)), None)
+                preferred = next(
+                    (b for b in bias_order if any(i.type == b for i in filtered_intents)), None
+                )
                 if preferred and chosen and chosen.type != preferred:
                     # If the preferred candidate exists and is reasonably close, switch
                     cand = next(i for i in filtered_intents if i.type == preferred)
                     # Be more assertive on explicit cue words
-                    threshold = 0.4 if preferred in ("debug", "optimize", "refactor", "implement") else 0.25
+                    threshold = (
+                        0.4 if preferred in ("debug", "optimize", "refactor", "implement") else 0.25
+                    )
                     if (chosen.confidence - cand.confidence) <= threshold:
                         chosen = cand
         else:
@@ -663,8 +687,10 @@ class HybridIntentDetector:
                 top = pool[0]
                 if len(pool) > 1:
                     second = pool[1]
-                    if top.type == "integrate" and second.type == "implement" and (
-                        top.confidence - second.confidence <= 0.05
+                    if (
+                        top.type == "integrate"
+                        and second.type == "implement"
+                        and (top.confidence - second.confidence <= 0.05)
                     ):
                         chosen = second
                     else:
@@ -729,7 +755,7 @@ class HybridIntentDetector:
         # Extract keywords
         keywords = self.keyword_extractor.extract(text, max_keywords=15)
 
-    # Combine intents
+        # Combine intents
         combined_intents = self._combine_intents(
             all_intents,
             keywords,
@@ -756,18 +782,23 @@ class HybridIntentDetector:
         # Final safeguard: if still < 2 distinct types and we have raw signals,
         # pull in an additional pattern-based intent (if any) even if below threshold.
         if len({i.type for i in filtered}) < 2 and pattern_intents:
-            extra = [i for i in sorted(pattern_intents, key=lambda x: x.confidence, reverse=True)
-                     if i.type != "understand" and i.type not in {j.type for j in filtered}]
+            extra = [
+                i
+                for i in sorted(pattern_intents, key=lambda x: x.confidence, reverse=True)
+                if i.type != "understand" and i.type not in {j.type for j in filtered}
+            ]
             if extra:
                 # Wrap into combined form for consistency
-                filtered.append(Intent(
-                    type=extra[0].type,
-                    confidence=extra[0].confidence,
-                    evidence=extra[0].evidence,
-                    keywords=keywords[:5],
-                    metadata={"sources": ["pattern"], "num_detections": 1},
-                    source="combined",
-                ))
+                filtered.append(
+                    Intent(
+                        type=extra[0].type,
+                        confidence=extra[0].confidence,
+                        evidence=extra[0].evidence,
+                        keywords=keywords[:5],
+                        metadata={"sources": ["pattern"], "num_detections": 1},
+                        source="combined",
+                    )
+                )
 
         # Add keywords to all intents
         for intent in filtered:

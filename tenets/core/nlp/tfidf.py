@@ -14,7 +14,7 @@ from tenets.utils.logger import get_logger
 
 class TFIDFCalculator:
     """TF-IDF calculator for ranking.
-    
+
     Simplified wrapper around NLP TFIDFCalculator to maintain
     existing ranking API while using centralized logic.
     """
@@ -32,6 +32,7 @@ class TFIDFCalculator:
         from tenets.core.nlp.keyword_extractor import (
             TFIDFCalculator as NLPTFIDFCalculator,
         )
+
         self._calculator = NLPTFIDFCalculator(
             use_stopwords=use_stopwords,
             stopword_set="code",  # Use minimal stopwords for code/code-search
@@ -175,7 +176,7 @@ class TFIDFCalculator:
 
 class BM25Calculator:
     """BM25 calculator for ranking.
-    
+
     Simplified wrapper around NLP BM25Calculator to maintain
     existing ranking API while using centralized logic.
     """
@@ -189,14 +190,15 @@ class BM25Calculator:
             use_stopwords: Whether to filter stopwords (uses 'code' set)
         """
         self.logger = get_logger(__name__)
-        
+
         # Use NLP BM25 calculator
         from tenets.core.nlp.keyword_extractor import BM25Calculator as NLPBM25Calculator
+
         self._calculator = NLPBM25Calculator(
             k1=k1,
             b=b,
             use_stopwords=use_stopwords,
-            stopword_set='code'  # Use minimal stopwords for code search
+            stopword_set="code",  # Use minimal stopwords for code search
         )
 
     def tokenize(self, text: str) -> List[str]:

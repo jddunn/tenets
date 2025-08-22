@@ -290,7 +290,7 @@ def create_visualizer(
         "dependencies": DependencyVisualizer,
         "deps": DependencyVisualizer,
         "hotspots": HotspotVisualizer,
-    "momentum": MomentumVisualizer,
+        "momentum": MomentumVisualizer,
     }
     key = (viz_type or "").lower()
     cls = mapping.get(key)
