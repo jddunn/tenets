@@ -363,16 +363,16 @@ class TestDistillCommand:
             assert "Analysis failed" in result.stdout
 
     def test_distill_with_stopwords(self, runner, mock_tenets):
-        """Test enabling stopword filtering."""
+        """Test with verbose mode (stopwords parameter removed)."""
         with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
             app = typer.Typer()
             app.command()(distill)
 
-            result = runner.invoke(app, ["analyze", ".", "--use-stopwords"])
+            result = runner.invoke(app, ["analyze", ".", "--verbose"])
 
             assert result.exit_code == 0
-            call_args = mock_tenets.distill.call_args[1]
-            assert call_args["use_stopwords"] is True
+            # Verbose flag doesn't get passed to distill, only affects output
+            mock_tenets.distill.assert_called_once()
 
 
 class TestDistillOutputFormatting:
@@ -415,3 +415,93 @@ class TestDistillOutputFormatting:
                 # In piped mode, should not have decorative elements
                 assert "═" not in result.stdout  # No rule lines
                 assert "Tenets Context" not in result.stdout  # No panel
+
+    def test_include_tests_flag(self, runner, mock_tenets):
+        """Test --include-tests flag."""
+        with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
+            app = typer.Typer()
+            app.command()(distill)
+
+            result = runner.invoke(app, ["explain auth flow", ".", "--include-tests"])
+
+            assert result.exit_code == 0
+
+            # Verify include_tests was passed as True
+            call_args = mock_tenets.distill.call_args[1]
+            assert call_args["include_tests"] is True
+
+    def test_exclude_tests_flag(self, runner, mock_tenets):
+        """Test --exclude-tests flag."""
+        with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
+            app = typer.Typer()
+            app.command()(distill)
+
+            result = runner.invoke(app, ["write unit tests", ".", "--exclude-tests"])
+
+            assert result.exit_code == 0
+
+            # Verify include_tests was passed as False
+            call_args = mock_tenets.distill.call_args[1]
+            assert call_args["include_tests"] is False
+
+    def test_test_flags_priority(self, runner, mock_tenets):
+        """Test that --exclude-tests takes priority over --include-tests."""
+        with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
+            app = typer.Typer()
+            app.command()(distill)
+
+            # Both flags provided - exclude should win
+            result = runner.invoke(app, ["test prompt", ".", "--include-tests", "--exclude-tests"])
+
+            assert result.exit_code == 0
+
+            # Verify include_tests was passed as False (exclude wins)
+            call_args = mock_tenets.distill.call_args[1]
+            assert call_args["include_tests"] is False
+
+    def test_no_test_flags(self, runner, mock_tenets):
+        """Test that no test flags results in None (automatic detection)."""
+        with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
+            app = typer.Typer()
+            app.command()(distill)
+
+            result = runner.invoke(app, ["analyze code", "."])
+
+            assert result.exit_code == 0
+
+            # Verify include_tests was passed as None (automatic detection)
+            call_args = mock_tenets.distill.call_args[1]
+            assert call_args["include_tests"] is None
+
+    def test_test_flags_with_other_options(self, runner, mock_tenets):
+        """Test test flags work with other CLI options."""
+        with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
+            app = typer.Typer()
+            app.command()(distill)
+
+            result = runner.invoke(
+                app,
+                [
+                    "debug auth",
+                    ".",
+                    "--include-tests",
+                    "--format",
+                    "json",
+                    "--mode",
+                    "thorough",
+                    "--include",
+                    "*.py",
+                    "--exclude",
+                    "*.log",
+                ],
+            )
+
+            assert result.exit_code == 0
+
+            # Verify all parameters were passed correctly
+            call_args = mock_tenets.distill.call_args[1]
+            assert call_args["include_tests"] is True
+            assert call_args["format"] == "json"
+            assert call_args["mode"] == "thorough"
+            assert call_args["include_patterns"] == ["*.py"]
+            assert call_args["exclude_patterns"] == ["*.log"]

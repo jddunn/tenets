@@ -82,6 +82,14 @@ tenets distill "implement OAuth2" ./src --copy
 tenets distill "implement OAuth2" ./src > context.md
 # (equivalent: tenets distill "implement OAuth2" ./src -o context.md)
 
+# Generate interactive HTML report
+tenets distill "analyze authentication" --format html -o report.html
+
+# Choose your speed/accuracy trade-off
+tenets distill "find bug" --mode fast         # <5s, keyword matching
+tenets distill "fix feature" --mode balanced  # 10-30s, TF-IDF ranking (default)
+tenets distill "refactor API" --mode thorough # 30-60s+, semantic analysis
+
 # Make copying the default (in .tenets.yml)
 # output:\n#   copy_on_distill: true
 ```
@@ -190,6 +198,44 @@ ranking:
 
 Like repomix on steroids - smart filters, automatic relevance ranking, and configurable aggregation:
 
+### Analysis Modes (Presets)
+
+Tenets offers three ranking modes that balance speed vs. accuracy:
+
+| Mode         | Speed          | Accuracy | Use Case                                | What It Does                                                                                                        |
+| ------------ | -------------- | -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **fast**     | ⚡ <5s         | Good     | Quick exploration, simple queries       | • Keyword & path matching<br>• Basic file type relevance<br>• No deep analysis                                      |
+| **balanced** | ⚡⚡ 10-30s    | Better   | Most use cases (default)                | • TF-IDF corpus analysis<br>• BM25 relevance scoring<br>• Structure analysis<br>• Import/export tracking            |
+| **thorough** | ⚡⚡⚡ 30-60s+ | Best     | Complex refactoring, deep understanding | • Everything from balanced<br>• Semantic similarity (ML)<br>• Code pattern detection<br>• Dependency graph analysis |
+
+**Mode Examples:**
+
+```bash
+# Fast mode - Quick keyword search (best for simple queries)
+tenets distill "find login function" --mode fast
+# ✅ Great for: Finding specific functions/files, quick exploration
+# ❌ Skip for: Understanding complex flows, architecture analysis
+
+# Balanced mode - Smart ranking with corpus analysis (default)
+tenets distill "implement caching layer" --mode balanced
+# ✅ Great for: Feature implementation, bug fixes, code reviews
+# ❌ Skip for: When you need semantic understanding
+
+# Thorough mode - Deep analysis with ML (when accuracy matters)
+tenets distill "refactor authentication system" --mode thorough --max-tokens 100000
+# ✅ Great for: Major refactoring, security reviews, understanding complex systems
+# ❌ Skip for: Quick lookups, simple tasks, large codebases (>1000 files)
+```
+
+**Performance Tips:**
+
+- Start with `fast` for exploration, upgrade to `balanced/thorough` as needed
+- Use `--stats` to see ranking performance metrics
+- Combine with `--include/--exclude` to reduce file count before ranking
+- Cache is shared across modes - second run is always faster
+
+### Filtering and Targeting
+
 ```bash
 # Distill by file types (include only Python & JS; exclude tests)
 tenets distill "review API" --include "*.py,*.js" --exclude "test_*" --stats
@@ -212,6 +258,18 @@ tenets instill --session new-feature --list-pinned
 # 5) Force raw content (no summarization) or shrink tokens
 tenets distill "investigate slow queries" --session new-feature --full
 tenets distill "summarize public API" --session new-feature --remove-comments --condense
+
+# Working without explicit sessions (uses "default" session automatically)
+tenets tenet add "Always validate inputs"
+tenets instill  # Applies to default session
+tenets distill "implement validation"  # Uses default session
+
+# Save the default session with a meaningful name later
+tenets session save validation-feature --delete-source
+
+# Generate interactive HTML report with visualizations
+tenets distill "analyze authentication flow" --format html -o report.html
+# HTML reports include: search, copy buttons, export to JSON/Markdown, file charts
 ```
 
 ### Guiding Principles (Tenets)
@@ -336,6 +394,42 @@ Optimize token usage or force raw context inclusion when needed:
 
 Order: comments removed first, whitespace condensed second. Both affect token counting and packing decisions.
 
+### Session Management
+
+Sessions help organize your work and maintain context across commands:
+
+**Default Session Behavior:**
+
+- When no `--session` is specified, commands use a persistent "default" session
+- The default session saves tenets, pinned files, and context just like named sessions
+- You can save the default session with a meaningful name later
+
+```bash
+# Working without explicit sessions (uses "default" automatically)
+tenets tenet add "Use dependency injection"
+tenets instill --add-file src/core/container.py
+tenets distill "refactor service layer"
+
+# Later, save your work with a proper name
+tenets session save dependency-refactor
+tenets session save di-work --delete-source  # Save and clean up default
+```
+
+**Session Commands:**
+
+```bash
+# Session lifecycle
+tenets session create my-feature    # Create new session
+tenets session list                  # Show all sessions
+tenets session resume my-feature     # Switch to session
+tenets session exit                  # Mark current as inactive
+tenets session delete my-feature     # Remove session
+
+# Save sessions with new names
+tenets session save production --from debug-session
+tenets session save final --from default --delete-source
+```
+
 ### Pinned Files (Session Persistence)
 
 Guarantee critical files are prioritized for a session:
@@ -393,6 +487,114 @@ tenets distill "malloc|alloc" --include "*.c" --session debug-memory-leak
 # AI: "I need to see the cleanup functions"
 tenets distill "free|cleanup" --include "*.c" --session debug-memory-leak
 ```
+
+### Common Usage Patterns
+
+```bash
+# Quick exploration with fast mode
+tenets distill "database models" --mode fast --copy
+
+# Standard development with balanced mode (default)
+tenets distill "implement user registration" -o context.md
+
+# Deep analysis with thorough mode
+tenets distill "security vulnerabilities" --mode thorough --max-tokens 150000
+
+# Generate interactive HTML report for sharing
+tenets distill "API architecture review" --format html -o api-review.html
+# Open in browser for search, charts, and export features
+
+# Combine modes with sessions for iterative work
+tenets session create oauth-impl
+tenets distill "OAuth2 flow" --mode fast --session oauth-impl  # Quick overview
+tenets distill "refresh token handling" --mode thorough --session oauth-impl  # Deep dive
+
+# Export context in different formats
+tenets distill "payment processing" --format json | jq '.files[].path'  # List files
+tenets distill "error handling" --format xml > context.xml  # For Claude
+tenets distill "test coverage" --format html -o report.html  # Interactive report
+```
+
+### Test File Handling
+
+Tenets intelligently handles test files to improve context relevance:
+
+**Default Behavior (Recommended):**
+
+- Test files are **excluded by default** for most prompts
+- Tests are **automatically included** when prompt mentions testing
+- Improves context quality by focusing on production code
+
+```bash
+# These prompts exclude tests (better context for understanding):
+tenets distill "explain authentication flow"
+tenets distill "how does user registration work"
+tenets distill "debug payment processing"
+
+# These prompts automatically include tests (detected by intent):
+tenets distill "write unit tests for auth module"
+tenets distill "fix failing tests"
+tenets distill "improve test coverage"
+tenets distill "debug test_user_registration.py"
+```
+
+**Manual Override:**
+
+```bash
+# Force include tests even for non-test prompts
+tenets distill "understand auth flow" --include-tests
+
+# Force exclude tests even for test-related prompts
+tenets distill "fix failing tests" --exclude-tests
+
+# Traditional manual filtering (still works)
+tenets distill "review code" --exclude "test_*,*_test.py,tests/**"
+```
+
+**Configuration:**
+
+```yaml
+# .tenets.yml - customize test patterns for your project
+scanner:
+  exclude_tests_by_default: true # default
+  test_patterns:
+    - 'test_*.py' # Python
+    - '*_test.py'
+    - '*.test.js' # JavaScript
+    - '*.spec.ts' # TypeScript
+    - '*Test.java' # Java
+  test_directories:
+    - 'tests'
+    - '__tests__'
+    - 'spec'
+```
+
+### Output Formats
+
+Tenets supports multiple output formats for different use cases:
+
+```bash
+# Default markdown format (optimized for AI assistants)
+tenets distill "implement OAuth2" --format markdown
+
+# XML format (optimized for Claude)
+tenets distill "implement OAuth2" --format xml -o context.xml
+
+# JSON for programmatic use
+tenets distill "implement OAuth2" --format json | jq .files[0]
+
+# Interactive HTML report with visualizations
+tenets distill "implement OAuth2" --format html -o report.html
+```
+
+**HTML Reports** include:
+
+- 🔍 Live search to filter files
+- 📋 Copy buttons for individual files
+- 📥 Export to JSON/Markdown
+- 📊 Interactive charts (file distribution, token usage)
+- 🔄 Expand/collapse for full file content
+- 📱 Responsive design for any screen size
 
 ### Exploration & Analysis
 
@@ -607,6 +809,59 @@ Notes
 - JSX/TSX are owned by JavaScriptAnalyzer; HTMLAnalyzer focuses on HTML and Vue SFCs.
 - YAML heuristics set structure.framework (e.g., docker-compose, kubernetes) and populate modules with services/resources.
 - Generic analyzer extracts imports/references from config where possible (images, depends_on, ConfigMaps/Secrets, etc.).
+
+## Python API
+
+Use Tenets programmatically in your Python projects:
+
+```python
+from tenets import Tenets
+from pathlib import Path
+
+# Initialize
+tenets = Tenets()
+
+# Basic context extraction (uses default session)
+result = tenets.distill("implement user authentication")
+print(f"Generated {result.token_count} tokens")
+print(result.context[:500])  # First 500 chars
+
+# Generate interactive HTML report
+result = tenets.distill("review API design", format="html")
+Path("api-review.html").write_text(result.context)
+
+# Add guiding principles
+tenets.add_tenet("Use type hints", priority="high")
+tenets.add_tenet("Follow SOLID principles", category="architecture")
+tenets.instill_tenets()
+
+# Pin critical files
+tenets.pin_file("src/core/auth.py")
+tenets.pin_folder("src/api/")
+
+# Named sessions for organized work
+result = tenets.distill(
+    "implement OAuth2",
+    session_name="oauth-feature",
+    mode="thorough",
+    max_tokens=100000
+)
+
+# Custom configuration
+from tenets.config import TenetsConfig
+
+config = TenetsConfig(
+    max_tokens=150000,
+    ranking_algorithm="thorough",
+    model="claude-3-opus"
+)
+tenets = Tenets(config)
+
+# Analyze codebase
+analysis = tenets.examine("./src")
+print(f"Health Score: {analysis.health_score}")
+print(f"Complexity Issues: {analysis.complexity.high_complexity_count}")
+```
 
 ## Contributing
 

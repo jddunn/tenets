@@ -1,7 +1,7 @@
 """Tests for main Distiller orchestrator."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -227,7 +227,7 @@ class TestDistiller:
         """Test file discovery."""
         prompt_context = PromptContext(text="test", file_patterns=["*.py"])
 
-        files = mock_components._discover_files(paths=[Path(".")], prompt_context=prompt_context)
+        files = mock_components._discover_files(paths=[Path()], prompt_context=prompt_context)
 
         assert len(files) == 3
         mock_components.scanner.scan.assert_called()
@@ -276,7 +276,7 @@ class TestDistiller:
 
     def test_get_git_context(self, mock_components):
         """Test git context extraction."""
-        paths = [Path(".")]
+        paths = [Path()]
         prompt_context = PromptContext(text="recent changes")
         files = [FileAnalysis(path="file1.py", content="content")]
 
@@ -295,7 +295,7 @@ class TestDistiller:
         mock_components.git.is_git_repo.return_value = False
 
         git_context = mock_components._get_git_context(
-            paths=[Path(".")], prompt_context=PromptContext(text="test"), files=[]
+            paths=[Path()], prompt_context=PromptContext(text="test"), files=[]
         )
 
         assert git_context is None
@@ -428,3 +428,128 @@ class TestDistiller:
                                         result = dist.distill("p", pinned_files=[Path("a.py")])
                                         assert call_order[0] == "a.py"
                                         assert result.metadata.get("files_analyzed") == 3
+
+    def test_test_exclusion_with_test_intent(self, mock_components):
+        """Test that test files are included when prompt has test intent."""
+        # Mock parser to return test intent
+        mock_components.parser.parse.return_value = PromptContext(
+            text="write unit tests", intent="test", include_tests=True
+        )
+
+        result = mock_components.distill("write unit tests for auth")
+
+        # Verify scanner was called without test exclusions
+        mock_components.scanner.scan.assert_called()
+        call_args = mock_components.scanner.scan.call_args
+        exclude_patterns = call_args[1].get("exclude_patterns", [])
+
+        # Should not have test patterns in exclusions since include_tests=True
+        test_pattern_found = any("test" in pattern.lower() for pattern in exclude_patterns)
+        assert not test_pattern_found
+
+    def test_test_exclusion_with_non_test_intent(self, mock_components):
+        """Test that test files are excluded for non-test prompts."""
+        # Mock parser to return non-test intent
+        mock_components.parser.parse.return_value = PromptContext(
+            text="explain auth flow", intent="understand", include_tests=False
+        )
+
+        # Set up config to exclude tests by default
+        mock_components.config.scanner.exclude_tests_by_default = True
+        mock_components.config.scanner.test_patterns = ["test_*.py", "*_test.py"]
+        mock_components.config.scanner.test_directories = ["tests", "__tests__"]
+
+        result = mock_components.distill("explain auth flow")
+
+        # Verify scanner was called with test exclusions
+        mock_components.scanner.scan.assert_called()
+        call_args = mock_components.scanner.scan.call_args
+        exclude_patterns = call_args[1].get("exclude_patterns", [])
+
+        # Should have test patterns in exclusions
+        assert "test_*.py" in exclude_patterns
+        assert "*_test.py" in exclude_patterns
+        assert "**/tests/**" in exclude_patterns
+
+    def test_test_inclusion_override(self, mock_components):
+        """Test explicit test inclusion parameter overrides prompt detection."""
+        # Mock parser to return non-test intent
+        mock_components.parser.parse.return_value = PromptContext(
+            text="explain auth flow", intent="understand", include_tests=False
+        )
+
+        # Override with include_tests=True
+        result = mock_components.distill("explain auth flow", include_tests=True)
+
+        # Should call parser.parse but then override the include_tests flag
+        mock_components.parser.parse.assert_called()
+
+        # Verify scanner was called without test exclusions (due to override)
+        mock_components.scanner.scan.assert_called()
+        call_args = mock_components.scanner.scan.call_args
+        exclude_patterns = call_args[1].get("exclude_patterns", [])
+
+        # Should not have test patterns since include_tests was forced to True
+        test_pattern_found = any("test" in pattern.lower() for pattern in exclude_patterns)
+        assert not test_pattern_found
+
+    def test_test_exclusion_override(self, mock_components):
+        """Test explicit test exclusion parameter overrides prompt detection."""
+        # Mock parser to return test intent
+        mock_components.parser.parse.return_value = PromptContext(
+            text="write unit tests", intent="test", include_tests=True
+        )
+
+        # Set up config
+        mock_components.config.scanner.exclude_tests_by_default = True
+        mock_components.config.scanner.test_patterns = ["test_*.py", "*_test.py"]
+        mock_components.config.scanner.test_directories = ["tests"]
+
+        # Override with include_tests=False
+        result = mock_components.distill("write unit tests", include_tests=False)
+
+        # Verify scanner was called with test exclusions (due to override)
+        mock_components.scanner.scan.assert_called()
+        call_args = mock_components.scanner.scan.call_args
+        exclude_patterns = call_args[1].get("exclude_patterns", [])
+
+        # Should have test patterns since include_tests was forced to False
+        assert "test_*.py" in exclude_patterns
+        assert "*_test.py" in exclude_patterns
+
+    def test_discover_files_test_exclusion_logic(self, mock_components):
+        """Test the _discover_files method test exclusion logic directly."""
+        # Test with include_tests=False
+        prompt_context = PromptContext(text="test", include_tests=False)
+        mock_components.config.scanner.exclude_tests_by_default = True
+        mock_components.config.scanner.test_patterns = ["test_*.py", "*.test.js"]
+        mock_components.config.scanner.test_directories = ["tests", "spec"]
+
+        files = mock_components._discover_files(
+            paths=[Path()], prompt_context=prompt_context, exclude_patterns=["*.log"]
+        )
+
+        # Verify scanner was called with correct exclusion patterns
+        mock_components.scanner.scan.assert_called()
+        call_args = mock_components.scanner.scan.call_args
+        exclude_patterns = call_args[1]["exclude_patterns"]
+
+        # Should include original exclusions plus test patterns
+        assert "*.log" in exclude_patterns
+        assert "test_*.py" in exclude_patterns
+        assert "*.test.js" in exclude_patterns
+        assert "**/tests/**" in exclude_patterns
+        assert "**/spec/**" in exclude_patterns
+
+        # Test with include_tests=True
+        prompt_context.include_tests = True
+
+        files = mock_components._discover_files(
+            paths=[Path()], prompt_context=prompt_context, exclude_patterns=["*.log"]
+        )
+
+        # Should only have original exclusions, no test patterns
+        call_args = mock_components.scanner.scan.call_args
+        exclude_patterns = call_args[1]["exclude_patterns"]
+        assert "*.log" in exclude_patterns
+        assert "test_*.py" not in exclude_patterns

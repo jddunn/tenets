@@ -59,7 +59,7 @@ graph TB
         WebUI[Web UI<br/>Future]
         IDE[IDE Extensions]
     end
-    
+
     subgraph "Command Orchestration"
         DISPATCHER[Command Dispatcher]
         DISTILL[Distill Command]
@@ -68,13 +68,13 @@ graph TB
         MOMENTUM[Momentum Command]
         SESSION[Session Management]
     end
-    
+
     subgraph "Prompt Processing Layer"
         PARSER[Prompt Parser]
         INTENT[Intent Detection]
         KEYWORDS[Keyword Extraction]
         ENTITIES[Entity Extraction]
-        
+
         subgraph "NLP Pipeline"
             TOKENIZER[Tokenizer]
             STOPWORDS[Stopwords]
@@ -82,13 +82,13 @@ graph TB
             TFIDF[TF-IDF Analysis]
         end
     end
-    
+
     subgraph "File Discovery & Analysis"
         SCANNER[File Scanner]
         GITIGNORE[.gitignore Parser]
         BINARY[Binary Detection]
         PARALLEL[Parallel Scanner]
-        
+
         subgraph "Code Analysis Engine"
             PYTHON_ANALYZER[Python Analyzer]
             JS_ANALYZER[JavaScript Analyzer]
@@ -96,7 +96,7 @@ graph TB
             JAVA_ANALYZER[Java Analyzer]
             GENERIC_ANALYZER[Generic Analyzer]
         end
-        
+
         subgraph "AST & Structure"
             CLASSES[Class Extraction]
             FUNCTIONS[Function Extraction]
@@ -104,7 +104,7 @@ graph TB
             EXPORTS[Export Analysis]
         end
     end
-    
+
     subgraph "Intelligence & Ranking"
         subgraph "Ranking Engine"
             FAST[Fast Strategy]
@@ -112,7 +112,7 @@ graph TB
             THOROUGH[Thorough Strategy]
             ML[ML Strategy]
         end
-        
+
         subgraph "Ranking Factors"
             SEMANTIC[Semantic Similarity<br/>25%]
             KEYWORD_MATCH[Keyword Matching<br/>15%]
@@ -121,85 +121,85 @@ graph TB
             PATH_REL[Path Relevance<br/>10%]
             GIT_SIG[Git Signals<br/>15%]
         end
-        
+
         subgraph "ML/NLP Pipeline"
             EMBEDDINGS[Local Embeddings]
             EMBED_CACHE[Embedding Cache]
             SIMILARITY[Similarity Computing]
         end
     end
-    
+
     subgraph "Context Optimization"
         CONTEXT_BUILDER[Context Builder]
         TOKEN_COUNTER[Token Counter]
         SUMMARIZER[Summarizer]
         FORMATTER[Output Formatter]
     end
-    
+
     subgraph "Storage & Persistence"
         SQLITE[SQLite Database<br/>Sessions]
         MEMORY[Memory Cache<br/>LRU]
         DISK[Disk Cache<br/>Analysis Results]
     end
-    
+
     CLI --> DISPATCHER
     API --> DISPATCHER
     WebUI --> DISPATCHER
     IDE --> DISPATCHER
-    
+
     DISPATCHER --> DISTILL
     DISPATCHER --> EXAMINE
     DISPATCHER --> CHRONICLE
     DISPATCHER --> MOMENTUM
     DISPATCHER --> SESSION
-    
+
     DISTILL --> PARSER
     PARSER --> INTENT
     PARSER --> KEYWORDS
     PARSER --> ENTITIES
-    
+
     INTENT --> TOKENIZER
     KEYWORDS --> YAKE
     ENTITIES --> TFIDF
-    
+
     PARSER --> SCANNER
     SCANNER --> GITIGNORE
     SCANNER --> BINARY
     SCANNER --> PARALLEL
-    
+
     SCANNER --> PYTHON_ANALYZER
     SCANNER --> JS_ANALYZER
     SCANNER --> GO_ANALYZER
     SCANNER --> JAVA_ANALYZER
     SCANNER --> GENERIC_ANALYZER
-    
+
     PYTHON_ANALYZER --> CLASSES
     PYTHON_ANALYZER --> FUNCTIONS
     PYTHON_ANALYZER --> IMPORTS
     PYTHON_ANALYZER --> EXPORTS
-    
+
     CLASSES --> FAST
     FUNCTIONS --> BALANCED
     IMPORTS --> THOROUGH
     EXPORTS --> ML
-    
+
     FAST --> SEMANTIC
     BALANCED --> KEYWORD_MATCH
     THOROUGH --> TFIDF_SIM
     ML --> IMPORT_CENT
-    
+
     SEMANTIC --> EMBEDDINGS
     EMBEDDINGS --> EMBED_CACHE
     EMBED_CACHE --> SIMILARITY
-    
+
     SIMILARITY --> CONTEXT_BUILDER
     KEYWORD_MATCH --> CONTEXT_BUILDER
     TFIDF_SIM --> CONTEXT_BUILDER
-    
+
     CONTEXT_BUILDER --> TOKEN_COUNTER
     CONTEXT_BUILDER --> SUMMARIZER
     CONTEXT_BUILDER --> FORMATTER
-    
+
     FORMATTER --> SQLITE
     FORMATTER --> MEMORY
     FORMATTER --> DISK
@@ -216,28 +216,28 @@ graph LR
         RANK[Ranking Engine]
         CONTEXT[Context Builder]
     end
-    
+
     subgraph "Analysis Tools"
         EXAMINE[Examine Tool]
         CHRONICLE[Chronicle Tool]
         MOMENTUM[Momentum Tool]
     end
-    
+
     subgraph "Storage Systems"
         CACHE[Cache Manager]
         SESSION[Session Store]
         CONFIG[Configuration]
     end
-    
+
     NLP --> RANK
     SCAN --> ANALYZE
     ANALYZE --> RANK
     RANK --> CONTEXT
-    
+
     ANALYZE --> EXAMINE
     SCAN --> CHRONICLE
     CHRONICLE --> MOMENTUM
-    
+
     RANK --> CACHE
     CONTEXT --> SESSION
     SESSION --> CONFIG
@@ -254,61 +254,61 @@ graph TD
         PROMPT[User Prompt]
         CODE[Code Content]
     end
-    
+
     subgraph "Tokenization Layer"
         CODE_TOK[Code Tokenizer<br/>camelCase, snake_case]
         TEXT_TOK[Text Tokenizer<br/>NLP processing]
     end
-    
+
     subgraph "Keyword Extraction"
         YAKE_EXT[YAKE Extractor<br/>Statistical]
         TFIDF_EXT[TF-IDF Extractor<br/>Frequency-based]
         FREQ_EXT[Frequency Extractor<br/>Fallback]
     end
-    
+
     subgraph "Stopword Management"
         CODE_STOP[Code Stopwords<br/>Minimal - 30 words]
         PROMPT_STOP[Prompt Stopwords<br/>Aggressive - 200+ words]
     end
-    
+
     subgraph "Embedding Generation"
         LOCAL_EMB[Local Embeddings<br/>sentence-transformers]
         MODEL_SEL[Model Selection<br/>MiniLM, MPNet]
         FALLBACK[TF-IDF Fallback<br/>No ML required]
     end
-    
+
     subgraph "Similarity Computing"
         COSINE[Cosine Similarity]
         EUCLIDEAN[Euclidean Distance]
         BATCH[Batch Processing]
     end
-    
+
     subgraph "Caching System"
         MEM_CACHE[Memory Cache<br/>LRU 1000 items]
         DISK_CACHE[SQLite Cache<br/>30 day TTL]
     end
-    
+
     INPUT --> CODE_TOK
     INPUT --> TEXT_TOK
     PROMPT --> TEXT_TOK
     CODE --> CODE_TOK
-    
+
     CODE_TOK --> CODE_STOP
     TEXT_TOK --> PROMPT_STOP
-    
+
     CODE_STOP --> YAKE_EXT
     PROMPT_STOP --> YAKE_EXT
     YAKE_EXT --> TFIDF_EXT
     TFIDF_EXT --> FREQ_EXT
-    
+
     FREQ_EXT --> LOCAL_EMB
     LOCAL_EMB --> MODEL_SEL
     MODEL_SEL --> FALLBACK
-    
+
     FALLBACK --> COSINE
     COSINE --> EUCLIDEAN
     EUCLIDEAN --> BATCH
-    
+
     BATCH --> MEM_CACHE
     MEM_CACHE --> DISK_CACHE
 ```
@@ -323,27 +323,27 @@ graph LR
         MPNET[all-mpnet-base-v2<br/>420MB, Best]
         QA_MINI[multi-qa-MiniLM<br/>Q&A Optimized]
     end
-    
+
     subgraph "Processing Pipeline"
         BATCH_ENC[Batch Encoding]
         CHUNK[Document Chunking<br/>1000 chars, 100 overlap]
         VECTOR[Vector Operations<br/>NumPy optimized]
     end
-    
+
     subgraph "Cache Strategy"
         KEY_GEN[Cache Key Generation<br/>model + content hash]
         WARM[Cache Warming]
         INVALID[Intelligent Invalidation]
     end
-    
+
     MINI_L6 --> BATCH_ENC
     MINI_L12 --> BATCH_ENC
     MPNET --> BATCH_ENC
     QA_MINI --> BATCH_ENC
-    
+
     BATCH_ENC --> CHUNK
     CHUNK --> VECTOR
-    
+
     VECTOR --> KEY_GEN
     KEY_GEN --> WARM
     WARM --> INVALID
@@ -360,14 +360,20 @@ graph TD
         PATHS[Specified Paths]
         PATTERNS[Include Patterns]
     end
-    
+
     subgraph "Ignore System Hierarchy"
         CLI_IGNORE[CLI Arguments<br/>--exclude<br/>Highest Priority]
         TENETS_IGNORE[.tenetsignore<br/>Project-specific]
         GIT_IGNORE[.gitignore<br/>Version control]
         GLOBAL_IGNORE[Global Ignores<br/>~/.config/tenets/ignore<br/>Lowest Priority]
     end
-    
+    subgraph "Intelligent Test Exclusion"
+        INTENT_DETECT[Intent Detection<br/>Test-related prompts?]
+        CLI_OVERRIDE[CLI Override<br/>--include-tests / --exclude-tests]
+        TEST_PATTERNS[Test Pattern Matching<br/>Multi-language support]
+        TEST_DIRS[Test Directory Detection<br/>tests/, __tests__, spec/]
+    end
+
     subgraph "Detection Systems"
         BINARY_DET[Binary Detection]
         EXT_CHECK[Extension Check]
@@ -375,40 +381,40 @@ graph TD
         CONTENT_CHECK[Content Sampling<br/>Null byte detection]
         MAGIC_CHECK[Magic Number<br/>File signatures]
     end
-    
+
     subgraph "Parallel Processing"
         WORK_QUEUE[Work Queue]
         PROCESS_POOL[Process Pool<br/>CPU-bound operations]
         THREAD_POOL[Thread Pool<br/>I/O operations]
         PROGRESS[Progress Tracking<br/>tqdm]
     end
-    
+
     subgraph "Output"
         SCANNED_FILE[Scanned File Objects]
         METADATA[File Metadata]
         ANALYSIS_READY[Ready for Analysis]
     end
-    
+
     ROOT --> CLI_IGNORE
     PATHS --> CLI_IGNORE
     PATTERNS --> CLI_IGNORE
-    
+
     CLI_IGNORE --> TENETS_IGNORE
     TENETS_IGNORE --> GIT_IGNORE
     GIT_IGNORE --> GLOBAL_IGNORE
-    
+
     GLOBAL_IGNORE --> BINARY_DET
     BINARY_DET --> EXT_CHECK
     EXT_CHECK --> SIZE_CHECK
     SIZE_CHECK --> CONTENT_CHECK
     CONTENT_CHECK --> MAGIC_CHECK
-    
+
     MAGIC_CHECK --> WORK_QUEUE
     WORK_QUEUE --> PROCESS_POOL
     WORK_QUEUE --> THREAD_POOL
     PROCESS_POOL --> PROGRESS
     THREAD_POOL --> PROGRESS
-    
+
     PROGRESS --> SCANNED_FILE
     SCANNED_FILE --> METADATA
     METADATA --> ANALYSIS_READY
@@ -434,6 +440,82 @@ flowchart TD
     SKIP --> IGNORE
 ```
 
+### Intelligent Test File Exclusion
+
+Tenets implements intelligent test file handling to improve context relevance by automatically excluding or including test files based on the user's intent.
+
+```mermaid
+flowchart TD
+    PROMPT[User Prompt] --> PARSE[Prompt Parsing]
+    PARSE --> INTENT{Intent Detection<br/>Test-related?}
+
+    INTENT -->|Yes| INCLUDE_TESTS[include_tests = True]
+    INTENT -->|No| EXCLUDE_TESTS[include_tests = False]
+
+    CLI_OVERRIDE{CLI Override?<br/>--include-tests<br/>--exclude-tests}
+    CLI_OVERRIDE -->|--include-tests| FORCE_INCLUDE[include_tests = True]
+    CLI_OVERRIDE -->|--exclude-tests| FORCE_EXCLUDE[include_tests = False]
+    CLI_OVERRIDE -->|None| INTENT
+
+    INCLUDE_TESTS --> SCAN_ALL[Scan All Files]
+    EXCLUDE_TESTS --> TEST_FILTER[Apply Test Filters]
+    FORCE_INCLUDE --> SCAN_ALL
+    FORCE_EXCLUDE --> TEST_FILTER
+
+    TEST_FILTER --> PATTERN_MATCH[Pattern Matching]
+    PATTERN_MATCH --> DIR_MATCH[Directory Matching]
+
+    subgraph "Test Patterns (Multi-language)"
+        PY_PATTERNS["Python: test_*.py, *_test.py"]
+        JS_PATTERNS["JavaScript: *.test.js, *.spec.js"]
+        JAVA_PATTERNS["Java: *Test.java, *Tests.java"]
+        GO_PATTERNS["Go: *_test.go"]
+        GENERIC_PATTERNS["Generic: **/test/**, **/tests/**"]
+    end
+
+    subgraph "Test Directories"
+        COMMON_DIRS["tests, __tests__, spec"]
+        LANG_DIRS["unit_tests, integration_tests"]
+        E2E_DIRS["e2e, e2e_tests, functional_tests"]
+    end
+
+    PATTERN_MATCH --> PY_PATTERNS
+    PATTERN_MATCH --> JS_PATTERNS
+    PATTERN_MATCH --> JAVA_PATTERNS
+    PATTERN_MATCH --> GO_PATTERNS
+    PATTERN_MATCH --> GENERIC_PATTERNS
+
+    DIR_MATCH --> COMMON_DIRS
+    DIR_MATCH --> LANG_DIRS
+    DIR_MATCH --> E2E_DIRS
+
+    PY_PATTERNS --> FILTERED_FILES[Filtered File List]
+    JS_PATTERNS --> FILTERED_FILES
+    JAVA_PATTERNS --> FILTERED_FILES
+    GO_PATTERNS --> FILTERED_FILES
+    GENERIC_PATTERNS --> FILTERED_FILES
+
+    COMMON_DIRS --> FILTERED_FILES
+    LANG_DIRS --> FILTERED_FILES
+    E2E_DIRS --> FILTERED_FILES
+
+    SCAN_ALL --> ANALYSIS[File Analysis]
+    FILTERED_FILES --> ANALYSIS
+```
+
+**Intent Detection Patterns:**
+- Test-related keywords: `test`, `tests`, `testing`, `unit`, `integration`, `spec`, `coverage`
+- Test actions: `write tests`, `fix tests`, `run tests`, `test coverage`, `mock`
+- Test files: `test_auth.py`, `auth.test.js`, `*Test.java`
+- Test frameworks: `pytest`, `jest`, `mocha`, `junit`, `rspec`
+
+**Benefits:**
+- **Improved Relevance**: Non-test prompts get cleaner production code context
+- **Automatic Intelligence**: Test prompts automatically include test files
+- **Manual Override**: CLI flags provide full control when needed
+- **Multi-language Support**: Recognizes test patterns across languages
+- **Configuration**: Customizable patterns for project-specific conventions
+
 ## Code Analysis Engine
 
 ### Language Analyzer Architecture
@@ -449,7 +531,7 @@ graph TB
         CALC_COMP[calculate_complexity()]
         TRACE_DEP[trace_dependencies()]
     end
-    
+
     subgraph "Language-Specific Analyzers"
         PYTHON[Python Analyzer<br/>Full AST parsing]
         JAVASCRIPT[JavaScript Analyzer<br/>ES6+ support]
@@ -458,7 +540,7 @@ graph TB
         RUST[Rust Analyzer<br/>Ownership patterns]
         GENERIC[Generic Analyzer<br/>Pattern-based fallback]
     end
-    
+
     subgraph "Analysis Features"
         AST[AST Parsing]
         IMPORTS[Import Resolution]
@@ -467,26 +549,26 @@ graph TB
         PATTERNS[Code Patterns]
         COMPLEXITY[Complexity Metrics]
     end
-    
+
     BASE --> EXTRACT_IMP
     BASE --> EXTRACT_EXP
     BASE --> EXTRACT_CLS
     BASE --> EXTRACT_FN
     BASE --> CALC_COMP
     BASE --> TRACE_DEP
-    
+
     BASE --> PYTHON
     BASE --> JAVASCRIPT
     BASE --> GOLANG
     BASE --> JAVA
     BASE --> RUST
     BASE --> GENERIC
-    
+
     PYTHON --> AST
     PYTHON --> IMPORTS
     PYTHON --> TYPES
     PYTHON --> DOCS
-    
+
     JAVASCRIPT --> PATTERNS
     GOLANG --> PATTERNS
     JAVA --> COMPLEXITY
@@ -503,42 +585,42 @@ graph LR
         NODE_VISIT[Node Visitor]
         SYMBOL_TABLE[Symbol Table]
     end
-    
+
     subgraph "Code Structure"
         CLASSES[Class Definitions<br/>Inheritance chains]
         FUNCTIONS[Function Definitions<br/>Async detection]
         DECORATORS[Decorator Analysis]
         TYPE_HINTS[Type Hint Extraction]
     end
-    
+
     subgraph "Import Analysis"
         ABS_IMP[Absolute Imports]
         REL_IMP[Relative Imports]
         STAR_IMP[Star Imports]
         IMPORT_GRAPH[Import Graph Building]
     end
-    
+
     subgraph "Complexity Metrics"
         CYCLO[Cyclomatic Complexity<br/>+1 for if, for, while]
         COGNITIVE[Cognitive Complexity<br/>Nesting penalties]
         HALSTEAD[Halstead Metrics<br/>Operators/operands]
     end
-    
+
     AST_PARSE --> NODE_VISIT
     NODE_VISIT --> SYMBOL_TABLE
-    
+
     SYMBOL_TABLE --> CLASSES
     SYMBOL_TABLE --> FUNCTIONS
     SYMBOL_TABLE --> DECORATORS
     SYMBOL_TABLE --> TYPE_HINTS
-    
+
     NODE_VISIT --> ABS_IMP
     NODE_VISIT --> REL_IMP
     NODE_VISIT --> STAR_IMP
     ABS_IMP --> IMPORT_GRAPH
     REL_IMP --> IMPORT_GRAPH
     STAR_IMP --> IMPORT_GRAPH
-    
+
     SYMBOL_TABLE --> CYCLO
     SYMBOL_TABLE --> COGNITIVE
     SYMBOL_TABLE --> HALSTEAD
@@ -556,44 +638,44 @@ graph TD
         THOROUGH[Thorough Strategy<br/>~200ms/file<br/>Deep Analysis]
         ML_STRAT[ML Strategy<br/>~500ms/file<br/>Semantic Understanding]
     end
-    
+
     subgraph "Semantic Understanding - 25%"
         SEM_SIM[Semantic Similarity<br/>ML-based understanding<br/>Local embeddings]
     end
-    
+
     subgraph "Text Matching - 30%"
         KEY_MATCH[Keyword Matching<br/>15%<br/>Direct term hits]
         TFIDF_SIM[TF-IDF Similarity<br/>15%<br/>Statistical relevance]
     end
-    
+
     subgraph "Code Structure - 20%"
         IMP_CENT[Import Centrality<br/>10%<br/>PageRank-style]
         PATH_REL[Path Relevance<br/>10%<br/>Directory structure]
     end
-    
+
     subgraph "Git Signals - 15% (Optional)"
         GIT_REC[Git Recency<br/>5%<br/>Recent changes]
         GIT_FREQ[Git Frequency<br/>5%<br/>Change frequency]
         GIT_AUTH[Git Authors<br/>5%<br/>Author expertise]
     end
-    
+
     subgraph "File Characteristics - 10%"
         FILE_TYPE[File Type<br/>5%<br/>Type relevance]
         CODE_PAT[Code Patterns<br/>5%<br/>Pattern matching]
     end
-    
+
     subgraph "Scoring Engine"
         WEIGHTED[Weighted Combination]
         THRESHOLD[Threshold Filtering]
         NORMALIZED[Score Normalization]
         RANKED[Final Rankings]
     end
-    
+
     FAST --> KEY_MATCH
     BALANCED --> TFIDF_SIM
     THOROUGH --> IMP_CENT
     ML_STRAT --> SEM_SIM
-    
+
     SEM_SIM --> WEIGHTED
     KEY_MATCH --> WEIGHTED
     TFIDF_SIM --> WEIGHTED
@@ -604,7 +686,7 @@ graph TD
     GIT_AUTH --> WEIGHTED
     FILE_TYPE --> WEIGHTED
     CODE_PAT --> WEIGHTED
-    
+
     WEIGHTED --> THRESHOLD
     THRESHOLD --> NORMALIZED
     NORMALIZED --> RANKED
@@ -620,40 +702,40 @@ graph LR
         COSINE[Cosine Similarity]
         CACHE_SEM[Cache Results]
     end
-    
+
     subgraph "Keyword Matching"
         FILENAME[Filename Match<br/>Weight: 0.4]
         IMPORT_M[Import Match<br/>Weight: 0.3]
         CLASS_FN[Class/Function Name<br/>Weight: 0.25]
         POSITION[Position Weight<br/>Early lines favored]
     end
-    
+
     subgraph "Import Centrality"
         IN_EDGES[Incoming Edges<br/>Files importing this<br/>70% weight]
         OUT_EDGES[Outgoing Edges<br/>Files this imports<br/>30% weight]
         LOG_SCALE[Logarithmic Scaling<br/>High-degree nodes]
         NORMALIZE[Normalize 0-1]
     end
-    
+
     subgraph "Git Signals"
         RECENCY[Recency Score<br/>Exponential decay<br/>30-day half-life]
         FREQUENCY[Frequency Score<br/>Log of commit count]
         EXPERTISE[Author Expertise<br/>Contribution volume]
         CHURN[Recent Churn<br/>Lines changed]
     end
-    
+
     CHUNK --> EMBED
     EMBED --> COSINE
     COSINE --> CACHE_SEM
-    
+
     FILENAME --> POSITION
     IMPORT_M --> POSITION
     CLASS_FN --> POSITION
-    
+
     IN_EDGES --> LOG_SCALE
     OUT_EDGES --> LOG_SCALE
     LOG_SCALE --> NORMALIZE
-    
+
     RECENCY --> EXPERTISE
     FREQUENCY --> EXPERTISE
     EXPERTISE --> CHURN
@@ -672,39 +754,39 @@ graph TD
         MERGE_DATA[Merge Detection]
         CONFLICT_HIST[Conflict History]
     end
-    
+
     subgraph "Chronicle Analysis"
         TEMPORAL[Temporal Analysis<br/>Activity patterns]
         CONTRIBUTORS[Contributor Tracking<br/>Author patterns]
         VELOCITY[Change Velocity<br/>Trend analysis]
         HOTSPOTS[Change Hotspots<br/>Problem areas]
     end
-    
+
     subgraph "Metrics Calculation"
         BUS_FACTOR[Bus Factor<br/>Knowledge concentration]
         EXPERTISE[Author Expertise<br/>Domain knowledge]
         FRESHNESS[Code Freshness<br/>Age distribution]
         STABILITY[Change Stability<br/>Frequency patterns]
     end
-    
+
     subgraph "Risk Assessment"
         KNOWLEDGE_RISK[Knowledge Risk<br/>Single points of failure]
         CHURN_RISK[Churn Risk<br/>High-change areas]
         COMPLEXITY_RISK[Complexity Risk<br/>Hard-to-maintain code]
         SUCCESSION[Succession Planning<br/>Knowledge transfer]
     end
-    
+
     COMMIT_LOG --> TEMPORAL
     BLAME_DATA --> CONTRIBUTORS
     BRANCH_INFO --> VELOCITY
     MERGE_DATA --> HOTSPOTS
     CONFLICT_HIST --> HOTSPOTS
-    
+
     CONTRIBUTORS --> BUS_FACTOR
     TEMPORAL --> EXPERTISE
     VELOCITY --> FRESHNESS
     HOTSPOTS --> STABILITY
-    
+
     BUS_FACTOR --> KNOWLEDGE_RISK
     EXPERTISE --> CHURN_RISK
     FRESHNESS --> COMPLEXITY_RISK
@@ -720,33 +802,33 @@ graph LR
         KEY_METRICS[Key Metrics Dashboard]
         ALERTS[Risk Alerts]
     end
-    
+
     subgraph "Activity Analysis"
         TIMELINE[Activity Timeline]
         PATTERNS[Change Patterns]
         TRENDS[Velocity Trends]
     end
-    
+
     subgraph "Contributor Analysis"
         TEAM[Team Composition]
         EXPERTISE_MAP[Expertise Mapping]
         CONTRIBUTION[Contribution Patterns]
     end
-    
+
     subgraph "Risk Assessment"
         RISKS[Identified Risks]
         RECOMMENDATIONS[Recommendations]
         ACTION_ITEMS[Action Items]
     end
-    
+
     HEALTH --> TIMELINE
     KEY_METRICS --> PATTERNS
     ALERTS --> TRENDS
-    
+
     TIMELINE --> TEAM
     PATTERNS --> EXPERTISE_MAP
     TRENDS --> CONTRIBUTION
-    
+
     TEAM --> RISKS
     EXPERTISE_MAP --> RECOMMENDATIONS
     CONTRIBUTION --> ACTION_ITEMS
@@ -763,53 +845,53 @@ graph TD
         TOKEN_BUDGET[Available Token Budget]
         USER_PREFS[User Preferences]
     end
-    
+
     subgraph "Selection Strategy"
         THRESHOLD[Score Threshold Filtering]
         TOP_N[Top-N Selection]
         DIVERSITY[Diversity Optimization]
         DEPENDENCIES[Dependency Inclusion]
     end
-    
+
     subgraph "Token Management"
         MODEL_LIMITS[Model-Specific Limits<br/>4K, 8K, 16K, 32K, 100K]
         PROMPT_RESERVE[Prompt Token Reserve]
         RESPONSE_RESERVE[Response Token Reserve<br/>2K-4K]
         SAFETY_MARGIN[Safety Margin<br/>5% buffer]
     end
-    
+
     subgraph "Content Optimization"
         SUMMARIZATION[Summarization Strategy]
         EXTRACTION[Key Component Extraction]
         COMPRESSION[Content Compression]
         FORMATTING[Output Formatting]
     end
-    
+
     subgraph "Quality Assurance"
         COHERENCE[Context Coherence Check]
         COMPLETENESS[Completeness Validation]
         RELEVANCE[Relevance Verification]
         FINAL_OUTPUT[Final Context Output]
     end
-    
+
     RANKED_FILES --> THRESHOLD
     TOKEN_BUDGET --> MODEL_LIMITS
     USER_PREFS --> TOP_N
-    
+
     THRESHOLD --> TOP_N
     TOP_N --> DIVERSITY
     DIVERSITY --> DEPENDENCIES
-    
+
     MODEL_LIMITS --> PROMPT_RESERVE
     PROMPT_RESERVE --> RESPONSE_RESERVE
     RESPONSE_RESERVE --> SAFETY_MARGIN
-    
+
     DEPENDENCIES --> SUMMARIZATION
     SAFETY_MARGIN --> SUMMARIZATION
     SUMMARIZATION --> EXTRACTION
     EXTRACTION --> COMPRESSION
     COMPRESSION --> FORMATTING
-    
+
     FORMATTING --> COHERENCE
     COHERENCE --> COMPLETENESS
     COMPLETENESS --> RELEVANCE
@@ -826,38 +908,38 @@ graph LR
         DOCSTRINGS[Docstrings/Comments<br/>Documentation]
         TYPES[Type Definitions<br/>Interface contracts]
     end
-    
+
     subgraph "Compression Strategy"
         REDUNDANCY[Remove Redundancy<br/>Duplicate code]
         WHITESPACE[Normalize Whitespace<br/>Consistent formatting]
         COMMENTS[Condense Comments<br/>Key information only]
         BOILERPLATE[Remove Boilerplate<br/>Standard patterns]
     end
-    
+
     subgraph "Semantic Strategy"
         MEANING[Preserve Meaning<br/>Core logic intact]
         CONTEXT[Maintain Context<br/>Relationship preservation]
         ABSTRACTIONS[Higher-level View<br/>Architectural overview]
         EXAMPLES[Key Examples<br/>Usage patterns]
     end
-    
+
     subgraph "LLM Strategy (Optional)"
         EXTERNAL_API[External LLM API<br/>OpenAI/Anthropic]
         INTELLIGENT[Intelligent Summarization<br/>Context-aware]
         CONSENT[User Consent Required<br/>Privacy protection]
         FALLBACK[Fallback to Local<br/>If API unavailable]
     end
-    
+
     IMPORTS_EX --> REDUNDANCY
     SIGNATURES --> WHITESPACE
     DOCSTRINGS --> COMMENTS
     TYPES --> BOILERPLATE
-    
+
     REDUNDANCY --> MEANING
     WHITESPACE --> CONTEXT
     COMMENTS --> ABSTRACTIONS
     BOILERPLATE --> EXAMPLES
-    
+
     MEANING --> EXTERNAL_API
     CONTEXT --> INTELLIGENT
     ABSTRACTIONS --> CONSENT
@@ -882,14 +964,14 @@ stateDiagram-v2
     Export --> Archived: Long-term storage
     Archived --> [*]
     Active --> [*]: Session ends
-    
+
     note right of FirstPrompt
         - Comprehensive analysis
         - All relevant files
         - Setup instructions
         - AI guidance
     end note
-    
+
     note right of Interaction
         - Incremental updates only
         - Changed files highlighted
@@ -909,14 +991,14 @@ graph TB
         FILE_STATES[file_states<br/>session_id, file_path, state]
         AI_REQUESTS[ai_requests<br/>id, session_id, type, request]
     end
-    
+
     subgraph "Relationships"
         SESSION_PROMPT[Session → Prompts<br/>One-to-Many]
         PROMPT_CONTEXT[Prompt → Context<br/>One-to-One]
         SESSION_FILES[Session → File States<br/>One-to-Many]
         SESSION_AI[Session → AI Requests<br/>One-to-Many]
     end
-    
+
     subgraph "Operations"
         CREATE[Create Session]
         SAVE[Save State]
@@ -925,12 +1007,12 @@ graph TB
         MERGE[Merge Sessions]
         EXPORT[Export Session]
     end
-    
+
     SESSIONS --> SESSION_PROMPT
     SESSIONS --> SESSION_FILES
     SESSIONS --> SESSION_AI
     PROMPTS --> PROMPT_CONTEXT
-    
+
     SESSION_PROMPT --> CREATE
     PROMPT_CONTEXT --> SAVE
     SESSION_FILES --> RESTORE
@@ -949,35 +1031,35 @@ graph TB
         LRU[LRU Cache<br/>1000 items default<br/>Sub-millisecond access]
         HOT_DATA[Frequently accessed data<br/>Recent analyses<br/>Active embeddings]
     end
-    
+
     subgraph "SQLite Database (Structured)"
         SESSIONS_DB[Session Storage<br/>User interactions]
         CONFIG_DB[Configuration<br/>Settings & preferences]
         RELATIONS[Relationship data<br/>File dependencies]
         PERF[1-10ms access time]
     end
-    
+
     subgraph "Disk Cache (Bulk)"
         ANALYSIS[Analysis Results<br/>File parsing cache]
         EMBEDDINGS[Embedding Cache<br/>ML vectors]
         FILE_CONTENT[File Content Cache<br/>Preprocessed data]
         BULK_PERF[10-100ms access time]
     end
-    
+
     subgraph "File System (Cold)"
         LOGS[Application Logs<br/>Debugging information]
         EXPORTS[Exported Sessions<br/>Sharing & backup]
         ARCHIVES[Archived Data<br/>Historical sessions]
         COLD_PERF[100ms+ access time]
     end
-    
+
     LRU --> SESSIONS_DB
     HOT_DATA --> CONFIG_DB
-    
+
     SESSIONS_DB --> ANALYSIS
     CONFIG_DB --> EMBEDDINGS
     RELATIONS --> FILE_CONTENT
-    
+
     ANALYSIS --> LOGS
     EMBEDDINGS --> EXPORTS
     FILE_CONTENT --> ARCHIVES
@@ -995,28 +1077,28 @@ graph LR
         TTL_EXPIRE[TTL Expiration<br/>Time-based cleanup]
         MANUAL[Manual Refresh<br/>User-initiated]
     end
-    
+
     subgraph "Cache Levels Affected"
         MEMORY_INV[Memory Cache<br/>Immediate eviction]
         SQLITE_INV[SQLite Cache<br/>Mark as stale]
         DISK_INV[Disk Cache<br/>File removal]
         CASCADE[Cascade Invalidation<br/>Dependent entries]
     end
-    
+
     subgraph "Rebuilding Strategy"
         LAZY[Lazy Rebuilding<br/>On-demand refresh]
         EAGER[Eager Rebuilding<br/>Background refresh]
         PARTIAL[Partial Rebuilding<br/>Incremental updates]
         BATCH[Batch Rebuilding<br/>Multiple files]
     end
-    
+
     FILE_MTIME --> MEMORY_INV
     CONTENT_HASH --> SQLITE_INV
     GIT_COMMIT --> DISK_INV
     DEP_CHANGE --> CASCADE
     TTL_EXPIRE --> CASCADE
     MANUAL --> CASCADE
-    
+
     MEMORY_INV --> LAZY
     SQLITE_INV --> EAGER
     DISK_INV --> PARTIAL
@@ -1035,38 +1117,38 @@ graph TD
         RANKING[Relevance Ranking<br/>Thread Pool<br/>Computation]
         EMBEDDING[Embedding Generation<br/>Batch Processing<br/>GPU if available]
     end
-    
+
     subgraph "Streaming Architecture"
         INCREMENTAL[Incremental Discovery<br/>Stream files as found]
         PROGRESSIVE[Progressive Ranking<br/>Rank as analyzed]
         CHUNKED[Chunked Analysis<br/>Process in batches]
         STREAMING[Result Streaming<br/>First results quickly]
     end
-    
+
     subgraph "Lazy Evaluation"
         DEFER[Defer Analysis<br/>Until needed]
         ON_DEMAND[On-demand Embeddings<br/>Generate when required]
         PROGRESSIVE_ENH[Progressive Enhancement<br/>Add features incrementally]
         JIT[Just-in-time Compilation<br/>Optimize hot paths]
     end
-    
+
     subgraph "Memory Management"
         STREAMING_PROC[Streaming Processing<br/>Constant memory usage]
         GC[Incremental GC<br/>Prevent pauses]
         MMAP[Memory-mapped Files<br/>Large file handling]
         PRESSURE[Memory Pressure Monitor<br/>Adaptive behavior]
     end
-    
+
     FILE_SCAN --> INCREMENTAL
     ANALYSIS --> PROGRESSIVE
     RANKING --> CHUNKED
     EMBEDDING --> STREAMING
-    
+
     INCREMENTAL --> DEFER
     PROGRESSIVE --> ON_DEMAND
     CHUNKED --> PROGRESSIVE_ENH
     STREAMING --> JIT
-    
+
     DEFER --> STREAMING_PROC
     ON_DEMAND --> GC
     PROGRESSIVE_ENH --> MMAP
@@ -1108,7 +1190,7 @@ graph TB
         USER[User Configuration<br/>~/.config/tenets/config.yml]
         SYSTEM[System Defaults<br/>Built-in fallbacks<br/>Lowest Priority]
     end
-    
+
     subgraph "Configuration Categories"
         RANKING_CONFIG[Ranking Configuration<br/>Algorithms, weights, factors]
         NLP_CONFIG[NLP Configuration<br/>Tokenization, stopwords]
@@ -1117,20 +1199,20 @@ graph TB
         SCANNER_CONFIG[Scanner Configuration<br/>Ignore patterns, limits]
         OUTPUT_CONFIG[Output Configuration<br/>Format, tokens, metadata]
     end
-    
+
     subgraph "Dynamic Configuration"
         HOT_RELOAD[Hot Reload<br/>File change detection]
         API_UPDATE[Runtime API Updates<br/>Programmatic changes]
         VALIDATION[Configuration Validation<br/>Type checking, constraints]
         ROLLBACK[Error Rollback<br/>Revert on failure]
     end
-    
+
     CLI --> RANKING_CONFIG
     ENV --> NLP_CONFIG
     PROJECT --> ML_CONFIG
     USER --> CACHE_CONFIG
     SYSTEM --> SCANNER_CONFIG
-    
+
     RANKING_CONFIG --> HOT_RELOAD
     NLP_CONFIG --> API_UPDATE
     ML_CONFIG --> VALIDATION
@@ -1151,7 +1233,7 @@ ranking:
   threshold: 0.1       # Minimum relevance score
   use_git: true        # Enable git signals
   use_ml: true         # Enable ML features
-  
+
   # Factor weights (must sum to ~1.0)
   weights:
     semantic_similarity: 0.25
@@ -1164,7 +1246,7 @@ ranking:
     git_authors: 0.05
     file_type: 0.05
     code_patterns: 0.05
-  
+
   # Performance
   workers: 8           # Parallel workers
   batch_size: 100      # Batch size for ML
@@ -1175,7 +1257,7 @@ nlp:
   stopword_set: minimal  # minimal|aggressive|custom
   tokenizer: code        # code|text
   keyword_extractor: yake # yake|tfidf|frequency
-  
+
 # ML configuration
 ml:
   model: all-MiniLM-L6-v2
@@ -1189,7 +1271,7 @@ cache:
   directory: ~/.tenets/cache
   max_size_mb: 1000
   ttl_days: 7
-  
+
   # SQLite pragmas
   sqlite_pragmas:
     journal_mode: WAL
@@ -1204,7 +1286,7 @@ scanner:
   follow_symlinks: false
   max_file_size_mb: 10
   binary_detection: true
-  
+
   # Global ignores
   ignore_patterns:
     - "*.pyc"
@@ -1217,7 +1299,7 @@ scanner:
     - "dist"
     - "build"
 
-# Output configuration  
+# Output configuration
 output:
   format: markdown     # markdown|json|xml
   max_tokens: 100000
@@ -1236,7 +1318,7 @@ examination:
   complexity_threshold: 10
   duplication_threshold: 0.1
   min_test_coverage: 0.8
-  
+
 # Chronicle configuration
 chronicle:
   include_merges: false
@@ -1263,7 +1345,7 @@ graph TB
         MOMENTUM[tenets momentum<br/>Velocity tracking]
         SESSION[tenets session<br/>Session management]
     end
-    
+
     subgraph "Distill Options"
         PROMPT[--prompt TEXT<br/>Analysis prompt]
         ALGORITHM[--algorithm CHOICE<br/>fast|balanced|thorough|ml]
@@ -1272,33 +1354,33 @@ graph TB
         SESSION_OPT[--session NAME<br/>Session context]
         COPY[--copy<br/>Copy to clipboard]
     end
-    
+
     subgraph "Global Options"
         CONFIG[--config PATH<br/>Configuration file]
         VERBOSE[--verbose/-v<br/>Logging level]
         NO_CACHE[--no-cache<br/>Disable caching]
         WORKERS[--workers N<br/>Parallel processing]
     end
-    
+
     subgraph "Output Formats"
         MARKDOWN[Markdown (default)<br/>Human-readable]
         JSON[JSON format<br/>Machine-readable]
         XML[XML format<br/>Structured data]
         RAW[Raw text<br/>Plain output]
     end
-    
+
     DISTILL --> PROMPT
     DISTILL --> ALGORITHM
     DISTILL --> MAX_TOKENS
     DISTILL --> FILTERS
     DISTILL --> SESSION_OPT
     DISTILL --> COPY
-    
+
     EXAMINE --> CONFIG
     CHRONICLE --> VERBOSE
     MOMENTUM --> NO_CACHE
     SESSION --> WORKERS
-    
+
     COPY --> MARKDOWN
     SESSION_OPT --> JSON
     FILTERS --> XML
@@ -1354,7 +1436,7 @@ graph TB
         NO_CLOUD[No Cloud Storage<br/>All data stays local]
         NO_PHONE_HOME[No Phone Home<br/>No automatic updates]
     end
-    
+
     subgraph "Secret Detection"
         API_KEYS[API Key Detection<br/>Common patterns]
         PASSWORDS[Password Detection<br/>Credential patterns]
@@ -1363,7 +1445,7 @@ graph TB
         CONNECTION_STRINGS[Connection Strings<br/>Database URLs]
         ENV_VARS[Environment Variables<br/>Sensitive values]
     end
-    
+
     subgraph "Output Sanitization"
         REDACT[Redact Secrets<br/>Replace with placeholders]
         MASK_PII[Mask PII<br/>Personal information]
@@ -1371,26 +1453,26 @@ graph TB
         REMOVE_URLS[Remove Internal URLs<br/>Private endpoints]
         ANONYMIZE[Anonymization Option<br/>Remove identifying info]
     end
-    
+
     subgraph "Data Protection"
         ENCRYPTED_CACHE[Encrypted Cache<br/>Optional encryption at rest]
         SECURE_DELETE[Secure Deletion<br/>Overwrite sensitive data]
         ACCESS_CONTROL[File Access Control<br/>Respect permissions]
         AUDIT_LOG[Audit Logging<br/>Security events]
     end
-    
+
     LOCAL --> API_KEYS
     NO_TELEMETRY --> PASSWORDS
     NO_CLOUD --> TOKENS
     NO_PHONE_HOME --> PRIVATE_KEYS
-    
+
     API_KEYS --> REDACT
     PASSWORDS --> MASK_PII
     TOKENS --> CLEAN_PATHS
     PRIVATE_KEYS --> REMOVE_URLS
     CONNECTION_STRINGS --> ANONYMIZE
     ENV_VARS --> ANONYMIZE
-    
+
     REDACT --> ENCRYPTED_CACHE
     MASK_PII --> SECURE_DELETE
     CLEAN_PATHS --> ACCESS_CONTROL
@@ -1408,7 +1490,7 @@ graph LR
         CONTEXT[Context Analysis<br/>Variable names]
         KEYWORDS[Keyword Detection<br/>password, secret, key]
     end
-    
+
     subgraph "Secret Types"
         AWS[AWS Access Keys<br/>AKIA...]
         GITHUB[GitHub Tokens<br/>ghp_, gho_]
@@ -1417,19 +1499,19 @@ graph LR
         DATABASE[Database URLs<br/>postgres://, mysql://]
         GENERIC[Generic Secrets<br/>High entropy strings]
     end
-    
+
     subgraph "Response Actions"
         FLAG[Flag for Review<br/>Warn user]
         REDACT_AUTO[Auto Redaction<br/>Replace with [REDACTED]]
         EXCLUDE[Exclude File<br/>Skip entirely]
         LOG[Security Log<br/>Record detection]
     end
-    
+
     REGEX --> AWS
     ENTROPY --> GITHUB
     CONTEXT --> JWT
     KEYWORDS --> RSA
-    
+
     AWS --> FLAG
     GITHUB --> REDACT_AUTO
     JWT --> EXCLUDE
@@ -1450,38 +1532,38 @@ graph TB
         E2E[End-to-End Tests<br/>Complete user journeys<br/>CLI to output]
         PERFORMANCE[Performance Tests<br/>Benchmark regression<br/>Memory usage]
     end
-    
+
     subgraph "Test Structure"
         FIXTURES[Test Fixtures<br/>Sample codebases<br/>Known outputs]
         MOCKS[Mock Objects<br/>External dependencies<br/>Controlled behavior]
         HELPERS[Test Helpers<br/>Common operations<br/>Assertion utilities]
         FACTORIES[Data Factories<br/>Generate test data<br/>Realistic scenarios]
     end
-    
+
     subgraph "Quality Metrics"
         COVERAGE[Code Coverage<br/>Line and branch coverage]
         COMPLEXITY[Complexity Limits<br/>Cyclomatic < 10]
         DUPLICATION[Duplication Check<br/>< 5% duplicate code]
         DOCUMENTATION[Documentation<br/>100% public API]
     end
-    
+
     subgraph "Continuous Testing"
         PRE_COMMIT[Pre-commit Hooks<br/>Fast feedback]
         CI_PIPELINE[CI Pipeline<br/>Full test suite]
         NIGHTLY[Nightly Tests<br/>Extended scenarios]
         BENCHMARKS[Benchmark Tracking<br/>Performance trends]
     end
-    
+
     UNIT --> FIXTURES
     INTEGRATION --> MOCKS
     E2E --> HELPERS
     PERFORMANCE --> FACTORIES
-    
+
     FIXTURES --> COVERAGE
     MOCKS --> COMPLEXITY
     HELPERS --> DUPLICATION
     FACTORIES --> DOCUMENTATION
-    
+
     COVERAGE --> PRE_COMMIT
     COMPLEXITY --> CI_PIPELINE
     DUPLICATION --> NIGHTLY
@@ -1498,14 +1580,14 @@ graph LR
         E2E_COV[E2E Tests<br/>Critical user journeys<br/>Happy paths]
         PERF_COV[Performance Tests<br/>Regression prevention<br/>Memory leak detection]
     end
-    
+
     subgraph "Quality Gates"
         CODE_QUALITY[Code Quality<br/>Complexity < 10<br/>Function length < 50]
         DOCUMENTATION[Documentation<br/>100% public API<br/>Usage examples]
         SECURITY[Security Tests<br/>Secret detection<br/>Input validation]
         COMPATIBILITY[Compatibility<br/>Python 3.8+<br/>Multiple platforms]
     end
-    
+
     UNIT_COV --> CODE_QUALITY
     INTEGRATION_COV --> DOCUMENTATION
     E2E_COV --> SECURITY
@@ -1525,14 +1607,14 @@ graph TB
         IDE_PLUGINS[IDE Plugin Ecosystem<br/>VS Code, IntelliJ, Vim]
         CROSS_REPO[Cross-repository Analysis<br/>Monorepo support<br/>Dependency tracking]
     end
-    
+
     subgraph "ML Enhancements"
         NEWER_MODELS[Newer Embedding Models<br/>Code-specific transformers<br/>Better accuracy]
         FINE_TUNING[Fine-tuning Pipeline<br/>Domain-specific models<br/>Custom training]
         MULTIMODAL[Multi-modal Understanding<br/>Diagrams, images<br/>Architecture docs]
         CODE_TRANSFORMERS[Code-specific Models<br/>Programming language aware<br/>Syntax understanding]
     end
-    
+
     INCREMENTAL --> NEWER_MODELS
     FASTER_EMBED --> FINE_TUNING
     LANGUAGE_SUP --> MULTIMODAL
@@ -1550,7 +1632,7 @@ graph TB
         KNOWLEDGE_GRAPHS[Knowledge Graphs<br/>Code relationships<br/>Semantic connections]
         AI_AGENTS[AI Agent Integration<br/>Autonomous assistance<br/>Proactive suggestions]
     end
-    
+
     subgraph "Enterprise Features"
         SSO[SSO/SAML Support<br/>Enterprise authentication<br/>Role-based access]
         AUDIT[Audit Logging<br/>Compliance tracking<br/>Usage monitoring]
@@ -1558,7 +1640,7 @@ graph TB
         AIR_GAPPED[Air-gapped Deployment<br/>Offline operation<br/>Secure environments]
         CUSTOM_ML[Custom ML Models<br/>Private model training<br/>Domain expertise]
     end
-    
+
     WEB_UI --> SSO
     SHARED_CONTEXT --> AUDIT
     KNOWLEDGE_GRAPHS --> COMPLIANCE
@@ -1576,7 +1658,7 @@ graph TB
         UNIVERSAL[Universal Code Intelligence<br/>Any language, any domain<br/>Contextual understanding]
         INDUSTRY_STANDARD[Industry Standard<br/>AI pair programming<br/>Developer toolchain]
     end
-    
+
     subgraph "Research Areas"
         GRAPH_NEURAL[Graph Neural Networks<br/>Code structure understanding<br/>Relationship modeling]
         REINFORCEMENT[Reinforcement Learning<br/>Ranking optimization<br/>Adaptive behavior]
@@ -1584,7 +1666,7 @@ graph TB
         EXPLAINABLE[Explainable AI<br/>Ranking transparency<br/>Decision reasoning]
         FEDERATED[Federated Learning<br/>Team knowledge sharing<br/>Privacy-preserving]
     end
-    
+
     AUTONOMOUS --> GRAPH_NEURAL
     PREDICTIVE --> REINFORCEMENT
     UNIVERSAL --> FEW_SHOT
@@ -1597,32 +1679,163 @@ graph TB
 ```mermaid
 timeline
     title Tenets Technology Roadmap
-    
+
     2025 Q1 : Core ML Pipeline
             : Local Embeddings
             : Multi-language Support
             : IDE Integrations
-    
+
     2025 Q2 : Web Collaboration
             : Team Features
             : Enterprise Security
             : Performance Optimization
-    
+
     2025 Q3 : Knowledge Graphs
             : AI Agent Integration
             : Custom Models
             : Advanced Analytics
-    
+
     2026    : Autonomous Understanding
             : Predictive Intelligence
             : Graph Neural Networks
             : Industry Adoption
-    
+
     2027+   : Universal Code Intelligence
             : Federated Learning
             : Next-gen AI Integration
             : Market Leadership
 ```
+
+## Output Generation & Visualization
+
+### Output Formatting System
+
+The output formatting system in Tenets provides multiple format options to suit different use cases and integrations:
+
+```mermaid
+graph TB
+    subgraph "Format Types"
+        MARKDOWN[Markdown Format<br/>Human-readable]
+        JSON[JSON Format<br/>Machine-parseable]
+        XML[XML Format<br/>Structured data]
+        HTML[HTML Format<br/>Interactive reports]
+    end
+
+    subgraph "HTML Report Features"
+        INTERACTIVE[Interactive Elements<br/>Collapsible sections]
+        VISUALS[Visualizations<br/>Charts & graphs]
+        STYLING[Professional Styling<br/>Modern UI]
+        RESPONSIVE[Responsive Design<br/>Mobile-friendly]
+    end
+
+    subgraph "Report Components"
+        HEADER[Report Header<br/>Title & metadata]
+        PROMPT_DISPLAY[Prompt Analysis<br/>Keywords & intent]
+        STATS[Statistics Dashboard<br/>Metrics & KPIs]
+        FILES[File Listings<br/>Code previews]
+        GIT[Git Context<br/>Commits & contributors]
+    end
+
+    HTML --> INTERACTIVE
+    HTML --> VISUALS
+    HTML --> STYLING
+    HTML --> RESPONSIVE
+
+    INTERACTIVE --> HEADER
+    VISUALS --> STATS
+    STYLING --> FILES
+    RESPONSIVE --> GIT
+```
+
+### HTML Report Generation
+
+The HTML formatter leverages the reporting infrastructure to create rich, interactive reports:
+
+#### Features:
+- **Interactive Dashboard**: Collapsible sections, sortable tables, and filterable content
+- **Visual Statistics**: Charts for file distribution, token usage, and relevance scores
+- **Code Previews**: Syntax-highlighted code snippets with truncation for large files
+- **Responsive Design**: Mobile-friendly layout that adapts to screen size
+- **Professional Styling**: Modern UI with gradients, shadows, and animations
+- **Git Integration**: Display of recent commits, contributors, and branch information
+
+#### Architecture:
+
+```python
+class HTMLFormatter:
+    """HTML report generation for distill command."""
+
+    def format_html(self, aggregated, prompt_context, session):
+        # Create HTML template with modern styling
+        template = HTMLTemplate(theme="modern", include_charts=True)
+
+        # Build report sections
+        sections = [
+            self._build_header(prompt_context, session),
+            self._build_prompt_analysis(prompt_context),
+            self._build_statistics(aggregated),
+            self._build_file_cards(aggregated["included_files"]),
+            self._build_git_context(aggregated.get("git_context"))
+        ]
+
+        # Generate final HTML with embedded styles and scripts
+        return template.render(sections)
+```
+
+### Visualization Components
+
+The visualization system provides rich visual representations of code analysis:
+
+```mermaid
+graph LR
+    subgraph "Chart Types"
+        BAR[Bar Charts<br/>File metrics]
+        PIE[Pie Charts<br/>Language distribution]
+        HEAT[Heatmaps<br/>Complexity visualization]
+        GRAPH[Network Graphs<br/>Dependencies]
+    end
+
+    subgraph "Data Sources"
+        METRICS[Code Metrics]
+        RANKINGS[Relevance Rankings]
+        TOKENS[Token Distribution]
+        COVERAGE[Test Coverage]
+    end
+
+    METRICS --> BAR
+    RANKINGS --> HEAT
+    TOKENS --> PIE
+    COVERAGE --> GRAPH
+```
+
+### Integration with Report Generator
+
+The distill command now fully integrates with the report generation infrastructure:
+
+1. **Shared Templates**: Uses the same HTML templates as the examine command
+2. **Consistent Styling**: Unified visual design across all report types
+3. **Reusable Components**: Shared visualization libraries and chart generators
+4. **Export Options**: Support for PDF export via HTML rendering
+
+### Usage Examples
+
+```bash
+# Generate HTML report for context
+tenets distill "review API" --format html -o report.html
+
+# Create interactive dashboard with verbose details
+tenets distill "analyze security" --format html --verbose -o security_context.html
+
+# Generate report with custom styling
+tenets distill "refactor database" --format html --theme dark -o refactor.html
+```
+
+### Performance Optimizations
+
+- **Lazy Loading**: Large code sections load on-demand
+- **Virtual Scrolling**: Efficient rendering of long file lists
+- **Minified Assets**: Compressed CSS and JavaScript
+- **Inline Resources**: No external dependencies for offline viewing
 
 ## Conclusion
 
@@ -1631,7 +1844,7 @@ Tenets represents a fundamental shift in how developers interact with their code
 The architecture is designed to be:
 
 - **Performant**: Sub-second responses for most operations
-- **Scalable**: From small projects to massive monorepos  
+- **Scalable**: From small projects to massive monorepos
 - **Extensible**: Plugin system for custom logic
 - **Private**: Everything runs locally
 - **Intelligent**: State-of-the-art ML when available

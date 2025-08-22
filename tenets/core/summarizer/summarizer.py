@@ -329,17 +329,21 @@ class Summarizer:
         mode: Optional[Union[str, SummarizationMode]] = None,
         target_ratio: float = 0.3,
         preserve_structure: bool = True,
+        prompt_keywords: Optional[List[str]] = None,
     ) -> SummarizationResult:
         """Summarize a code file intelligently.
 
         Handles code files specially by preserving important elements
         like class/function signatures while summarizing implementations.
+        Enhanced with context-aware documentation summarization that preserves
+        relevant sections based on prompt keywords.
 
         Args:
             file: FileAnalysis object
             mode: Summarization mode
             target_ratio: Target compression ratio
             preserve_structure: Whether to preserve code structure
+            prompt_keywords: Keywords from user prompt for context-aware summarization
 
         Returns:
             SummarizationResult
@@ -355,7 +359,43 @@ class Summarizer:
                 time_elapsed=0.0,
             )
 
-        if preserve_structure and file.language:
+        # Determine if this is a documentation file
+        file_path = Path(file.path)
+        is_documentation = self._is_documentation_file(file_path)
+
+        # Check if context-aware documentation summarization is enabled
+        docs_context_aware = getattr(self.config.summarizer, "docs_context_aware", True)
+        docs_show_in_place_context = getattr(
+            self.config.summarizer, "docs_show_in_place_context", True
+        )
+
+        # Apply documentation-specific summarization if enabled and applicable
+        if (
+            is_documentation
+            and docs_context_aware
+            and docs_show_in_place_context
+            and prompt_keywords
+        ):
+            summary = self._summarize_documentation_with_context(
+                file, target_ratio, prompt_keywords
+            )
+
+            return SummarizationResult(
+                original_text=file.content,
+                summary=summary,
+                original_length=len(file.content),
+                summary_length=len(summary),
+                compression_ratio=len(summary) / len(file.content),
+                strategy_used="docs-context-aware",
+                time_elapsed=0.0,
+                metadata={
+                    "file": file.path,
+                    "is_documentation": True,
+                    "prompt_keywords": prompt_keywords,
+                    "context_aware": True,
+                },
+            )
+        elif preserve_structure and file.language:
             # Intelligent code summarization
             summary = self._summarize_code(file, target_ratio)
 
@@ -437,6 +477,7 @@ class Summarizer:
                 else:
                     # Generic regex fallback for other languages
                     import re
+
                     lines = file.content.splitlines()
                     pattern_defs = re.compile(r"\b(class|def|function)\b")
                     for line in lines[:200]:
@@ -547,6 +588,7 @@ class Summarizer:
         mode: Optional[Union[str, SummarizationMode]] = None,
         target_ratio: float = 0.3,
         parallel: bool = True,
+        prompt_keywords: Optional[List[str]] = None,
     ) -> BatchSummarizationResult:
         """Summarize multiple texts in batch.
 
@@ -555,6 +597,7 @@ class Summarizer:
             mode: Summarization mode
             target_ratio: Target compression ratio
             parallel: Whether to process in parallel
+            prompt_keywords: Keywords from user prompt for context-aware documentation summarization
 
         Returns:
             BatchSummarizationResult
@@ -569,7 +612,9 @@ class Summarizer:
         for item in texts:
             try:
                 if isinstance(item, FileAnalysis):
-                    result = self.summarize_file(item, mode, target_ratio)
+                    result = self.summarize_file(
+                        item, mode, target_ratio, prompt_keywords=prompt_keywords
+                    )
                 else:
                     result = self.summarize(item, mode, target_ratio)
 
@@ -768,6 +813,280 @@ class Summarizer:
             stats["avg_time"] = 0.0
 
         return stats
+
+    def _is_documentation_file(self, file_path: Path) -> bool:
+        """Determine if a file is a documentation file.
+
+        Args:
+            file_path: Path to the file
+
+        Returns:
+            True if file is considered documentation
+        """
+        # Common documentation file extensions
+        doc_extensions = {
+            ".md",
+            ".markdown",
+            ".rst",
+            ".txt",
+            ".text",
+            ".adoc",
+            ".asciidoc",
+            ".tex",
+            ".org",
+        }
+
+        # Configuration files that often contain documentation
+        config_extensions = {
+            ".yaml",
+            ".yml",
+            ".json",
+            ".toml",
+            ".ini",
+            ".conf",
+            ".cfg",
+            ".properties",
+            ".env",
+        }
+
+        # Common documentation file names
+        doc_names = {
+            "readme",
+            "changelog",
+            "changes",
+            "history",
+            "news",
+            "authors",
+            "contributors",
+            "license",
+            "copying",
+            "install",
+            "installation",
+            "usage",
+            "tutorial",
+            "guide",
+            "manual",
+            "help",
+            "faq",
+            "todo",
+            "notes",
+            "docs",
+            "documentation",
+        }
+
+        extension = file_path.suffix.lower()
+        name_lower = file_path.stem.lower()
+
+        # Check extension
+        if extension in doc_extensions:
+            return True
+
+        # Check configuration files (often contain documentation)
+        if extension in config_extensions:
+            return True
+
+        # Check common documentation file names
+        if name_lower in doc_names:
+            return True
+
+        # Check if file is in docs-related directories
+        parts = [part.lower() for part in file_path.parts]
+        doc_dirs = {"docs", "doc", "documentation", "guide", "guides", "manual", "help"}
+        if any(part in doc_dirs for part in parts):
+            return True
+
+        return False
+
+    def _summarize_documentation_with_context(
+        self, file: FileAnalysis, target_ratio: float, prompt_keywords: List[str]
+    ) -> str:
+        """Summarize documentation file with context-aware approach.
+
+        This method preserves sections that are relevant to the prompt keywords
+        and shows them in-place within the summary, maintaining the document
+        structure while highlighting relevant context.
+
+        Args:
+            file: FileAnalysis object for the documentation file
+            target_ratio: Target compression ratio
+            prompt_keywords: Keywords from user prompt for relevance matching
+
+        Returns:
+            Context-aware summary with relevant sections preserved
+        """
+        from tenets.core.analysis.implementations.generic_analyzer import GenericAnalyzer
+
+        # Get configuration parameters
+        search_depth = getattr(self.config.summarizer, "docs_context_search_depth", 2)
+        min_confidence = getattr(self.config.summarizer, "docs_context_min_confidence", 0.6)
+        max_sections = getattr(self.config.summarizer, "docs_context_max_sections", 10)
+        preserve_examples = getattr(self.config.summarizer, "docs_context_preserve_examples", True)
+
+        # Use generic analyzer to extract context-relevant sections
+        analyzer = GenericAnalyzer()
+        file_path = Path(file.path)
+
+        context_result = analyzer.extract_context_relevant_sections(
+            content=file.content,
+            file_path=file_path,
+            prompt_keywords=prompt_keywords,
+            search_depth=search_depth,
+            min_confidence=min_confidence,
+            max_sections=max_sections,
+        )
+
+        relevant_sections = context_result["relevant_sections"]
+        metadata = context_result["metadata"]
+
+        summary_parts = []
+
+        # Add file header with context information
+        summary_parts.append(f"# {file_path.name}")
+        summary_parts.append(
+            f"*Documentation file with {len(relevant_sections)} relevant sections (search depth: {search_depth})*"
+        )
+        summary_parts.append("")
+
+        # If no relevant sections found, fall back to generic summarization
+        if not relevant_sections:
+            self.logger.debug(
+                f"No relevant sections found in {file.path}, using generic summarization"
+            )
+            generic_summary = self.summarize(
+                file.content, mode=SummarizationMode.EXTRACTIVE, target_ratio=target_ratio
+            ).summary
+            summary_parts.append("## Summary")
+            summary_parts.append(generic_summary)
+            return "\n".join(summary_parts)
+
+        # Add table of contents for relevant sections
+        if len(relevant_sections) > 1:
+            summary_parts.append("## Relevant Sections")
+            for i, section in enumerate(relevant_sections, 1):
+                context_type = section.get("context_type", "general")
+                score = section.get("relevance_score", 0.0)
+                summary_parts.append(
+                    f"{i}. **{section['title']}** ({context_type}, relevance: {score:.2f})"
+                )
+            summary_parts.append("")
+
+        # Process and include relevant sections with full context
+        total_length = 0
+        target_length = int(len(file.content) * target_ratio)
+
+        for section in relevant_sections:
+            if total_length >= target_length:
+                break
+
+            section_summary = self._format_relevant_section(section, preserve_examples)
+            section_length = len(section_summary)
+
+            # Include section if it fits within our target
+            if total_length + section_length <= target_length * 1.2:  # Allow 20% overage
+                summary_parts.append(section_summary)
+                summary_parts.append("")
+                total_length += section_length
+            else:
+                # Compress the section content to fit
+                compressed_content = self.summarize(
+                    section["content"], mode=SummarizationMode.EXTRACTIVE, target_ratio=0.5
+                ).summary
+
+                compressed_section = section.copy()
+                compressed_section["content"] = compressed_content
+                section_summary = self._format_relevant_section(
+                    compressed_section, preserve_examples
+                )
+                summary_parts.append(section_summary)
+                summary_parts.append("")
+                total_length += len(section_summary)
+
+        # Add metadata footer
+        summary_parts.append("---")
+        summary_parts.append(
+            f"*Context analysis: {metadata['matched_sections']}/{metadata['total_sections']} sections matched, "
+            f"avg relevance: {metadata['avg_relevance_score']:.2f}*"
+        )
+
+        return "\n".join(summary_parts)
+
+    def _format_relevant_section(
+        self, section: Dict[str, Any], preserve_examples: bool = True
+    ) -> str:
+        """Format a relevant section for inclusion in the summary.
+
+        Args:
+            section: Section dictionary with content and metadata
+            preserve_examples: Whether to preserve code examples
+
+        Returns:
+            Formatted section content
+        """
+        parts = []
+
+        # Section header with relevance info
+        title = section.get("title", "Section")
+        context_type = section.get("context_type", "general")
+        relevance_score = section.get("relevance_score", 0.0)
+
+        # Determine header level (ensure it's at least ##)
+        level = max(section.get("level", 2), 2)
+        header_prefix = "#" * level
+
+        parts.append(f"{header_prefix} {title}")
+        parts.append(f"*{context_type.title()} content (relevance: {relevance_score:.2f})*")
+        parts.append("")
+
+        # Add keyword matches summary
+        keyword_matches = section.get("keyword_matches", [])
+        if keyword_matches:
+            match_summary = []
+            for match in keyword_matches[:3]:  # Show top 3 matches
+                keyword = match.get("keyword", "")
+                match_type = match.get("match_type", "")
+                count = match.get("count", 0)
+                if count > 0:
+                    match_summary.append(f"{keyword} ({match_type}: {count})")
+
+            if match_summary:
+                parts.append(f"**Keywords found:** {', '.join(match_summary)}")
+                parts.append("")
+
+        # Process section content
+        content = section.get("content", "")
+
+        # Extract and highlight code examples if preserve_examples is True
+        if preserve_examples:
+            code_examples = section.get("code_examples", [])
+            if code_examples:
+                # Replace code blocks with highlighted versions
+                for example in code_examples:
+                    if example["type"] == "code_block":
+                        lang = example.get("language", "")
+                        code = example.get("code", "")
+                        # Ensure code blocks are properly highlighted
+                        highlighted = f"```{lang}\n{code}\n```"
+                        # Find and replace in content (this is a simplified approach)
+                        content = content.replace(example.get("raw_match", ""), highlighted)
+
+        # Add the content
+        parts.append(content.strip())
+
+        # Add extracted references if significant
+        api_refs = section.get("api_references", [])
+        config_refs = section.get("config_references", [])
+
+        if api_refs or config_refs:
+            parts.append("")
+            if api_refs:
+                api_names = [ref.get("name", "") for ref in api_refs[:5]]
+                parts.append(f"**API References:** {', '.join(filter(None, api_names))}")
+
+            if config_refs:
+                config_keys = [ref.get("key", "") for ref in config_refs[:5]]
+                parts.append(f"**Configuration:** {', '.join(filter(None, config_keys))}")
+
+        return "\n".join(parts)
 
 
 class FileSummarizer:

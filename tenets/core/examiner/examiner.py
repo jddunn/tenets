@@ -139,15 +139,19 @@ class ExaminationResult:
         """
         # If we have a hotspot report with its own health score, use it as a base
         # Otherwise start with a more realistic baseline
-        if self.hotspots and hasattr(self.hotspots, 'health_score'):
+        if self.hotspots and hasattr(self.hotspots, "health_score"):
             # Use hotspot health score as base (already factors in many issues)
-            score = self.hotspots.health_score
+            try:
+                score = float(self.hotspots.health_score)
+            except (TypeError, ValueError):
+                # If health_score is not a valid number (e.g., Mock), use default
+                score = 85.0
         else:
             # Start with a more realistic baseline when no deep analysis done
             score = 85.0
 
         # Additional adjustments based on other metrics
-        
+
         # Deduct for high complexity (if not already factored into hotspots)
         if self.complexity and not self.hotspots:
             complexity_penalty = min(15, self.complexity.high_complexity_count * 1.5)
@@ -167,7 +171,7 @@ class ExaminationResult:
                 coverage_val = 0.0
             if coverage_val <= 1:
                 coverage_val *= 100
-            
+
             # Adjust score based on coverage
             if coverage_val > 80:
                 score += 5
@@ -175,7 +179,7 @@ class ExaminationResult:
                 score -= 10
             elif coverage_val < 70:
                 score -= 5
-                
+
             # Documentation bonus
             try:
                 doc_ratio = float(getattr(self.metrics, "documentation_ratio", 0))
@@ -317,13 +321,13 @@ class Examiner:
                 exclude_patterns=exclude_patterns,
                 max_files=max_files,
             )
-            
+
             # Track excluded files and patterns for reporting
             all_files = list(path.rglob("*"))
             all_file_paths = [f for f in all_files if f.is_file()]
             included_paths = set(files)
             excluded_files = [str(f) for f in all_file_paths if f not in included_paths]
-            
+
             # Store excluded file information
             result.excluded_files = excluded_files[:1000]  # Limit to prevent huge lists
             result.excluded_count = len(excluded_files)
@@ -491,10 +495,9 @@ class Examiner:
                     # If f is a mock or invalid path-like, skip it
                     continue
                 # Strict: drop if pattern matches OR common test substring is present
-                if (
-                    any(fnmatch.fnmatch(name, p) or fnmatch.fnmatch(full, p) for p in exclude_patterns)
-                    or ("test_" in full)
-                ):
+                if any(
+                    fnmatch.fnmatch(name, p) or fnmatch.fnmatch(full, p) for p in exclude_patterns
+                ) or ("test_" in full):
                     continue
                 filtered.append(f)
             files = filtered

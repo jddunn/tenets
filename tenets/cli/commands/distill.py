@@ -32,7 +32,7 @@ def distill(
     path: Path = typer.Argument(Path(), help="Path to analyze (directory or files)"),
     # Output options
     format: str = typer.Option(
-        "markdown", "--format", "-f", help="Output format: markdown, xml, json"
+        "markdown", "--format", "-f", help="Output format: markdown, xml, json, html"
     ),
     output: Optional[Path] = typer.Option(
         None, "--output", "-o", help="Save output to file instead of stdout"
@@ -56,6 +56,14 @@ def distill(
     ),
     exclude: Optional[str] = typer.Option(
         None, "--exclude", "-e", help="Exclude file patterns (e.g., 'test_*,*.backup')"
+    ),
+    include_tests: bool = typer.Option(
+        False, "--include-tests", help="Include test files (overrides default exclusion)"
+    ),
+    exclude_tests: bool = typer.Option(
+        False,
+        "--exclude-tests",
+        help="Explicitly exclude test files (even for test-related prompts)",
     ),
     # Features
     no_git: bool = typer.Option(False, "--no-git", help="Disable git context inclusion"),
@@ -137,6 +145,15 @@ def distill(
         include_patterns = include.split(",") if include else None
         exclude_patterns = exclude.split(",") if exclude else None
 
+        # Determine test inclusion based on CLI flags
+        # Priority: exclude_tests flag > include_tests flag > automatic detection
+        test_inclusion = None
+        if exclude_tests:
+            test_inclusion = False  # Explicitly exclude tests
+        elif include_tests:
+            test_inclusion = True  # Explicitly include tests
+        # If neither flag is set, let the prompt analysis decide (test_inclusion = None)
+
         # Show progress unless quiet
         if not quiet:
             with Progress(
@@ -162,6 +179,7 @@ def distill(
                     full=full,
                     condense=condense,
                     remove_comments=remove_comments,
+                    include_tests=test_inclusion,
                 )
         else:
             # No progress bar in quiet mode
@@ -179,16 +197,17 @@ def distill(
                 full=full,
                 condense=condense,
                 remove_comments=remove_comments,
+                include_tests=test_inclusion,
             )
 
         # Prepare metadata and interactivity flags
         raw_meta = getattr(result, "metadata", {})
         metadata = raw_meta if isinstance(raw_meta, dict) else {}
-        
+
         # Show verbose debug information if requested
         if verbose and not quiet:
             console.print("\n[yellow]═══ Verbose Debug Information ═══[/yellow]")
-            
+
             # Show parsing details
             if "prompt_context" in metadata:
                 pc = metadata["prompt_context"]
@@ -198,7 +217,7 @@ def distill(
                 console.print(f"  Keywords: {pc.get('keywords', [])}")
                 console.print(f"  Synonyms: {pc.get('synonyms', [])}")
                 console.print(f"  Entities: {pc.get('entities', [])}")
-                
+
             # Show ranking details
             if "ranking_details" in metadata:
                 rd = metadata["ranking_details"]
@@ -207,17 +226,23 @@ def distill(
                 console.print(f"  Threshold: {rd.get('threshold', 0.1)}")
                 console.print(f"  Files Ranked: {rd.get('files_ranked', 0)}")
                 console.print(f"  Files Above Threshold: {rd.get('files_above_threshold', 0)}")
-                
+
                 # Show top ranked files
                 if "top_files" in rd:
                     console.print("\n[cyan]Top Ranked Files:[/cyan]")
                     for i, file_info in enumerate(rd["top_files"][:10], 1):
-                        console.print(f"  {i}. {file_info['path']} (score: {file_info['score']:.3f})")
+                        console.print(
+                            f"  {i}. {file_info['path']} (score: {file_info['score']:.3f})"
+                        )
                         if "match_details" in file_info:
                             md = file_info["match_details"]
-                            console.print(f"      Keywords matched: {md.get('keywords_matched', [])}")
-                            console.print(f"      Semantic score: {md.get('semantic_score', 0):.3f}")
-                            
+                            console.print(
+                                f"      Keywords matched: {md.get('keywords_matched', [])}"
+                            )
+                            console.print(
+                                f"      Semantic score: {md.get('semantic_score', 0):.3f}"
+                            )
+
             # Show aggregation details
             if "aggregation_details" in metadata:
                 ad = metadata["aggregation_details"]
@@ -230,7 +255,7 @@ def distill(
                     console.print("\n  [yellow]Rejection Reasons:[/yellow]")
                     for reason, count in ad["rejection_reasons"].items():
                         console.print(f"    {reason}: {count} files")
-                        
+
             console.print("\n[yellow]═════════════════════════════[/yellow]\n")
         files_included = metadata.get("files_included", 0)
         files_analyzed = metadata.get("files_analyzed", 0)

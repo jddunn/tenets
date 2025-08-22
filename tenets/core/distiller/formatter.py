@@ -36,13 +36,16 @@ class ContextFormatter:
         """Format aggregated context for output.
 
         Args:
-            aggregated: Aggregated context data
-            format: Output format (markdown, xml, json)
-            prompt_context: Original prompt context
-            session_name: Optional session name
+            aggregated: Aggregated context data containing files and statistics.
+            format: Output format (markdown, xml, json, html).
+            prompt_context: Original prompt context with task analysis.
+            session_name: Optional session name for context tracking.
 
         Returns:
-            Formatted context string
+            Formatted context string in the requested format.
+
+        Raises:
+            ValueError: If format is not supported.
         """
         self.logger.debug(f"Formatting context as {format}")
 
@@ -52,13 +55,24 @@ class ContextFormatter:
             return self._format_xml(aggregated, prompt_context, session_name)
         elif format == "json":
             return self._format_json(aggregated, prompt_context, session_name)
+        elif format == "html":
+            return self._format_html(aggregated, prompt_context, session_name)
         else:
             raise ValueError(f"Unknown format: {format}")
 
     def _format_markdown(
         self, aggregated: Dict[str, Any], prompt_context: PromptContext, session_name: Optional[str]
     ) -> str:
-        """Format as markdown."""
+        """Format context as markdown.
+
+        Args:
+            aggregated: Aggregated context data.
+            prompt_context: Original prompt context.
+            session_name: Optional session name.
+
+        Returns:
+            Markdown-formatted string optimized for AI assistants.
+        """
         lines = []
 
         # Header
@@ -86,12 +100,12 @@ class ContextFormatter:
         # Statistics
         stats = aggregated["statistics"]
         lines.append("## Context Summary")
-        lines.append(f"- **Files Found**: {stats['files_analyzed']}")
+        lines.append(f"- **Files Found**: {stats.get('files_analyzed', 0)}")
         lines.append(
-            f"- **Files Included**: {stats['files_included']} full, {stats['files_summarized']} summarized"
+            f"- **Files Included**: {stats.get('files_included', 0)} full, {stats.get('files_summarized', 0)} summarized"
         )
         lines.append(
-            f"- **Token Usage**: {aggregated['total_tokens']:,} / {aggregated['available_tokens']:,} ({stats['token_utilization']:.1%})"
+            f"- **Token Usage**: {aggregated.get('total_tokens', 0):,} / {aggregated.get('available_tokens', 0):,} ({stats.get('token_utilization', 0):.1%})"
         )
         lines.append("")
 
@@ -125,17 +139,45 @@ class ContextFormatter:
 
             for file_info in full_files:
                 file = file_info["file"]
-                lines.append(f"#### {file.path} ({file.lines} lines)")
+                content = file_info["content"]
 
-                # Add file metadata
-                lines.append(f"*Language: {file.language} | Relevance: {file.relevance_score:.2f}*")
-                lines.append("")
+                # Check if this is a context-aware documentation file
+                metadata = file_info.get("metadata", {})
+                is_docs_context_aware = metadata.get("context_aware", False) and metadata.get(
+                    "is_documentation", False
+                )
 
-                # Add content with syntax highlighting
-                lines.append(f"```{file.language}")
-                lines.append(file_info["content"])
-                lines.append("```")
-                lines.append("")
+                if is_docs_context_aware:
+                    # Special handling for context-aware documentation
+                    lines.append(f"#### 📖 {file.path} (Documentation with relevant context)")
+
+                    # Add enhanced metadata for documentation
+                    prompt_keywords = metadata.get("prompt_keywords", [])
+                    if prompt_keywords:
+                        lines.append(f"*Context keywords: {', '.join(prompt_keywords[:5])}*")
+                    lines.append(
+                        f"*Language: {file.language} | Relevance: {file.relevance_score:.2f}*"
+                    )
+                    lines.append("")
+
+                    # For documentation, display content directly (already formatted)
+                    lines.append(content)
+                    lines.append("")
+                else:
+                    # Standard file formatting
+                    lines.append(f"#### {file.path} ({file.lines} lines)")
+
+                    # Add file metadata
+                    lines.append(
+                        f"*Language: {file.language} | Relevance: {file.relevance_score:.2f}*"
+                    )
+                    lines.append("")
+
+                    # Add content with syntax highlighting
+                    lines.append(f"```{file.language}")
+                    lines.append(content)
+                    lines.append("```")
+                    lines.append("")
 
         if summarized_files:
             lines.append("### Summarized Files")
@@ -144,23 +186,56 @@ class ContextFormatter:
             for file_info in summarized_files:
                 file = file_info["file"]
                 summary = file_info.get("summary")
+                content = file_info["content"]
 
                 # Get token count from file_info (already calculated in aggregator)
                 token_count = file_info.get("tokens", 0)
-                lines.append(
-                    f"#### {file.path} (Summary: {file.lines} lines → {token_count} tokens)"
-                )
-                lines.append(f"*Language: {file.language} | Relevance: {file.relevance_score:.2f}*")
-                lines.append("")
 
-                lines.append(f"```{file.language}")
-                lines.append(file_info["content"])
-                lines.append("```")
+                # Check if this is a context-aware documentation file
+                metadata = file_info.get("metadata", {})
+                is_docs_context_aware = metadata.get("context_aware", False) and metadata.get(
+                    "is_documentation", False
+                )
+
+                if is_docs_context_aware:
+                    # Special handling for context-aware documentation summaries
+                    lines.append(
+                        f"#### 📖 {file.path} (Documentation summary with relevant context)"
+                    )
+
+                    # Add enhanced metadata for documentation
+                    prompt_keywords = metadata.get("prompt_keywords", [])
+                    if prompt_keywords:
+                        lines.append(f"*Context keywords: {', '.join(prompt_keywords[:5])}*")
+                    lines.append(
+                        f"*Language: {file.language} | Relevance: {file.relevance_score:.2f} | Summary: {file.lines} lines → {token_count} tokens*"
+                    )
+                    lines.append("")
+
+                    # For documentation, display content directly (already formatted with context)
+                    lines.append(content)
+                    lines.append("")
+                else:
+                    # Standard summary formatting
+                    lines.append(
+                        f"#### {file.path} (Summary: {file.lines} lines → {token_count} tokens)"
+                    )
+                    lines.append(
+                        f"*Language: {file.language} | Relevance: {file.relevance_score:.2f}*"
+                    )
+                    lines.append("")
+
+                    lines.append(f"```{file.language}")
+                    lines.append(content)
+                    lines.append("```")
 
                 # Add any metadata about the summary if available
-                if summary and hasattr(summary, 'metadata') and summary.metadata:
+                if summary and hasattr(summary, "metadata") and summary.metadata:
                     lines.append("")
-                    lines.append(f"*Summary strategy: {summary.strategy_used}*")
+                    if is_docs_context_aware:
+                        lines.append(f"*Summary strategy: {summary.strategy_used} (context-aware)*")
+                    else:
+                        lines.append(f"*Summary strategy: {summary.strategy_used}*")
 
                 lines.append("")
 
@@ -184,7 +259,16 @@ class ContextFormatter:
     def _format_xml(
         self, aggregated: Dict[str, Any], prompt_context: PromptContext, session_name: Optional[str]
     ) -> str:
-        """Format as XML (optimized for Claude)."""
+        """Format context as XML.
+
+        Args:
+            aggregated: Aggregated context data.
+            prompt_context: Original prompt context.
+            session_name: Optional session name.
+
+        Returns:
+            XML-formatted string optimized for Claude.
+        """
         lines = []
 
         lines.append('<?xml version="1.0" encoding="UTF-8"?>')
@@ -204,20 +288,20 @@ class ContextFormatter:
         # Analysis
         lines.append("  <analysis>")
         lines.append(f"    <task_type>{prompt_context.task_type}</task_type>")
-        lines.append(f'    <keywords>{", ".join(prompt_context.keywords)}</keywords>')
+        lines.append(f"    <keywords>{', '.join(prompt_context.keywords)}</keywords>")
 
         if prompt_context.focus_areas:
-            lines.append(f'    <focus_areas>{", ".join(prompt_context.focus_areas)}</focus_areas>')
+            lines.append(f"    <focus_areas>{', '.join(prompt_context.focus_areas)}</focus_areas>")
 
         lines.append("  </analysis>")
 
         # Statistics
         stats = aggregated["statistics"]
         lines.append("  <statistics>")
-        lines.append(f'    <files_analyzed>{stats["files_analyzed"]}</files_analyzed>')
-        lines.append(f'    <files_included>{stats["files_included"]}</files_included>')
-        lines.append(f'    <files_summarized>{stats["files_summarized"]}</files_summarized>')
-        lines.append(f'    <total_tokens>{aggregated["total_tokens"]}</total_tokens>')
+        lines.append(f"    <files_analyzed>{stats.get('files_analyzed', 0)}</files_analyzed>")
+        lines.append(f"    <files_included>{stats.get('files_included', 0)}</files_included>")
+        lines.append(f"    <files_summarized>{stats.get('files_summarized', 0)}</files_summarized>")
+        lines.append(f"    <total_tokens>{aggregated['total_tokens']}</total_tokens>")
         lines.append("  </statistics>")
 
         # Files
@@ -232,7 +316,7 @@ class ContextFormatter:
             lines.append(f"      <language>{file.language}</language>")
             lines.append(f"      <relevance>{file.relevance_score:.2f}</relevance>")
             lines.append(f"      <lines>{file.lines}</lines>")
-            lines.append(f"      <content><![CDATA[")
+            lines.append("      <content><![CDATA[")
             lines.append(file_info["content"])
             lines.append("      ]]></content>")
 
@@ -240,7 +324,7 @@ class ContextFormatter:
                 summary = file_info["summary"]
                 if summary.instructions:
                     lines.append(
-                        f'      <instructions>{self._escape_xml(" ".join(summary.instructions))}</instructions>'
+                        f"      <instructions>{self._escape_xml(' '.join(summary.instructions))}</instructions>"
                     )
 
             lines.append("    </file>")
@@ -257,7 +341,16 @@ class ContextFormatter:
     def _format_json(
         self, aggregated: Dict[str, Any], prompt_context: PromptContext, session_name: Optional[str]
     ) -> str:
-        """Format as JSON."""
+        """Format context as JSON.
+
+        Args:
+            aggregated: Aggregated context data.
+            prompt_context: Original prompt context.
+            session_name: Optional session name.
+
+        Returns:
+            JSON-formatted string for programmatic use.
+        """
         data = {
             "context": {
                 "prompt": prompt_context.text,
@@ -279,7 +372,7 @@ class ContextFormatter:
             file = file_info["file"]
 
             file_data = {
-                "path": file.path,
+                "path": str(file.path),  # Convert Path to string
                 "language": file.language,
                 "relevance_score": file.relevance_score,
                 "lines": file.lines,
@@ -300,12 +393,19 @@ class ContextFormatter:
 
         # Add git context if available
         if "git_context" in aggregated:
-            data["git_context"] = aggregated["git_context"]
+            data["git_context"] = self._make_json_serializable(aggregated["git_context"])
 
-        return json.dumps(data, indent=2)
+        return json.dumps(data, indent=2, default=str)  # Use default=str as fallback
 
     def _format_git_context_markdown(self, git_context: Dict[str, Any]) -> List[str]:
-        """Format git context for markdown."""
+        """Format git context for markdown output.
+
+        Args:
+            git_context: Git context data including branch, commits, contributors.
+
+        Returns:
+            List of markdown-formatted lines.
+        """
         lines = ["## Git Context"]
 
         if "branch" in git_context:
@@ -328,11 +428,18 @@ class ContextFormatter:
         return lines
 
     def _format_git_context_xml(self, git_context: Dict[str, Any]) -> List[str]:
-        """Format git context for XML."""
+        """Format git context for XML output.
+
+        Args:
+            git_context: Git context data including branch, commits, contributors.
+
+        Returns:
+            List of XML-formatted lines.
+        """
         lines = ["  <git_context>"]
 
         if "branch" in git_context:
-            lines.append(f'    <branch>{git_context["branch"]}</branch>')
+            lines.append(f"    <branch>{git_context['branch']}</branch>")
 
         if "recent_commits" in git_context:
             lines.append("    <recent_commits>")
@@ -340,7 +447,7 @@ class ContextFormatter:
                 lines.append(
                     f'      <commit sha="{commit["sha"]}" author="{self._escape_xml(commit["author"])}" date="{commit["date"]}">'
                 )
-                lines.append(f'        <message>{self._escape_xml(commit["message"])}</message>')
+                lines.append(f"        <message>{self._escape_xml(commit['message'])}</message>")
                 lines.append("      </commit>")
             lines.append("    </recent_commits>")
 
@@ -348,7 +455,14 @@ class ContextFormatter:
         return lines
 
     def _escape_xml(self, text: str) -> str:
-        """Escape special characters for XML."""
+        """Escape special characters for XML.
+
+        Args:
+            text: Text to escape.
+
+        Returns:
+            XML-safe escaped string.
+        """
         return (
             text.replace("&", "&amp;")
             .replace("<", "&lt;")
@@ -356,3 +470,955 @@ class ContextFormatter:
             .replace('"', "&quot;")
             .replace("'", "&apos;")
         )
+
+    def _format_html(
+        self, aggregated: Dict[str, Any], prompt_context: PromptContext, session_name: Optional[str]
+    ) -> str:
+        """Format as interactive HTML report with visualizations.
+
+        Args:
+            aggregated: Aggregated context data containing files and statistics.
+            prompt_context: Original prompt context with task analysis.
+            session_name: Optional session name for the report.
+
+        Returns:
+            Formatted HTML string with interactive features.
+        """
+        from tenets.core.reporting.html_reporter import HTMLTemplate
+        from tenets.core.reporting.visualizer import ChartGenerator
+
+        # Create HTML template and chart generator
+        template = HTMLTemplate(theme="modern", include_charts=True)
+        chart_gen = ChartGenerator(self.config)
+
+        # Build HTML structure
+        html_parts = []
+
+        # Get base template and styles
+        base = template.get_base_template()
+        styles = template.get_styles()
+
+        # Add custom styles for distill report
+        custom_styles = """
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                line-height: 1.6;
+                color: #1a202c;
+                background: #f7fafc;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
+            .distill-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 2rem;
+                border-radius: 0.5rem;
+                margin-bottom: 2rem;
+            }
+            .distill-header h1 {
+                margin: 0 0 0.5rem 0;
+                font-size: 2rem;
+            }
+            .distill-header p {
+                margin: 0.25rem 0;
+                opacity: 0.95;
+            }
+            .metadata-section {
+                background: white;
+                border-radius: 0.5rem;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            .metadata-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 1rem;
+            }
+            .metadata-table th {
+                text-align: left;
+                padding: 0.75rem;
+                background: #f7fafc;
+                border-bottom: 2px solid #e2e8f0;
+                font-weight: 600;
+            }
+            .metadata-table td {
+                padding: 0.75rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .badge {
+                display: inline-block;
+                padding: 0.25rem 0.75rem;
+                border-radius: 9999px;
+                font-size: 0.875rem;
+                font-weight: 500;
+            }
+            .badge-primary {
+                background: #667eea;
+                color: white;
+            }
+            .prompt-box {
+                background: white;
+                border-left: 4px solid #667eea;
+                padding: 1.5rem;
+                margin: 1rem 0;
+                border-radius: 0.5rem;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            .file-card {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                margin: 1rem 0;
+                transition: box-shadow 0.3s;
+                position: relative;
+            }
+            .file-card:hover {
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            .code-preview {
+                background: #1e293b;
+                color: #e2e8f0;
+                padding: 1rem;
+                border-radius: 0.25rem;
+                overflow-x: auto;
+                font-family: 'Courier New', monospace;
+                font-size: 0.875rem;
+                position: relative;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            .code-preview pre {
+                margin: 0;
+                white-space: pre-wrap;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin: 2rem 0;
+            }
+            .stat-card {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                text-align: center;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            .stat-value {
+                font-size: 2rem;
+                font-weight: bold;
+                color: #667eea;
+            }
+            .stat-label {
+                color: #64748b;
+                font-size: 0.875rem;
+                margin-top: 0.5rem;
+            }
+            .copy-button {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                background: #667eea;
+                color: white;
+                border: none;
+                border-radius: 0.25rem;
+                padding: 0.25rem 0.5rem;
+                cursor: pointer;
+                font-size: 0.75rem;
+                transition: background 0.3s;
+            }
+            .copy-button:hover {
+                background: #764ba2;
+            }
+            .copy-button.copied {
+                background: #10b981;
+            }
+            .export-controls {
+                display: flex;
+                gap: 1rem;
+                margin: 1rem 0;
+                padding: 1rem;
+                background: white;
+                border-radius: 0.5rem;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            .export-button {
+                background: #667eea;
+                color: white;
+                border: none;
+                border-radius: 0.25rem;
+                padding: 0.5rem 1rem;
+                cursor: pointer;
+                transition: background 0.3s;
+            }
+            .export-button:hover {
+                background: #764ba2;
+            }
+            .search-box {
+                flex: 1;
+                padding: 0.5rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.25rem;
+                font-size: 1rem;
+            }
+            .highlight {
+                background: yellow;
+                font-weight: bold;
+            }
+            .expand-button {
+                background: none;
+                border: 1px solid #667eea;
+                color: #667eea;
+                border-radius: 0.25rem;
+                padding: 0.25rem 0.5rem;
+                cursor: pointer;
+                font-size: 0.75rem;
+                margin-top: 0.5rem;
+            }
+            .expand-button:hover {
+                background: #667eea;
+                color: white;
+            }
+            .file-content-full {
+                display: none;
+                background: #1e293b;
+                color: #e2e8f0;
+                padding: 1rem;
+                border-radius: 0.25rem;
+                margin-top: 0.5rem;
+                overflow-x: auto;
+            }
+            .file-content-full.expanded {
+                display: block;
+            }
+            .file-content-full pre {
+                margin: 0;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            section {
+                margin: 2rem 0;
+            }
+            section h2 {
+                color: #2d3748;
+                margin-bottom: 1rem;
+                font-size: 1.5rem;
+            }
+
+            /* Tab Interface */
+            .tab-container {
+                margin-bottom: 2rem;
+            }
+
+            .tab-nav {
+                display: flex;
+                align-items: center;
+                background: #f8fafc;
+                border-radius: 8px;
+                padding: 8px;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .tab-button {
+                background: none;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #64748b;
+                transition: all 0.3s;
+            }
+
+            .tab-button:hover {
+                background: #e2e8f0;
+                color: #2d3748;
+            }
+
+            .tab-button.active {
+                background: #667eea;
+                color: white;
+            }
+
+            .tab-controls {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                margin-left: auto;
+                flex-wrap: wrap;
+            }
+
+            .tab-content {
+                display: none;
+                padding: 20px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                margin-bottom: 20px;
+            }
+
+            .tab-content.active {
+                display: block;
+            }
+
+            /* Content viewers */
+            .content-viewer {
+                max-height: 600px;
+                overflow-y: auto;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                padding: 16px;
+                background: #f8fafc;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 0.875rem;
+                line-height: 1.6;
+                white-space: pre-wrap;
+            }
+
+            .markdown-viewer {
+                max-height: 600px;
+                overflow-y: auto;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                padding: 20px;
+                background: white;
+                line-height: 1.6;
+            }
+
+            .markdown-viewer h1, .markdown-viewer h2, .markdown-viewer h3 {
+                color: #2d3748;
+                margin-top: 1.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .markdown-viewer h1 { font-size: 1.5rem; }
+            .markdown-viewer h2 { font-size: 1.25rem; }
+            .markdown-viewer h3 { font-size: 1.125rem; }
+
+            .markdown-viewer pre {
+                background: #f8fafc;
+                padding: 12px;
+                border-radius: 6px;
+                overflow-x: auto;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 0.875rem;
+            }
+
+            .markdown-viewer code {
+                background: #f1f5f9;
+                padding: 2px 4px;
+                border-radius: 3px;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 0.875rem;
+            }
+
+            .json-viewer {
+                max-height: 600px;
+                overflow-y: auto;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                padding: 16px;
+                background: #1e293b;
+                color: #e2e8f0;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 0.875rem;
+                line-height: 1.6;
+            }
+
+            .json-viewer .json-key {
+                color: #60a5fa;
+            }
+
+            .json-viewer .json-string {
+                color: #34d399;
+            }
+
+            .json-viewer .json-number {
+                color: #fbbf24;
+            }
+
+            .json-viewer .json-boolean {
+                color: #f87171;
+            }
+
+            .json-viewer .json-null {
+                color: #9ca3af;
+            }
+        </style>
+        """
+
+        # Prepare chart data
+        included_files = aggregated.get("included_files", [])
+        stats = aggregated.get("statistics", {})
+
+        # Create file distribution chart
+        file_languages = {}
+        for file_info in included_files:
+            lang = file_info["file"].language
+            file_languages[lang] = file_languages.get(lang, 0) + 1
+
+        file_dist_chart = ""
+        if file_languages:
+            chart_config = chart_gen.create_pie_chart(
+                labels=list(file_languages.keys()),
+                values=list(file_languages.values()),
+                title="File Distribution by Language",
+            )
+            file_dist_chart = f"""
+            <canvas id="fileDistChart"></canvas>
+            <script>
+                const fileDistConfig = {json.dumps(chart_config, default=str)};
+            </script>
+            """
+
+        # Create a JSON-serializable version of aggregated data
+        json_safe_aggregated = self._make_json_serializable(aggregated)
+
+        # Add JavaScript for interactivity
+        scripts = """
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Copy functionality using data from textarea
+            function copyFileContent(fileId) {
+                const textarea = document.getElementById('content-' + fileId);
+                const buttonId = 'copy-' + fileId;
+                if (textarea) {
+                    navigator.clipboard.writeText(textarea.value).then(function() {
+                        const button = document.getElementById(buttonId);
+                        const originalText = button.innerText;
+                        button.innerText = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.innerText = originalText;
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(function(err) {
+                        console.error('Copy failed:', err);
+                    });
+                }
+            }
+
+            // Export functionality
+            function exportAsJSON() {
+                const data = window.contextData || {};
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'context-report.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function exportAsMarkdown() {
+                const markdown = window.markdownContent || '';
+                const blob = new Blob([markdown], {type: 'text/markdown'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'context-report.md';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // Search functionality
+            function searchContent() {
+                const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+                const cards = document.querySelectorAll('.file-card');
+
+                cards.forEach(card => {
+                    const content = card.textContent.toLowerCase();
+                    if (searchTerm === '' || content.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            // Expand/collapse functionality
+            function toggleExpand(fileId) {
+                const fullContent = document.getElementById('full-' + fileId);
+                const preview = document.getElementById('preview-' + fileId);
+                const button = document.getElementById('expand-' + fileId);
+
+                if (fullContent.classList.contains('expanded')) {
+                    fullContent.classList.remove('expanded');
+                    preview.style.display = 'block';
+                    button.innerText = 'Show Full';
+                } else {
+                    fullContent.classList.add('expanded');
+                    preview.style.display = 'none';
+                    button.innerText = 'Show Less';
+                }
+            }
+
+            // Tab switching functionality
+            function openTab(evt, tabName) {
+                // Hide all tab content
+                const tabContents = document.getElementsByClassName('tab-content');
+                for (let i = 0; i < tabContents.length; i++) {
+                    tabContents[i].classList.remove('active');
+                }
+
+                // Remove active class from all tab buttons
+                const tabButtons = document.getElementsByClassName('tab-button');
+                for (let i = 0; i < tabButtons.length; i++) {
+                    tabButtons[i].classList.remove('active');
+                }
+
+                // Show the selected tab content and mark button as active
+                document.getElementById(tabName).classList.add('active');
+                evt.currentTarget.classList.add('active');
+
+                // Initialize JSON viewer if switching to JSON tab
+                if (tabName === 'json-tab') {
+                    initializeJsonViewer();
+                }
+            }
+
+            // JSON viewer with syntax highlighting
+            function initializeJsonViewer() {
+                const jsonRaw = document.getElementById('json-raw');
+                if (jsonRaw && window.contextData) {
+                    jsonRaw.innerHTML = syntaxHighlightJson(JSON.stringify(window.contextData, null, 2));
+                }
+            }
+
+            // Simple JSON syntax highlighting
+            function syntaxHighlightJson(json) {
+                json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\\s*:)?|\b(true|false|null)\b|-?\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?)/g, function (match) {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+            }
+
+            // Store data for export
+            window.contextData = %s;
+            window.markdownContent = %s;
+
+            // Initialize after page load
+            window.addEventListener('DOMContentLoaded', function() {
+                // Initialize charts
+                if (typeof fileDistConfig !== 'undefined') {
+                    const ctx = document.getElementById('fileDistChart');
+                    if (ctx) {
+                        new Chart(ctx, fileDistConfig);
+                    }
+                }
+
+                // Add event listeners for copy buttons
+                document.querySelectorAll('.copy-button').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const fileId = this.getAttribute('data-file-id');
+                        copyFileContent(fileId);
+                    });
+                });
+
+                // Add event listeners for expand buttons
+                document.querySelectorAll('.expand-button').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const fileId = this.getAttribute('data-file-id');
+                        toggleExpand(fileId);
+                    });
+                });
+            });
+        </script>
+        """ % (
+            self._escape_json_for_js(json.dumps(json_safe_aggregated)),
+            self._escape_json_for_js(
+                json.dumps(self._format_markdown(aggregated, prompt_context, session_name))
+            ),
+        )
+
+        # Build header with metadata
+        metadata = aggregated.get("metadata", {})
+        header = f"""
+        <div class="distill-header">
+            <h1>Context Distillation Report</h1>
+            <p>Generated by Tenets v{self.config.version} at {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+            {f"<p>Session: {session_name}</p>" if session_name else ""}
+        </div>
+
+        <!-- Metadata Table -->
+        <div class="metadata-section">
+            <h2>📋 Analysis Configuration</h2>
+            <table class="metadata-table">
+                <tr><th>Parameter</th><th>Value</th></tr>
+                <tr><td>Mode</td><td><span class="badge badge-primary">{metadata.get("mode", "balanced")}</span></td></tr>
+                <tr><td>Max Tokens</td><td>{metadata.get("max_tokens", getattr(self.config, "max_tokens", 100000)):,}</td></tr>
+                <tr><td>Model</td><td>{metadata.get("model", getattr(self.config, "model", "gpt-4"))}</td></tr>
+                <tr><td>Files Analyzed</td><td>{aggregated.get("statistics", {}).get("files_analyzed", 0)}</td></tr>
+                <tr><td>Threshold</td><td>{metadata.get("threshold", getattr(self.config.ranking, "threshold", 0.1))}</td></tr>
+                <tr><td>Include Git</td><td>{"✓" if aggregated.get("git_context") else "✗"}</td></tr>
+                <tr><td>Time Elapsed</td><td>{metadata.get("time_elapsed", "N/A")}</td></tr>
+            </table>
+        </div>
+        """
+
+        # Build tabbed interface with export controls
+        export_controls = """
+        <div class="tab-container">
+            <div class="tab-nav">
+                <button class="tab-button active" onclick="openTab(event, 'files-tab')">📁 File Explorer</button>
+                <button class="tab-button" onclick="openTab(event, 'markdown-tab')">📄 Markdown View</button>
+                <button class="tab-button" onclick="openTab(event, 'json-tab')">🔧 JSON Data</button>
+                <div class="tab-controls">
+                    <input type="text" id="searchBox" class="search-box" placeholder="🔍 Search..." onkeyup="searchContent()">
+                    <button class="export-button" onclick="exportAsJSON()">📥 JSON</button>
+                    <button class="export-button" onclick="exportAsMarkdown()">📄 MD</button>
+                    <button class="export-button" id="copy-all" onclick="copyToClipboard(window.markdownContent, 'copy-all')">📋 Copy</button>
+                </div>
+            </div>
+        </div>
+        """
+
+        # Build prompt section
+        prompt_section = f"""
+        <section class="prompt-box">
+            <h2>📝 Original Prompt</h2>
+            <p><strong>{self._escape_html(prompt_context.text)}</strong></p>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{prompt_context.task_type}</div>
+                    <div class="stat-label">Task Type</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{len(prompt_context.keywords)}</div>
+                    <div class="stat-label">Keywords</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{len(prompt_context.entities)}</div>
+                    <div class="stat-label">Entities</div>
+                </div>
+            </div>
+        </section>
+        """
+
+        # Build statistics section with chart
+        stats_section = f"""
+        <section>
+            <h2>📊 Context Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{stats.get("files_analyzed", 0)}</div>
+                    <div class="stat-label">Files Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{stats.get("files_included", 0)}</div>
+                    <div class="stat-label">Full Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{stats.get("files_summarized", 0)}</div>
+                    <div class="stat-label">Summarized</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{aggregated.get("total_tokens", 0):,}</div>
+                    <div class="stat-label">Total Tokens</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{stats.get("token_utilization", 0) * 100:.1f}%</div>
+                    <div class="stat-label">Token Utilization</div>
+                </div>
+            </div>
+            {f'<div style="max-width: 400px; margin: 2rem auto;">{file_dist_chart}</div>' if file_dist_chart else ""}
+        </section>
+        """
+
+        # Build files section
+        files_section = ["<section><h2>📁 Included Files</h2>"]
+
+        included_files = aggregated.get("included_files", [])
+        for idx, file_info in enumerate(included_files):
+            file = file_info["file"]
+            is_summarized = file_info.get("summarized", False)
+            file_id = f"file-{idx}"
+            content = file_info["content"]
+
+            # Store content in a data attribute to avoid inline JavaScript with content
+            escaped_content = self._escape_html(content)
+            files_section.append(
+                f"""
+            <div class="file-card" data-file-id="{file_id}" data-content-length="{len(content)}">
+                <button class="copy-button" id="copy-{file_id}"
+                        data-file-id="{file_id}">
+                    📋 Copy
+                </button>
+                <h3>{self._escape_html(str(file.path))}</h3>
+                <div style="display: flex; gap: 1rem; margin: 0.5rem 0;">
+                    <span class="badge">{self._escape_html(file.language)}</span>
+                    <span class="badge">Relevance: {file.relevance_score:.2f}</span>
+                    <span class="badge">{"Summarized" if is_summarized else "Full"}</span>
+                    <span class="badge">{file_info.get("tokens", 0)} tokens</span>
+                </div>
+                <div class="code-preview" id="preview-{file_id}">
+                    <pre>{escaped_content[:500]}{"..." if len(content) > 500 else ""}</pre>
+                </div>
+                <div class="file-content-full" id="full-{file_id}">
+                    <pre>{escaped_content}</pre>
+                </div>
+                <textarea style="display:none" id="content-{file_id}">{escaped_content}</textarea>
+                <button class="expand-button" id="expand-{file_id}"
+                        data-file-id="{file_id}">
+                    Show Full
+                </button>
+            </div>
+            """
+            )
+
+        files_section.append("</section>")
+
+        # Build git context section if available
+        git_section = ""
+        if aggregated.get("git_context"):
+            git = aggregated["git_context"]
+            git_section = f"""
+            <section>
+                <h2>🔀 Git Context</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{git.get("current_branch", "N/A")}</div>
+                        <div class="stat-label">Current Branch</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{len(git.get("recent_commits", []))}</div>
+                        <div class="stat-label">Recent Commits</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{len(git.get("contributors", []))}</div>
+                        <div class="stat-label">Contributors</div>
+                    </div>
+                </div>
+            </section>
+            """
+
+        # Build tab content sections
+        files_tab_content = f"""
+        <div id="files-tab" class="tab-content active">
+            {prompt_section}
+            {stats_section}
+            {"".join(files_section)}
+            {git_section}
+        </div>
+        """
+
+        markdown_tab_content = f"""
+        <div id="markdown-tab" class="tab-content">
+            <h2>📄 Full Markdown Context</h2>
+            <div class="markdown-viewer" id="markdown-content">
+                {self._render_markdown_content(aggregated, prompt_context)}
+            </div>
+        </div>
+        """
+
+        json_tab_content = """
+        <div id="json-tab" class="tab-content">
+            <h2>🔧 Raw JSON Data</h2>
+            <div class="json-viewer" id="json-content">
+                <pre id="json-raw"></pre>
+            </div>
+        </div>
+        """
+
+        # Combine all sections with proper container
+        content = f"""
+        <div class="container">
+            {header}
+            {export_controls}
+            {files_tab_content}
+            {markdown_tab_content}
+            {json_tab_content}
+        </div>
+        """
+
+        # Build final HTML
+        html = base.format(
+            title="Tenets Context Distillation Report",
+            styles=styles + custom_styles,
+            scripts=scripts,
+            header="",
+            navigation="",
+            content=content,
+            footer='<footer style="text-align: center; padding: 2rem; color: #64748b;">Generated by Tenets</footer>',
+            chart_scripts="",
+        )
+
+        return html
+
+    def _escape_html(self, text: str) -> str:
+        """Escape special characters for HTML.
+
+        Args:
+            text: Text to escape.
+
+        Returns:
+            HTML-safe escaped string.
+        """
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;")
+        )
+
+    def _escape_js(self, text: str) -> str:
+        """Escape special characters for JavaScript strings.
+
+        Args:
+            text: Text to escape.
+
+        Returns:
+            JavaScript-safe escaped string for use in template literals.
+        """
+        return (
+            text.replace("\\", "\\\\")
+            .replace("`", "\\`")
+            .replace("$", "\\$")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        )
+
+    def _escape_json_for_js(self, json_str: str) -> str:
+        """Escape JSON string for safe embedding in JavaScript.
+
+        This prevents XSS attacks when embedding JSON data into HTML/JS.
+
+        Args:
+            json_str: JSON string to escape.
+
+        Returns:
+            JavaScript-safe JSON string.
+        """
+        return (
+            json_str.replace("</", "<\\/")  # Prevent closing script tags
+            .replace("<script", "<\\u0073cript")  # Escape script tags
+            .replace("</script", "<\\/\\u0073cript")  # Escape closing script tags
+            .replace("<!--", "<\\u0021--")  # Escape HTML comments
+            .replace("-->", "--\\u003e")  # Escape closing HTML comments
+        )
+
+    def _render_markdown_content(self, aggregated: Dict[str, Any], prompt_context) -> str:
+        """Render the full markdown content for the markdown viewer tab.
+
+        Args:
+            aggregated: The aggregated context data
+            prompt_context: The prompt context
+
+        Returns:
+            HTML-formatted markdown content
+        """
+        # Get the markdown content that would be exported
+        markdown_content = self._format_markdown(aggregated, prompt_context, None)
+
+        # Convert markdown to HTML (basic conversion)
+        html_content = self._markdown_to_html(markdown_content)
+
+        return html_content
+
+    def _markdown_to_html(self, markdown_text: str) -> str:
+        """Convert markdown text to HTML.
+
+        Args:
+            markdown_text: Markdown text to convert
+
+        Returns:
+            HTML representation of the markdown
+        """
+        # Basic markdown to HTML conversion
+        html = self._escape_html(markdown_text)
+
+        # Convert headers
+        html = html.replace("\n### ", "\n<h3>").replace("\n## ", "\n<h2>").replace("\n# ", "\n<h1>")
+        # Close headers (simplified)
+        html = html.replace("<h1>", "<h1>").replace("\n", "</h1>\n", 1) if "<h1>" in html else html
+        html = html.replace("<h2>", "<h2>").replace("\n", "</h2>\n", 1) if "<h2>" in html else html
+        html = html.replace("<h3>", "<h3>").replace("\n", "</h3>\n", 1) if "<h3>" in html else html
+
+        # Convert code blocks
+        lines = html.split("\n")
+        in_code_block = False
+        result_lines = []
+
+        for line in lines:
+            if line.startswith("```"):
+                if in_code_block:
+                    result_lines.append("</pre>")
+                    in_code_block = False
+                else:
+                    result_lines.append("<pre>")
+                    in_code_block = True
+            elif in_code_block:
+                result_lines.append(line)
+            else:
+                # Convert inline code
+                if "`" in line:
+                    parts = line.split("`")
+                    for i in range(1, len(parts), 2):
+                        if i < len(parts):
+                            parts[i] = f"<code>{parts[i]}</code>"
+                    line = "".join(parts)
+                result_lines.append(line)
+
+        html = "\n".join(result_lines)
+
+        # Convert newlines to <br> for better formatting
+        html = html.replace("\n\n", "</p><p>").replace("\n", "<br>")
+        html = f"<p>{html}</p>"
+
+        return html
+
+    def _make_json_serializable(self, obj: Any) -> Any:
+        """Convert objects to JSON-serializable format.
+
+        Args:
+            obj: Object to convert.
+
+        Returns:
+            JSON-serializable version of the object.
+        """
+        import dataclasses
+
+        if isinstance(obj, dict):
+            return {k: self._make_json_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self._make_json_serializable(item) for item in obj]
+        elif isinstance(obj, Path):
+            return str(obj)
+        elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+            # Convert dataclass to dict
+            return self._make_json_serializable(dataclasses.asdict(obj))
+        elif hasattr(obj, "__dict__"):
+            # Convert object with __dict__ to dict
+            return self._make_json_serializable(obj.__dict__)
+        elif isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        else:
+            # For any other type, convert to string
+            return str(obj)
