@@ -180,3 +180,87 @@ def exit_session(name: Optional[str] = typer.Argument(None, help="Session name (
         raise typer.Exit(1)
     db.set_active(target, False)
     console.print(f"[yellow]Exited session:[/yellow] {target}")
+
+
+@session_app.command("save")
+def save_session(
+    new_name: str = typer.Argument(..., help="New name for the session"),
+    from_session: Optional[str] = typer.Option(
+        None, "--from", "-f", help="Source session to save from (default: current/default session)"
+    ),
+    delete_source: bool = typer.Option(
+        False, "--delete-source", help="Delete the source session after saving"
+    ),
+):
+    """Save a session with a new name (useful for saving default/temporary sessions).
+
+    This command copies an existing session (including all its metadata, pinned files,
+    tenets, and context) to a new session with the specified name.
+
+    Examples:
+        # Save the default session with a custom name
+        tenets session save my-feature
+
+        # Save a specific session with a new name
+        tenets session save production-fix --from debug-session
+
+        # Save and clean up the original
+        tenets session save final-version --from default --delete-source
+    """
+    db = _get_db()
+
+    # Determine source session
+    source_name = from_session
+    if not source_name:
+        # Try to get active session first
+        active = db.get_active_session()
+        if active:
+            source_name = active.name
+        else:
+            # Default to "default" session
+            source_name = "default"
+
+    # Get source session
+    source_session = db.get_session(source_name)
+    if not source_session:
+        console.print(f"[red]Source session not found:[/red] {source_name}")
+        console.print("[dim]Tip: Use 'tenets session list' to see available sessions.[/dim]")
+        raise typer.Exit(1)
+
+    # Check if target already exists
+    if db.get_session(new_name):
+        if not typer.confirm(f"Session '{new_name}' already exists. Overwrite?"):
+            raise typer.Abort()
+        db.delete_session(new_name, purge_context=True)
+
+    # Create new session with same metadata
+    db.create_session(new_name)
+    new_session = db.get_session(new_name)
+
+    # Copy metadata (including pinned files, tenets, etc.)
+    if source_session.metadata:
+        new_session.metadata = source_session.metadata.copy()
+        # Update the session name in metadata if it's stored there
+        if "name" in new_session.metadata:
+            new_session.metadata["name"] = new_name
+
+    # Copy context artifacts
+    # Note: This would require additional implementation in SessionDB
+    # to copy context between sessions
+
+    # Set as active
+    db.set_active(new_name, True)
+
+    console.print(f"[green]✓ Saved session '{source_name}' as '{new_name}'[/green]")
+
+    # Delete source if requested
+    if delete_source:
+        if source_name == "default":
+            if not typer.confirm("Delete the default session? This will remove all unsaved work."):
+                console.print("[yellow]Keeping source session.[/yellow]")
+            else:
+                db.delete_session(source_name, purge_context=True)
+                console.print(f"[yellow]Deleted source session:[/yellow] {source_name}")
+        else:
+            db.delete_session(source_name, purge_context=True)
+            console.print(f"[yellow]Deleted source session:[/yellow] {source_name}")

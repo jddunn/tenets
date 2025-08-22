@@ -99,6 +99,7 @@ class Tenets:
 
     Example:
         >>> from tenets import Tenets
+        >>> from pathlib import Path
         >>>
         >>> # Initialize with default config
         >>> ten = Tenets()
@@ -108,13 +109,29 @@ class Tenets:
         >>> config = TenetsConfig(max_tokens=150000, ranking_algorithm="thorough")
         >>> ten = Tenets(config=config)
         >>>
-        >>> # Extract context
+        >>> # Extract context (uses default session automatically)
         >>> result = ten.distill("implement user authentication")
         >>> print(f"Generated {result.token_count} tokens of context")
         >>>
+        >>> # Generate HTML report
+        >>> result = ten.distill("review API endpoints", format="html")
+        >>> Path("api-review.html").write_text(result.context)
+        >>>
         >>> # Add and apply tenets
         >>> ten.add_tenet("Use dependency injection", priority="high")
+        >>> ten.add_tenet("Follow RESTful conventions", category="architecture")
         >>> ten.instill_tenets()
+        >>>
+        >>> # Pin critical files for priority inclusion
+        >>> ten.pin_file("src/core/auth.py")
+        >>> ten.pin_folder("src/api/endpoints")
+        >>>
+        >>> # Work with named sessions
+        >>> result = ten.distill(
+        ...     "implement OAuth2",
+        ...     session_name="oauth-feature",
+        ...     mode="thorough"
+        ... )
     """
 
     def __init__(self, config: Optional[Union[TenetsConfig, dict[str, Any], Path]] = None):
@@ -219,6 +236,7 @@ class Tenets:
         full: bool = False,
         condense: bool = False,
         remove_comments: bool = False,
+        include_tests: Optional[bool] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -231,7 +249,7 @@ class Tenets:
                    to a GitHub issue, JIRA ticket, etc.
             files: Paths to analyze. Can be a single path, list of paths, or None
                   to use current directory
-            format: Output format - 'markdown', 'xml' (Claude), or 'json'
+            format: Output format - 'markdown', 'xml' (Claude), 'json', or 'html' (interactive report)
             model: Target LLM model for token counting (e.g., 'gpt-4o', 'claude-3-opus')
             max_tokens: Maximum tokens for context (overrides model default)
             mode: Analysis mode - 'fast', 'balanced', or 'thorough'
@@ -249,8 +267,9 @@ class Tenets:
             FileNotFoundError: If specified files don't exist
 
         Example:
-            >>> # Basic usage
+            >>> # Basic usage (uses default session automatically)
             >>> result = tenets.distill("implement OAuth2 authentication")
+            >>> print(result.context[:100])  # First 100 chars of context
             >>>
             >>> # With specific files and options
             >>> result = tenets.distill(
@@ -260,6 +279,19 @@ class Tenets:
             ...     max_tokens=50000,
             ...     include_patterns=["*.py"],
             ...     exclude_patterns=["test_*.py"]
+            ... )
+            >>>
+            >>> # Generate HTML report
+            >>> result = tenets.distill(
+            ...     "analyze authentication flow",
+            ...     format="html"
+            ... )
+            >>> Path("report.html").write_text(result.context)
+            >>>
+            >>> # With session management
+            >>> result = tenets.distill(
+            ...     "implement validation",
+            ...     session_name="validation-feature"
             ... )
             >>>
             >>> # From GitHub issue
@@ -311,6 +343,7 @@ class Tenets:
             condense=condense,
             remove_comments=remove_comments,
             pinned_files=pinned_files or None,
+            include_tests=include_tests,
         )
 
         # Inject system instruction if configured

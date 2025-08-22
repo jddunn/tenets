@@ -460,6 +460,71 @@ class ScannerConfig:
     workers: int = 4
     parallel_mode: str = "auto"
     timeout: float = 5.0
+    exclude_tests_by_default: bool = True
+    test_patterns: List[str] = field(
+        default_factory=lambda: [
+            # Python test patterns
+            "test_*.py",
+            "*_test.py",
+            "test*.py",
+            # JavaScript/TypeScript test patterns
+            "*.test.js",
+            "*.spec.js",
+            "*.test.ts",
+            "*.spec.ts",
+            "*.test.jsx",
+            "*.spec.jsx",
+            "*.test.tsx",
+            "*.spec.tsx",
+            # Java test patterns
+            "*Test.java",
+            "*Tests.java",
+            "*TestCase.java",
+            # C# test patterns
+            "*Test.cs",
+            "*Tests.cs",
+            "*TestCase.cs",
+            # Go test patterns
+            "*_test.go",
+            "test_*.go",
+            # Ruby test patterns
+            "*_test.rb",
+            "*_spec.rb",
+            "test_*.rb",
+            # PHP test patterns
+            "*Test.php",
+            "*_test.php",
+            "test_*.php",
+            # Rust test patterns
+            "*_test.rs",
+            "test_*.rs",
+            # General patterns
+            "**/test/**",
+            "**/tests/**",
+            "**/*test*/**",
+        ]
+    )
+    test_directories: List[str] = field(
+        default_factory=lambda: [
+            "test",
+            "tests",
+            "__tests__",
+            "spec",
+            "specs",
+            "testing",
+            "test_*",
+            "*_test",
+            "*_tests",
+            # Language specific
+            "unit_tests",
+            "integration_tests",
+            "e2e",
+            "e2e_tests",
+            "functional_tests",
+            "acceptance_tests",
+            "regression_tests",
+        ]
+    )
 
 
 @dataclass
@@ -526,6 +591,12 @@ class SummarizerConfig:
         enable_ml_strategies: Whether to enable ML-based strategies
         quality_threshold: Quality threshold for auto mode selection
         batch_size: Batch size for parallel processing
+        docs_context_aware: Whether to enable context-aware summarization for documentation files
+        docs_show_in_place_context: When enabled, preserves and highlights relevant context in documentation summaries instead of generic structure
+        docs_context_search_depth: How deep to search for contextual references (1=direct mentions, 2=semantic similarity, 3=deep analysis)
+        docs_context_min_confidence: Minimum confidence threshold for context relevance (0.0-1.0)
+        docs_context_max_sections: Maximum number of contextual sections to preserve per document
+        docs_context_preserve_examples: Whether to always preserve code examples and snippets in documentation
     """
 
     default_mode: str = "auto"
@@ -540,6 +611,16 @@ class SummarizerConfig:
     enable_ml_strategies: bool = True
     quality_threshold: str = "medium"  # low, medium, high
     batch_size: int = 10
+
+    # Documentation context-aware summarization settings
+    docs_context_aware: bool = True  # Enable smart context-aware documentation summarization
+    docs_show_in_place_context: bool = (
+        True  # Preserve relevant context sections in-place within summaries
+    )
+    docs_context_search_depth: int = 2  # 1=direct mentions, 2=semantic similarity, 3=deep analysis
+    docs_context_min_confidence: float = 0.6  # Minimum confidence for context relevance (0.0-1.0)
+    docs_context_max_sections: int = 10  # Maximum contextual sections to preserve per document
+    docs_context_preserve_examples: bool = True  # Always preserve code examples and snippets
 
 
 @dataclass

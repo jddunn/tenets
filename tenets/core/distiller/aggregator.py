@@ -186,11 +186,17 @@ class ContextAggregator:
                         file=file,
                         target_ratio=target_ratio,
                         preserve_structure=True,
+                        prompt_keywords=prompt_context.keywords if prompt_context else None,
                     )
 
                     # Get actual token count of summary
                     summary_content = summary.summary if hasattr(summary, 'summary') else str(summary)
                     actual_summary_tokens = count_tokens(summary_content, model)
+                    
+                    # Extract metadata from summary if available
+                    metadata = {}
+                    if hasattr(summary, 'metadata') and summary.metadata:
+                        metadata = summary.metadata
                     
                     summarized_files.append(
                         {
@@ -200,6 +206,7 @@ class ContextAggregator:
                             "summarized": True,
                             "summary": summary,
                             "transformations": transformed_stats,
+                            "metadata": metadata,
                         }
                     )
                     total_tokens += actual_summary_tokens

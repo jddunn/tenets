@@ -590,6 +590,111 @@ class TestPromptParser:
             for k in context.keywords
         )
 
+    def test_should_include_tests_explicit_test_intent(self, parser):
+        """Test that explicit test intent includes tests."""
+        # Test with test intent
+        result = parser._should_include_tests("test", "write unit tests", ["test", "unit"])
+        assert result is True
+
+    def test_should_include_tests_test_keywords(self, parser):
+        """Test that test-related keywords include tests."""
+        test_cases = [
+            (["test", "coverage"], True),
+            (["unit", "testing"], True),
+            (["pytest", "jest"], True),
+            (["integration", "e2e"], True),
+            (["mock", "stub"], True),
+            (["spec", "assertion"], True),
+            (["auth", "login"], False),  # Non-test keywords
+            (["database", "api"], False),  # Non-test keywords
+        ]
+
+        for keywords, expected in test_cases:
+            result = parser._should_include_tests("understand", "general prompt", keywords)
+            assert result == expected, f"Keywords {keywords} should return {expected}"
+
+    def test_should_include_tests_file_patterns(self, parser):
+        """Test that test file patterns include tests."""
+        test_cases = [
+            ("debug test_auth.py file", True),
+            ("fix auth.test.js errors", True),
+            ("check UserTest.java class", True),
+            ("update auth_test.py", True),
+            ("check tests/auth directory", True),
+            ("review __tests__ folder", True),
+            ("debug auth.py file", False),  # Non-test file
+            ("fix main.js errors", False),  # Non-test file
+        ]
+
+        for prompt, expected in test_cases:
+            result = parser._should_include_tests("debug", prompt, [])
+            assert result == expected, f"Prompt '{prompt}' should return {expected}"
+
+    def test_should_include_tests_action_patterns(self, parser):
+        """Test that test-related actions include tests."""
+        test_cases = [
+            ("write unit tests for auth", True),
+            ("add integration tests", True),
+            ("fix failing tests", True),
+            ("run tests for coverage", True),
+            ("mock the database", True),
+            ("test coverage report", True),
+            ("unit test assertion", True),
+            ("e2e test suite", True),
+            ("write documentation", False),  # Non-test action
+            ("fix authentication bug", False),  # Non-test action
+        ]
+
+        for prompt, expected in test_cases:
+            result = parser._should_include_tests("implement", prompt, [])
+            assert result == expected, f"Prompt '{prompt}' should return {expected}"
+
+    def test_should_include_tests_quality_patterns(self, parser):
+        """Test that test quality patterns include tests."""
+        test_cases = [
+            ("check test coverage", True),
+            ("generate coverage report", True),
+            ("fix failing tests", True),
+            ("broken test suite", True),
+            ("test failures in CI", True),
+            ("tests are passing", True),
+            ("check code coverage", False),  # Not test-specific
+            ("fix broken deployment", False),  # Non-test quality
+        ]
+
+        for prompt, expected in test_cases:
+            result = parser._should_include_tests("debug", prompt, [])
+            assert result == expected, f"Prompt '{prompt}' should return {expected}"
+
+    def test_should_include_tests_default_exclusion(self, parser):
+        """Test that non-test prompts default to excluding tests."""
+        test_cases = [
+            ("explain authentication flow", False),
+            ("implement user registration", False),
+            ("debug payment processing", False),
+            ("refactor database models", False),
+            ("optimize API performance", False),
+            ("understand code architecture", False),
+        ]
+
+        for prompt, expected in test_cases:
+            result = parser._should_include_tests("understand", prompt, [])
+            assert result == expected, f"Prompt '{prompt}' should return {expected}"
+
+    def test_parse_includes_test_flag(self, parser):
+        """Test that parsing sets include_tests flag correctly."""
+        # Test-related prompt should include tests
+        context = parser.parse("write unit tests for authentication")
+        assert context.include_tests is True
+
+        # Non-test prompt should exclude tests
+        context = parser.parse("explain authentication flow")
+        assert context.include_tests is False
+
+        # Test file mention should include tests
+        context = parser.parse("debug test_auth.py failure")
+        assert context.include_tests is True
+
 
 class TestConvenienceFunctions:
     """Test module-level convenience functions."""
