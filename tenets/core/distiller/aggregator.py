@@ -11,7 +11,6 @@ from tenets.config import TenetsConfig
 from tenets.core.summarizer import Summarizer
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
-from tenets.models.summary import FileSummary
 from tenets.utils.logger import get_logger
 from tenets.utils.tokens import count_tokens
 
@@ -92,7 +91,7 @@ class ContextAggregator:
         included_files = []
         summarized_files = []
         total_tokens = 0
-        
+
         # Track rejection reasons for verbose mode
         rejection_reasons = {
             "below_min_relevance": 0,
@@ -181,7 +180,7 @@ class ContextAggregator:
                 if summary_tokens > 100:  # Worth summarizing
                     # Calculate target ratio based on desired token reduction
                     target_ratio = min(0.5, summary_tokens / file_tokens)
-                    
+
                     summary = self.summarizer.summarize_file(
                         file=file,
                         target_ratio=target_ratio,
@@ -190,14 +189,16 @@ class ContextAggregator:
                     )
 
                     # Get actual token count of summary
-                    summary_content = summary.summary if hasattr(summary, 'summary') else str(summary)
+                    summary_content = (
+                        summary.summary if hasattr(summary, "summary") else str(summary)
+                    )
                     actual_summary_tokens = count_tokens(summary_content, model)
-                    
+
                     # Extract metadata from summary if available
                     metadata = {}
-                    if hasattr(summary, 'metadata') and summary.metadata:
+                    if hasattr(summary, "metadata") and summary.metadata:
                         metadata = summary.metadata
-                    
+
                     summarized_files.append(
                         {
                             "file": file,
