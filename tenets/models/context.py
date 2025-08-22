@@ -79,6 +79,7 @@ class PromptContext:
     confidence_scores: dict[str, float] = field(default_factory=dict)
     session_id: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.now)
+    include_tests: bool = False  # Whether to include test files in analysis
 
     def __post_init__(self):
         """Post-initialization processing."""

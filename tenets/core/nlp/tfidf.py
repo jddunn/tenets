@@ -74,7 +74,19 @@ class TFIDFCalculator:
         Returns:
             TF-IDF vector for document
         """
-        return self._calculator.add_document(doc_id, text)
+        # Invalidate IDF cache before/after adding a document to reflect corpus change
+        try:
+            if hasattr(self._calculator, "idf_cache"):
+                self._calculator.idf_cache = {}
+        except Exception:
+            pass
+        result = self._calculator.add_document(doc_id, text)
+        try:
+            if hasattr(self._calculator, "idf_cache"):
+                self._calculator.idf_cache = {}
+        except Exception:
+            pass
+        return result
 
     # Expose core TF/IDF computations used by tests
     def compute_tf(self, tokens: List[str], use_sublinear: bool = True) -> Dict[str, float]:

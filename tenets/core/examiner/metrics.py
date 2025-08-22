@@ -199,6 +199,35 @@ class MetricsCalculator:
         self.config = config
         self.logger = get_logger(__name__)
 
+    # -------- Safe coercion helpers (robust to Mocks) --------
+    @staticmethod
+    def _safe_int(value: Any, default: int = 0) -> int:
+        if value is None:
+            return default
+        try:
+            if isinstance(value, bool):
+                return int(value)
+            return int(value)
+        except Exception:
+            try:
+                return int(float(str(value)))
+            except Exception:
+                return default
+
+    @staticmethod
+    def _safe_float(value: Any, default: float = 0.0) -> float:
+        if value is None:
+            return default
+        try:
+            if isinstance(value, bool):
+                return float(value)
+            return float(value)
+        except Exception:
+            try:
+                return float(str(value))
+            except Exception:
+                return default
+
     def calculate(self, files: List[Any]) -> MetricsReport:
         """Calculate comprehensive metrics for analyzed files.
 
@@ -261,14 +290,22 @@ class MetricsCalculator:
             >>> metrics = calculator.calculate_file_metrics(file_analysis)
             >>> print(f"File complexity: {metrics['complexity']}")
         """
+
+        # Safely determine lengths for possibly mocked attributes
+        def _safe_len(obj: Any) -> int:
+            try:
+                return len(obj)  # type: ignore[arg-type]
+            except Exception:
+                return 0
+
         metrics = {
-            "lines": getattr(file_analysis, "lines", 0),
-            "blank_lines": getattr(file_analysis, "blank_lines", 0),
-            "comment_lines": getattr(file_analysis, "comment_lines", 0),
+            "lines": self._safe_int(getattr(file_analysis, "lines", 0), 0),
+            "blank_lines": self._safe_int(getattr(file_analysis, "blank_lines", 0), 0),
+            "comment_lines": self._safe_int(getattr(file_analysis, "comment_lines", 0), 0),
             "code_lines": 0,
-            "functions": len(getattr(file_analysis, "functions", [])),
-            "classes": len(getattr(file_analysis, "classes", [])),
-            "imports": len(getattr(file_analysis, "imports", [])),
+            "functions": _safe_len(getattr(file_analysis, "functions", [])),
+            "classes": _safe_len(getattr(file_analysis, "classes", [])),
+            "imports": _safe_len(getattr(file_analysis, "imports", [])),
             "complexity": 0,
             "documentation_ratio": 0.0,
         }
@@ -278,16 +315,35 @@ class MetricsCalculator:
 
         # Extract complexity
         if hasattr(file_analysis, "complexity") and file_analysis.complexity:
-            metrics["complexity"] = getattr(file_analysis.complexity, "cyclomatic", 0)
+            metrics["complexity"] = self._safe_int(
+                getattr(file_analysis.complexity, "cyclomatic", 0), 0
+            )
 
         # Calculate documentation ratio
         if metrics["code_lines"] > 0:
-            metrics["documentation_ratio"] = metrics["comment_lines"] / metrics["code_lines"]
+            metrics["documentation_ratio"] = self._safe_float(metrics["comment_lines"]) / float(
+                metrics["code_lines"]
+            )
 
         # Add language and path info
         metrics["language"] = getattr(file_analysis, "language", "unknown")
-        metrics["path"] = getattr(file_analysis, "path", "")
-        metrics["name"] = Path(metrics["path"]).name if metrics["path"] else "unknown"
+        raw_path = getattr(file_analysis, "path", "")
+        # Coerce path and name robustly for mocks/Path-like/str
+        try:
+            metrics["path"] = str(raw_path) if raw_path is not None else ""
+        except Exception:
+            metrics["path"] = ""
+        try:
+            # Prefer attribute .name when available
+            if hasattr(raw_path, "name") and not isinstance(raw_path, str):
+                name_val = getattr(raw_path, "name")
+                metrics["name"] = str(name_val)
+            elif metrics["path"]:
+                metrics["name"] = Path(metrics["path"]).name
+            else:
+                metrics["name"] = "unknown"
+        except Exception:
+            metrics["name"] = "unknown"
 
         return metrics
 
@@ -309,23 +365,32 @@ class MetricsCalculator:
 
             # Count lines
             if hasattr(file, "lines"):
-                report.total_lines += file.lines
+                report.total_lines += self._safe_int(getattr(file, "lines", 0), 0)
             if hasattr(file, "blank_lines"):
-                report.total_blank_lines += file.blank_lines
+                report.total_blank_lines += self._safe_int(getattr(file, "blank_lines", 0), 0)
             if hasattr(file, "comment_lines"):
-                report.total_comment_lines += file.comment_lines
+                report.total_comment_lines += self._safe_int(getattr(file, "comment_lines", 0), 0)
 
             # Count structures
             if hasattr(file, "functions"):
-                report.total_functions += len(file.functions)
+                try:
+                    report.total_functions += len(getattr(file, "functions"))
+                except Exception:
+                    pass
             if hasattr(file, "classes"):
-                report.total_classes += len(file.classes)
+                try:
+                    report.total_classes += len(getattr(file, "classes"))
+                except Exception:
+                    pass
             if hasattr(file, "imports"):
-                report.total_imports += len(file.imports)
+                try:
+                    report.total_imports += len(getattr(file, "imports"))
+                except Exception:
+                    pass
 
             # Collect complexity
             if hasattr(file, "complexity") and file.complexity:
-                complexity = getattr(file.complexity, "cyclomatic", 0)
+                complexity = self._safe_int(getattr(file.complexity, "cyclomatic", 0), 0)
                 complexities.append(complexity)
                 report.max_complexity = max(report.max_complexity, complexity)
                 report.min_complexity = min(report.min_complexity, complexity)
@@ -457,10 +522,16 @@ class MetricsCalculator:
         import_counts = defaultdict(int)
         for file in files:
             if hasattr(file, "imports"):
-                for imp in file.imports:
+                imports_obj = getattr(file, "imports")
+                # Make iteration robust to mocks/non-iterables
+                try:
+                    iterable = list(imports_obj)  # type: ignore
+                except Exception:
+                    iterable = []
+                for imp in iterable:
                     # Extract module name from import
                     if hasattr(imp, "module"):
-                        module = imp.module
+                        module = getattr(imp, "module")
                     else:
                         module = str(imp)
                     if module:
@@ -626,9 +697,21 @@ class MetricsCalculator:
 
         for file in files:
             if hasattr(file, "content"):
-                content_lower = file.content.lower()
+                try:
+                    content = file.content
+                    # Coerce to string safely for mocks/bytes
+                    if isinstance(content, bytes):
+                        content_lower = content.decode(errors="ignore").lower()
+                    else:
+                        content_lower = str(content).lower()
+                except Exception:
+                    continue
                 for pattern in security_patterns:
-                    security_mentions += content_lower.count(pattern)
+                    try:
+                        security_mentions += content_lower.count(pattern)
+                    except Exception:
+                        # Be defensive if content_lower is not a normal string-like
+                        continue
 
         # This could be used to adjust technical debt or add a security score
         if security_mentions > 50:  # Arbitrary threshold

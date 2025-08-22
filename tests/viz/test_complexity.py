@@ -95,6 +95,22 @@ class TestComplexityVisualizer:
 
         assert chart["data"]["datasets"][0]["data"] == [10, 5, 3, 2]
 
+    def test_create_distribution_chart_alternate_keys(self, complexity_visualizer):
+        """Test distribution chart with alternate key formats."""
+        data = {
+            "complexity_distribution": {
+                "simple (1-5)": 7,
+                "moderate (6-10)": 3,
+                "complex (11-20)": 2,
+                "very complex (21+)": 1,
+            }
+        }
+
+        chart = complexity_visualizer.create_distribution_chart(data)
+
+        assert chart["data"]["datasets"][0]["data"] == [7, 3, 2, 1]
+        assert chart["data"]["labels"][0] == "Low (1-5)"
+
     def test_create_top_complex_chart(self, complexity_visualizer, sample_complexity_data):
         """Test creating top complex items chart."""
         chart = complexity_visualizer.create_top_complex_chart(

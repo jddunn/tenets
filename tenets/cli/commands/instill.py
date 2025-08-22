@@ -8,13 +8,12 @@ This command provides comprehensive control over tenet injection including:
 - Export capabilities for analysis
 """
 
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+import click
 import typer
-from rich import print
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -101,8 +100,10 @@ def instill(
     show_config: bool = typer.Option(
         False, "--show-config", help="Show current injection configuration"
     ),
+
     # Context
     ctx: typer.Context = typer.Context,
+
 ):
     """
     Smart injection of guiding principles (tenets) into your context.
@@ -146,8 +147,15 @@ def instill(
         # Reset session tracking
         tenets instill --reset-session --session oauth-work
     """
-    verbose = ctx.obj.get("verbose", False)
-    quiet = ctx.obj.get("quiet", False)
+    state = {}
+    try:
+        _ctx = click.get_current_context(silent=True)
+        if _ctx and _ctx.obj:
+            state = _ctx.obj
+    except Exception:
+        state = {}
+    verbose = state.get("verbose", False)
+    quiet = state.get("quiet", False)
 
     try:
         # Load configuration
@@ -215,7 +223,8 @@ def instill(
             return
 
         if add_file or add_folder or remove_file:
-            _manage_pinned_files(tenets_instance, session, add_file, add_folder, remove_file)
+            _manage_pinned_files(tenets_instance, session, add_file, add_folder, remove_file, quiet)
+
             if not (force or dry_run):  # Only manage files, don't instill
                 return
 
@@ -338,7 +347,7 @@ def instill(
                 _show_instillation_result(last_result, verbose)
 
     except Exception as e:
-        console.print(f"[red]Error:[/red] {str(e)}")
+        console.print(f"[red]Error:[/red] {e!s}")
         if verbose:
             console.print_exception()
         raise typer.Exit(1)
@@ -527,12 +536,12 @@ def _show_statistics(instiller, session: Optional[str]) -> None:
 
     stats_text = f"""
 [bold]Overall:[/bold]
-  Total Instillations: {metrics['total_instillations']}
-  Total Tenets: {metrics['total_tenets_instilled']}
-  Total Tokens Added: {metrics['total_token_increase']:,}
-  Avg Tenets/Context: {metrics['avg_tenets_per_context']:.1f}
-  Avg Tokens/Context: {metrics['avg_token_increase']:.0f}
-  Avg Complexity: {metrics['avg_complexity']:.2f}
+  Total Instillations: {metrics["total_instillations"]}
+  Total Tenets: {metrics["total_tenets_instilled"]}
+  Total Tokens Added: {metrics["total_token_increase"]:,}
+  Avg Tenets/Context: {metrics["avg_tenets_per_context"]:.1f}
+  Avg Tokens/Context: {metrics["avg_token_increase"]:.0f}
+  Avg Complexity: {metrics["avg_complexity"]:.2f}
 
 [bold]Strategy Distribution:[/bold]"""
 
@@ -644,6 +653,7 @@ def _manage_pinned_files(
     add_files: Optional[list[str]],
     add_folders: Optional[list[str]],
     remove_files: Optional[list[str]],
+    quiet: bool,
 ) -> None:
     """Manage pinned files for a session."""
     sess_name = session or "default"
@@ -698,6 +708,11 @@ def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None
     console.print("[bold]Would instill the following tenets:[/bold]\n")
 
     for i, tenet in enumerate(pending[: tenets_instance.config.tenet.max_per_context], 1):
+        # Keep markup minimal and safe; print raw text to avoid Rich parsing [] in content
+        priority_label = str(tenet.priority.value).upper()
+        line = f"{i}. {priority_label} {tenet.content}"
+        console.print(line, markup=False)
+
         priority_color = {
             "critical": "red",
             "high": "yellow",
@@ -721,14 +736,13 @@ def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None
         f"Total: {len(pending[:tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]"
     )
 
-
 def _export_history(instiller, output_path: Path, format: str, session: Optional[str]) -> None:
     """Export injection history."""
     try:
         instiller.export_instillation_history(output_path, format=format, session=session)
         console.print(f"[green]✓[/green] Exported history to: {output_path}")
     except Exception as e:
-        console.print(f"[red]Error exporting history:[/red] {str(e)}")
+        console.print(f"[red]Error exporting history:[/red] {e!s}")
         raise typer.Exit(1)
 
 
@@ -737,7 +751,7 @@ def _show_instillation_result(result, verbose: bool) -> None:
     if result.skip_reason:
         console.print(
             Panel(
-                f"[yellow]Injection skipped[/yellow]\n" f"Reason: {result.skip_reason}",
+                f"[yellow]Injection skipped[/yellow]\nReason: {result.skip_reason}",
                 title="⏭️ Skipped",
                 border_style="yellow",
             )

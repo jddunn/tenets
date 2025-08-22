@@ -1,70 +1,417 @@
 {
   "concepts": {
     "authentication": [
-      "auth", "authentication", "authorization", "login", "logout",
-      "session", "token", "jwt", "oauth", "oauth2", "sso", "saml",
-      "credential", "password", "permission", "role", "access"
+      "auth", "authentication", "authorization", "login", "logout", "signin", "signout",
+      "session", "token", "jwt", "oauth", "oauth2", "openid", "oidc", "sso", "saml",
+      "credential", "password", "passphrase", "pin", "otp", "2fa", "mfa", "totp",
+      "permission", "role", "rbac", "acl", "access", "privilege", "grant", "revoke",
+      "identity", "principal", "subject", "claim", "scope", "audience", "issuer",
+      "bearer", "refresh", "access_token", "id_token", "nonce", "state", "pkce",
+      "biometric", "fingerprint", "faceid", "touchid", "webauthn", "fido", "passkey"
     ],
     "api": [
-      "api", "rest", "restful", "graphql", "endpoint", "route",
-      "controller", "handler", "middleware", "request", "response",
-      "http", "https", "webhook", "websocket", "grpc", "rpc"
+      "api", "rest", "restful", "graphql", "grpc", "rpc", "jsonrpc", "xmlrpc",
+      "endpoint", "route", "resource", "path", "url", "uri", "urn",
+      "controller", "handler", "middleware", "interceptor", "filter", "guard",
+      "request", "response", "payload", "body", "header", "query", "param",
+      "http", "https", "http2", "http3", "quic", "method", "verb",
+      "get", "post", "put", "patch", "delete", "options", "head", "trace",
+      "webhook", "websocket", "sse", "long-polling", "streaming", "realtime",
+      "swagger", "openapi", "raml", "apiblueprint", "postman", "insomnia",
+      "cors", "preflight", "origin", "referer", "user-agent", "content-type",
+      "status", "statuscode", "error", "success", "redirect", "retry", "timeout",
+      "pagination", "cursor", "offset", "limit", "page", "pagesize", "sort", "filter",
+      "versioning", "v1", "v2", "api-version", "deprecation", "sunset"
     ],
     "database": [
-      "database", "db", "sql", "nosql", "query", "model", "schema",
-      "migration", "orm", "odm", "table", "collection", "index",
-      "postgres", "mysql", "mongodb", "redis", "elasticsearch"
+      "database", "db", "datastore", "persistence", "storage",
+      "sql", "nosql", "newsql", "graph", "vector", "timeseries", "columnar",
+      "query", "command", "statement", "transaction", "acid", "base", "cap",
+      "model", "entity", "document", "record", "row", "column", "field", "attribute",
+      "schema", "table", "collection", "bucket", "namespace", "keyspace",
+      "migration", "seed", "fixture", "backup", "restore", "dump", "export", "import",
+      "orm", "odm", "dao", "repository", "mapper", "active-record", "data-mapper",
+      "index", "btree", "hash", "gin", "gist", "fulltext", "compound", "unique",
+      "primary", "foreign", "composite", "surrogate", "natural", "key", "constraint",
+      "join", "inner", "outer", "left", "right", "cross", "union", "intersect",
+      "aggregate", "group", "having", "window", "partition", "rank", "dense_rank",
+      "postgres", "postgresql", "mysql", "mariadb", "sqlite", "mssql", "oracle",
+      "mongodb", "dynamodb", "cassandra", "couchdb", "redis", "memcached",
+      "elasticsearch", "solr", "lucene", "opensearch", "algolia", "typesense",
+      "neo4j", "arangodb", "orientdb", "janusgraph", "dgraph", "neptune",
+      "influxdb", "prometheus", "timescaledb", "questdb", "clickhouse",
+      "connection", "pool", "cursor", "prepared", "statement", "batch", "bulk"
     ],
     "frontend": [
-      "ui", "ux", "frontend", "component", "view", "template",
-      "react", "vue", "angular", "svelte", "layout", "style",
-      "css", "sass", "scss", "responsive", "mobile", "desktop"
+      "ui", "ux", "frontend", "client", "spa", "pwa", "ssr", "ssg", "isr",
+      "component", "element", "widget", "control", "input", "button", "form",
+      "view", "page", "screen", "layout", "template", "partial", "fragment",
+      "react", "vue", "angular", "svelte", "solid", "qwik", "alpine", "lit",
+      "next", "nuxt", "gatsby", "astro", "remix", "sveltekit", "vite", "webpack",
+      "style", "css", "sass", "scss", "less", "stylus", "postcss", "tailwind",
+      "styled-components", "emotion", "stitches", "vanilla-extract", "css-modules",
+      "responsive", "mobile", "tablet", "desktop", "breakpoint", "viewport",
+      "flexbox", "grid", "container", "spacing", "margin", "padding", "border",
+      "animation", "transition", "transform", "keyframe", "ease", "duration",
+      "dom", "virtual-dom", "shadow-dom", "web-components", "custom-elements",
+      "state", "props", "context", "store", "redux", "mobx", "zustand", "pinia",
+      "hook", "lifecycle", "mount", "unmount", "render", "hydration", "reconciliation",
+      "router", "navigation", "link", "route", "params", "query", "hash", "history",
+      "accessibility", "a11y", "aria", "wcag", "screen-reader", "keyboard", "focus",
+      "i18n", "l10n", "locale", "translation", "rtl", "ltr", "pluralization"
     ],
     "backend": [
-      "backend", "server", "service", "microservice", "api",
-      "business logic", "domain", "repository", "use case",
-      "controller", "model", "django", "flask", "fastapi",
-      "express", "spring", "rails"
+      "backend", "server", "service", "api", "application", "app",
+      "microservice", "monolith", "serverless", "lambda", "function", "edge",
+      "business", "logic", "domain", "core", "layer", "tier", "architecture",
+      "controller", "handler", "processor", "manager", "orchestrator", "coordinator",
+      "model", "entity", "aggregate", "value-object", "domain-event", "saga",
+      "repository", "service", "factory", "builder", "adapter", "facade", "proxy",
+      "usecase", "interactor", "presenter", "gateway", "boundary", "port",
+      "django", "flask", "fastapi", "tornado", "aiohttp", "sanic", "falcon",
+      "express", "koa", "fastify", "nest", "hapi", "restify", "feathers",
+      "spring", "springboot", "micronaut", "quarkus", "vertx", "play",
+      "rails", "sinatra", "hanami", "grape", "roda", "cuba", "padrino",
+      "laravel", "symfony", "slim", "lumen", "codeigniter", "yii", "cakephp",
+      "gin", "echo", "fiber", "chi", "gorilla", "buffalo", "revel",
+      "actix", "rocket", "warp", "axum", "tide", "poem", "salvo",
+      "asp.net", "dotnet", "core", "mvc", "webapi", "minimal", "blazor"
     ],
     "testing": [
-      "test", "testing", "unit test", "integration test", "e2e",
-      "spec", "suite", "coverage", "mock", "stub", "fixture",
-      "jest", "pytest", "mocha", "jasmine", "cypress", "selenium"
+      "test", "testing", "qa", "quality", "assurance", "verification", "validation",
+      "unit", "integration", "functional", "acceptance", "regression", "smoke",
+      "e2e", "end-to-end", "ui", "api", "contract", "snapshot", "visual",
+      "spec", "suite", "case", "scenario", "given", "when", "then", "arrange", "act", "assert",
+      "coverage", "line", "branch", "statement", "function", "mutation", "pit",
+      "mock", "stub", "spy", "fake", "double", "dummy", "fixture", "factory",
+      "jest", "mocha", "jasmine", "karma", "cypress", "playwright", "puppeteer",
+      "pytest", "unittest", "nose", "behave", "robot", "locust", "hypothesis",
+      "junit", "testng", "mockito", "spock", "cucumber", "gatling", "jmeter",
+      "rspec", "minitest", "capybara", "factory_bot", "shoulda", "vcr",
+      "phpunit", "codeception", "behat", "phpspec", "pest", "kahlan",
+      "go-test", "testify", "ginkgo", "gomega", "goconvey", "goblin",
+      "cargo-test", "proptest", "quickcheck", "criterion", "insta",
+      "xunit", "nunit", "mstest", "specflow", "fluent", "shouldly",
+      "selenium", "webdriver", "appium", "detox", "espresso", "xctest",
+      "tdd", "bdd", "atdd", "ddd", "property", "fuzz", "chaos", "monkey"
     ],
     "devops": [
-      "deploy", "deployment", "ci", "cd", "pipeline", "docker",
-      "kubernetes", "k8s", "container", "orchestration", "aws",
-      "azure", "gcp", "terraform", "ansible", "jenkins", "github actions"
+      "devops", "devsecops", "sre", "platform", "infrastructure", "ops",
+      "ci", "cd", "continuous", "integration", "delivery", "deployment",
+      "pipeline", "workflow", "job", "stage", "step", "task", "action",
+      "build", "compile", "package", "bundle", "artifact", "release", "publish",
+      "docker", "container", "image", "registry", "hub", "compose", "swarm",
+      "kubernetes", "k8s", "pod", "service", "deployment", "statefulset", "daemonset",
+      "helm", "chart", "operator", "crd", "configmap", "secret", "ingress",
+      "terraform", "ansible", "puppet", "chef", "salt", "pulumi", "cdk",
+      "aws", "ec2", "s3", "lambda", "rds", "dynamodb", "cloudformation", "eks",
+      "azure", "vm", "blob", "functions", "cosmos", "aks", "arm", "bicep",
+      "gcp", "compute", "storage", "cloud-functions", "bigquery", "gke", "deployment-manager",
+      "jenkins", "gitlab-ci", "github-actions", "circleci", "travis", "bamboo",
+      "argocd", "flux", "spinnaker", "tekton", "drone", "concourse", "codefresh",
+      "prometheus", "grafana", "datadog", "newrelic", "splunk", "elk", "apm",
+      "vault", "consul", "etcd", "zookeeper", "eureka", "nacos", "apollo"
     ],
     "performance": [
-      "performance", "optimization", "speed", "latency", "throughput",
-      "cache", "caching", "cdn", "load balancing", "scaling",
-      "profiling", "benchmark", "memory", "cpu", "async", "parallel"
+      "performance", "optimization", "speed", "fast", "slow", "latency", "throughput",
+      "cache", "caching", "redis", "memcached", "varnish", "cdn", "cloudflare",
+      "load", "balance", "balancer", "nginx", "haproxy", "envoy", "traefik",
+      "scale", "scaling", "horizontal", "vertical", "autoscale", "elasticity",
+      "profile", "profiling", "benchmark", "stress", "load-test", "capacity",
+      "memory", "heap", "stack", "gc", "garbage", "collection", "leak", "bloat",
+      "cpu", "thread", "process", "concurrency", "parallel", "async", "sync",
+      "queue", "message", "rabbitmq", "kafka", "sqs", "pubsub", "nats", "mqtt",
+      "batch", "bulk", "stream", "pipeline", "worker", "job", "cron", "scheduler",
+      "index", "query", "n+1", "eager", "lazy", "prefetch", "preload", "includes",
+      "compression", "gzip", "brotli", "minify", "uglify", "tree-shake", "bundle",
+      "cdn", "edge", "cloudflare", "fastly", "akamai", "cloudfront", "bunny"
     ],
     "security": [
-      "security", "vulnerability", "encryption", "cryptography",
-      "ssl", "tls", "https", "cors", "csrf", "xss", "sql injection",
-      "penetration testing", "audit", "compliance", "gdpr", "pci"
+      "security", "secure", "vulnerability", "exploit", "threat", "risk", "attack",
+      "encryption", "decrypt", "crypto", "cryptography", "hash", "salt", "pepper",
+      "ssl", "tls", "https", "certificate", "ca", "pki", "x509", "csr",
+      "cors", "csrf", "xss", "xxe", "sqli", "injection", "traversal", "lfi", "rfi",
+      "owasp", "cve", "cvss", "cwe", "mitigation", "patch", "fix", "remediation",
+      "penetration", "pentest", "audit", "scan", "scanner", "burp", "zap", "nmap",
+      "firewall", "waf", "ids", "ips", "siem", "soar", "edr", "xdr",
+      "compliance", "gdpr", "ccpa", "hipaa", "pci", "sox", "iso27001", "soc2",
+      "zero-trust", "least-privilege", "defense-in-depth", "segmentation",
+      "secrets", "vault", "hsm", "kms", "rotation", "escrow", "recovery"
+    ],
+    "cloud": [
+      "cloud", "iaas", "paas", "saas", "faas", "baas", "caas", "daas",
+      "serverless", "lambda", "function", "edge", "cdn", "cloudflare-workers",
+      "multi-cloud", "hybrid-cloud", "private-cloud", "public-cloud", "on-premise",
+      "availability", "region", "zone", "az", "geo", "replication", "failover",
+      "bucket", "blob", "object", "block", "file", "storage", "archive", "glacier",
+      "vpc", "vnet", "subnet", "cidr", "nat", "gateway", "peering", "transit",
+      "load-balancer", "alb", "nlb", "elb", "target-group", "health-check",
+      "auto-scaling", "scale-set", "instance-group", "spot", "reserved", "savings",
+      "cloudwatch", "stackdriver", "azure-monitor", "logs", "metrics", "traces",
+      "iam", "rbac", "policy", "role", "user", "group", "service-account", "principal"
+    ],
+    "data": [
+      "data", "dataset", "dataframe", "series", "array", "matrix", "tensor",
+      "etl", "elt", "pipeline", "flow", "dag", "workflow", "orchestration",
+      "warehouse", "lake", "lakehouse", "mart", "cube", "olap", "oltp",
+      "batch", "stream", "realtime", "near-realtime", "micro-batch", "window",
+      "spark", "hadoop", "hive", "presto", "trino", "drill", "impala", "athena",
+      "airflow", "dagster", "prefect", "luigi", "argo", "kubeflow", "mlflow",
+      "kafka", "kinesis", "pubsub", "eventbridge", "eventhub", "pulsar", "rabbitmq",
+      "snowflake", "databricks", "bigquery", "redshift", "synapse", "dremio",
+      "pandas", "numpy", "polars", "dask", "ray", "modin", "vaex", "rapids",
+      "parquet", "avro", "orc", "arrow", "feather", "hdf5", "netcdf", "zarr"
+    ],
+    "ai_ml": [
+      "ai", "ml", "machine-learning", "deep-learning", "neural", "network",
+      "model", "train", "training", "inference", "predict", "prediction", "score",
+      "feature", "engineering", "selection", "extraction", "embedding", "vector",
+      "supervised", "unsupervised", "reinforcement", "semi-supervised", "self-supervised",
+      "classification", "regression", "clustering", "segmentation", "detection",
+      "tensorflow", "pytorch", "keras", "scikit-learn", "xgboost", "lightgbm",
+      "transformer", "bert", "gpt", "llm", "nlp", "cv", "computer-vision",
+      "cnn", "rnn", "lstm", "gru", "gan", "vae", "autoencoder", "attention",
+      "fine-tune", "transfer", "pretrained", "checkpoint", "weights", "bias",
+      "hyperparameter", "optimization", "grid-search", "random-search", "bayesian",
+      "loss", "accuracy", "precision", "recall", "f1", "auc", "roc", "confusion",
+      "dataset", "dataloader", "batch", "epoch", "iteration", "gradient", "backprop",
+      "cuda", "gpu", "tpu", "distributed", "parallel", "mixed-precision", "quantization"
+    ],
+    "mobile": [
+      "mobile", "app", "application", "native", "hybrid", "cross-platform",
+      "ios", "android", "iphone", "ipad", "tablet", "phone", "watch", "wearable",
+      "swift", "objective-c", "kotlin", "java", "dart", "flutter", "react-native",
+      "xcode", "android-studio", "gradle", "cocoapods", "carthage", "spm",
+      "uikit", "swiftui", "jetpack", "compose", "material", "cupertino",
+      "navigation", "tab", "drawer", "stack", "modal", "sheet", "dialog",
+      "notification", "push", "local", "fcm", "apns", "onesignal", "firebase",
+      "camera", "photo", "video", "audio", "microphone", "permission", "privacy",
+      "store", "appstore", "playstore", "testflight", "beta", "release", "ipa", "apk",
+      "deeplink", "universal", "applink", "branch", "adjust", "appsflyer"
+    ],
+    "blockchain": [
+      "blockchain", "crypto", "cryptocurrency", "defi", "web3", "dapp",
+      "ethereum", "bitcoin", "solana", "polygon", "avalanche", "bnb", "arbitrum",
+      "smart-contract", "solidity", "vyper", "rust", "move", "cairo", "yul",
+      "wallet", "metamask", "walletconnect", "ledger", "trezor", "seed", "mnemonic",
+      "transaction", "gas", "fee", "gwei", "nonce", "block", "hash", "merkle",
+      "erc20", "erc721", "erc1155", "nft", "token", "mint", "burn", "transfer",
+      "defi", "amm", "dex", "cex", "liquidity", "pool", "swap", "yield", "farm",
+      "consensus", "pow", "pos", "dpos", "pbft", "raft", "tendermint",
+      "ipfs", "arweave", "filecoin", "storj", "sia", "decentralized", "p2p",
+      "web3js", "ethersjs", "hardhat", "truffle", "foundry", "brownie", "anchor"
+    ],
+    "iot": [
+      "iot", "embedded", "sensor", "actuator", "device", "gateway", "edge",
+      "mqtt", "coap", "amqp", "lorawan", "zigbee", "bluetooth", "ble", "wifi",
+      "arduino", "raspberry", "esp32", "esp8266", "stm32", "arm", "cortex",
+      "firmware", "bootloader", "ota", "fota", "update", "flash", "eeprom",
+      "gpio", "i2c", "spi", "uart", "pwm", "adc", "dac", "interrupt", "timer",
+      "temperature", "humidity", "pressure", "motion", "light", "proximity",
+      "telemetry", "scada", "plc", "modbus", "opcua", "bacnet", "canbus",
+      "aws-iot", "azure-iot", "google-iot", "thingsboard", "node-red", "mosquitto"
+    ],
+    "monitoring": [
+      "monitoring", "observability", "metrics", "logs", "traces", "spans",
+      "prometheus", "grafana", "datadog", "newrelic", "appdynamics", "dynatrace",
+      "elasticsearch", "logstash", "kibana", "elk", "beats", "fluentd", "vector",
+      "jaeger", "zipkin", "tempo", "xray", "lightstep", "honeycomb", "signoz",
+      "alert", "alarm", "notification", "pagerduty", "opsgenie", "victorops",
+      "sla", "slo", "sli", "uptime", "availability", "mttr", "mtbf", "mttd",
+      "dashboard", "panel", "widget", "chart", "graph", "heatmap", "gauge",
+      "apm", "rum", "synthetic", "profiling", "diagnostics", "debugging",
+      "opentelemetry", "otel", "instrumentation", "collector", "exporter"
+    ],
+    "architecture": [
+      "architecture", "design", "pattern", "principle", "solid", "dry", "kiss",
+      "microservices", "monolith", "soa", "serverless", "event-driven", "cqrs",
+      "hexagonal", "onion", "clean", "ddd", "domain-driven", "layered", "mvc",
+      "singleton", "factory", "builder", "prototype", "adapter", "decorator",
+      "observer", "strategy", "command", "mediator", "repository", "unit-of-work",
+      "dependency", "injection", "ioc", "inversion", "container", "service-locator",
+      "event", "sourcing", "saga", "choreography", "orchestration", "workflow",
+      "circuit-breaker", "retry", "timeout", "bulkhead", "rate-limit", "throttle",
+      "cache-aside", "write-through", "write-behind", "refresh-ahead", "lazy",
+      "sharding", "partitioning", "replication", "federation", "denormalization"
     ]
   },
-  "frameworks": [
-    "react", "vue", "angular", "svelte", "next", "nuxt", "gatsby",
-    "django", "flask", "fastapi", "express", "koa", "nest",
-    "spring", "rails", "laravel", "symfony", "asp.net",
-    "tensorflow", "pytorch", "scikit-learn", "keras", "pandas", "numpy"
-  ],
+  "frameworks": {
+    "frontend_frameworks": [
+      "react", "vue", "angular", "svelte", "solid", "qwik", "alpine", "lit",
+      "preact", "inferno", "mithril", "ember", "backbone", "knockout", "aurelia",
+      "polymer", "stencil", "hyperapp", "cycle", "marko", "riot", "stimulus"
+    ],
+    "meta_frameworks": [
+      "next", "nuxt", "gatsby", "astro", "remix", "sveltekit", "solidstart",
+      "qwikity", "elder", "sapper", "gridsome", "vuepress", "vitepress", "docusaurus"
+    ],
+    "css_frameworks": [
+      "tailwind", "bootstrap", "bulma", "foundation", "materialize", "semantic",
+      "ant", "chakra", "mantine", "mui", "primereact", "primevue", "element",
+      "vuetify", "quasar", "ionic", "framework7", "onsenui", "uikit", "spectre"
+    ],
+    "backend_frameworks": [
+      "express", "koa", "fastify", "nest", "hapi", "restify", "feathers", "sails",
+      "django", "flask", "fastapi", "pyramid", "bottle", "cherrypy", "tornado",
+      "spring", "springboot", "micronaut", "quarkus", "vertx", "play", "struts",
+      "rails", "sinatra", "hanami", "grape", "roda", "cuba", "padrino", "phoenix",
+      "laravel", "symfony", "slim", "lumen", "codeigniter", "yii", "cakephp",
+      "gin", "echo", "fiber", "chi", "gorilla", "buffalo", "revel", "beego",
+      "actix", "rocket", "warp", "axum", "tide", "poem", "salvo", "nickel"
+    ],
+    "testing_frameworks": [
+      "jest", "mocha", "jasmine", "karma", "ava", "tape", "qunit", "vitest",
+      "cypress", "playwright", "puppeteer", "selenium", "webdriver", "nightwatch",
+      "pytest", "unittest", "nose", "behave", "robot", "locust", "tavern",
+      "junit", "testng", "spock", "cucumber", "karate", "rest-assured",
+      "rspec", "minitest", "capybara", "factory_bot", "shoulda", "cucumber",
+      "phpunit", "codeception", "behat", "phpspec", "pest", "kahlan",
+      "go-test", "testify", "ginkgo", "gomega", "goconvey", "goblin"
+    ],
+    "orm_odm": [
+      "sequelize", "typeorm", "prisma", "mongoose", "bookshelf", "objection",
+      "django-orm", "sqlalchemy", "peewee", "tortoise", "orator", "pony",
+      "hibernate", "jpa", "mybatis", "jooq", "exposed", "ktorm", "ebean",
+      "activerecord", "sequel", "rom", "datamapper", "mongoid", "dynamoid",
+      "eloquent", "doctrine", "propel", "cycle", "atlas", "redbeanphp",
+      "gorm", "xorm", "beego-orm", "ent", "bun", "upper", "reform",
+      "diesel", "sqlx", "sea-orm", "rbatis", "ormlib", "tiberius"
+    ],
+    "build_tools": [
+      "webpack", "vite", "parcel", "rollup", "esbuild", "snowpack", "wmr",
+      "gulp", "grunt", "brunch", "fuse-box", "metro", "turbopack", "bun",
+      "maven", "gradle", "ant", "sbt", "mill", "bazel", "buck", "pants",
+      "make", "cmake", "ninja", "meson", "scons", "waf", "premake",
+      "cargo", "go-mod", "npm", "yarn", "pnpm", "pip", "poetry", "pdm",
+      "composer", "bundler", "mix", "rebar", "cabal", "stack", "dub"
+    ],
+    "ml_frameworks": [
+      "tensorflow", "pytorch", "keras", "scikit-learn", "xgboost", "lightgbm",
+      "catboost", "jax", "mxnet", "paddle", "caffe", "theano", "chainer",
+      "transformers", "spacy", "nltk", "gensim", "fasttext", "flair", "allennlp",
+      "opencv", "pillow", "scikit-image", "detectron", "yolo", "mmdetection",
+      "mlflow", "kubeflow", "ray", "horovod", "deepspeed", "fairscale"
+    ]
+  },
   "languages": {
-    "python": [".py", ".pyw", ".pyi"],
-    "javascript": [".js", ".jsx", ".mjs", ".cjs"],
-    "typescript": [".ts", ".tsx", ".d.ts"],
-    "java": [".java"],
-    "go": [".go"],
-    "rust": [".rs"],
-    "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".h"],
-    "csharp": [".cs"],
-    "ruby": [".rb"],
-    "php": [".php"],
-    "swift": [".swift"],
-    "kotlin": [".kt", ".kts"]
+    "python": {
+      "extensions": [".py", ".pyw", ".pyi", ".pyx", ".pxd", ".pxi"],
+      "keywords": ["def", "class", "import", "from", "if", "elif", "else", "for", "while", "with", "try", "except", "finally", "lambda", "yield", "async", "await", "pass", "break", "continue", "return", "raise", "assert", "del", "global", "nonlocal", "and", "or", "not", "in", "is", "None", "True", "False"],
+      "frameworks": ["django", "flask", "fastapi", "pyramid", "bottle", "tornado", "aiohttp", "sanic"],
+      "tools": ["pip", "poetry", "pipenv", "virtualenv", "conda", "pytest", "black", "flake8", "mypy", "pylint", "jupyter", "ipython"]
+    },
+    "javascript": {
+      "extensions": [".js", ".mjs", ".cjs", ".jsx"],
+      "keywords": ["function", "const", "let", "var", "if", "else", "for", "while", "do", "switch", "case", "break", "continue", "return", "throw", "try", "catch", "finally", "async", "await", "class", "extends", "static", "get", "set", "new", "this", "super", "import", "export", "default", "from", "as", "typeof", "instanceof", "in", "of", "delete", "void", "yield", "null", "undefined", "true", "false"],
+      "frameworks": ["react", "vue", "angular", "svelte", "express", "next", "nuxt", "gatsby", "nest"],
+      "tools": ["npm", "yarn", "pnpm", "webpack", "vite", "babel", "eslint", "prettier", "jest", "mocha", "node", "deno", "bun"]
+    },
+    "typescript": {
+      "extensions": [".ts", ".tsx", ".d.ts", ".mts", ".cts"],
+      "keywords": ["interface", "type", "enum", "namespace", "module", "declare", "abstract", "implements", "extends", "private", "protected", "public", "readonly", "static", "as", "is", "keyof", "typeof", "infer", "never", "unknown", "any", "void", "null", "undefined", "true", "false"],
+      "frameworks": ["angular", "nest", "next", "remix", "typeorm", "prisma"],
+      "tools": ["tsc", "ts-node", "tsx", "swc", "esbuild", "tsup", "tslint", "typescript-eslint"]
+    },
+    "java": {
+      "extensions": [".java", ".class", ".jar", ".war", ".ear"],
+      "keywords": ["class", "interface", "enum", "extends", "implements", "public", "private", "protected", "static", "final", "abstract", "synchronized", "volatile", "transient", "native", "strictfp", "if", "else", "for", "while", "do", "switch", "case", "break", "continue", "return", "throw", "throws", "try", "catch", "finally", "import", "package", "new", "this", "super", "instanceof", "void", "boolean", "byte", "char", "short", "int", "long", "float", "double", "null", "true", "false"],
+      "frameworks": ["spring", "springboot", "struts", "jsf", "vaadin", "play", "micronaut", "quarkus", "vertx"],
+      "tools": ["maven", "gradle", "ant", "junit", "mockito", "lombok", "jackson", "gson", "log4j", "slf4j"]
+    },
+    "go": {
+      "extensions": [".go", ".mod", ".sum"],
+      "keywords": ["package", "import", "func", "var", "const", "type", "struct", "interface", "map", "chan", "if", "else", "for", "range", "switch", "case", "break", "continue", "return", "go", "defer", "panic", "recover", "select", "fallthrough", "default", "nil", "true", "false", "iota", "make", "new", "cap", "len", "append", "copy", "delete", "close"],
+      "frameworks": ["gin", "echo", "fiber", "beego", "revel", "buffalo", "chi", "gorilla"],
+      "tools": ["go", "gofmt", "goimports", "golint", "golangci-lint", "go-mod", "delve", "gore", "air", "cobra", "viper"]
+    },
+    "rust": {
+      "extensions": [".rs", ".rlib"],
+      "keywords": ["fn", "let", "mut", "const", "static", "struct", "enum", "trait", "impl", "mod", "pub", "use", "as", "crate", "self", "super", "if", "else", "match", "for", "while", "loop", "break", "continue", "return", "async", "await", "move", "ref", "box", "dyn", "extern", "in", "where", "unsafe", "true", "false", "Some", "None", "Ok", "Err"],
+      "frameworks": ["actix", "rocket", "warp", "axum", "tide", "poem", "tower", "tonic", "diesel", "sqlx"],
+      "tools": ["cargo", "rustc", "rustfmt", "clippy", "rustup", "rust-analyzer", "miri", "criterion", "proptest"]
+    },
+    "cpp": {
+      "extensions": [".cpp", ".cc", ".cxx", ".c++", ".hpp", ".h", ".hh", ".hxx", ".h++", ".c", ".ipp", ".tpp"],
+      "keywords": ["class", "struct", "union", "enum", "namespace", "template", "typename", "public", "private", "protected", "virtual", "override", "final", "static", "const", "constexpr", "mutable", "volatile", "inline", "extern", "typedef", "using", "if", "else", "for", "while", "do", "switch", "case", "break", "continue", "return", "throw", "try", "catch", "new", "delete", "this", "nullptr", "true", "false", "auto", "decltype", "sizeof", "typeid", "static_cast", "dynamic_cast", "const_cast", "reinterpret_cast"],
+      "frameworks": ["qt", "boost", "poco", "cpp-rest", "drogon", "crow", "pistache", "cpprestsdk"],
+      "tools": ["gcc", "clang", "msvc", "cmake", "make", "ninja", "conan", "vcpkg", "bazel", "valgrind", "gdb", "lldb"]
+    },
+    "csharp": {
+      "extensions": [".cs", ".csx"],
+      "keywords": ["class", "struct", "interface", "enum", "namespace", "using", "public", "private", "protected", "internal", "static", "readonly", "const", "abstract", "virtual", "override", "sealed", "partial", "async", "await", "if", "else", "for", "foreach", "while", "do", "switch", "case", "break", "continue", "return", "throw", "try", "catch", "finally", "new", "this", "base", "typeof", "sizeof", "is", "as", "var", "dynamic", "null", "true", "false", "void", "bool", "byte", "sbyte", "char", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "decimal", "string", "object"],
+      "frameworks": ["asp.net", "dotnet", "core", "mvc", "webapi", "blazor", "maui", "xamarin", "unity", "wpf", "winforms"],
+      "tools": ["dotnet", "nuget", "msbuild", "visual-studio", "rider", "omnisharp", "xunit", "nunit", "moq"]
+    },
+    "ruby": {
+      "extensions": [".rb", ".rake", ".gemspec", ".ru", ".rbw", ".gemfile"],
+      "keywords": ["class", "module", "def", "end", "if", "elsif", "else", "unless", "case", "when", "for", "while", "until", "do", "break", "next", "redo", "retry", "return", "yield", "super", "self", "nil", "true", "false", "and", "or", "not", "begin", "rescue", "ensure", "raise", "throw", "catch", "require", "require_relative", "include", "extend", "attr_reader", "attr_writer", "attr_accessor", "alias", "undef"],
+      "frameworks": ["rails", "sinatra", "hanami", "grape", "roda", "cuba", "padrino", "jekyll"],
+      "tools": ["ruby", "irb", "gem", "bundler", "rake", "rspec", "minitest", "rubocop", "pry", "yard"]
+    },
+    "php": {
+      "extensions": [".php", ".phtml", ".php3", ".php4", ".php5", ".phps", ".inc"],
+      "keywords": ["class", "interface", "trait", "extends", "implements", "public", "private", "protected", "static", "final", "abstract", "const", "function", "return", "if", "elseif", "else", "switch", "case", "break", "continue", "for", "foreach", "while", "do", "try", "catch", "finally", "throw", "new", "clone", "instanceof", "namespace", "use", "as", "global", "isset", "empty", "die", "exit", "eval", "include", "include_once", "require", "require_once", "true", "false", "null"],
+      "frameworks": ["laravel", "symfony", "codeigniter", "yii", "slim", "lumen", "cakephp", "wordpress", "drupal"],
+      "tools": ["composer", "phpunit", "phpstan", "psalm", "php-cs-fixer", "xdebug", "opcache", "pear", "pecl"]
+    },
+    "swift": {
+      "extensions": [".swift"],
+      "keywords": ["class", "struct", "enum", "protocol", "extension", "func", "var", "let", "if", "else", "guard", "switch", "case", "for", "while", "repeat", "break", "continue", "return", "throw", "throws", "rethrows", "do", "try", "catch", "defer", "import", "typealias", "associatedtype", "init", "deinit", "subscript", "operator", "precedencegroup", "self", "Self", "super", "nil", "true", "false", "is", "as", "Any", "AnyObject", "public", "internal", "fileprivate", "private", "static", "final", "lazy", "optional", "required", "weak", "unowned"],
+      "frameworks": ["swiftui", "uikit", "vapor", "perfect", "kitura", "combine", "rxswift"],
+      "tools": ["swift", "swiftc", "xcode", "spm", "cocoapods", "carthage", "swiftlint", "jazzy", "xctest"]
+    },
+    "kotlin": {
+      "extensions": [".kt", ".kts"],
+      "keywords": ["class", "interface", "object", "fun", "val", "var", "if", "else", "when", "for", "while", "do", "break", "continue", "return", "throw", "try", "catch", "finally", "package", "import", "typealias", "constructor", "init", "companion", "open", "final", "abstract", "override", "private", "protected", "public", "internal", "inline", "noinline", "crossinline", "reified", "suspend", "data", "sealed", "annotation", "enum", "const", "lateinit", "by", "in", "is", "as", "null", "true", "false", "this", "super"],
+      "frameworks": ["spring", "ktor", "android", "compose", "tornadofx", "vaadin", "javalin", "http4k"],
+      "tools": ["kotlinc", "gradle", "maven", "android-studio", "intellij", "detekt", "ktlint", "dokka"]
+    },
+    "scala": {
+      "extensions": [".scala", ".sc"],
+      "keywords": ["class", "trait", "object", "def", "val", "var", "if", "else", "match", "case", "for", "while", "do", "try", "catch", "finally", "throw", "import", "package", "extends", "with", "override", "private", "protected", "public", "abstract", "final", "sealed", "implicit", "lazy", "type", "yield", "return", "new", "this", "super", "null", "true", "false", "Unit", "Any", "AnyRef", "AnyVal", "Nothing", "None", "Some", "Left", "Right"],
+      "frameworks": ["play", "akka", "spark", "cats", "zio", "http4s", "finatra", "scalatra", "lift"],
+      "tools": ["scalac", "sbt", "mill", "bloop", "metals", "scalafmt", "scalafix", "ammonite", "scala-cli"]
+    },
+    "dart": {
+      "extensions": [".dart"],
+      "keywords": ["class", "mixin", "enum", "extends", "implements", "with", "abstract", "interface", "static", "final", "const", "var", "dynamic", "void", "null", "true", "false", "if", "else", "for", "while", "do", "switch", "case", "break", "continue", "return", "throw", "try", "catch", "finally", "assert", "new", "this", "super", "async", "await", "yield", "sync", "import", "export", "library", "part", "get", "set", "operator", "factory", "typedef", "extension", "late", "required", "covariant"],
+      "frameworks": ["flutter", "angular-dart", "aqueduct", "shelf", "angel", "jaguar"],
+      "tools": ["dart", "flutter", "pub", "dartfmt", "dartanalyzer", "dart2js", "dartdevc", "observatory"]
+    }
+  },
+  "file_patterns": {
+    "config": [
+      ".*rc$", ".*rc.json$", ".*rc.js$", ".*rc.yml$", ".*rc.yaml$",
+      ".config.js$", ".config.json$", ".config.yml$", ".config.yaml$",
+      "config.js$", "config.json$", "config.yml$", "config.yaml$",
+      "settings.json$", "settings.yml$", "settings.yaml$",
+      ".env$", ".env.local$", ".env.development$", ".env.production$",
+      "dockerfile$", "docker-compose.yml$", "docker-compose.yaml$",
+      "makefile$", "gemfile$", "rakefile$", "gulpfile", "gruntfile"
+    ],
+    "test": [
+      "test.js$", "test.ts$", "test.py$", "test.go$", "test.java$",
+      "spec.js$", "spec.ts$", "spec.rb$", ".test.js$", ".spec.js$",
+      "test_.*.py$", "_test.go$", "Test.java$", "Tests.cs$",
+      "__tests__", "tests/", "test/", "spec/", "specs/"
+    ],
+    "documentation": [
+      "readme", "changelog", "contributing", "license", "authors",
+      ".md$", ".mdx$", ".rst$", ".txt$", ".adoc$", ".textile$",
+      "docs/", "documentation/", "wiki/", "man/", "manual/"
+    ],
+    "build": [
+      "webpack.config", "rollup.config", "vite.config", "tsconfig",
+      "babel.config", ".babelrc", "jest.config", ".eslintrc",
+      "package.json", "package-lock.json", "yarn.lock", "pnpm-lock",
+      "Cargo.toml", "Cargo.lock", "go.mod", "go.sum", "pom.xml",
+      "build.gradle", "settings.gradle", "requirements.txt", "Pipfile",
+      "Gemfile", "composer.json", "composer.lock"
+    ],
+    "ci_cd": [
+      ".github/workflows", ".gitlab-ci", "jenkinsfile", ".travis",
+      ".circleci", "azure-pipelines", "bitbucket-pipelines",
+      ".drone", "codefresh", "buildkite", "appveyor", "wercker"
+    ]
   }
 }

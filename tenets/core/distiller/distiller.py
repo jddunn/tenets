@@ -65,6 +65,7 @@ class Distiller:
         condense: bool = False,
         remove_comments: bool = False,
         pinned_files: Optional[List[Path]] = None,
+        include_tests: Optional[bool] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -100,6 +101,11 @@ class Distiller:
 
         # 1. Parse and understand the prompt
         prompt_context = self._parse_prompt(prompt)
+
+        # Override test inclusion if explicitly specified
+        if include_tests is not None:
+            prompt_context.include_tests = include_tests
+            self.logger.debug(f"Override: test inclusion set to {include_tests}")
 
         # 2. Determine paths to analyze
         paths = self._normalize_paths(paths)
@@ -170,20 +176,60 @@ class Distiller:
             session_name=session_name,
         )
 
-        # 9. Build final result
+        # 9. Build final result with debug information
+        metadata = {
+            "mode": mode,
+            "files_analyzed": len(files),
+            "files_included": len(aggregated["included_files"]),
+            "model": model,
+            "session": session_name,
+            "prompt": prompt,
+            "full_mode": full,
+            "condense": condense,
+            "remove_comments": remove_comments,
+        }
+
+        # Add debug information for verbose mode
+        # Add prompt parsing details
+        metadata["prompt_context"] = {
+            "task_type": prompt_context.task_type,
+            "intent": prompt_context.intent,
+            "keywords": prompt_context.keywords,
+            "synonyms": getattr(prompt_context, "synonyms", []),
+            "entities": prompt_context.entities,
+        }
+
+        # Add ranking details
+        metadata["ranking_details"] = {
+            "algorithm": mode,
+            "threshold": self.config.ranking.threshold,
+            "files_ranked": len(analyzed_files),
+            "files_above_threshold": len(ranked_files),
+            "top_files": [
+                {
+                    "path": str(f.path),
+                    "score": f.relevance_score,
+                    "match_details": {
+                        "keywords_matched": getattr(f, "keywords_matched", []),
+                        "semantic_score": getattr(f, "semantic_score", 0),
+                    },
+                }
+                for f in ranked_files[:10]  # Top 10 files
+            ],
+        }
+
+        # Add aggregation details
+        metadata["aggregation_details"] = {
+            "strategy": aggregated.get("strategy", "unknown"),
+            "min_relevance": aggregated.get("min_relevance", 0),
+            "files_considered": len(ranked_files),
+            "files_rejected": len(ranked_files) - len(aggregated["included_files"]),
+            "rejection_reasons": aggregated.get("rejection_reasons", {}),
+        }
+
         return self._build_result(
             formatted=formatted,
-            metadata={
-                "mode": mode,
-                "files_analyzed": len(files),
-                "files_included": len(aggregated["included_files"]),
-                "model": model,
-                "session": session_name,
-                "prompt": prompt,
-                "full_mode": full,
-                "condense": condense,
-                "remove_comments": remove_comments,
-            },
+            metadata=metadata,
         )
 
     def _parse_prompt(self, prompt: str) -> PromptContext:
@@ -215,6 +261,24 @@ class Distiller:
             # Merge with include patterns
             include_patterns = (include_patterns or []) + prompt_context.file_patterns
 
+        # Handle test file exclusion/inclusion based on configuration and prompt context
+        exclude_patterns = exclude_patterns or []
+
+        # If tests should be excluded and not explicitly included in prompt
+        if self.config.scanner.exclude_tests_by_default and not prompt_context.include_tests:
+            # Add test patterns to exclusion list
+            test_exclusions = []
+            for pattern in self.config.scanner.test_patterns:
+                test_exclusions.append(pattern)
+
+            # Add test directories to exclusion list
+            for test_dir in self.config.scanner.test_directories:
+                test_exclusions.append(f"**/{test_dir}/**")
+                test_exclusions.append(f"{test_dir}/**")
+
+            exclude_patterns.extend(test_exclusions)
+            self.logger.debug(f"Excluding test files: added {len(test_exclusions)} test patterns")
+
         # Scan for files
         files = self.scanner.scan(
             paths=paths,
@@ -224,7 +288,14 @@ class Distiller:
             respect_gitignore=self.config.respect_gitignore,
         )
 
-        self.logger.info(f"Discovered {len(files)} files")
+        # Log test inclusion/exclusion status
+        if prompt_context.include_tests:
+            self.logger.info(f"Discovered {len(files)} files (including tests)")
+        elif self.config.scanner.exclude_tests_by_default:
+            self.logger.info(f"Discovered {len(files)} files (excluding tests)")
+        else:
+            self.logger.info(f"Discovered {len(files)} files")
+
         return files
 
     def _analyze_files(
@@ -271,7 +342,9 @@ class Distiller:
         # Get git information
         context = {
             "recent_commits": self.git.get_recent_commits(
-                path=git_root, limit=10, files=[f.path for f in files[:20]]  # Top 20 files
+                path=git_root,
+                limit=10,
+                files=[f.path for f in files[:20]],  # Top 20 files
             ),
             "contributors": self.git.get_contributors(
                 path=git_root, files=[f.path for f in files[:20]]

@@ -5,11 +5,6 @@ relevant files, track development velocity, and build optimal context for both
 human understanding and AI pair programming - all without making any LLM API calls.
 
 This package provides:
-- Intelligent context extraction (distill)
-- Guiding principles management (tenets/instill)
-- Code analysis and metrics (examine)
-- Development tracking (chronicle/momentum)
-- Visualization capabilities (viz)
 
 Example:
     Basic usage for context extraction:
@@ -26,6 +21,8 @@ Example:
     >>> result = ten.distill("add user model")  # Context now includes tenets
 """
 
+from __future__ import annotations
+
 __version__ = "0.1.0"
 __author__ = "Johnny Dunn"
 __license__ = "MIT"
@@ -33,21 +30,51 @@ __license__ = "MIT"
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 # Check Python version
 if sys.version_info < (3, 9):
     raise RuntimeError("Tenets requires Python 3.9 or higher")
 
-# Import core components
+# Keep runtime imports lightweight. Only import heavy modules lazily.
 from tenets.config import TenetsConfig
-from tenets.core.analysis.analyzer import CodeAnalyzer
-from tenets.core.distiller import Distiller
-from tenets.core.instiller import Instiller
-from tenets.core.instiller.manager import TenetManager
-from tenets.models.context import ContextResult
-from tenets.models.tenet import Priority, Tenet, TenetCategory
+from tenets.models.context import ContextResult  # re-export for public API/tests
+from tenets.models.tenet import Priority, Tenet, TenetCategory  # re-export for public API/tests
 from tenets.utils.logger import get_logger
+
+
+# Lightweight, patchable factories for heavy components (allow tests to patch tenets.Distiller/Instiller)
+def Distiller(*args, **kwargs):  # type: ignore[override]
+    from tenets.core.distiller import Distiller as _Distiller
+
+    return _Distiller(*args, **kwargs)
+
+
+def Instiller(*args, **kwargs):  # type: ignore[override]
+    from tenets.core.instiller import Instiller as _Instiller
+
+    return _Instiller(*args, **kwargs)
+
+
+def CodeAnalyzer(*args, **kwargs):  # type: ignore[override]
+    """Lightweight, patchable factory for the code analyzer.
+
+    Tests patch this symbol at the package level (tenets.CodeAnalyzer),
+    so expose a simple wrapper that imports on demand.
+    """
+    from tenets.core.analysis.analyzer import CodeAnalyzer as _CodeAnalyzer
+
+    return _CodeAnalyzer(*args, **kwargs)
+
+
+# Type-checking only imports (no runtime side-effects)
+if TYPE_CHECKING:  # pragma: no cover - used only for typing
+    from tenets.core.analysis.analyzer import CodeAnalyzer
+    from tenets.core.distiller import Distiller
+    from tenets.core.instiller import Instiller
+    from tenets.core.instiller.manager import TenetManager
+    from tenets.models.context import ContextResult
+    from tenets.models.tenet import Priority, Tenet, TenetCategory
 
 
 class Tenets:
@@ -72,6 +99,7 @@ class Tenets:
 
     Example:
         >>> from tenets import Tenets
+        >>> from pathlib import Path
         >>>
         >>> # Initialize with default config
         >>> ten = Tenets()
@@ -81,13 +109,29 @@ class Tenets:
         >>> config = TenetsConfig(max_tokens=150000, ranking_algorithm="thorough")
         >>> ten = Tenets(config=config)
         >>>
-        >>> # Extract context
+        >>> # Extract context (uses default session automatically)
         >>> result = ten.distill("implement user authentication")
         >>> print(f"Generated {result.token_count} tokens of context")
         >>>
+        >>> # Generate HTML report
+        >>> result = ten.distill("review API endpoints", format="html")
+        >>> Path("api-review.html").write_text(result.context)
+        >>>
         >>> # Add and apply tenets
         >>> ten.add_tenet("Use dependency injection", priority="high")
+        >>> ten.add_tenet("Follow RESTful conventions", category="architecture")
         >>> ten.instill_tenets()
+        >>>
+        >>> # Pin critical files for priority inclusion
+        >>> ten.pin_file("src/core/auth.py")
+        >>> ten.pin_folder("src/api/endpoints")
+        >>>
+        >>> # Work with named sessions
+        >>> result = ten.distill(
+        ...     "implement OAuth2",
+        ...     session_name="oauth-feature",
+        ...     mode="thorough"
+        ... )
     """
 
     def __init__(self, config: Optional[Union[TenetsConfig, dict[str, Any], Path]] = None):
@@ -159,7 +203,7 @@ class Tenets:
         self.logger = get_logger(__name__)
         self.logger.info(f"Initializing Tenets v{__version__}")
 
-        # Initialize core components
+        # Initialize core components using module-level factories (patchable in tests)
         self.distiller = Distiller(self.config)
         self.instiller = Instiller(self.config)
         self.tenet_manager = self.instiller.manager
@@ -192,6 +236,7 @@ class Tenets:
         full: bool = False,
         condense: bool = False,
         remove_comments: bool = False,
+        include_tests: Optional[bool] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -204,7 +249,7 @@ class Tenets:
                    to a GitHub issue, JIRA ticket, etc.
             files: Paths to analyze. Can be a single path, list of paths, or None
                   to use current directory
-            format: Output format - 'markdown', 'xml' (Claude), or 'json'
+            format: Output format - 'markdown', 'xml' (Claude), 'json', or 'html' (interactive report)
             model: Target LLM model for token counting (e.g., 'gpt-4o', 'claude-3-opus')
             max_tokens: Maximum tokens for context (overrides model default)
             mode: Analysis mode - 'fast', 'balanced', or 'thorough'
@@ -222,8 +267,9 @@ class Tenets:
             FileNotFoundError: If specified files don't exist
 
         Example:
-            >>> # Basic usage
+            >>> # Basic usage (uses default session automatically)
             >>> result = tenets.distill("implement OAuth2 authentication")
+            >>> print(result.context[:100])  # First 100 chars of context
             >>>
             >>> # With specific files and options
             >>> result = tenets.distill(
@@ -233,6 +279,19 @@ class Tenets:
             ...     max_tokens=50000,
             ...     include_patterns=["*.py"],
             ...     exclude_patterns=["test_*.py"]
+            ... )
+            >>>
+            >>> # Generate HTML report
+            >>> result = tenets.distill(
+            ...     "analyze authentication flow",
+            ...     format="html"
+            ... )
+            >>> Path("report.html").write_text(result.context)
+            >>>
+            >>> # With session management
+            >>> result = tenets.distill(
+            ...     "implement validation",
+            ...     session_name="validation-feature"
             ... )
             >>>
             >>> # From GitHub issue
@@ -284,6 +343,7 @@ class Tenets:
             condense=condense,
             remove_comments=remove_comments,
             pinned_files=pinned_files or None,
+            include_tests=include_tests,
         )
 
         # Inject system instruction if configured
@@ -765,12 +825,12 @@ class Tenets:
 
 # Convenience exports
 __all__ = [
+    "CodeAnalyzer",
+    "ContextResult",
+    "Priority",
+    "Tenet",
+    "TenetCategory",
     "Tenets",
     "TenetsConfig",
-    "ContextResult",
-    "Tenet",
-    "Priority",
-    "TenetCategory",
-    "CodeAnalyzer",
     "__version__",
 ]

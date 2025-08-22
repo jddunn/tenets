@@ -1,10 +1,9 @@
 """Tests for the HTML report generator module."""
 
 import base64
-import json
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -251,6 +250,9 @@ class TestHTMLReporter:
         assert "<h2" in html
         assert "Test Section" in html
         assert "Test content" in html
+        # Check that metrics are rendered
+        assert 'class="metrics-grid"' in html
+        assert "Metric1" in html
 
     def test_generate_section_collapsible(self, reporter):
         """Test collapsible section generation."""
@@ -264,7 +266,7 @@ class TestHTMLReporter:
 
     def test_render_content_list(self, reporter):
         """Test rendering list content."""
-        content = ["Item 1", "Item 2", "Item 3"]
+        content = ["- Item 1", "- Item 2", "- Item 3"]
 
         html = reporter._render_content(content)
 
@@ -272,6 +274,36 @@ class TestHTMLReporter:
         assert "<li>Item 1</li>" in html
         assert "<li>Item 2</li>" in html
         assert "<li>Item 3</li>" in html
+
+    def test_render_content_markdown(self, reporter):
+        """Test rendering markdown-style content."""
+        content = [
+            "Regular paragraph",
+            "",
+            "### Heading 3",
+            "- List item with **bold** text",
+            "- Another item with *italic*",
+            "   Indented continuation",
+        ]
+
+        html = reporter._render_content(content)
+
+        assert "<p>Regular paragraph</p>" in html
+        assert "<h3>Heading 3</h3>" in html
+        assert "<ul>" in html
+        assert "<strong>bold</strong>" in html
+        assert "<em>italic</em>" in html
+        assert "margin-left: 20px" in html
+
+    def test_process_markdown(self, reporter):
+        """Test markdown processing."""
+        text = "This has **bold** and *italic* and `code` text"
+
+        html = reporter._process_markdown(text)
+
+        assert "<strong>bold</strong>" in html
+        assert "<em>italic</em>" in html
+        assert "<code>code</code>" in html
 
     def test_render_content_dict(self, reporter):
         """Test rendering dictionary content as metrics."""

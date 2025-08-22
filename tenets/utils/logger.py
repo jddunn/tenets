@@ -33,7 +33,7 @@ def _configure_root(level: int) -> None:
     root = logging.getLogger()
 
     if _CONFIGURED:
-        if _CURRENT_LEVEL != level:
+        if level != _CURRENT_LEVEL:
             root.setLevel(level)
             for h in root.handlers:
                 h.setLevel(level)
@@ -49,7 +49,24 @@ def _configure_root(level: int) -> None:
                 handler = h
                 break
         if handler is None:
-            handler = RichHandler(rich_tracebacks=True, show_time=True, show_path=False)
+            # Force a reasonable width to prevent character wrapping
+            import shutil
+
+            from rich.console import Console
+
+            # Get terminal width or use a reasonable default
+            terminal_width = shutil.get_terminal_size(fallback=(120, 24)).columns
+            # Use at least 120 columns to prevent wrapping
+            width = max(120, terminal_width)
+            console = Console(width=width, force_terminal=True, legacy_windows=False)
+            handler = RichHandler(
+                rich_tracebacks=True,
+                show_time=True,
+                show_path=False,
+                console=console,
+                markup=True,
+                log_time_format="[%X]",
+            )
             # Even with Rich, provide a simple formatter to satisfy tests
             handler.setFormatter(logging.Formatter("%(message)s"))
             handler.setLevel(level)
@@ -112,13 +129,12 @@ def get_logger(name: Optional[str] = None, level: Optional[int] = None) -> loggi
     # - Otherwise (arbitrary logger names), set the resolved level
     if level is not None:
         logger.setLevel(level)
+    elif logger_name == "tenets":
+        logger.setLevel(resolved_level)
+    elif logger_name.startswith("tenets."):
+        # Inherit from parent 'tenets' logger / root, do not set explicit level
+        pass
     else:
-        if logger_name == "tenets":
-            logger.setLevel(resolved_level)
-        elif logger_name.startswith("tenets."):
-            # Inherit from parent 'tenets' logger / root, do not set explicit level
-            pass
-        else:
-            logger.setLevel(resolved_level)
+        logger.setLevel(resolved_level)
 
     return logger

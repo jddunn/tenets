@@ -19,6 +19,12 @@ from tenets.utils.logger import get_logger
 
 from .generator import ReportConfig, ReportSection
 
+# Re-export ReportGenerator for tests that patch via this module
+try:  # pragma: no cover
+    from .generator import ReportGenerator as ReportGenerator
+except Exception:  # pragma: no cover
+    ReportGenerator = None  # type: ignore
+
 
 class HTMLTemplate:
     """HTML template generator for reports.
@@ -353,11 +359,44 @@ class HTMLTemplate:
             border-radius: 8px;
             text-align: center;
             transition: transform 0.3s;
+            position: relative;
         }
 
         .metric-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 20px var(--shadow);
+        }
+        
+        /* Tooltip styles */
+        .metric-card[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            margin-bottom: 10px;
+            max-width: 250px;
+            white-space: normal;
+            text-align: left;
+            line-height: 1.4;
+        }
+        
+        .metric-card[data-tooltip]:hover::before {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+            margin-bottom: 4px;
+            z-index: 1000;
         }
 
         .metric-value {
@@ -560,6 +599,7 @@ class HTMLTemplate:
         for section in sections:
             if section.visible:
                 icon = section.icon if section.icon else ""
+                # Preserve emoji/icons as-is; HTML is written as UTF-8
                 nav_items.append(f'<li><a href="#{section.id}">{icon} {section.title}</a></li>')
 
         return f"""
@@ -667,9 +707,18 @@ class HTMLReporter:
         # Generate HTML content
         html_content = self._generate_html(sections, metadata, report_config)
 
+        # Ensure output is ASCII-safe for environments that read with
+        # platform default encodings (e.g., cp1252 on Windows). Convert
+        # non-ASCII characters to HTML entities to avoid decode errors
+        # when tests read the file without specifying encoding.
+        try:
+            safe_content = html_content.encode("ascii", "xmlcharrefreplace").decode("ascii")
+        except Exception:
+            safe_content = html_content  # Fallback; still write as-is
+
         # Write to file
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
+            f.write(safe_content)
 
         self.logger.info(f"HTML report generated: {output_path}")
         return output_path
@@ -799,16 +848,20 @@ class HTMLReporter:
         collapsible_class = "collapsible" if section.collapsible else ""
 
         html = f"""
-    <section id="{section.id}" class="section">
-        <h{section.level} class="{collapsible_class}">
-            {icon} {section.title}
-        </h{section.level}>
-        <div class="{"collapsible-content" if section.collapsible else ""}">
-    """
+        <section id="{section.id}" class="section">
+            <h{section.level} class="{collapsible_class}">
+                {icon} {section.title}
+            </h{section.level}>
+            <div class="{"collapsible-content" if section.collapsible else ""}">
+        """
 
         # Section content
         if section.content:
             html += self._render_content(section.content)
+
+        # Metrics
+        if hasattr(section, "metrics") and section.metrics:
+            html += self._render_metrics(section.metrics)
 
         # Tables
         for table in section.tables:
@@ -829,9 +882,9 @@ class HTMLReporter:
             html += self._generate_section(subsection, report_config)
 
         html += """
-        </div>
-    </section>
-    """
+            </div>
+        </section>
+        """
 
         return html
 
@@ -845,12 +898,94 @@ class HTMLReporter:
             str: Rendered HTML
         """
         if isinstance(content, list):
-            items = "".join(f"<li>{item}</li>" for item in content)
-            return f"<ul>{items}</ul>"
+            # Process list items - handle markdown-like content
+            html_parts = []
+            in_list = False
+
+            for item in content:
+                item_str = str(item)
+
+                # Handle empty lines
+                if not item_str.strip():
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append("<br>")
+                    continue
+
+                # Handle headers (markdown style)
+                if item_str.startswith("###"):
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append(f"<h3>{item_str[3:].strip()}</h3>")
+                elif item_str.startswith("##"):
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append(f"<h2>{item_str[2:].strip()}</h2>")
+                elif item_str.startswith("#"):
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    html_parts.append(f"<h1>{item_str[1:].strip()}</h1>")
+                # Handle list items
+                elif item_str.startswith("- ") or item_str.startswith("* "):
+                    if not in_list:
+                        html_parts.append("<ul>")
+                        in_list = True
+                    # Process markdown bold
+                    processed = self._process_markdown(item_str[2:])
+                    html_parts.append(f"<li>{processed}</li>")
+                # Handle indented content (continuation of previous item)
+                elif item_str.startswith("   "):
+                    processed = self._process_markdown(item_str.strip())
+                    html_parts.append(
+                        f"<div style='margin-left: 20px; color: var(--text-secondary);'>{processed}</div>"
+                    )
+                else:
+                    if in_list:
+                        html_parts.append("</ul>")
+                        in_list = False
+                    # Regular paragraph
+                    processed = self._process_markdown(item_str)
+                    html_parts.append(f"<p>{processed}</p>")
+
+            if in_list:
+                html_parts.append("</ul>")
+
+            return "\n".join(html_parts)
         elif isinstance(content, dict):
             return self._render_metrics(content)
         else:
-            return f"<p>{content}</p>"
+            return f"<p>{self._process_markdown(str(content))}</p>"
+
+    def _process_markdown(self, text: str) -> str:
+        """Process basic markdown formatting.
+
+        Args:
+            text: Text with markdown formatting
+
+        Returns:
+            str: HTML formatted text
+        """
+        # Escape HTML first
+        text = self._escape_html(text)
+
+        # Bold text
+        import re
+
+        text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+        text = re.sub(r"__(.+?)__", r"<strong>\1</strong>", text)
+
+        # Italic text
+        text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
+        text = re.sub(r"_(.+?)_", r"<em>\1</em>", text)
+
+        # Inline code
+        text = re.sub(r"`(.+?)`", r"<code>\1</code>", text)
+
+        return text
 
     def _render_table(self, table_data: Dict[str, Any]) -> str:
         """Render a table.
@@ -950,12 +1085,32 @@ class HTMLReporter:
         Returns:
             str: Metrics HTML
         """
+        # Define tooltips for common metrics
+        metric_tooltips = {
+            "Total Hotspots": "Files with high risk scores based on change frequency, complexity, and size",
+            "Critical": "Files requiring immediate attention (risk score > 80)",
+            "High Risk": "Files that should be addressed soon (risk score 60-80)",
+            "Files Analyzed": "Total number of files examined for potential issues",
+            "Average Complexity": "Mean cyclomatic complexity across all functions",
+            "Maximum Complexity": "Highest cyclomatic complexity found in any function",
+            "Complex Functions": "Number of functions with complexity > 10",
+            "Total Functions": "Total number of functions analyzed",
+            "Health Score": "Overall codebase health rating (0-100)",
+            "Test Coverage": "Percentage of code covered by tests",
+            "Excluded Files": "Files ignored during analysis",
+            "Ignored Patterns": "File patterns excluded from analysis",
+            "Bus Factor": "Minimum number of contributors who could derail the project if unavailable",
+        }
+
         cards = []
 
         for key, value in metrics.items():
+            tooltip = metric_tooltips.get(key, "")
+            tooltip_attr = f'data-tooltip="{tooltip}"' if tooltip else ""
+
             cards.append(
                 f"""
-            <div class="metric-card">
+            <div class="metric-card" {tooltip_attr}>
                 <div class="metric-label">{key}</div>
                 <div class="metric-value">{value}</div>
             </div>
@@ -1238,13 +1393,16 @@ def create_dashboard(
     if config is None:
         config = TenetsConfig()
 
-    from .generator import ReportGenerator
+    # Use module-level ReportGenerator symbol so tests can patch it via this module
+    generator = ReportGenerator(config) if ReportGenerator is not None else None
+    if generator is None:
+        # Fallback import if re-export failed for any reason
+        from .generator import ReportGenerator as _RG  # type: ignore
 
-    generator = ReportGenerator(config)
+        generator = _RG(config)
     report_config = ReportConfig(
         title="Code Analysis Dashboard",
         format="html",
-        template="dashboard",
         include_charts=True,
         include_toc=False,
     )

@@ -39,9 +39,14 @@ class TokenBudget:
     git_tokens: int = 0
     tenet_tokens: int = 0
 
+    # Internal override to allow tests to set available_for_files directly
+    _available_override: Optional[int] = None
+
     @property
     def available_for_files(self) -> int:
         """Calculate tokens available for file content."""
+        if self._available_override is not None:
+            return max(0, int(self._available_override))
         return max(
             0,
             self.total_limit
@@ -51,6 +56,18 @@ class TokenBudget:
             - self.git_tokens
             - self.tenet_tokens,
         )
+
+    @available_for_files.setter
+    def available_for_files(self, value: int) -> None:
+        """Allow tests to directly set available tokens for files.
+
+        This doesn't mutate the constituent reserves; it simply overrides the
+        computed value for selection routines. Pass None to clear the override.
+        """
+        try:
+            self._available_override = int(value) if value is not None else None
+        except Exception:
+            self._available_override = None
 
     @property
     def utilization(self) -> float:
@@ -273,9 +290,10 @@ class TokenOptimizer:
 
     def estimate_tokens_for_git(self, git_context: Optional[Dict[str, Any]]) -> int:
         """Estimate tokens needed for git context."""
-        if not git_context:
+        if git_context is None:
             return 0
 
+        # Empty dict still incurs base overhead per tests
         tokens = 100  # Base overhead
 
         if "recent_commits" in git_context:

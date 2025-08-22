@@ -103,8 +103,5 @@
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', init);
   } else { init(); }
-
-  // Observe DOM changes (navigation.instant swaps)
-  var mo = new MutationObserver(function(){ wire(); });
-  mo.observe(document.documentElement, { childList:true, subtree:true });
+  // No MutationObserver: event delegation handles dynamic content too
 })();

@@ -16,10 +16,7 @@ Test Coverage:
 """
 
 import json
-import os
-from dataclasses import asdict
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
 
 import pytest
 import yaml
@@ -222,6 +219,29 @@ class TestSubsystemConfigs:
         assert scanner.follow_symlinks is False
         assert scanner.max_file_size == 5_000_000
         assert scanner.max_files == 10_000
+
+        # Test new test exclusion fields
+        assert scanner.exclude_tests_by_default is True
+        assert isinstance(scanner.test_patterns, list)
+        assert len(scanner.test_patterns) > 0
+        assert isinstance(scanner.test_directories, list)
+        assert len(scanner.test_directories) > 0
+
+        # Check that common test patterns are included
+        test_patterns_str = ",".join(scanner.test_patterns)
+        assert "test_*.py" in test_patterns_str
+        assert "*_test.py" in test_patterns_str
+        assert "*.test.js" in test_patterns_str
+        assert "*.spec.js" in test_patterns_str
+        assert "*Test.java" in test_patterns_str
+        assert "*_test.go" in test_patterns_str
+
+        # Check that common test directories are included
+        test_dirs_str = ",".join(scanner.test_directories)
+        assert "test" in test_dirs_str
+        assert "tests" in test_dirs_str
+        assert "__tests__" in test_dirs_str
+        assert "spec" in test_dirs_str
         assert scanner.binary_check is True
         assert scanner.encoding == "utf-8"
         assert scanner.workers == 4
