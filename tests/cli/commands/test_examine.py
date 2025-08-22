@@ -513,6 +513,7 @@ class TestAutoFilenameGeneration:
     def test_generate_auto_filename_basic(self):
         """Test basic filename generation."""
         from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
 
         # Use a fixed timestamp for consistent testing
@@ -530,6 +531,7 @@ class TestAutoFilenameGeneration:
         """Test filename generation with full paths."""
         from datetime import datetime
         from pathlib import Path
+
         from tenets.cli.commands.examine import generate_auto_filename
 
         test_time = datetime(2024, 1, 15, 14, 30, 45)
@@ -549,6 +551,7 @@ class TestAutoFilenameGeneration:
     def test_generate_auto_filename_special_chars(self):
         """Test filename generation with special characters."""
         from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
 
         test_time = datetime(2024, 1, 15, 14, 30, 45)
@@ -568,6 +571,7 @@ class TestAutoFilenameGeneration:
     def test_generate_auto_filename_edge_cases(self):
         """Test filename generation edge cases."""
         from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
 
         test_time = datetime(2024, 1, 15, 14, 30, 45)
@@ -588,6 +592,7 @@ class TestAutoFilenameGeneration:
     def test_generate_auto_filename_no_timestamp(self):
         """Test that current time is used when no timestamp provided."""
         from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
 
         # Generate two filenames quickly
