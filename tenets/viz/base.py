@@ -304,7 +304,9 @@ class BaseVisualizer:
         creator = creators.get(chart_type, self._create_bar_chart)
         return creator(data, config)
 
-    def _create_horizontal_bar_chart(self, data: Dict[str, Any], config: ChartConfig) -> Dict[str, Any]:
+    def _create_horizontal_bar_chart(
+        self, data: Dict[str, Any], config: ChartConfig
+    ) -> Dict[str, Any]:
         """Create horizontal bar chart configuration.
 
         Args:

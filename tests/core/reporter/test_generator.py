@@ -268,7 +268,7 @@ class TestReportGenerator:
     def test_create_readme_section(self, generator):
         """Test README section creation."""
         readme_content = "# Test Project\\n\\nThis is a test project."
-        
+
         # Create a proper readme_info dict as expected by the method
         readme_info = {
             "path": "README.md",
@@ -277,7 +277,7 @@ class TestReportGenerator:
             "original_length": len(readme_content),
             "displayed_length": len(readme_content),
             "condensed_by": 0,
-            "lines": readme_content.count('\n') + 1
+            "lines": readme_content.count("\n") + 1,
         }
 
         section = generator._create_readme_section(readme_info)

@@ -7,14 +7,14 @@ and methods to the NLP implementation and add a couple of helpers that the
 ranking tests depend on (e.g., ``get_top_terms``).
 """
 
-from typing import Dict, List, Tuple, Any, Set
+from typing import Dict, List, Set, Tuple
 
 from tenets.utils.logger import get_logger
 
 
 class TFIDFCalculator:
     """TF-IDF calculator for ranking.
-    
+
     Simplified wrapper around NLP TFIDFCalculator to maintain
     existing ranking API while using centralized logic.
     """
@@ -29,9 +29,8 @@ class TFIDFCalculator:
         self.use_stopwords = use_stopwords
 
         # Use centralized NLP TF-IDF calculator
-        from tenets.core.nlp.keyword_extractor import (
-            TFIDFCalculator as NLPTFIDFCalculator,
-        )
+        from tenets.core.nlp.keyword_extractor import TFIDFCalculator as NLPTFIDFCalculator
+
         self._calculator = NLPTFIDFCalculator(
             use_stopwords=use_stopwords,
             stopword_set="code",  # Use minimal stopwords for code/code-search
@@ -154,7 +153,7 @@ class TFIDFCalculator:
 
     @document_count.setter
     def document_count(self, value: int) -> None:
-        setattr(self._calculator, "document_count", value)
+        self._calculator.document_count = value
 
     @property
     def document_frequency(self) -> Dict[str, int]:
@@ -162,7 +161,7 @@ class TFIDFCalculator:
 
     @document_frequency.setter
     def document_frequency(self, value: Dict[str, int]) -> None:
-        setattr(self._calculator, "document_frequency", value)
+        self._calculator.document_frequency = value
 
     @property
     def idf_cache(self) -> Dict[str, float]:
@@ -170,12 +169,12 @@ class TFIDFCalculator:
 
     @idf_cache.setter
     def idf_cache(self, value: Dict[str, float]) -> None:
-        setattr(self._calculator, "idf_cache", value)
+        self._calculator.idf_cache = value
 
 
 class BM25Calculator:
     """BM25 calculator for ranking.
-    
+
     Simplified wrapper around NLP BM25Calculator to maintain
     existing ranking API while using centralized logic.
     """
@@ -189,14 +188,15 @@ class BM25Calculator:
             use_stopwords: Whether to filter stopwords (uses 'code' set)
         """
         self.logger = get_logger(__name__)
-        
+
         # Use NLP BM25 calculator
         from tenets.core.nlp.keyword_extractor import BM25Calculator as NLPBM25Calculator
+
         self._calculator = NLPBM25Calculator(
             k1=k1,
             b=b,
             use_stopwords=use_stopwords,
-            stopword_set='code'  # Use minimal stopwords for code search
+            stopword_set="code",  # Use minimal stopwords for code search
         )
 
     def tokenize(self, text: str) -> List[str]:

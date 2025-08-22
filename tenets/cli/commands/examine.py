@@ -169,7 +169,7 @@ def _run_examination(
 
         # Add the examined path to results for filename generation
         examination_results["path"] = str(target_path)
-        
+
         # Display or save results based on format
         if output_format.lower() == "terminal":
             _display_terminal_results(examination_results, show_details)
@@ -326,18 +326,18 @@ def _display_ownership_results(
 
 def generate_auto_filename(path: str, format: str, timestamp: Optional[datetime] = None) -> str:
     """Generate an automatic filename for reports.
-    
+
     Args:
         path: The path that was examined
         format: The output format (html, json, markdown, etc.)
         timestamp: Optional timestamp to use (defaults to current time)
-        
+
     Returns:
         Generated filename like: tenets_report_{path}_{timestamp}.{format}
     """
     # Use provided timestamp or current time
     ts = timestamp or datetime.now()
-    
+
     # Extract base name from path
     if str(path) in [".", ""]:
         # Handle current directory or empty path
@@ -352,14 +352,14 @@ def generate_auto_filename(path: str, format: str, timestamp: Optional[datetime]
     else:
         # Just a name, not a path
         safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(path))
-    
+
     # Handle edge cases where the name becomes empty or just underscores
     if not safe_path_name or all(c == "_" for c in safe_path_name):
         safe_path_name = "project"
-    
+
     # Generate timestamp string
     timestamp_str = ts.strftime("%Y%m%d_%H%M%S")
-    
+
     # Create filename: tenets_report_{path}_{timestamp}.{format}
     return f"tenets_report_{safe_path_name}_{timestamp_str}.{format}"
 

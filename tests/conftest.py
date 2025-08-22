@@ -12,15 +12,11 @@ Fixtures provided:
     - Utility fixtures (loggers, temporary paths)
 """
 
-import json
 import os
-import shutil
-import tempfile
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Generator, List
-from unittest.mock import MagicMock, Mock, patch
+from typing import Dict, Generator
+from unittest.mock import MagicMock, Mock
 
 import pytest
 import yaml
@@ -28,6 +24,7 @@ import yaml
 # Compatibility: pytest.Any was added in newer pytest versions.
 # Provide a lightweight fallback so tests using pytest.Any(str) work.
 if not hasattr(pytest, "Any"):
+
     class _Any:  # pragma: no cover - trivial shim
         def __init__(self, typ=object):
             self.typ = typ
@@ -58,8 +55,8 @@ os.environ.setdefault("TENETS_LLM_ENABLED", "false")
 # Import the modules we're testing
 from tenets.config import TenetsConfig
 from tenets.models.analysis import ComplexityMetrics, FileAnalysis, ImportInfo
-from tenets.models.context import ContextResult, PromptContext
-from tenets.models.tenet import Priority, Tenet, TenetStatus
+from tenets.models.context import PromptContext
+from tenets.models.tenet import Priority, Tenet
 
 # ============================================================================
 # Configuration Fixtures
@@ -261,7 +258,7 @@ def mock_external_dependencies(monkeypatch, request):
         if importlib.util.find_spec("sentence_transformers") is None:
             stub = types.ModuleType("sentence_transformers")
 
-            class SentenceTransformer:  # noqa: N801 (match real class name)
+            class SentenceTransformer:
                 def __init__(self, *_, **__):
                     pass
 
@@ -298,14 +295,14 @@ from typing import List, Optional
 
 class SampleClass:
     """A sample class for testing."""
-    
+
     def __init__(self, name: str):
         self.name = name
-        
+
     def greet(self, greeting: str = "Hello") -> str:
         """Return a greeting message."""
         return f"{greeting}, {self.name}!"
-        
+
 def sample_function(items: List[str]) -> Optional[str]:
     """Process a list of items."""
     if not items:
@@ -336,11 +333,11 @@ import axios from 'axios';
 export default function SampleComponent({ name }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    
+
     useEffect(() => {
         fetchData();
     }, []);
-    
+
     async function fetchData() {
         try {
             const response = await axios.get('/api/data');
@@ -351,7 +348,7 @@ export default function SampleComponent({ name }) {
             setLoading(false);
         }
     }
-    
+
     return (
         <div className="sample-component">
             <h1>Hello, {name}!</h1>
@@ -490,10 +487,11 @@ def create_test_repo(temp_dir: Path):
         # Initialize git repo
         import subprocess
 
-        subprocess.run(["git", "init"], cwd=temp_dir, capture_output=True)
-        subprocess.run(["git", "add", "."], cwd=temp_dir, capture_output=True)
+        subprocess.run(["git", "init"], check=False, cwd=temp_dir, capture_output=True)
+        subprocess.run(["git", "add", "."], check=False, cwd=temp_dir, capture_output=True)
         subprocess.run(
             ["git", "commit", "-m", "Initial commit"],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             env={

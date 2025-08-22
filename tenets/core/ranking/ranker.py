@@ -37,9 +37,11 @@ try:  # pragma: no cover - optional dependency
 except Exception:  # pragma: no cover
     SentenceTransformer = None  # type: ignore
 
+
 # Provide a module-level cosine_similarity function for tests to patch
 def cosine_similarity(a, b):  # pragma: no cover - simple fallback
     try:
+
         def to_vec(x):
             try:
                 if hasattr(x, "detach"):
@@ -77,6 +79,7 @@ def cosine_similarity(a, b):  # pragma: no cover - simple fallback
         vb = vb[:n]
         dot = sum(va[i] * vb[i] for i in range(n))
         import math as _m
+
         norm_a = _m.sqrt(sum(v * v for v in va)) or 1.0
         norm_b = _m.sqrt(sum(v * v for v in vb)) or 1.0
         return float(dot / (norm_a * norm_b))
@@ -312,7 +315,7 @@ class RelevanceRanker:
         # Sort by score
         ranked_files.sort(reverse=True)
 
-    # Filter by threshold and update statistics
+        # Filter by threshold and update statistics
         threshold = self.config.ranking.threshold
         filtered_files = []
         scores = []
@@ -346,7 +349,7 @@ class RelevanceRanker:
             top_k = min(3, len(ranked_files))
             fallback = [rf.analysis for rf in ranked_files[:top_k]]
             for i, a in enumerate(fallback, 1):
-                a.relevance_score = ranked_files[i-1].score
+                a.relevance_score = ranked_files[i - 1].score
                 a.relevance_rank = i
             filtered_files = fallback
 
@@ -559,7 +562,7 @@ class RelevanceRanker:
         use_sw = self.use_stopwords
         try:
             if hasattr(self.config, "use_tfidf_stopwords"):
-                use_sw = bool(getattr(self.config, "use_tfidf_stopwords"))
+                use_sw = bool(self.config.use_tfidf_stopwords)
         except Exception:
             pass
 

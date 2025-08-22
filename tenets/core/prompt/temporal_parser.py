@@ -462,7 +462,9 @@ class TemporalParser:
                     pattern_src = match.re.pattern
                 except Exception:
                     pattern_src = ""
-                if ("\\s*-\\s*" in pattern_src or " - " in pattern_src) and ("since" in lower_text_all and "until" in lower_text_all):
+                if ("\\s*-\\s*" in pattern_src or " - " in pattern_src) and (
+                    "since" in lower_text_all and "until" in lower_text_all
+                ):
                     # Let the explicit 'since ... until ...' pattern handle this text
                     continue
                 groups = match.groups()
@@ -490,7 +492,7 @@ class TemporalParser:
                     tl = t.strip().lower()
                     for lead in ("since ", "until ", "to ", "through ", "and "):
                         if tl.startswith(lead):
-                            return t.strip()[len(lead):].strip()
+                            return t.strip()[len(lead) :].strip()
                     # Also strip trailing punctuation without breaking dates
                     cleaned = t.strip().rstrip(".,;: )]")
                     return cleaned
@@ -541,7 +543,9 @@ class TemporalParser:
                                 last_day = datetime(y + 1, 1, 1) - timedelta(days=1)
                             else:
                                 last_day = datetime(y, m + 1, 1) - timedelta(days=1)
-                            end_date = last_day.replace(hour=23, minute=59, second=59, microsecond=999999)
+                            end_date = last_day.replace(
+                                hour=23, minute=59, second=59, microsecond=999999
+                            )
                         except Exception:
                             end_date = self._now()
                     else:
@@ -604,7 +608,12 @@ class TemporalParser:
                     or "each month" in pattern_text
                 ):
                     recurrence = "monthly"
-                elif "yearly" in pattern_text or "annually" in pattern_text or "each year" in pattern_text or "every year" in pattern_text:
+                elif (
+                    "yearly" in pattern_text
+                    or "annually" in pattern_text
+                    or "each year" in pattern_text
+                    or "every year" in pattern_text
+                ):
                     recurrence = "yearly"
                 elif "hourly" in pattern_text or "every hour" in pattern_text:
                     recurrence = "hourly"
@@ -746,12 +755,16 @@ class TemporalParser:
     def _get_current_period(self, period: str) -> Tuple[datetime, datetime]:
         """Get start and end dates for current period."""
         now = self._now()
-        
+
         if "week" in period:
             # Get current week (Monday to Sunday) with day boundaries
             weekday = now.weekday()
-            start = (now - timedelta(days=weekday)).replace(hour=0, minute=0, second=0, microsecond=0)
-            end = (start + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
+            start = (now - timedelta(days=weekday)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            end = (start + timedelta(days=6)).replace(
+                hour=23, minute=59, second=59, microsecond=999999
+            )
         elif "month" in period:
             # Get current month
             start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -917,10 +930,10 @@ class TemporalParser:
         """
         # Parse expressions
         expressions = self.parse(text)
-        
+
         # Get temporal context
         context = self.get_temporal_context(expressions)
-        
+
         # Add the parsed expressions
         context["expressions_detail"] = [
             {
@@ -935,5 +948,5 @@ class TemporalParser:
             }
             for expr in expressions
         ]
-        
+
         return context

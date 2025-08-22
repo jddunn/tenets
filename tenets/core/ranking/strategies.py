@@ -525,7 +525,8 @@ class ThoroughRankingStrategy(RankingStrategy):
         # Optional embedding model for semantic similarity; tests patch the
         # constructor in ranker module, so import from there.
         try:  # pragma: no cover - optional dependency
-            from .ranker import SentenceTransformer as _ST, cosine_similarity as _cos
+            from .ranker import SentenceTransformer as _ST
+            from .ranker import cosine_similarity as _cos
 
             self._cosine_similarity = _cos
             if _ST is not None:
@@ -535,9 +536,11 @@ class ThoroughRankingStrategy(RankingStrategy):
                 self._embedding_model = None
         except Exception:
             self._embedding_model = None
+
             # Fallback simple cosine if import failed
             def _fallback_cos(a, b):
                 try:
+
                     def to_vec(x):
                         try:
                             if hasattr(x, "detach"):
@@ -631,19 +634,15 @@ class ThoroughRankingStrategy(RankingStrategy):
         try:
             if self._embedding_model and file.content and prompt_context.text:
                 # Typical usage encodes to tensor; tests provide a mock with unsqueeze
-                f_emb = self._embedding_model.encode(
-                    file.content, convert_to_tensor=True
-                )
+                f_emb = self._embedding_model.encode(file.content, convert_to_tensor=True)
                 if hasattr(f_emb, "unsqueeze"):
                     f_emb = f_emb.unsqueeze(0)
-                p_emb = self._embedding_model.encode(
-                    prompt_context.text, convert_to_tensor=True
-                )
+                p_emb = self._embedding_model.encode(prompt_context.text, convert_to_tensor=True)
                 if hasattr(p_emb, "unsqueeze"):
                     p_emb = p_emb.unsqueeze(0)
                 sim = self._cosine_similarity(f_emb, p_emb)
                 # Handle numpy/tensor scalars with .item()
-                if hasattr(sim, "item") and callable(getattr(sim, "item")):
+                if hasattr(sim, "item") and callable(sim.item):
                     sim = sim.item()
                 factors.semantic_similarity = float(sim) if sim is not None else 0.0
         except Exception:

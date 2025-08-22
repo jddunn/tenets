@@ -211,7 +211,7 @@ class ReportGenerator:
         # Add file overview section
         if "metrics" in data:
             self.sections.append(self._create_file_overview_section(data, config))
-        
+
         # Add excluded files section if available
         if data.get("excluded_files") or data.get("ignored_patterns"):
             self.sections.append(self._create_excluded_files_section(data, config))
@@ -347,21 +347,24 @@ class ReportGenerator:
             health_icon = "❌"
 
         content = []
-        
+
         # Add root path information
         root_path = data.get("root_path", ".")
         if root_path and root_path != ".":
             from pathlib import Path
+
             path_obj = Path(root_path) if isinstance(root_path, str) else root_path
             content.append(f"📂 **Project Path:** `{path_obj.resolve()}`")
             content.append("")
-        
-        content.extend([
-            f"The codebase is in **{health_status}** condition {health_icon} with a health score of **{health_score:.1f}/100**.",
-            "",
-            "### Key Findings",
-            "",
-        ])
+
+        content.extend(
+            [
+                f"The codebase is in **{health_status}** condition {health_icon} with a health score of **{health_score:.1f}/100**.",
+                "",
+                "### Key Findings",
+                "",
+            ]
+        )
 
         if summary.get("critical_issues", 0) > 0:
             content.append(
@@ -435,7 +438,7 @@ class ReportGenerator:
         section = ReportSection(
             id="complexity", title="Complexity Analysis", level=1, order=3, icon="🔍"
         )
-        
+
         # Add explanation of complexity metrics
         section.content = [
             "### Understanding Code Complexity",
@@ -587,7 +590,7 @@ class ReportGenerator:
             ReportSection: Hotspots section
         """
         section = ReportSection(id="hotspots", title="Code Hotspots", level=1, order=4, icon="🔥")
-        
+
         # Add explanation of what hotspots are
         section.content = [
             "### What are Code Hotspots?",
@@ -595,7 +598,7 @@ class ReportGenerator:
             "Code hotspots are files that require special attention due to a combination of factors:",
             "",
             "- **🔄 High Change Frequency**: Files that are modified often are more likely to introduce bugs",
-            "- **🧩 High Complexity**: Complex code is harder to maintain and more error-prone", 
+            "- **🧩 High Complexity**: Complex code is harder to maintain and more error-prone",
             "- **📏 Large Size**: Large files are difficult to understand and navigate",
             "- **🐛 Bug History**: Files with a history of bugs are likely to have more issues",
             "- **👥 Multiple Contributors**: Files touched by many developers may lack consistency",
@@ -613,12 +616,14 @@ class ReportGenerator:
 
         # Add metrics - handle both hotspot_files and hotspots keys
         hotspot_files = hotspot_data.get("hotspot_files", hotspot_data.get("hotspots", []))
-        
+
         section.metrics = {
             "Total Hotspots": hotspot_data.get("total_hotspots", len(hotspot_files)),
             "Critical": hotspot_data.get("critical_count", 0),
             "High Risk": hotspot_data.get("high_count", 0),
-            "Files Analyzed": hotspot_data.get("files_analyzed", hotspot_data.get("total_files", 0)),
+            "Files Analyzed": hotspot_data.get(
+                "files_analyzed", hotspot_data.get("total_files", 0)
+            ),
         }
 
         # Add visualizations
@@ -829,7 +834,7 @@ class ReportGenerator:
 
         # File size distribution chart
         if config.include_charts and metrics.get("size_distribution"):
-            from tenets.viz import create_chart, ChartType
+            from tenets.viz import ChartType, create_chart
 
             dist = metrics["size_distribution"]
             chart = create_chart(
@@ -858,28 +863,30 @@ class ReportGenerator:
 
         return section
 
-    def _create_excluded_files_section(self, data: Dict[str, Any], config: ReportConfig) -> ReportSection:
+    def _create_excluded_files_section(
+        self, data: Dict[str, Any], config: ReportConfig
+    ) -> ReportSection:
         """Create excluded files section.
-        
+
         Args:
             data: Analysis data
             config: Report configuration
-            
+
         Returns:
             ReportSection: Excluded files section
         """
         section = ReportSection(
-            id="excluded_files", 
-            title="Excluded Files", 
-            level=1, 
-            order=2.5, 
+            id="excluded_files",
+            title="Excluded Files",
+            level=1,
+            order=2.5,
             icon="🚫",
             collapsible=True,
-            collapsed=True
+            collapsed=True,
         )
-        
+
         content = []
-        
+
         # Add ignored patterns if available
         ignored_patterns = data.get("ignored_patterns", [])
         if ignored_patterns:
@@ -888,22 +895,23 @@ class ReportGenerator:
             for pattern in ignored_patterns:
                 content.append(f"- `{pattern}`")
             content.append("")
-        
+
         # Add excluded files if available
         excluded_files = data.get("excluded_files", [])
         if excluded_files:
             content.append(f"### Excluded Files ({len(excluded_files)} files)")
             content.append("")
-            
+
             # Group files by reason or extension
             from pathlib import Path
+
             by_extension = {}
             for file_path in excluded_files[:100]:  # Limit to first 100 for readability
                 ext = Path(file_path).suffix or "no extension"
                 if ext not in by_extension:
                     by_extension[ext] = []
                 by_extension[ext].append(file_path)
-            
+
             for ext, files in sorted(by_extension.items()):
                 content.append(f"**{ext}** ({len(files)} files):")
                 for file_path in files[:10]:  # Show first 10 of each type
@@ -911,19 +919,19 @@ class ReportGenerator:
                 if len(files) > 10:
                     content.append(f"  - ... and {len(files) - 10} more")
                 content.append("")
-            
+
             if len(excluded_files) > 100:
                 content.append(f"*... and {len(excluded_files) - 100} more excluded files*")
-        
+
         # Add summary metrics
         section.metrics = {
             "Excluded Files": len(excluded_files),
             "Ignored Patterns": len(ignored_patterns),
         }
-        
+
         section.content = content
         return section
-    
+
     def _find_readme(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Find and read README content if available.
 
@@ -934,27 +942,34 @@ class ReportGenerator:
             Optional[Dict]: README info with content and metadata
         """
         from pathlib import Path
-        
+
         root_path = data.get("root_path", ".")
         if isinstance(root_path, str):
             root_path = Path(root_path)
-        
+
         # Look for README files in common formats
-        readme_patterns = ["README.md", "README.MD", "readme.md", "README.rst", "README.txt", "README"]
-        
+        readme_patterns = [
+            "README.md",
+            "README.MD",
+            "readme.md",
+            "README.rst",
+            "README.txt",
+            "README",
+        ]
+
         for pattern in readme_patterns:
             readme_path = root_path / pattern
             if readme_path.exists() and readme_path.is_file():
                 try:
                     content = readme_path.read_text(encoding="utf-8", errors="ignore")
                     original_length = len(content)
-                    
+
                     # Create a summary if the README is too long
                     max_length = 2000  # Maximum characters to show
                     if len(content) > max_length:
                         # Find a good break point
                         truncated = content[:max_length]
-                        last_newline = truncated.rfind('\n')
+                        last_newline = truncated.rfind("\n")
                         if last_newline > max_length * 0.8:  # If we have a newline in the last 20%
                             truncated = truncated[:last_newline]
                         summary = truncated + "\n\n... [README truncated for brevity]"
@@ -962,7 +977,7 @@ class ReportGenerator:
                     else:
                         summary = content
                         condensed_ratio = 0
-                    
+
                     return {
                         "path": str(readme_path),
                         "name": pattern,
@@ -970,11 +985,11 @@ class ReportGenerator:
                         "original_length": original_length,
                         "displayed_length": len(summary),
                         "condensed_by": condensed_ratio,
-                        "lines": content.count('\n') + 1
+                        "lines": content.count("\n") + 1,
                     }
                 except Exception as e:
                     self.logger.warning(f"Failed to read README at {readme_path}: {e}")
-        
+
         return None
 
     def _create_readme_section(self, readme_info: Dict[str, Any]) -> ReportSection:
@@ -987,23 +1002,25 @@ class ReportGenerator:
             ReportSection: README section
         """
         section = ReportSection(id="readme", title="Project README", level=1, order=1.5, icon="📖")
-        
+
         # Add README metadata
         content = []
-        
+
         # Show README stats
         if readme_info.get("condensed_by", 0) > 0:
-            content.append(f"*📄 {readme_info['name']} - {readme_info['lines']} lines "
-                          f"({readme_info['original_length']:,} characters)*")
+            content.append(
+                f"*📄 {readme_info['name']} - {readme_info['lines']} lines "
+                f"({readme_info['original_length']:,} characters)*"
+            )
             content.append(f"*📊 Condensed by {readme_info['condensed_by']:.1f}% for readability*")
             content.append("")
         else:
             content.append(f"*📄 {readme_info['name']} - {readme_info['lines']} lines*")
             content.append("")
-        
+
         # Add the README content
         content.append(readme_info["content"])
-        
+
         section.content = content
         section.collapsible = True
         section.collapsed = True  # Start collapsed by default
@@ -1027,124 +1044,148 @@ class ReportGenerator:
 
         # Always provide recommendations based on the analysis
         metrics = data.get("metrics", {})
-        
+
         # Complexity recommendations
         if "complexity" in data:
             complexity = data["complexity"]
             avg_complexity = complexity.get("avg_complexity", 0)
             max_complexity = complexity.get("max_complexity", 0)
-            
+
             if avg_complexity > 15:
-                recommendations.append({
-                    "priority": "high",
-                    "category": "complexity",
-                    "action": "Refactor complex functions to reduce cognitive load",
-                    "impact": "Improved maintainability and reduced bug risk",
-                })
+                recommendations.append(
+                    {
+                        "priority": "high",
+                        "category": "complexity",
+                        "action": "Refactor complex functions to reduce cognitive load",
+                        "impact": "Improved maintainability and reduced bug risk",
+                    }
+                )
             elif max_complexity > 20:
-                recommendations.append({
-                    "priority": "medium",
-                    "category": "complexity",
-                    "action": f"Simplify the most complex functions (complexity: {max_complexity})",
-                    "impact": "Better code readability and easier testing",
-                })
+                recommendations.append(
+                    {
+                        "priority": "medium",
+                        "category": "complexity",
+                        "action": f"Simplify the most complex functions (complexity: {max_complexity})",
+                        "impact": "Better code readability and easier testing",
+                    }
+                )
             elif complexity.get("complex_functions", 0) > 0:
-                recommendations.append({
-                    "priority": "low",
-                    "category": "complexity",
-                    "action": f"Review {complexity.get('complex_functions', 0)} complex functions for potential simplification",
-                    "impact": "Continuous improvement in code quality",
-                })
+                recommendations.append(
+                    {
+                        "priority": "low",
+                        "category": "complexity",
+                        "action": f"Review {complexity.get('complex_functions', 0)} complex functions for potential simplification",
+                        "impact": "Continuous improvement in code quality",
+                    }
+                )
 
         # Hotspot recommendations
         if "hotspots" in data:
             hotspots = data["hotspots"]
             total_hotspots = hotspots.get("total_hotspots", 0)
             critical_count = hotspots.get("critical_count", 0)
-            
+
             if critical_count > 0:
-                recommendations.append({
-                    "priority": "critical",
-                    "category": "hotspots",
-                    "action": f"Address {critical_count} critical hotspots immediately",
-                    "impact": "Reduced technical debt and improved stability",
-                })
+                recommendations.append(
+                    {
+                        "priority": "critical",
+                        "category": "hotspots",
+                        "action": f"Address {critical_count} critical hotspots immediately",
+                        "impact": "Reduced technical debt and improved stability",
+                    }
+                )
             elif total_hotspots > 20:
-                recommendations.append({
-                    "priority": "high",
-                    "category": "hotspots",
-                    "action": f"Review and refactor {total_hotspots} identified hotspots",
-                    "impact": "Prevention of future maintenance issues",
-                })
+                recommendations.append(
+                    {
+                        "priority": "high",
+                        "category": "hotspots",
+                        "action": f"Review and refactor {total_hotspots} identified hotspots",
+                        "impact": "Prevention of future maintenance issues",
+                    }
+                )
             elif total_hotspots > 0:
-                recommendations.append({
-                    "priority": "medium",
-                    "category": "hotspots",
-                    "action": f"Monitor {total_hotspots} hotspots for deterioration",
-                    "impact": "Proactive maintenance planning",
-                })
+                recommendations.append(
+                    {
+                        "priority": "medium",
+                        "category": "hotspots",
+                        "action": f"Monitor {total_hotspots} hotspots for deterioration",
+                        "impact": "Proactive maintenance planning",
+                    }
+                )
 
         # Test coverage recommendations
         test_coverage = metrics.get("test_coverage", 0)
         if test_coverage > 0:
             if test_coverage < 0.5:
-                recommendations.append({
-                    "priority": "high",
-                    "category": "testing",
-                    "action": f"Increase test coverage from {test_coverage*100:.1f}% to at least 70%",
-                    "impact": "Reduced regression bugs and safer refactoring",
-                })
+                recommendations.append(
+                    {
+                        "priority": "high",
+                        "category": "testing",
+                        "action": f"Increase test coverage from {test_coverage * 100:.1f}% to at least 70%",
+                        "impact": "Reduced regression bugs and safer refactoring",
+                    }
+                )
             elif test_coverage < 0.8:
-                recommendations.append({
-                    "priority": "medium",
-                    "category": "testing",
-                    "action": f"Improve test coverage from {test_coverage*100:.1f}% to 80% or higher",
-                    "impact": "Better confidence in code changes",
-                })
+                recommendations.append(
+                    {
+                        "priority": "medium",
+                        "category": "testing",
+                        "action": f"Improve test coverage from {test_coverage * 100:.1f}% to 80% or higher",
+                        "impact": "Better confidence in code changes",
+                    }
+                )
 
         # File size recommendations
         if metrics.get("largest_files"):
             largest = metrics["largest_files"][0] if metrics["largest_files"] else None
             if largest and largest.get("lines", 0) > 1000:
-                recommendations.append({
-                    "priority": "medium",
-                    "category": "architecture",
-                    "action": f"Split large files (e.g., {largest.get('name', 'unknown')} with {largest.get('lines', 0):,} lines)",
-                    "impact": "Improved modularity and easier navigation",
-                })
+                recommendations.append(
+                    {
+                        "priority": "medium",
+                        "category": "architecture",
+                        "action": f"Split large files (e.g., {largest.get('name', 'unknown')} with {largest.get('lines', 0):,} lines)",
+                        "impact": "Improved modularity and easier navigation",
+                    }
+                )
 
         # Documentation recommendations
         doc_ratio = metrics.get("documentation_ratio", 0)
         if doc_ratio < 0.1:
-            recommendations.append({
-                "priority": "low",
-                "category": "documentation",
-                "action": "Add documentation to critical modules and functions",
-                "impact": "Better onboarding and knowledge transfer",
-            })
+            recommendations.append(
+                {
+                    "priority": "low",
+                    "category": "documentation",
+                    "action": "Add documentation to critical modules and functions",
+                    "impact": "Better onboarding and knowledge transfer",
+                }
+            )
 
         # Dependencies recommendations
         if "dependencies" in data:
             deps = data["dependencies"]
             if deps.get("circular_count", 0) > 0:
-                recommendations.append({
-                    "priority": "high",
-                    "category": "architecture",
-                    "action": f"Resolve {deps['circular_count']} circular dependencies",
-                    "impact": "Better modularity and easier testing",
-                })
+                recommendations.append(
+                    {
+                        "priority": "high",
+                        "category": "architecture",
+                        "action": f"Resolve {deps['circular_count']} circular dependencies",
+                        "impact": "Better modularity and easier testing",
+                    }
+                )
 
         # Team recommendations
         if "contributors" in data:
             contributors = data["contributors"]
             bus_factor = contributors.get("bus_factor", 0)
             if bus_factor > 0 and bus_factor <= 2:
-                recommendations.append({
-                    "priority": "medium",
-                    "category": "team",
-                    "action": f"Improve knowledge sharing (current bus factor: {bus_factor})",
-                    "impact": "Reduced key person risk",
-                })
+                recommendations.append(
+                    {
+                        "priority": "medium",
+                        "category": "team",
+                        "action": f"Improve knowledge sharing (current bus factor: {bus_factor})",
+                        "impact": "Reduced key person risk",
+                    }
+                )
 
         # Only provide general recommendations if we have actually analyzed files
         # Don't show generic recommendations if health score is perfect due to no analysis
@@ -1152,23 +1193,27 @@ class ReportGenerator:
             # Check if we actually analyzed files
             total_files = metrics.get("total_files", 0)
             health_score = data.get("overview", {}).get("health_score", 75)
-            
+
             # Only add general recommendations if we analyzed files or health isn't perfect
             if total_files > 0 or health_score < 95:
-                recommendations.append({
-                    "priority": "low",
-                    "category": "general",
-                    "action": "Continue monitoring code quality metrics",
-                    "impact": "Maintain current quality standards",
-                })
-            
+                recommendations.append(
+                    {
+                        "priority": "low",
+                        "category": "general",
+                        "action": "Continue monitoring code quality metrics",
+                        "impact": "Maintain current quality standards",
+                    }
+                )
+
             if metrics.get("total_files", 0) > 100:
-                recommendations.append({
-                    "priority": "low",
-                    "category": "maintenance",
-                    "action": "Consider establishing coding standards if not already in place",
-                    "impact": "Consistent code quality across the team",
-                })
+                recommendations.append(
+                    {
+                        "priority": "low",
+                        "category": "maintenance",
+                        "action": "Consider establishing coding standards if not already in place",
+                        "impact": "Consistent code quality across the team",
+                    }
+                )
 
         # Sort by priority
         priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -1176,14 +1221,16 @@ class ReportGenerator:
 
         # Format as content
         content = []
-        
+
         # Add introduction
         if recommendations:
-            content.extend([
-                "Based on the analysis of your codebase, here are actionable recommendations to improve code quality:",
-                "",
-            ])
-            
+            content.extend(
+                [
+                    "Based on the analysis of your codebase, here are actionable recommendations to improve code quality:",
+                    "",
+                ]
+            )
+
             # Group by priority
             priority_groups = {}
             for rec in recommendations:
@@ -1191,7 +1238,7 @@ class ReportGenerator:
                 if priority not in priority_groups:
                     priority_groups[priority] = []
                 priority_groups[priority].append(rec)
-            
+
             # Add recommendations by priority
             for priority in ["critical", "high", "medium", "low"]:
                 if priority in priority_groups:
@@ -1199,25 +1246,27 @@ class ReportGenerator:
                         "critical": "🚨 **Critical Issues**",
                         "high": "⚠️ **High Priority**",
                         "medium": "🔔 **Medium Priority**",
-                        "low": "💡 **Suggestions**"
+                        "low": "💡 **Suggestions**",
                     }[priority]
-                    
+
                     content.append(priority_title)
                     content.append("")
-                    
+
                     for rec in priority_groups[priority]:
                         content.append(f"• **{rec['action']}**")
                         content.append(f"  *Impact: {rec['impact']}*")
                         content.append("")
         else:
-            content.extend([
-                "✅ **Your codebase is in excellent condition!**",
-                "",
-                "No critical issues were identified. Continue with your current practices and consider:",
-                "- Regular code reviews",
-                "- Maintaining test coverage",
-                "- Monitoring metrics over time",
-            ])
+            content.extend(
+                [
+                    "✅ **Your codebase is in excellent condition!**",
+                    "",
+                    "No critical issues were identified. Continue with your current practices and consider:",
+                    "- Regular code reviews",
+                    "- Maintaining test coverage",
+                    "- Monitoring metrics over time",
+                ]
+            )
 
         section.content = content
 
@@ -1287,38 +1336,40 @@ class ReportGenerator:
             change_freq = hotspot.get("change_frequency", 0)
             complexity = hotspot.get("complexity", 0)
             score = hotspot.get("risk_score", 0)
-            
+
             if change_freq > 20:
                 reasons.append(f"High changes ({change_freq})")
             elif change_freq > 10:
                 reasons.append(f"Frequent changes ({change_freq})")
-                
+
             if complexity > 20:
                 reasons.append(f"Very complex ({complexity})")
             elif complexity > 10:
                 reasons.append(f"Complex ({complexity})")
-                
+
             if score > 60:
                 reasons.append("High risk score")
             elif score > 40:
                 reasons.append("Elevated risk")
-                
+
             # If no specific reasons, provide general one based on score
             if not reasons:
                 if score > 30:
                     reasons.append("Combined risk factors")
                 else:
                     reasons.append("Monitoring recommended")
-            
-            rows.append([
-                hotspot.get("file", "Unknown"),
-                hotspot.get("risk_level", "low").upper(),
-                change_freq,
-                complexity,
-                f"{score:.1f}",
-                ", ".join(reasons)
-            ])
-            
+
+            rows.append(
+                [
+                    hotspot.get("file", "Unknown"),
+                    hotspot.get("risk_level", "low").upper(),
+                    change_freq,
+                    complexity,
+                    f"{score:.1f}",
+                    ", ".join(reasons),
+                ]
+            )
+
         return {
             "headers": ["File", "Risk Level", "Changes", "Complexity", "Score", "Reasons"],
             "rows": rows,
