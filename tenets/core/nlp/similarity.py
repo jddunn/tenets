@@ -136,7 +136,7 @@ def manhattan_distance(vec1, vec2) -> float:
 class SemanticSimilarity:
     """Compute semantic similarity using embeddings."""
 
-    def __init__(self, model: Optional[object] = None, cache_embeddings: bool = True):
+    def __init__(self, model: Optional["EmbeddingModel"] = None, cache_embeddings: bool = True):
         """Initialize semantic similarity.
 
         Args:
@@ -147,6 +147,9 @@ class SemanticSimilarity:
 
         if model is None:
             # Use module-level factory (patchable in tests)
+
+            from .embeddings import create_embedding_model
+
             self.model = create_embedding_model()
         else:
             self.model = model
@@ -202,7 +205,6 @@ class SemanticSimilarity:
 
         # Get query embedding
         query_emb = self._get_embedding(query)
-        query_emb = np.asarray(query_emb)
         if query_emb.ndim > 1:
             query_emb = query_emb[0]
 
@@ -217,11 +219,15 @@ class SemanticSimilarity:
         elif not isinstance(doc_embeddings, (list, tuple)):
             doc_embeddings = [np.asarray(doc_embeddings)]
 
+        # Get document embeddings (batch encode for efficiency)
+        doc_embeddings = self.model.encode(documents)
+
         # Compute similarities
         similarities = []
         for i, doc_emb in enumerate(doc_embeddings):
             # Ensure ndarray-like
             doc_emb = np.asarray(doc_emb)
+
             if metric == "cosine":
                 sim = cosine_similarity(query_emb, doc_emb)
             elif metric == "euclidean":
@@ -260,7 +266,7 @@ class SemanticSimilarity:
         similarities = self.compute_batch(query, documents, metric)
         return [(i, sim) for i, sim in similarities if sim >= threshold]
 
-    def _get_embedding(self, text: str):
+    def _get_embedding(self, text: str) -> np.ndarray:
         """Get embedding for text with caching.
 
         Args:
