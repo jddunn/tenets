@@ -775,7 +775,9 @@ class ComplexityAnalyzer:
 
             # Calculate aggregate complexity
             if class_complexity.methods:
-                total_cyclomatic = sum(self._safe_int(m.metrics.cyclomatic, 0) for m in class_complexity.methods)
+                total_cyclomatic = sum(
+                    self._safe_int(m.metrics.cyclomatic, 0) for m in class_complexity.methods
+                )
                 class_complexity.metrics.cyclomatic = total_cyclomatic
 
             return class_complexity

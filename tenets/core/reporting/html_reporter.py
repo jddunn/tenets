@@ -1101,13 +1101,13 @@ class HTMLReporter:
             "Ignored Patterns": "File patterns excluded from analysis",
             "Bus Factor": "Minimum number of contributors who could derail the project if unavailable",
         }
-        
+
         cards = []
 
         for key, value in metrics.items():
             tooltip = metric_tooltips.get(key, "")
             tooltip_attr = f'data-tooltip="{tooltip}"' if tooltip else ""
-            
+
             cards.append(
                 f"""
             <div class="metric-card" {tooltip_attr}>

@@ -28,6 +28,7 @@ import yaml
 # Compatibility: pytest.Any was added in newer pytest versions.
 # Provide a lightweight fallback so tests using pytest.Any(str) work.
 if not hasattr(pytest, "Any"):
+
     class _Any:  # pragma: no cover - trivial shim
         def __init__(self, typ=object):
             self.typ = typ

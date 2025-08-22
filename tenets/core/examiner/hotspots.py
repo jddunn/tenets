@@ -121,9 +121,8 @@ class HotspotMetrics:
 
         # Heuristic overrides to align with test expectations
         # Classify as high when there is sustained activity and complexity/bug profile is notable
-        if (
-            (self.change_frequency >= 1.0 and self.complexity >= 15.0)
-            or (self.commit_count >= 50 and self.bug_fix_commits >= 15)
+        if (self.change_frequency >= 1.0 and self.complexity >= 15.0) or (
+            self.commit_count >= 50 and self.bug_fix_commits >= 15
         ):
             return "high"
 
@@ -330,45 +329,47 @@ class HotspotReport:
                 reasons.append(f"High change frequency ({h.metrics.change_frequency})")
             elif h.metrics.change_frequency > 10:
                 reasons.append(f"Frequent changes ({h.metrics.change_frequency})")
-                
+
             if h.metrics.complexity > 20:
                 reasons.append(f"Very high complexity ({h.metrics.complexity:.1f})")
             elif h.metrics.complexity > 10:
                 reasons.append(f"High complexity ({h.metrics.complexity:.1f})")
-                
+
             if h.metrics.author_count > 10:
                 reasons.append(f"Many contributors ({h.metrics.author_count})")
-                
+
             if h.metrics.bug_fix_commits > 5:
                 reasons.append(f"Frequent bug fixes ({h.metrics.bug_fix_commits})")
-                
+
             if h.metrics.coupling > 10:
                 reasons.append(f"High coupling ({h.metrics.coupling} files)")
-                
+
             if h.size > 1000:
                 reasons.append(f"Large file ({h.size} lines)")
-                
+
             # Add problem indicators as reasons too
             reasons.extend(h.problem_indicators)
-            
-            hotspot_files.append({
-                "file": h.path,
-                "name": h.name,
-                "risk_score": h.metrics.hotspot_score,
-                "risk_level": h.metrics.risk_level,
-                "change_frequency": h.metrics.change_frequency,
-                "complexity": h.metrics.complexity,
-                "commit_count": h.metrics.commit_count,
-                "author_count": h.metrics.author_count,
-                "bug_fixes": h.metrics.bug_fix_commits,
-                "coupling": h.metrics.coupling,
-                "size": h.size,
-                "language": h.language,
-                "issues": h.problem_indicators,
-                "reasons": reasons[:5],  # Limit to top 5 reasons
-                "recommended_actions": h.recommended_actions,
-            })
-        
+
+            hotspot_files.append(
+                {
+                    "file": h.path,
+                    "name": h.name,
+                    "risk_score": h.metrics.hotspot_score,
+                    "risk_level": h.metrics.risk_level,
+                    "change_frequency": h.metrics.change_frequency,
+                    "complexity": h.metrics.complexity,
+                    "commit_count": h.metrics.commit_count,
+                    "author_count": h.metrics.author_count,
+                    "bug_fixes": h.metrics.bug_fix_commits,
+                    "coupling": h.metrics.coupling,
+                    "size": h.size,
+                    "language": h.language,
+                    "issues": h.problem_indicators,
+                    "reasons": reasons[:5],  # Limit to top 5 reasons
+                    "recommended_actions": h.recommended_actions,
+                }
+            )
+
         return {
             "total_files_analyzed": self.total_files_analyzed,
             "total_hotspots": self.total_hotspots,
@@ -709,7 +710,9 @@ class HotspotDetector:
             f
             for f, count in change_data["coupled_files"].items()
             if count >= 3  # Minimum coupling threshold
-        ][:10]  # Top 10 coupled files
+        ][
+            :10
+        ]  # Top 10 coupled files
 
         # Add recent commits
         hotspot.recent_commits = sorted(
@@ -1399,7 +1402,9 @@ def detect_hotspots(
             f
             for f, count in change_data["coupled_files"].items()
             if count >= 3  # Minimum coupling threshold
-        ][:10]  # Top 10 coupled files
+        ][
+            :10
+        ]  # Top 10 coupled files
 
         # Add recent commits
         hotspot.recent_commits = sorted(
@@ -1907,5 +1912,3 @@ def detect_hotspots(
             matrix[level] = matrix[level][:20]
 
         return matrix
-
- 

@@ -290,6 +290,7 @@ class MetricsCalculator:
             >>> metrics = calculator.calculate_file_metrics(file_analysis)
             >>> print(f"File complexity: {metrics['complexity']}")
         """
+
         # Safely determine lengths for possibly mocked attributes
         def _safe_len(obj: Any) -> int:
             try:
@@ -320,9 +321,9 @@ class MetricsCalculator:
 
         # Calculate documentation ratio
         if metrics["code_lines"] > 0:
-            metrics["documentation_ratio"] = self._safe_float(
-                metrics["comment_lines"]
-            ) / float(metrics["code_lines"])
+            metrics["documentation_ratio"] = self._safe_float(metrics["comment_lines"]) / float(
+                metrics["code_lines"]
+            )
 
         # Add language and path info
         metrics["language"] = getattr(file_analysis, "language", "unknown")
@@ -368,9 +369,7 @@ class MetricsCalculator:
             if hasattr(file, "blank_lines"):
                 report.total_blank_lines += self._safe_int(getattr(file, "blank_lines", 0), 0)
             if hasattr(file, "comment_lines"):
-                report.total_comment_lines += self._safe_int(
-                    getattr(file, "comment_lines", 0), 0
-                )
+                report.total_comment_lines += self._safe_int(getattr(file, "comment_lines", 0), 0)
 
             # Count structures
             if hasattr(file, "functions"):
