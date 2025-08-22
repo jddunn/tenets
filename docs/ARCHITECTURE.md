@@ -1299,6 +1299,16 @@ scanner:
     - "dist"
     - "build"
 
+# Summarization configuration
+summarizer:
+  # Documentation context-aware summarization
+  docs_context_aware: true           # Enable smart context-aware documentation summarization
+  docs_show_in_place_context: true   # Preserve relevant context sections in-place within summaries
+  docs_context_search_depth: 2       # 1=direct mentions, 2=semantic similarity, 3=deep analysis
+  docs_context_min_confidence: 0.6   # Minimum confidence for context relevance (0.0-1.0)
+  docs_context_max_sections: 10      # Maximum contextual sections to preserve per document
+  docs_context_preserve_examples: true # Always preserve code examples and snippets
+
 # Output configuration
 output:
   format: markdown     # markdown|json|xml

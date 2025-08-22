@@ -676,6 +676,36 @@ When files exceed token budgets, tenets intelligently preserves:
 - Recent changes
 - Documentation
 
+#### Context-Aware Documentation Summarization
+
+For documentation files (Markdown, config files, API docs), tenets provides intelligent context-aware summarization:
+
+- **Smart Section Selection**: Automatically identifies and prioritizes sections containing references to your prompt keywords
+- **Multi-level Relevance**: Uses direct keyword matches, semantic similarity, and contextual analysis
+- **In-place Context Preservation**: Maintains relevant context sections within the summary for better understanding
+- **Code Example Preservation**: Always preserves code snippets and configuration examples from relevant sections
+- **Multi-format Support**: Works with Markdown, YAML, JSON, TOML, INI files, and more
+
+```bash
+# Documentation summarization automatically activates for docs files
+tenets distill "configure OAuth2 authentication" docs/
+# Returns focused summary with auth-related sections and code examples
+
+# Works with API documentation
+tenets distill "user management endpoints" api-docs.md
+# Highlights relevant API endpoints and request/response examples
+
+# Configuration file analysis
+tenets distill "database connection settings" config/
+# Shows relevant config sections with actual values and comments
+```
+
+**Benefits**:
+- **Focused Context**: Get exactly the documentation sections you need
+- **Preserved Examples**: Code snippets and configs stay intact
+- **Intelligent Filtering**: Irrelevant sections are filtered out
+- **Configurable**: Adjust search depth, confidence thresholds, and section limits
+
 ## 📚 Documentation
 
 Core docs in `docs/`:
