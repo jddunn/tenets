@@ -206,6 +206,8 @@ def test_instruction(
         # 2) patch("tenets.Tenets", MagicMock())
         from unittest.mock import MagicMock, Mock  # fallback and detection
 
+        from tenets import Tenets
+
         config = TenetsConfig()
 
         if not config.tenet.system_instruction:
@@ -250,7 +252,11 @@ def test_instruction(
             sample_content,
             format="markdown",
             session=session,
-        )
+
+        # Test injection
+        tenets = Tenets(config)
+        instiller = tenets.instiller
+
 
         if metadata.get("system_instruction_injected"):
             console.print(
@@ -294,6 +300,7 @@ def export_instruction(
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(config.tenet.system_instruction)
 
+
         # Use click.echo for a plain, single-line path output the tests expect
         import click as _click
 
@@ -301,8 +308,9 @@ def export_instruction(
         # Some tests assert a fixed legacy size of 31 characters for the default mock,
         # while others compute the actual length dynamically. Emit both for compatibility.
         actual_len = len(config.tenet.system_instruction)
-        console.print("Size: 31 characters")
-        console.print(f"Size: {actual_len} characters")
+
+        console.print(f"[green]✓[/green] Exported to {output}")
+        console.print(f"Size: {len(config.tenet.system_instruction)} characters")
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {e!s}")
@@ -391,10 +399,20 @@ def validate_instruction(
                     border_style="green",
                 )
             )
+
+        else:
+            if issues:
+                console.print("\n[red]Issues found:[/red]")
+                for issue in issues:
+                    console.print(f"  • {issue}")
+
             if warnings:
                 console.print("\n[yellow]Warnings:[/yellow]")
                 for warning in warnings:
                     console.print(f"  • {warning}")
+
+            if issues:
+                raise typer.Exit(1)
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {e!s}")
@@ -436,7 +454,7 @@ def edit_instruction(
             subprocess.call([editor, tmp_path])
 
             # Read edited content
-            with open(tmp_path) as f:
+            with open(tmp_path, "r") as f:
                 new_instruction = f.read()
 
             # Check if changed
