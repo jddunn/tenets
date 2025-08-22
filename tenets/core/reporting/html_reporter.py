@@ -366,7 +366,7 @@ class HTMLTemplate:
             transform: translateY(-5px);
             box-shadow: 0 5px 20px var(--shadow);
         }
-        
+
         /* Tooltip styles */
         .metric-card[data-tooltip]:hover::after {
             content: attr(data-tooltip);
@@ -386,7 +386,7 @@ class HTMLTemplate:
             text-align: left;
             line-height: 1.4;
         }
-        
+
         .metric-card[data-tooltip]:hover::before {
             content: "";
             position: absolute;
@@ -1101,13 +1101,13 @@ class HTMLReporter:
             "Ignored Patterns": "File patterns excluded from analysis",
             "Bus Factor": "Minimum number of contributors who could derail the project if unavailable",
         }
-        
+
         cards = []
 
         for key, value in metrics.items():
             tooltip = metric_tooltips.get(key, "")
             tooltip_attr = f'data-tooltip="{tooltip}"' if tooltip else ""
-            
+
             cards.append(
                 f"""
             <div class="metric-card" {tooltip_attr}>

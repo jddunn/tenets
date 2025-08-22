@@ -290,6 +290,7 @@ class MetricsCalculator:
             >>> metrics = calculator.calculate_file_metrics(file_analysis)
             >>> print(f"File complexity: {metrics['complexity']}")
         """
+
         # Safely determine lengths for possibly mocked attributes
         def _safe_len(obj: Any) -> int:
             try:
@@ -320,9 +321,9 @@ class MetricsCalculator:
 
         # Calculate documentation ratio
         if metrics["code_lines"] > 0:
-            metrics["documentation_ratio"] = self._safe_float(
-                metrics["comment_lines"]
-            ) / float(metrics["code_lines"])
+            metrics["documentation_ratio"] = self._safe_float(metrics["comment_lines"]) / float(
+                metrics["code_lines"]
+            )
 
         # Add language and path info
         metrics["language"] = getattr(file_analysis, "language", "unknown")
@@ -335,7 +336,7 @@ class MetricsCalculator:
         try:
             # Prefer attribute .name when available
             if hasattr(raw_path, "name") and not isinstance(raw_path, str):
-                name_val = getattr(raw_path, "name")
+                name_val = raw_path.name
                 metrics["name"] = str(name_val)
             elif metrics["path"]:
                 metrics["name"] = Path(metrics["path"]).name
@@ -368,24 +369,22 @@ class MetricsCalculator:
             if hasattr(file, "blank_lines"):
                 report.total_blank_lines += self._safe_int(getattr(file, "blank_lines", 0), 0)
             if hasattr(file, "comment_lines"):
-                report.total_comment_lines += self._safe_int(
-                    getattr(file, "comment_lines", 0), 0
-                )
+                report.total_comment_lines += self._safe_int(getattr(file, "comment_lines", 0), 0)
 
             # Count structures
             if hasattr(file, "functions"):
                 try:
-                    report.total_functions += len(getattr(file, "functions"))
+                    report.total_functions += len(file.functions)
                 except Exception:
                     pass
             if hasattr(file, "classes"):
                 try:
-                    report.total_classes += len(getattr(file, "classes"))
+                    report.total_classes += len(file.classes)
                 except Exception:
                     pass
             if hasattr(file, "imports"):
                 try:
-                    report.total_imports += len(getattr(file, "imports"))
+                    report.total_imports += len(file.imports)
                 except Exception:
                     pass
 
@@ -523,7 +522,7 @@ class MetricsCalculator:
         import_counts = defaultdict(int)
         for file in files:
             if hasattr(file, "imports"):
-                imports_obj = getattr(file, "imports")
+                imports_obj = file.imports
                 # Make iteration robust to mocks/non-iterables
                 try:
                     iterable = list(imports_obj)  # type: ignore
@@ -532,7 +531,7 @@ class MetricsCalculator:
                 for imp in iterable:
                     # Extract module name from import
                     if hasattr(imp, "module"):
-                        module = getattr(imp, "module")
+                        module = imp.module
                     else:
                         module = str(imp)
                     if module:

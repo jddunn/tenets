@@ -513,101 +513,106 @@ class TestAutoFilenameGeneration:
     def test_generate_auto_filename_basic(self):
         """Test basic filename generation."""
         from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
-        
+
         # Use a fixed timestamp for consistent testing
         test_time = datetime(2024, 1, 15, 14, 30, 45)
-        
+
         # Test with simple path
         filename = generate_auto_filename("myproject", "html", test_time)
         assert filename == "tenets_report_myproject_20240115_143045.html"
-        
+
         # Test with different format
         filename = generate_auto_filename("myproject", "json", test_time)
         assert filename == "tenets_report_myproject_20240115_143045.json"
-    
+
     def test_generate_auto_filename_with_path(self):
         """Test filename generation with full paths."""
         from datetime import datetime
         from pathlib import Path
+
         from tenets.cli.commands.examine import generate_auto_filename
-        
+
         test_time = datetime(2024, 1, 15, 14, 30, 45)
-        
+
         # Test with absolute path
         filename = generate_auto_filename("/home/user/projects/myapp", "html", test_time)
         assert filename == "tenets_report_myapp_20240115_143045.html"
-        
+
         # Test with Windows path
         filename = generate_auto_filename("C:\\Users\\dev\\myapp", "html", test_time)
         assert filename == "tenets_report_myapp_20240115_143045.html"
-        
+
         # Test with Path object
         filename = generate_auto_filename(Path("/projects/webapp"), "markdown", test_time)
         assert filename == "tenets_report_webapp_20240115_143045.markdown"
-    
+
     def test_generate_auto_filename_special_chars(self):
         """Test filename generation with special characters."""
         from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
-        
+
         test_time = datetime(2024, 1, 15, 14, 30, 45)
-        
+
         # Test with spaces and special chars
         filename = generate_auto_filename("my-project_v2", "html", test_time)
         assert filename == "tenets_report_my-project_v2_20240115_143045.html"
-        
+
         # Test with invalid filename chars
         filename = generate_auto_filename("my@project#1", "html", test_time)
         assert filename == "tenets_report_my_project_1_20240115_143045.html"
-        
+
         # Test with dots
         filename = generate_auto_filename("my.project.name", "html", test_time)
         assert filename == "tenets_report_my_project_name_20240115_143045.html"
-    
+
     def test_generate_auto_filename_edge_cases(self):
         """Test filename generation edge cases."""
         from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
-        
+
         test_time = datetime(2024, 1, 15, 14, 30, 45)
-        
+
         # Test with current directory "."
         filename = generate_auto_filename(".", "html", test_time)
         assert filename == "tenets_report_project_20240115_143045.html"
-        
+
         # Test with empty string
         filename = generate_auto_filename("", "html", test_time)
         assert filename == "tenets_report_project_20240115_143045.html"
-        
+
         # Test with only special chars - should become "project" since it's all underscores
         filename = generate_auto_filename("@#$%", "html", test_time)
         # After converting special chars to underscores, it should detect it's all underscores and use "project"
         assert filename == "tenets_report_project_20240115_143045.html"
-    
+
     def test_generate_auto_filename_no_timestamp(self):
         """Test that current time is used when no timestamp provided."""
-        from datetime import datetime
+
         from tenets.cli.commands.examine import generate_auto_filename
-        
+
         # Generate two filenames quickly
         filename1 = generate_auto_filename("test", "html")
         filename2 = generate_auto_filename("test", "html")
-        
+
         # Both should start with the expected prefix
         assert filename1.startswith("tenets_report_test_")
         assert filename1.endswith(".html")
-        
+
         # Check timestamp format (YYYYMMDD_HHMMSS)
         parts = filename1.replace("tenets_report_test_", "").replace(".html", "")
         assert len(parts) == 15  # 8 for date + 1 underscore + 6 for time
         assert "_" in parts
-    
-    def test_examine_auto_filename_integration(self, runner, mock_examiner, mock_report_generator, tmp_path):
+
+    def test_examine_auto_filename_integration(
+        self, runner, mock_examiner, mock_report_generator, tmp_path
+    ):
         """Test that examine command uses auto filename when no output specified."""
         import re
-        from datetime import datetime
-        
+
         with patch("tenets.cli.commands.examine.CodeExaminer", return_value=mock_examiner):
             with patch(
                 "tenets.cli.commands.examine.ReportGenerator", return_value=mock_report_generator
@@ -615,19 +620,19 @@ class TestAutoFilenameGeneration:
                 with patch("tenets.cli.commands.examine.get_logger"):
                     # Run examine without specifying output
                     result = runner.invoke(examine, [str(tmp_path), "--format", "html"])
-                    
+
                     assert result.exit_code == 0
                     # Check that the auto-generated filename is in the output
                     assert "Report generated: tenets_report_" in result.stdout
-                    
+
                     # Verify the filename pattern
                     match = re.search(r"tenets_report_(\w+)_(\d{8}_\d{6})\.html", result.stdout)
                     assert match is not None
-                    
+
                     # Verify the path component
                     path_component = match.group(1)
                     assert len(path_component) > 0
-                    
+
                     # Verify timestamp format
                     timestamp_component = match.group(2)
                     assert len(timestamp_component) == 15  # YYYYMMDD_HHMMSS

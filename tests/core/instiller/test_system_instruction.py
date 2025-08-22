@@ -7,13 +7,13 @@ Covers:
 - Distill integration path metadata
 """
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
+from tenets import Tenets
 from tenets.config import TenetsConfig
 from tenets.core.instiller.instiller import Instiller
 from tenets.models.context import ContextResult
-from tenets import Tenets
 
 
 def make_config(tmpdir: str) -> TenetsConfig:
@@ -121,7 +121,12 @@ def test_distill_integration_metadata():
         # Manually simulate distill’s injection hook
         modified, meta = ten.instiller.inject_system_instruction(result.context, session="s")
         if meta.get("system_instruction_injected"):
-            result = ContextResult(files=result.files, context=modified, format=result.format, metadata={**result.metadata, "system_instruction": meta})
+            result = ContextResult(
+                files=result.files,
+                context=modified,
+                format=result.format,
+                metadata={**result.metadata, "system_instruction": meta},
+            )
         assert "system_instruction" in result.metadata
 
 

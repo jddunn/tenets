@@ -23,7 +23,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of API-related keywords."""
         text = "How do I configure the REST API endpoint for user authentication?"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         assert "api" in keywords
         assert "endpoint" in keywords
         assert "authentication" in keywords
@@ -33,7 +33,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of configuration-related keywords."""
         text = "Update the database configuration settings in the config file"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         assert "database" in keywords
         assert "configuration" in keywords
         assert "config" in keywords
@@ -43,7 +43,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of setup and installation keywords."""
         text = "Installation guide for Docker deployment setup requirements"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         assert "installation" in keywords
         assert "docker" in keywords
         assert "deployment" in keywords
@@ -54,7 +54,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of documentation structure keywords."""
         text = "Create a tutorial guide with examples and troubleshooting FAQ"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         assert "tutorial" in keywords
         assert "guide" in keywords
         assert "example" in keywords
@@ -65,7 +65,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of technology and tool names."""
         text = "Configure React app with TypeScript using npm and docker"
         keywords = parser._extract_technology_keywords(text)
-        
+
         assert "react" in keywords
         assert "typescript" in keywords
         assert "npm" in keywords
@@ -75,7 +75,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of file format keywords."""
         text = "Parse JSON data from YAML config files and markdown documentation"
         keywords = parser._extract_format_keywords(text)
-        
+
         assert "json" in keywords
         assert "yaml" in keywords
         assert "markdown" in keywords
@@ -84,7 +84,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of file extensions."""
         text = "Update the config.json and settings.yaml files"
         keywords = parser._extract_format_keywords(text)
-        
+
         assert "json" in keywords
         assert "yaml" in keywords
 
@@ -96,18 +96,18 @@ class TestDocumentationKeywordExtraction:
         Document the installation process in markdown format.
         """
         keywords = parser._extract_documentation_keywords(text)
-        
+
         # Should extract from all categories
         api_keywords = {"api", "authentication", "auth", "jwt", "token", "endpoint"}
         config_keywords = {"configuration", "config"}
         tech_keywords = {"docker", "python"}
         format_keywords = {"markdown"}
-        
+
         found_api = sum(1 for k in api_keywords if k in keywords)
         found_config = sum(1 for k in config_keywords if k in keywords)
         found_tech = sum(1 for k in tech_keywords if k in keywords)
         found_format = sum(1 for k in format_keywords if k in keywords)
-        
+
         assert found_api > 0
         assert found_config > 0
         assert found_tech > 0
@@ -117,7 +117,7 @@ class TestDocumentationKeywordExtraction:
         """Test that duplicate keywords are removed."""
         text = "API endpoint configuration for API authentication and endpoint security"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         # Should only have one instance of each keyword
         assert keywords.count("api") <= 1
         assert keywords.count("endpoint") <= 1
@@ -133,7 +133,7 @@ class TestDocumentationKeywordExtraction:
         Implement monitoring with logging and analytics tracking.
         """
         keywords = parser._extract_documentation_keywords(text)
-        
+
         # Should be limited to 15 keywords as specified in the method
         assert len(keywords) <= 15
 
@@ -141,7 +141,7 @@ class TestDocumentationKeywordExtraction:
         """Test that empty and very short keywords are filtered out."""
         text = "a of in API the configuration to and setup"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         # Should filter out stopwords and very short words
         assert "a" not in keywords
         assert "of" not in keywords
@@ -149,7 +149,7 @@ class TestDocumentationKeywordExtraction:
         assert "the" not in keywords
         assert "to" not in keywords
         assert "and" not in keywords
-        
+
         # Should keep meaningful keywords
         assert "api" in keywords
         assert "configuration" in keywords
@@ -159,7 +159,7 @@ class TestDocumentationKeywordExtraction:
         """Test that original case is preserved for keywords."""
         text = "Configure the API endpoint for user Authentication"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         # Should preserve original case when possible
         assert any(k in ["api", "API"] for k in keywords)
         assert any(k in ["authentication", "Authentication"] for k in keywords)
@@ -168,7 +168,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of programming concepts in documentation."""
         text = "Document the function interface and class module dependencies"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         assert "function" in keywords
         assert "interface" in keywords
         assert "class" in keywords
@@ -179,7 +179,7 @@ class TestDocumentationKeywordExtraction:
         """Test extraction of usage and operational keywords."""
         text = "Command line usage examples with logging and performance optimization"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         assert "command" in keywords
         assert "usage" in keywords
         assert "example" in keywords
@@ -190,22 +190,22 @@ class TestDocumentationKeywordExtraction:
     def test_integration_with_main_parsing(self, parser):
         """Test that documentation keywords are integrated into main parsing."""
         prompt = "How to configure API authentication with JWT tokens in the documentation"
-        
+
         context = parser.parse(prompt)
-        
+
         # Should include both regular keywords and documentation-specific ones
         keywords = context.keywords
-        
+
         # Should have documentation-specific keywords
         doc_keywords = {"api", "authentication", "auth", "jwt", "token", "configuration", "config"}
         found_doc_keywords = sum(1 for k in doc_keywords if k in keywords)
-        
+
         assert found_doc_keywords > 0
 
     def test_no_keywords_in_text(self, parser):
         """Test behavior when no documentation keywords are found."""
         text = "random text without any specific technical terms"
         keywords = parser._extract_documentation_keywords(text)
-        
+
         # Should return empty list or very few keywords
         assert len(keywords) <= 2  # Might catch "text" or similar generic terms

@@ -10,15 +10,15 @@ Consolidates all keyword extraction logic to avoid duplication.
 """
 
 import math
-import re
 from collections import Counter, defaultdict
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple, Union
 
 from tenets.utils.logger import get_logger
 
 # Try to import YAKE
 try:
     import yake
+
     YAKE_AVAILABLE = True
 except ImportError:
     YAKE_AVAILABLE = False
@@ -26,22 +26,22 @@ except ImportError:
 
 class KeywordExtractor:
     """Multi-method keyword extraction.
-    
+
     Attempts to use the best available method:
     1. YAKE (if installed)
     2. TF-IDF
     3. Frequency-based fallback
     """
-    
+
     def __init__(
         self,
         use_yake: bool = True,
-        language: str = 'en',
+        language: str = "en",
         use_stopwords: bool = True,
-        stopword_set: str = 'prompt'
+        stopword_set: str = "prompt",
     ):
         """Initialize keyword extractor.
-        
+
         Args:
             use_yake: Try to use YAKE if available
             language: Language for YAKE
@@ -53,134 +53,128 @@ class KeywordExtractor:
         self.language = language
         self.use_stopwords = use_stopwords
         self.stopword_set = stopword_set
-        
+
         # Initialize YAKE if available
         if self.use_yake:
             self.yake_extractor = yake.KeywordExtractor(
                 lan=language,
                 n=3,  # Max n-gram size
                 dedupLim=0.7,
-                dedupFunc='seqm',
+                dedupFunc="seqm",
                 windowsSize=1,
-                top=30
+                top=30,
             )
         else:
             self.yake_extractor = None
-            
+
         # Initialize tokenizer
         from .tokenizer import TextTokenizer
+
         self.tokenizer = TextTokenizer(use_stopwords=use_stopwords)
-        
+
         # Get stopwords if needed
         if use_stopwords:
             from .stopwords import StopwordManager
+
             self.stopwords = StopwordManager().get_set(stopword_set)
         else:
             self.stopwords = None
-        
+
     def extract(
-        self,
-        text: str,
-        max_keywords: int = 20,
-        include_scores: bool = False
+        self, text: str, max_keywords: int = 20, include_scores: bool = False
     ) -> Union[List[str], List[Tuple[str, float]]]:
         """Extract keywords from text.
-        
+
         Args:
             text: Input text
             max_keywords: Maximum keywords to extract
             include_scores: Return (keyword, score) tuples
-            
+
         Returns:
             List of keywords or (keyword, score) tuples
         """
         if not text:
             return []
-            
+
         # Try YAKE first
         if self.use_yake and self.yake_extractor:
             try:
                 keywords = self.yake_extractor.extract_keywords(text)
                 # YAKE returns (keyword, score) where lower score is better
                 keywords = [(kw, 1.0 - score) for kw, score in keywords[:max_keywords]]
-                
+
                 if include_scores:
                     return keywords
                 return [kw for kw, _ in keywords]
-                
+
             except Exception as e:
                 self.logger.warning(f"YAKE extraction failed: {e}")
-                
+
         # Fallback to TF-IDF or frequency
         return self._extract_fallback(text, max_keywords, include_scores)
-        
+
     def _extract_fallback(
-        self,
-        text: str,
-        max_keywords: int,
-        include_scores: bool
+        self, text: str, max_keywords: int, include_scores: bool
     ) -> Union[List[str], List[Tuple[str, float]]]:
         """Fallback keyword extraction using frequency and patterns.
-        
+
         Args:
             text: Input text
             max_keywords: Maximum keywords
             include_scores: Include scores
-            
+
         Returns:
             Keywords with optional scores
         """
         # Tokenize
         tokens = self.tokenizer.tokenize(text)
-        
+
         if not tokens:
             return []
-            
+
         # Count frequencies
         freq = Counter(tokens)
-        
+
         # Extract n-grams
         bigrams = self.tokenizer.extract_ngrams(text, n=2)
         trigrams = self.tokenizer.extract_ngrams(text, n=3)
-        
+
         # Score n-grams by component frequency
         ngram_scores = {}
-        
+
         for bigram in bigrams:
             parts = bigram.split()
             if all(freq.get(p, 0) > 1 for p in parts):
                 score = sum(freq[p] for p in parts) / len(parts)
                 ngram_scores[bigram] = score
-                
+
         for trigram in trigrams:
             parts = trigram.split()
             if all(freq.get(p, 0) > 1 for p in parts):
                 score = sum(freq[p] for p in parts) / len(parts)
                 ngram_scores[trigram] = score * 1.2  # Boost trigrams
-                
+
         # Combine unigrams and n-grams
         all_keywords = {}
-        
+
         # Add top unigrams
         for word, count in freq.most_common(max_keywords * 2):
             all_keywords[word] = count
-            
+
         # Add n-grams
         for ngram, score in ngram_scores.items():
             all_keywords[ngram] = score
-            
+
         # Sort by score
-        sorted_keywords = sorted(
-            all_keywords.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:max_keywords]
-        
+        sorted_keywords = sorted(all_keywords.items(), key=lambda x: x[1], reverse=True)[
+            :max_keywords
+        ]
+
         if include_scores:
             # Normalize scores
             max_score = sorted_keywords[0][1] if sorted_keywords else 1.0
             return [(kw, score / max_score) for kw, score in sorted_keywords]
-            
+
         return [kw for kw, _ in sorted_keywords]
 
 
@@ -198,7 +192,7 @@ class TFIDFCalculator:
     - Efficient sparse vector representation
     """
 
-    def __init__(self, use_stopwords: bool = False, stopword_set: str = 'code'):
+    def __init__(self, use_stopwords: bool = False, stopword_set: str = "code"):
         """Initialize TF-IDF calculator.
 
         Args:
@@ -211,6 +205,7 @@ class TFIDFCalculator:
 
         # Use NLP tokenizer
         from .tokenizer import CodeTokenizer
+
         self.tokenizer = CodeTokenizer(use_stopwords=use_stopwords)
 
         # Core data structures
@@ -395,8 +390,7 @@ class TFIDFCalculator:
             self.add_document(doc_id, text)
 
         self.logger.info(
-            f"Corpus built: {self.document_count} documents, "
-            f"{len(self.vocabulary)} unique terms"
+            f"Corpus built: {self.document_count} documents, {len(self.vocabulary)} unique terms"
         )
 
     def get_top_terms(self, doc_id: str, n: int = 10) -> List[Tuple[str, float]]:
@@ -423,7 +417,13 @@ class BM25Calculator:
     outperforms TF-IDF for information retrieval. Uses NLP tokenizers.
     """
 
-    def __init__(self, k1: float = 1.2, b: float = 0.75, use_stopwords: bool = False, stopword_set: str = 'code'):
+    def __init__(
+        self,
+        k1: float = 1.2,
+        b: float = 0.75,
+        use_stopwords: bool = False,
+        stopword_set: str = "code",
+    ):
         """Initialize BM25 calculator.
 
         Args:
@@ -440,6 +440,7 @@ class BM25Calculator:
 
         # Use NLP tokenizer
         from .tokenizer import CodeTokenizer
+
         self.tokenizer = CodeTokenizer(use_stopwords=use_stopwords)
 
         # Core data structures
@@ -511,7 +512,7 @@ class BM25Calculator:
         # in tiny corpora and to better separate relevant docs:
         # idf = log(1 + (N - df + 0.5)/(df + 0.5))
         numerator = max(0.0, (self.document_count - df + 0.5))
-        denominator = (df + 0.5)
+        denominator = df + 0.5
         ratio = (numerator / denominator) if denominator > 0 else 0.0
         idf = math.log(1.0 + ratio)
 
@@ -612,7 +613,7 @@ class TFIDFExtractor:
     returning dense vectors. Uses TextTokenizer for general text.
     """
 
-    def __init__(self, use_stopwords: bool = True, stopword_set: str = 'prompt'):
+    def __init__(self, use_stopwords: bool = True, stopword_set: str = "prompt"):
         """Initialize the extractor.
 
         Args:
@@ -625,6 +626,7 @@ class TFIDFExtractor:
 
         # Tokenizer for general text
         from .tokenizer import TextTokenizer
+
         self.tokenizer = TextTokenizer(use_stopwords=use_stopwords)
 
         # Learned state
@@ -664,7 +666,9 @@ class TFIDFExtractor:
         self._idf = {}
         for term, df in self._df.items():
             # log((N + 1) / (df + 1)) to avoid div by zero and dampen extremes
-            self._idf[term] = math.log((self._doc_count + 1) / (df + 1)) if self._doc_count > 0 else 0.0
+            self._idf[term] = (
+                math.log((self._doc_count + 1) / (df + 1)) if self._doc_count > 0 else 0.0
+            )
 
         self._fitted = True
         return self

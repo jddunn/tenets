@@ -10,7 +10,7 @@ detailed insights into code maintainability and potential problem areas.
 """
 
 import math
-from dataclasses import dataclass, field, InitVar
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -632,7 +632,7 @@ class ComplexityAnalyzer:
             )
 
             # Extract basic metrics
-            if hasattr(file, "complexity") and getattr(file, "complexity"):
+            if hasattr(file, "complexity") and file.complexity:
                 file_complexity.metrics.cyclomatic = self._safe_int(
                     getattr(file.complexity, "cyclomatic", 1), 1
                 )
@@ -719,7 +719,7 @@ class ComplexityAnalyzer:
             # Extract other metrics
             if hasattr(func, "parameters"):
                 try:
-                    func_complexity.metrics.parameter_count = int(len(getattr(func, "parameters")))
+                    func_complexity.metrics.parameter_count = len(func.parameters)
                 except Exception:
                     func_complexity.metrics.parameter_count = 0
 
@@ -775,7 +775,9 @@ class ComplexityAnalyzer:
 
             # Calculate aggregate complexity
             if class_complexity.methods:
-                total_cyclomatic = sum(self._safe_int(m.metrics.cyclomatic, 0) for m in class_complexity.methods)
+                total_cyclomatic = sum(
+                    self._safe_int(m.metrics.cyclomatic, 0) for m in class_complexity.methods
+                )
                 class_complexity.metrics.cyclomatic = total_cyclomatic
 
             return class_complexity
