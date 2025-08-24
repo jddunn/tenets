@@ -85,7 +85,7 @@ class TemporalPatternMatcher:
             patterns_file = (
                 Path(__file__).parent.parent.parent.parent
                 / "data"
-                / "patterns"
+                / "pattterns"  # Note: folder is misspelled in filesystem
                 / "temporal_patterns.json"
             )
 

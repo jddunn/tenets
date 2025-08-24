@@ -6,23 +6,11 @@ import typer
 from rich import print
 from rich.console import Console
 
-from tenets import __version__
-from tenets.cli.commands import (
-    chronicle_command,
-    distill_command,
-    examine_command,
-    instill_command,
-    momentum_command,
-)
 from tenets.cli.commands.config import config_app
 from tenets.cli.commands.session import session_app
 from tenets.cli.commands.system_instruction import app as system_instruction_app
 from tenets.cli.commands.tenet import tenet_app
 from tenets.cli.commands.viz import viz_app
-from tenets.utils.logger import get_logger
-
-# Create logger
-logger = get_logger(__name__)
 
 # Create main app
 app = typer.Typer(
@@ -84,15 +72,11 @@ app.add_typer(
 )
 
 # Register main commands
-app.command()(distill_command.distill)
-app.command()(instill_command.instill)
-app.add_typer(examine_command.examine, name="examine", help="Examine code quality and complexity")
-app.add_typer(
-    chronicle_command.chronicle, name="chronicle", help="Chronicling git history and activity"
-)
-app.add_typer(
-    momentum_command.momentum, name="momentum", help="Track development velocity and momentum"
-)
+from tenets.cli.commands.distill import distill
+from tenets.cli.commands.instill import instill
+
+app.command()(distill)
+app.command()(instill)
 
 
 @app.command()
@@ -101,6 +85,7 @@ def version(
 ):
     """Show version information."""
     if verbose:
+        from tenets import __version__
         console.print(f"[bold]Tenets[/bold] v{__version__}")
         console.print("Context that feeds your prompts")
         console.print("\n[dim]Features:[/dim]")
@@ -111,6 +96,7 @@ def version(
         console.print("  • Token-optimized aggregation")
         console.print("\n[dim]Built by manic.agency[/dim]")
     else:
+        from tenets import __version__
         print(f"tenets v{__version__}")
 
 
@@ -138,14 +124,14 @@ def main_callback(
 
     # Configure logging level
     import logging
-
+    
     if verbose:
-        get_logger(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
     elif quiet or silent:
-        get_logger(level=logging.ERROR)
+        logging.basicConfig(level=logging.ERROR)
     else:
         # Default to WARNING to avoid noisy INFO
-        get_logger(level=logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
 
 
 def run():

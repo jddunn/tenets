@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import yaml
 
-from tenets.utils.logger import get_logger
+# Logger imported locally to avoid circular imports
 
 
 @dataclass
@@ -966,6 +966,7 @@ class TenetsConfig:
         4. Applies environment variables
         5. Validates configuration
         """
+        from tenets.utils.logger import get_logger
         self._logger = get_logger(__name__)
 
         # Resolve project root

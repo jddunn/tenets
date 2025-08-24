@@ -1100,11 +1100,12 @@ class GenericAnalyzer(LanguageAnalyzer):
         return sections
 
     def _extract_markdown_sections(self, content: str, lines: List[str]) -> List[Dict[str, Any]]:
-        """Extract sections from Markdown documents."""
+        """Extract sections from Markdown documents preserving important subsections."""
         sections = []
         current_section = None
         current_content = []
-
+        parent_stack = []  # Track parent sections for context
+        
         for i, line in enumerate(lines, 1):
             # Check for headers
             header_match = re.match(r"^(#{1,6})\s+(.+)$", line)
@@ -1113,11 +1114,20 @@ class GenericAnalyzer(LanguageAnalyzer):
                 if current_section:
                     current_section["content"] = "\n".join(current_content)
                     current_section["end_line"] = i - 1
+                    # Add parent context if exists
+                    if parent_stack:
+                        current_section["parent_sections"] = [p["title"] for p in parent_stack]
                     sections.append(current_section)
-
-                # Start new section
+                
+                # Manage parent stack
                 level = len(header_match.group(1))
                 title = header_match.group(2).strip()
+                
+                # Pop parents that are at same or deeper level
+                while parent_stack and parent_stack[-1]["level"] >= level:
+                    parent_stack.pop()
+                
+                # Create new section
                 current_section = {
                     "title": title,
                     "level": level,
@@ -1126,15 +1136,22 @@ class GenericAnalyzer(LanguageAnalyzer):
                     "raw_content": line,
                 }
                 current_content = [line]
+                
+                # Add to parent stack if this could be a parent for future sections
+                if level <= 3:  # Only track top 3 levels as potential parents
+                    parent_stack.append({"title": title, "level": level})
+                    
             elif current_content:
                 current_content.append(line)
-
+        
         # Don't forget the last section
         if current_section:
             current_section["content"] = "\n".join(current_content)
             current_section["end_line"] = len(lines)
+            if parent_stack:
+                current_section["parent_sections"] = [p["title"] for p in parent_stack[:-1]]  # Exclude self
             sections.append(current_section)
-
+        
         return sections
 
     def _extract_config_sections(
@@ -1447,6 +1464,25 @@ class GenericAnalyzer(LanguageAnalyzer):
                         ],
                     }
                 )
+            
+            # Check for singular form in title if keyword is plural
+            if keyword_lower.endswith('s') and len(keyword_lower) > 3:
+                singular = keyword_lower[:-1]
+                # Use word boundary to avoid partial matches
+                singular_pattern = r'\b' + re.escape(singular) + r'\b'
+                singular_matches = len(re.findall(singular_pattern, title_lower))
+                if singular_matches > 0:
+                    keyword_score += singular_matches * 0.45  # Almost as valuable as direct match
+                    matches.append(
+                        {
+                            "keyword": keyword,
+                            "match_type": "title_singular",
+                            "count": singular_matches,
+                            "locations": [
+                                m.start() for m in re.finditer(singular_pattern, title_lower)
+                            ],
+                        }
+                    )
 
             # Direct matches in content
             content_matches = len(re.findall(re.escape(keyword_lower), content_lower))
@@ -1517,7 +1553,21 @@ class GenericAnalyzer(LanguageAnalyzer):
 
         # Normalize score based on content length and keyword count
         if prompt_keywords:
-            score = score / len(prompt_keywords)
+            # For sections that strongly match even one keyword, don't penalize too much
+            # This helps parent sections like "User Management" that match "users"
+            avg_score = score / len(prompt_keywords)
+            
+            # If we have any matches at all, ensure minimum threshold
+            if matches and avg_score > 0:
+                # Boost score if title contains relevant terms
+                has_title_match = any(m.get("match_type", "").startswith("title") for m in matches)
+                if has_title_match:
+                    score = max(avg_score * 2, 0.6)  # Ensure title matches meet threshold
+                else:
+                    score = avg_score
+            else:
+                score = avg_score
+                
             # Bonus for shorter, more focused sections
             if len(content) < 500:
                 score *= 1.2

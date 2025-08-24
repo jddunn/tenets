@@ -648,9 +648,9 @@ def logout():
 
         factors = strategy.rank_file(auth_file, prompt_context, {})
 
-        # Should detect auth patterns
-        assert "auth_patterns" in factors.custom_scores
-        assert factors.custom_scores["auth_patterns"] > 0.0
+        # Should detect authentication patterns
+        assert "authentication_patterns" in factors.custom_scores
+        assert factors.custom_scores["authentication_patterns"] > 0.0
 
     def test_ast_relevance_analysis(self, strategy):
         """Test AST-based relevance analysis."""

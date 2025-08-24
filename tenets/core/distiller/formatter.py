@@ -423,7 +423,11 @@ class ContextFormatter:
             lines.append("")
             lines.append("### Top Contributors")
             for contributor in git_context["contributors"][:5]:
-                lines.append(f"- {contributor['name']}: {contributor['commits']} commits")
+                # Handle both string and dict formats
+                if isinstance(contributor, str):
+                    lines.append(f"- {contributor}")
+                else:
+                    lines.append(f"- {contributor['name']}: {contributor['commits']} commits")
 
         return lines
 

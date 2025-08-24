@@ -13,6 +13,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from tenets import Tenets
+from tenets.utils.timing import CommandTimer, format_duration
 
 console = Console()
 
@@ -137,7 +138,14 @@ def distill(
     # Use the verbose parameter directly (it overrides context)
     quiet = state.get("quiet", False)
 
+    # Initialize timer - suppress output in JSON mode
+    is_json_quiet = format.lower() == "json" and not output
+    timer = CommandTimer(console, quiet or is_json_quiet)
+
     try:
+        # Start timing
+        timer.start("Initializing tenets...")
+        
         # Initialize tenets
         tenets = Tenets()
 
@@ -272,6 +280,9 @@ def distill(
         else:
             output_text = result.context
 
+        # Stop timing
+        timing_result = timer.stop("Context distillation complete")
+        
         # Build summary details
         include_display = ",".join(include_patterns) if include_patterns else "(none)"
         exclude_display = ",".join(exclude_patterns) if exclude_patterns else "(none)"
@@ -290,7 +301,8 @@ def distill(
                     f"Files: {files_included}/{files_analyzed}  •  Tokens: {token_count:,} / {max_tokens_display}\n"
                     f"Include: {include_display}\n"
                     f"Exclude: {exclude_display}\n"
-                    f"Git: {git_display}  •  Session: {session_display}",
+                    f"Git: {git_display}  •  Session: {session_display}\n"
+                    f"[dim]Time: {timing_result.formatted_duration}[/dim]",
                     title="Tenets Context",
                     border_style="green",
                 )
@@ -300,7 +312,7 @@ def distill(
         if output:
             output.write_text(output_text, encoding="utf-8")
             if not quiet:
-                console.print(f"[green]✓[/green] Context saved to {output}")
+                console.print(f"[green]✓[/green] Context saved to {output} [dim]({timing_result.formatted_duration})[/dim]")
         elif format == "json":
             # Emit pure JSON without Rich formatting to keep stdout clean for parsers/tests
             print(output_text)
@@ -363,7 +375,7 @@ def distill(
                 except Exception:
                     copied = False
             if copied and not quiet:
-                console.print("[cyan]📋 Context copied to clipboard[/cyan]")
+                console.print(f"[cyan]📋 Context copied to clipboard[/cyan] [dim]({timing_result.formatted_duration} total)[/dim]")
             elif not copied and do_copy and not quiet:
                 console.print(
                     "[yellow]Warning:[/yellow] Unable to copy to clipboard (missing pyperclip/xclip/pbcopy)."
@@ -424,13 +436,20 @@ def distill(
                     f"Files found: {files_analyzed}\n"
                     f"Files included: {files_included}\n"
                     f"Token usage: {token_count:,} / {max_tokens or 'model default'}\n"
-                    f"Analysis time: {metadata.get('analysis_time', '?')}s",
+                    f"Analysis time: {metadata.get('analysis_time', '?')}s\n"
+                    f"Total time: [green]{timing_result.formatted_duration}[/green]",
                     title="📊 Statistics",
                     border_style="blue",
                 )
             )
 
     except Exception as e:
+        # Stop timer on error
+        if timer.start_time and not timer.end_time:
+            timing_result = timer.stop("Operation failed")
+            if not quiet:
+                console.print(f"[dim]Failed after {timing_result.formatted_duration}[/dim]")
+        
         console.print(f"[red]Error:[/red] {e!s}")
         if verbose:
             console.print_exception()

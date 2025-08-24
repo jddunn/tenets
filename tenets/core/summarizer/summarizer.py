@@ -395,8 +395,8 @@ class Summarizer:
                     "context_aware": True,
                 },
             )
-        elif preserve_structure and file.language:
-            # Intelligent code summarization
+        elif preserve_structure and file.language and not is_documentation:
+            # Intelligent code summarization (skip for documentation files)
             summary = self._summarize_code(file, target_ratio)
 
             return SummarizationResult(
@@ -987,16 +987,70 @@ class Summarizer:
                 summary_parts.append("")
                 total_length += section_length
             else:
-                # Compress the section content to fit
-                compressed_content = self.summarize(
-                    section["content"], mode=SummarizationMode.EXTRACTIVE, target_ratio=0.5
-                ).summary
-
-                compressed_section = section.copy()
-                compressed_section["content"] = compressed_content
-                section_summary = self._format_relevant_section(
-                    compressed_section, preserve_examples
-                )
+                # For configuration sections, truncate rather than compress
+                section_type = section.get("section_type", "")
+                if section_type in ["yaml_key", "json_key", "ini_section", "toml_section"]:
+                    # Truncate content to fit
+                    truncated_section = section.copy()
+                    content_lines = section["content"].split("\n")
+                    # Keep first N lines that fit
+                    max_lines = min(10, len(content_lines))
+                    truncated_section["content"] = "\n".join(content_lines[:max_lines])
+                    if len(content_lines) > max_lines:
+                        truncated_section["content"] += "\n# ... (truncated)"
+                    section_summary = self._format_relevant_section(
+                        truncated_section, preserve_examples
+                    )
+                else:
+                    # Compress the section content to fit while preserving code examples
+                    compressed_section = section.copy()
+                    
+                    # Extract code examples before compression
+                    code_examples = section.get("code_examples", [])
+                    
+                    if code_examples and preserve_examples:
+                        # If we have code examples to preserve, compress the text around them
+                        content_lines = section["content"].split("\n")
+                        preserved_lines = []
+                        in_code_block = False
+                        code_block_lines = []
+                        
+                        for line in content_lines:
+                            # Check if we're entering or exiting a code block
+                            if line.strip().startswith("```"):
+                                if not in_code_block:
+                                    in_code_block = True
+                                    code_block_lines = [line]
+                                else:
+                                    code_block_lines.append(line)
+                                    preserved_lines.extend(code_block_lines)
+                                    in_code_block = False
+                                    code_block_lines = []
+                            elif in_code_block:
+                                code_block_lines.append(line)
+                            else:
+                                # For non-code lines, only keep the most important ones
+                                if any(kw.lower() in line.lower() for kw in prompt_keywords):
+                                    preserved_lines.append(line)
+                                elif line.strip() and len(preserved_lines) < 5:  # Keep first few lines
+                                    preserved_lines.append(line)
+                        
+                        # If still in a code block at the end, preserve it
+                        if in_code_block and code_block_lines:
+                            preserved_lines.extend(code_block_lines)
+                            preserved_lines.append("```")  # Close the code block
+                        
+                        compressed_section["content"] = "\n".join(preserved_lines)
+                    else:
+                        # No code examples to preserve, use regular compression
+                        compressed_content = self.summarize(
+                            section["content"], mode=SummarizationMode.EXTRACTIVE, target_ratio=0.5
+                        ).summary
+                        compressed_section["content"] = compressed_content
+                    
+                    section_summary = self._format_relevant_section(
+                        compressed_section, preserve_examples
+                    )
                 summary_parts.append(section_summary)
                 summary_parts.append("")
                 total_length += len(section_summary)
@@ -1054,23 +1108,38 @@ class Summarizer:
 
         # Process section content
         content = section.get("content", "")
-
-        # Extract and highlight code examples if preserve_examples is True
-        if preserve_examples:
-            code_examples = section.get("code_examples", [])
-            if code_examples:
-                # Replace code blocks with highlighted versions
-                for example in code_examples:
-                    if example["type"] == "code_block":
-                        lang = example.get("language", "")
-                        code = example.get("code", "")
-                        # Ensure code blocks are properly highlighted
-                        highlighted = f"```{lang}\n{code}\n```"
-                        # Find and replace in content (this is a simplified approach)
-                        content = content.replace(example.get("raw_match", ""), highlighted)
-
-        # Add the content
-        parts.append(content.strip())
+        
+        # For configuration sections, preserve the actual configuration syntax
+        section_type = section.get("section_type", "")
+        if section_type in ["yaml_key", "json_key", "ini_section", "toml_section"]:
+            # Show a snippet of the actual configuration
+            content_lines = content.split("\n")
+            if len(content_lines) > 10:
+                # Show first 8 lines and indicate truncation
+                snippet = "\n".join(content_lines[:8])
+                parts.append(f"```yaml\n{snippet}\n# ... (truncated)\n```")
+            else:
+                parts.append(f"```yaml\n{content.strip()}\n```")
+        else:
+            # Extract and highlight code examples if preserve_examples is True
+            if preserve_examples:
+                code_examples = section.get("code_examples", [])
+                if code_examples:
+                    # Replace code blocks with highlighted versions
+                    for example in code_examples:
+                        if example["type"] == "code_block":
+                            lang = example.get("language", "")
+                            code = example.get("code", "")
+                            raw_match = example.get("raw_match", "")
+                            # Only replace if we have a valid raw_match
+                            if raw_match:
+                                # Ensure code blocks are properly highlighted
+                                highlighted = f"```{lang}\n{code}\n```"
+                                # Find and replace in content (this is a simplified approach)
+                                content = content.replace(raw_match, highlighted)
+            
+            # Add the content
+            parts.append(content.strip())
 
         # Add extracted references if significant
         api_refs = section.get("api_references", [])
