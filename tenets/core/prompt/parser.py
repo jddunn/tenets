@@ -549,34 +549,38 @@ class PromptParser:
         # Check for test-related patterns in prompt text
         lower_prompt = prompt_text.lower()
 
-        # Test file patterns
+        # Test file patterns - check in original case for proper file names
         test_file_patterns = [
             r"\btest_\w+\.py\b",  # test_auth.py
             r"\w+_test\.py\b",  # auth_test.py
             r"\b\w+\.test\.\w+\b",  # auth.test.js
             r"\b\w+\.spec\.\w+\b",  # auth.spec.js
-            r"\btests?/\w+",  # tests/auth
-            r"\b__tests__/\w+",  # __tests__/auth
+            r"\btests?/",  # tests/ or test/
+            r"\b__tests__\b",  # __tests__
+            r"\w+Test\.\w+",  # UserTest.java, AuthTest.php
+            r"Test\w+\.\w+",  # TestUser.java
         ]
 
-        if any(re.search(pattern, lower_prompt) for pattern in test_file_patterns):
+        # Check patterns in both original case and lowercase
+        if any(re.search(pattern, prompt_text, re.IGNORECASE) for pattern in test_file_patterns):
             return True
 
         # Test action patterns - looking for explicit test-related actions
         test_action_patterns = [
-            r"\b(?:write|add|create|implement|build)\s+(?:unit\s+)?tests?\b",
+            r"\b(?:write|add|create|implement|build)\s+(?:unit\s+|integration\s+|e2e\s+)?tests?\b",
             r"\b(?:test|testing)\s+(?:the|this|that|coverage)\b",
-            r"\b(?:fix|debug|update|modify|check|review)\s+(?:the\s+)?tests?\b",
+            r"\b(?:fix|debug|update|modify|check|review)\s+(?:the\s+|failing\s+)?tests?\b",
             r"\b(?:test|check)\s+(?:coverage|failures?|errors?)\b",
             r"\b(?:run|execute)\s+(?:the\s+)?tests?\b",
             r"\bmock\s+(?:the|this|that)\b",
-            r"\bunit\s+test\b",
-            r"\bintegration\s+test\b",
-            r"\be2e\s+test\b",
-            r"\bend-to-end\s+test\b",
+            r"\bunit\s+tests?\b",
+            r"\bintegration\s+tests?\b",
+            r"\be2e\s+tests?\b",
+            r"\bend-to-end\s+tests?\b",
             r"\btest\s+suite\b",
             r"\btest\s+cases?\b",
             r"\bassertions?\b.*\b(?:fail|pass|error)\b",
+            r"\btest\s+coverage\b",
         ]
 
         if any(re.search(pattern, lower_prompt) for pattern in test_action_patterns):
@@ -589,6 +593,7 @@ class PromptParser:
             r"\bfailing\s+tests?\b",
             r"\btest\s+failures?\b",
             r"\bbroken\s+tests?\b",
+            r"\btests?\s+(?:are\s+)?(?:pass|fail|passing|failing)\b",
             r"\btest\s+(?:pass|fail)\b",
         ]
 
@@ -833,9 +838,9 @@ class PromptParser:
 
         # Configuration and setup keywords
         config_patterns = [
-            r"\b(config|configuration|setting|option|parameter|env|environment)\b",
+            r"\b(config|configuration|settings?|options?|parameters?|env|environment)\b",
             r"\b(install|installation|setup|deployment|deploy)\b",
-            r"\b(requirement|dependency|prerequisite|version)\b",
+            r"\b(requirements?|dependenc(?:y|ies)|prerequisites?|versions?)\b",
             r"\b(database|db|connection|credential)\b",
             r"\b(server|host|port|domain|certificate|ssl|tls)\b",
             r"\b(docker|container|image|volume|network)\b",
@@ -843,25 +848,25 @@ class PromptParser:
 
         # Documentation structure keywords
         structure_patterns = [
-            r"\b(tutorial|guide|walkthrough|example|demo)\b",
+            r"\b(tutorial|guide|walkthrough|examples?|demo)\b",
             r"\b(getting.?started|quick.?start|introduction|overview)\b",
-            r"\b(troubleshoot|faq|help|support|issue|problem)\b",
+            r"\b(troubleshoot(?:ing)?|faq|help|support|issue|problem)\b",
             r"\b(changelog|release.?note|migration|upgrade)\b",
             r"\b(readme|documentation|doc|manual)\b",
         ]
 
         # Programming concepts in documentation
         programming_patterns = [
-            r"\b(function|method|class|interface|module|package)\b",
-            r"\b(variable|constant|property|attribute|field)\b",
-            r"\b(import|include|require|export|dependency)\b",
+            r"\b(functions?|methods?|class(?:es)?|interfaces?|modules?|packages?)\b",
+            r"\b(variables?|constants?|propert(?:y|ies)|attributes?|fields?)\b",
+            r"\b(imports?|includes?|requires?|exports?|dependenc(?:y|ies))\b",
             r"\b(library|framework|sdk|plugin|extension)\b",
             r"\b(debug|test|unit.?test|integration.?test)\b",
         ]
 
         # Usage and operational keywords
         usage_patterns = [
-            r"\b(usage|how.?to|example|snippet|sample)\b",
+            r"\b(usage|how.?to|examples?|snippets?|samples?)\b",
             r"\b(command|cli|script|tool|utility)\b",
             r"\b(log|logging|monitor|metric|analytics)\b",
             r"\b(backup|restore|migration|sync)\b",
@@ -893,6 +898,37 @@ class PromptParser:
         # Add file extension and format keywords
         format_keywords = self._extract_format_keywords(text)
         doc_keywords.extend(format_keywords)
+        
+        # Process and normalize keywords
+        normalized_keywords = []
+        for keyword in doc_keywords:
+            kw_lower = keyword.lower()
+            # Normalize to base form and add variations
+            if kw_lower in ["settings", "setting"]:
+                normalized_keywords.extend(["setting", "settings"])
+            elif kw_lower in ["requirements", "requirement"]:
+                normalized_keywords.extend(["requirement", "requirements"])
+            elif kw_lower in ["examples", "example"]:
+                normalized_keywords.extend(["example", "examples"]) 
+            elif kw_lower in ["dependencies", "dependency"]:
+                normalized_keywords.extend(["dependency", "dependencies"])
+            elif kw_lower in ["functions", "function"]:
+                normalized_keywords.extend(["function", "functions"])
+            elif kw_lower in ["modules", "module"]:
+                normalized_keywords.extend(["module", "modules"])
+            elif kw_lower in ["interfaces", "interface"]:
+                normalized_keywords.extend(["interface", "interfaces"])
+            elif kw_lower in ["classes", "class"]:
+                normalized_keywords.extend(["class", "classes"])
+            elif kw_lower == "authentication":
+                normalized_keywords.extend(["authentication", "auth"])
+            elif kw_lower == "configuration":
+                normalized_keywords.extend(["configuration", "config"])
+            elif kw_lower == "troubleshooting":
+                normalized_keywords.extend(["troubleshooting", "troubleshoot"])
+            else:
+                normalized_keywords.append(keyword)
+        doc_keywords.extend(normalized_keywords)
 
         # Remove duplicates and common stopwords, keep original case for some keywords
         unique_keywords = []

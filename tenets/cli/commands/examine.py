@@ -23,6 +23,7 @@ from tenets.core.examiner import (
 )
 from tenets.core.reporting import ReportGenerator
 from tenets.utils.logger import get_logger
+from tenets.utils.timing import CommandTimer, format_duration
 from tenets.viz import ComplexityVisualizer, HotspotVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
@@ -75,6 +76,11 @@ def _run_examination(
     logger = get_logger(__name__)
     config = TenetsConfig()
 
+    # Initialize timer
+    is_quiet = output_format.lower() == "json" and not output
+    timer = CommandTimer(quiet=is_quiet)
+    timer.start("Starting code examination...")
+
     # Initialize path (do not fail early; allow tests to mock examiner)
     target_path = Path(path).resolve()
     # Only fail fast for clearly invalid test paths to satisfy error-handling tests
@@ -100,7 +106,7 @@ def _run_examination(
 
     try:
         # Perform examination
-        logger.info("Starting code examination...")
+        logger.info("Starting code examination...")  
         # Support both mocked .examine() and real .examine_project()
         if hasattr(examiner, "examine"):
             # Pass path as string to make test call-arg assertions robust across platforms
@@ -170,11 +176,23 @@ def _run_examination(
         # Add the examined path to results for filename generation
         examination_results["path"] = str(target_path)
 
+        # Stop timer
+        timing_result = timer.stop("Examination complete")
+        examination_results["timing"] = {
+            "duration": timing_result.duration,
+            "formatted_duration": timing_result.formatted_duration,
+            "start_time": timing_result.start_datetime.isoformat(),
+            "end_time": timing_result.end_datetime.isoformat(),
+        }
+
         # Display or save results based on format
         if output_format.lower() == "terminal":
             _display_terminal_results(examination_results, show_details)
             # Summary for terminal only
             _print_summary(examination_results)
+            # Show timing
+            if not is_quiet:
+                click.echo(f"\n⏱  Completed in {timing_result.formatted_duration}")
         elif output_format.lower() == "json":
             _output_json_results(examination_results, output)
         else:
@@ -183,6 +201,12 @@ def _run_examination(
             # Reports rendered to file; keep stdout clean
 
     except Exception as e:
+        # Stop timer on error
+        if timer.start_time and not timer.end_time:
+            timing_result = timer.stop("Examination failed")
+            if not is_quiet:
+                click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
+        
         logger.error(f"Examination failed: {e}")
         click.echo(str(e))
         raise SystemExit(1)

@@ -14,6 +14,7 @@ import typer
 from tenets.core.git import ChronicleBuilder, GitAnalyzer
 from tenets.core.reporting import ReportGenerator
 from tenets.utils.logger import get_logger
+from tenets.utils.timing import CommandTimer, format_duration
 from tenets.viz import ContributorVisualizer, MomentumVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
@@ -65,6 +66,11 @@ def run(
     logger = get_logger(__name__)
     config = None  # tests invoke this in isolation without Typer app context
 
+    # Initialize timer
+    is_quiet = format.lower() == "json" and not output
+    timer = CommandTimer(quiet=is_quiet)
+    timer.start("Initializing git chronicle...")
+
     # Initialize path; allow non-existent for most tests except explicit invalid paths
     target_path = Path(path).resolve()
     norm_path = str(path).replace("\\", "/").strip()
@@ -110,6 +116,15 @@ def run(
             logger.info("Analyzing change patterns...")
             chronicle_data["patterns"] = _analyze_patterns(git_analyzer, date_range)
 
+        # Stop timer
+        timing_result = timer.stop("Chronicle analysis complete")
+        chronicle_data["timing"] = {
+            "duration": timing_result.duration,
+            "formatted_duration": timing_result.formatted_duration,
+            "start_time": timing_result.start_datetime.isoformat(),
+            "end_time": timing_result.end_datetime.isoformat(),
+        }
+
         # Display or save results
         if format == "terminal":
             # Simple heading for tests before any rich output
@@ -117,6 +132,9 @@ def run(
             _display_terminal_chronicle(chronicle_data, show_contributors, show_patterns)
             # Summary
             _print_chronicle_summary(chronicle_data)
+            # Show timing
+            if not is_quiet:
+                click.echo(f"\n⏱  Completed in {timing_result.formatted_duration}")
         elif format == "json":
             _output_json_chronicle(chronicle_data, output)
             return
@@ -125,6 +143,12 @@ def run(
             # Do not print summary for non-terminal formats
 
     except Exception as e:
+        # Stop timer on error
+        if timer.start_time and not timer.end_time:
+            timing_result = timer.stop("Chronicle failed")
+            if not is_quiet:
+                click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
+        
         logger.error(f"Chronicle generation failed: {e}")
         click.echo(str(e))
         raise typer.Exit(1)

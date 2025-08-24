@@ -15,6 +15,7 @@ from tenets.core.git import GitAnalyzer
 from tenets.core.momentum import MomentumTracker
 from tenets.core.reporting import ReportGenerator
 from tenets.utils.logger import get_logger
+from tenets.utils.timing import CommandTimer, format_duration
 from tenets.viz import MomentumVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
@@ -58,6 +59,11 @@ def run(
     """
     logger = get_logger(__name__)
     config = None
+
+    # Initialize timer
+    is_quiet = output_format.lower() == "json" and not output
+    timer = CommandTimer(quiet=is_quiet)
+    timer.start("Tracking development momentum...")
 
     # Initialize path (do not fail early to keep tests using mocks green)
     target_path = Path(path).resolve()
@@ -109,17 +115,35 @@ def run(
             logger.info("Generating velocity forecast...")
             momentum_data["forecast"] = _generate_forecast(momentum_data.get("velocity_data", []))
 
+        # Stop timer
+        timing_result = timer.stop("Momentum analysis complete")
+        momentum_data["timing"] = {
+            "duration": timing_result.duration,
+            "formatted_duration": timing_result.formatted_duration,
+            "start_time": timing_result.start_datetime.isoformat(),
+            "end_time": timing_result.end_datetime.isoformat(),
+        }
+
         # Display or save results
         if output_format.lower() == "terminal":
             _display_terminal_momentum(momentum_data, team, burndown, forecast)
             # Summary only for terminal to keep JSON clean
             _print_momentum_summary(momentum_data)
+            # Show timing
+            if not is_quiet:
+                click.echo(f"\n⏱  Completed in {timing_result.formatted_duration}")
         elif output_format.lower() == "json":
             _output_json_momentum(momentum_data, output)
         else:
             _generate_momentum_report(momentum_data, output_format.lower(), output, config)
 
     except Exception as e:
+        # Stop timer on error
+        if timer.start_time and not timer.end_time:
+            timing_result = timer.stop("Momentum tracking failed")
+            if not is_quiet:
+                click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
+        
         logger.error(f"Momentum tracking failed: {e}")
         click.echo(str(e))
         raise typer.Exit(1)

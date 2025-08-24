@@ -199,7 +199,8 @@ class Tenets:
         else:
             raise ValueError(f"Invalid config type: {type(config)}")
 
-        # Initialize logger
+        # Initialize logger (import locally to avoid circular import)
+        from tenets.utils.logger import get_logger
         self.logger = get_logger(__name__)
         self.logger.info(f"Initializing Tenets v{__version__}")
 
@@ -260,7 +261,14 @@ class Tenets:
             apply_tenets: Whether to apply tenets (None = use config default)
 
         Returns:
-            ContextResult containing the generated context, metadata, and statistics
+            ContextResult containing the generated context, metadata, and statistics.
+            The metadata field includes timing information when available:
+                metadata['timing'] = {
+                    'duration': 2.34,  # seconds
+                    'formatted_duration': '2.34s',
+                    'start_datetime': '2024-01-15T10:30:45',
+                    'end_datetime': '2024-01-15T10:30:47'
+                }
 
         Raises:
             ValueError: If prompt is empty or invalid
@@ -296,6 +304,12 @@ class Tenets:
             >>>
             >>> # From GitHub issue
             >>> result = tenets.distill("https://github.com/org/repo/issues/123")
+            >>>
+            >>> # Access timing information
+            >>> result = tenets.distill("analyze performance")
+            >>> if 'timing' in result.metadata:
+            ...     print(f"Analysis took {result.metadata['timing']['formatted_duration']}")
+            ...     # Output: "Analysis took 2.34s"
         """
         if not prompt:
             raise ValueError("Prompt cannot be empty")
@@ -833,4 +847,5 @@ __all__ = [
     "Tenets",
     "TenetsConfig",
     "__version__",
+    "get_logger",
 ]

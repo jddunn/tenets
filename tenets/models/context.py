@@ -208,7 +208,12 @@ class ContextResult:
         files: List of included file paths (preferred alias)
         files_included: Backward-compatible alias for files
         files_summarized: List of summarized file paths
-        metadata: Additional metadata about generation
+        metadata: Additional metadata about generation, including:
+            - timing: Dict with duration info (if timing enabled)
+                - duration: float seconds
+                - formatted_duration: Human-readable string (e.g. "2.34s")
+                - start_datetime: ISO format start time
+                - end_datetime: ISO format end time
         session_id: Session this belongs to
         timestamp: When context was generated
         statistics: Generation statistics
