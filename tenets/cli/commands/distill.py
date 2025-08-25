@@ -226,6 +226,34 @@ def distill(
                 console.print(f"  Synonyms: {pc.get('synonyms', [])}")
                 console.print(f"  Entities: {pc.get('entities', [])}")
 
+            # Show NLP normalization details
+            if "nlp_normalization" in metadata:
+                nn = metadata["nlp_normalization"]
+                console.print("\n[cyan]NLP Normalization:[/cyan]")
+                kw = nn.get("keywords", {})
+                console.print(
+                    f"  Keywords normalized: {kw.get('original_total', 0)} -> {kw.get('total', 0)}"
+                )
+                # Print up to 5 examples of normalization steps
+                norm_map = kw.get("normalized", {})
+                shown = 0
+                for k, info in norm_map.items():
+                    console.print(f"    - {k}: steps={info.get('steps', [])}, variants={info.get('variants', [])}")
+                    shown += 1
+                    if shown >= 5:
+                        break
+                ent = nn.get("entities", {})
+                console.print(
+                    f"  Entities recognized: {ent.get('total', 0)} (variation counts: top {min(5, len(ent.get('variation_counts', {})))} shown)"
+                )
+                vc = ent.get("variation_counts", {})
+                shown = 0
+                for name, cnt in vc.items():
+                    console.print(f"    - {name}: {cnt} variants")
+                    shown += 1
+                    if shown >= 5:
+                        break
+
             # Show ranking details
             if "ranking_details" in metadata:
                 rd = metadata["ranking_details"]

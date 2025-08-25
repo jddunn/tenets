@@ -9,6 +9,9 @@ from rich.console import Console
 from tenets.cli.commands.config import config_app
 from tenets.cli.commands.session import session_app
 from tenets.cli.commands.system_instruction import app as system_instruction_app
+from tenets.cli.commands.momentum import momentum as momentum_app
+from tenets.cli.commands.chronicle import chronicle as chronicle_app
+from tenets.cli.commands.examine import examine as examine_app
 from tenets.cli.commands.tenet import tenet_app
 from tenets.cli.commands.viz import viz_app
 
@@ -70,6 +73,9 @@ app.add_typer(
     name="system-instruction",
     help="Manage system instruction (system prompt)",
 )
+app.add_typer(momentum_app, name="momentum", help="Track team momentum and velocity")
+app.add_typer(chronicle_app, name="chronicle", help="Analyze git history over time")
+app.add_typer(examine_app, name="examine", help="Comprehensive code examination")
 
 # Register main commands
 from tenets.cli.commands.distill import distill
@@ -124,14 +130,22 @@ def main_callback(
 
     # Configure logging level
     import logging
+    from tenets.utils.logger import get_logger
     
+    # Configure both root logger and tenets logger
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("tenets").setLevel(logging.DEBUG)
+        # Show debug output immediately
+        logger = get_logger(__name__)
+        logger.debug("Verbose mode enabled")
     elif quiet or silent:
         logging.basicConfig(level=logging.ERROR)
+        logging.getLogger("tenets").setLevel(logging.ERROR)
     else:
-        # Default to WARNING to avoid noisy INFO
+        # Default to INFO for tenets, WARNING for others
         logging.basicConfig(level=logging.WARNING)
+        logging.getLogger("tenets").setLevel(logging.INFO)
 
 
 def run():

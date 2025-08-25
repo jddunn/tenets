@@ -114,7 +114,7 @@ class FileScanner:
 
         # Build ignore patterns
         self.ignore_patterns = set(self.DEFAULT_IGNORE_PATTERNS)
-        if config.additional_ignore_patterns:
+        if config and hasattr(config, 'additional_ignore_patterns') and config.additional_ignore_patterns:
             self.ignore_patterns.update(config.additional_ignore_patterns)
 
     def scan(

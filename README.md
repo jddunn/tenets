@@ -335,8 +335,23 @@ tenets distill "extract token rotation into helper" --session payment-integratio
 Understand your codebase at a glance:
 
 ```bash
-# Dependency graphs
-tenets viz deps . --output architecture.svg
+# Dependency graphs with automatic project detection
+tenets viz deps . --output architecture.svg  # Auto-detects project type
+tenets viz deps . --level module --format html --output deps.html  # Interactive HTML
+tenets viz deps . --level package --cluster-by package  # Package-level view
+tenets viz deps . --layout circular --max-nodes 50  # Circular layout, top 50 nodes
+
+# Multiple output formats (install viz extras: pip install tenets[viz])
+tenets viz deps . --format svg --output arch.svg    # SVG with Graphviz
+tenets viz deps . --format png --output arch.png    # PNG image
+tenets viz deps . --format html --output deps.html  # Interactive D3.js/Plotly
+tenets viz deps . --format dot --output graph.dot   # Graphviz DOT format
+tenets viz deps . --format json --output data.json  # Raw JSON data
+
+# Advanced filtering and visualization
+tenets viz deps src/ --include "*.py" --exclude "*test*"  # Filter specific files
+tenets viz deps . --layout shell --max-nodes 75           # Shell layout with node limit
+tenets viz deps tenets/core --level module --cluster-by directory  # Focused subsystem view
 
 # Complexity analysis
 tenets viz complexity . --hotspots
@@ -605,12 +620,69 @@ tenets examine .
 # What's been happening?
 tenets chronicle --since "1 month" --summary
 
-# Visualize your architecture
-tenets viz deps . --cluster-by directory
+# Visualize your architecture with intelligent project detection
+tenets viz deps .  # Auto-detects Python/JS/Java/Go/etc and finds entry points
+tenets viz deps . --cluster-by directory  # Group by directories
+tenets viz deps . --level module  # Module-level dependencies (aggregated)
+tenets viz deps . --level package --output packages.svg  # Package architecture
 
 # Find complex areas
 tenets examine . --complexity --threshold 10
 ```
+
+## Architecture Visualization
+
+Generate beautiful, interactive dependency graphs to understand your codebase structure:
+
+### Quick Examples
+
+```bash
+# Install visualization dependencies
+pip install tenets[viz]
+
+# Auto-detect project and generate dependency graph
+tenets viz deps . --output architecture.svg
+
+# Interactive HTML for exploration
+tenets viz deps . --format html --output interactive.html
+# Open in browser for D3.js/Plotly interactive graph
+
+# Different views for different needs
+tenets viz deps . --level file      # Detailed file-level dependencies
+tenets viz deps . --level module    # Module-level aggregation (recommended)
+tenets viz deps . --level package   # High-level package architecture
+
+# Understand specific subsystems
+tenets viz deps src/api --include "*.py" --exclude "*test*" --output api.svg
+tenets viz deps frontend/ --include "*.js,*.jsx" --format html -o frontend.html
+```
+
+### Real-World Usage
+
+```bash
+# For documentation - clean package architecture
+tenets viz deps . --level package --format png --output docs/architecture.png
+
+# For code review - module dependencies with clustering
+tenets viz deps . --level module --cluster-by directory --format html -o review.html
+
+# For refactoring - find tightly coupled components
+tenets viz deps . --layout circular --format svg --output coupling.svg
+
+# For large projects - limit to most connected files
+tenets viz deps . --max-nodes 100 --format html --output top100.html
+```
+
+### Features
+
+- **Auto-Detection**: Automatically identifies Python, Node.js, Java, Go, Rust, etc.
+- **Smart Aggregation**: File → Module → Package level views
+- **Multiple Formats**: ASCII, SVG, PNG, HTML, DOT, JSON
+- **Interactive HTML**: Explore dependencies with D3.js/Plotly
+- **Pure Python**: No system dependencies, just `pip install`
+- **Filtering**: Include/exclude patterns for focused analysis
+- **Layouts**: Hierarchical, circular, shell, force-directed
+- **Clustering**: Group by directory, module, or package
 
 ## Examination & Reports
 

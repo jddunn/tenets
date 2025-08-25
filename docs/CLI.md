@@ -386,32 +386,54 @@ All visualization commands support ASCII output for terminal display, with optio
 
 ### viz deps
 
-Visualize code dependencies and architecture.
+Visualize code dependencies and architecture with intelligent project detection.
 
 ```bash
 tenets viz deps [path] [options]
 ```
 
 **Options:**
-- `--output, -o`: Save to file
-- `--format, -f`: Format: `ascii` (default for terminal), `svg`, `png`, `html`
-- `--cluster-by`: Group by: `directory`
-- `--max-nodes`: Maximum nodes to display (default: 100)
+- `--output, -o`: Save to file (e.g., architecture.svg)
+- `--format, -f`: Output format: `ascii`, `svg`, `png`, `html`, `json`, `dot`
+- `--level, -l`: Dependency level: `file` (default), `module`, `package`
+- `--cluster-by`: Group nodes by: `directory`, `module`, `package`
+- `--max-nodes`: Maximum nodes to display
+- `--include, -i`: Include file patterns (e.g., "*.py")
+- `--exclude, -e`: Exclude file patterns (e.g., "*test*")
+- `--layout`: Graph layout: `hierarchical`, `circular`, `shell`, `kamada`
+
+**Features:**
+- **Auto-detection**: Automatically detects project type (Python, Node.js, Java, Go, etc.)
+- **Smart aggregation**: Three levels of dependency views (file, module, package)
+- **Interactive HTML**: D3.js or Plotly-based interactive visualizations
+- **Pure Python**: All visualization libraries installable via `pip install tenets[viz]`
 
 **Examples:**
 
 ```bash
-# ASCII dependency tree in terminal
+# Auto-detect project type and show dependencies
 tenets viz deps
 
-# Save as SVG
-tenets viz deps --output dependencies.svg
+# Generate interactive HTML visualization
+tenets viz deps --format html --output deps.html
 
-# Cluster by directory structure
-tenets viz deps --cluster-by directory
+# Module-level dependencies as SVG
+tenets viz deps --level module --format svg --output modules.svg
 
-# Limit to core files
-tenets viz deps --max-nodes 50
+# Package architecture with clustering
+tenets viz deps --level package --cluster-by package --output packages.png
+
+# Circular layout for better visibility
+tenets viz deps --layout circular --format svg --output circular.svg
+
+# Limit to top 50 nodes for large projects
+tenets viz deps --max-nodes 50 --format png --output top50.png
+
+# Export to Graphviz DOT format
+tenets viz deps --format dot --output graph.dot
+
+# Filter specific files
+tenets viz deps src/ --include "*.py" --exclude "*test*"
 ```
 
 **ASCII Output Example:**
