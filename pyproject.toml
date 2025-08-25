@@ -56,6 +56,15 @@ Changelog = "https://github.com/jddunn/tenets/blob/main/CHANGELOG.md"
 tenets = "tenets.cli.app:app"
 
 [project.optional-dependencies]
+# Visualization features (graphs, charts, diagrams)
+viz = [
+    "networkx>=3.0",  # Graph algorithms and layouts
+    "matplotlib>=3.7.0",  # Static visualizations
+    "graphviz>=0.20.0",  # DOT language graphs (pure Python)
+    "plotly>=5.0.0",  # Interactive HTML visualizations
+    "pydot>=1.4.0",  # Graphviz interface used by some visualizations
+]
+
 # Light NLP features (includes basic summarization)
 light = [
     "yake>=0.4.8",
@@ -77,14 +86,7 @@ ml = [
     "huggingface-hub>=0.19.0",
 ]
 
-# Visualization features
-viz = [
-    "matplotlib>=3.7.0",
-    "networkx>=3.0",
-    "pydot>=1.4.0",
-    "plotly>=5.0.0",
-    "graphviz>=0.20.0",
-]
+# (duplicate viz block removed; merged into the single viz list above)
 
 # Web interface
 web = [
@@ -342,6 +344,23 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+norecursedirs = [
+    "venv",
+    ".venv",
+    "Lib",
+    "lib",
+    "Scripts",
+    "bin",
+    "Include",
+    "include",
+    "site-packages",
+    "build",
+    "dist",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".pytest_cache",
+]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",

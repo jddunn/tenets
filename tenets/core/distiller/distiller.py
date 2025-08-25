@@ -199,6 +199,13 @@ class Distiller:
             "entities": prompt_context.entities,
         }
 
+        # Expose NLP normalization metrics if available from parser
+        try:
+            if isinstance(prompt_context.metadata, dict) and "nlp_normalization" in prompt_context.metadata:
+                metadata["nlp_normalization"] = prompt_context.metadata["nlp_normalization"]
+        except Exception:
+            pass
+
         # Add ranking details
         metadata["ranking_details"] = {
             "algorithm": mode,

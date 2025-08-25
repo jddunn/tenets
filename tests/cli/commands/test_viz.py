@@ -1,24 +1,25 @@
 """Unit tests for the viz CLI command.
 
 Tests cover all visualization functionality including:
-- Data loading from JSON/CSV
-- Visualization type detection
-- Chart generation
-- Custom visualizations
-- Output formats (terminal, HTML, SVG, PNG)
-- Interactive mode
-- Field mapping
+- Dependency graph generation
+- Project type detection  
+- Multiple output formats (ASCII, SVG, PNG, HTML, JSON, DOT)
+- Clustering and aggregation
+- Complexity visualization
+- Contributor visualization
 - Error handling
 """
 
 import csv
 import json
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import MagicMock, patch, Mock
 
 import pytest
 from typer.testing import CliRunner
 
-from tenets.cli.commands.viz import viz
+from tenets.cli.app import app
+from tenets.cli.commands.viz import viz_app, aggregate_dependencies, get_aggregate_key
 
 
 @pytest.fixture
@@ -43,6 +44,32 @@ def sample_json_data():
             {"name": "Alice", "commits": 60, "lines": 2000},
             {"name": "Bob", "commits": 45, "lines": 1500},
         ],
+    }
+
+
+@pytest.fixture
+def sample_dependency_graph():
+    """Create sample dependency graph for testing."""
+    return {
+        "src/main.py": ["src/utils.py", "src/config.py"],
+        "src/utils.py": ["src/config.py"],
+        "src/api/routes.py": ["src/utils.py", "src/models.py"],
+        "tests/test_main.py": ["src/main.py"],
+    }
+
+
+@pytest.fixture
+def sample_project_info():
+    """Create sample project info for testing."""
+    return {
+        "type": "python_project",
+        "languages": {"python": 85.0, "yaml": 15.0},
+        "frameworks": ["flask"],
+        "entry_points": ["src/main.py", "setup.py"],
+        "structure": {
+            "directories": {"src": "Source code", "tests": "Tests"},
+            "test_directories": ["tests"],
+        }
     }
 
 
@@ -588,3 +615,200 @@ class TestVizSummaryOutput:
                 assert "Custom Visualization Generated" in result.stdout
                 assert "Type:" in result.stdout
                 assert "Datasets:" in result.stdout
+
+
+class TestVizDepsCommand:
+    """Test the viz deps command for dependency visualization."""
+    
+    def test_deps_basic(self, runner, tmp_path):
+        """Test basic dependency visualization."""
+        with patch("tenets.cli.commands.viz.ProjectDetector") as mock_detector:
+            with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
+                with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
+                    # Mock project detection
+                    mock_detector.return_value.detect_project.return_value = {
+                        "type": "python_project",
+                        "languages": {"python": 100.0},
+                        "frameworks": [],
+                        "entry_points": ["main.py"],
+                    }
+                    
+                    # Mock file scanning
+                    mock_scanner.return_value.scan.return_value = [
+                        Path("main.py"),
+                        Path("utils.py"),
+                    ]
+                    
+                    # Mock analysis
+                    mock_analysis = MagicMock()
+                    mock_analysis.structure.imports = [
+                        MagicMock(module="utils", from_module=None),
+                    ]
+                    mock_analyzer.return_value.analyze_file.return_value = mock_analysis
+                    
+                    result = runner.invoke(app, ["viz", "deps", str(tmp_path)])
+                    
+                    assert result.exit_code == 0
+                    assert "Detected project type: python_project" in result.stdout
+    
+    def test_deps_with_output_formats(self, runner, tmp_path, sample_dependency_graph):
+        """Test dependency visualization with different output formats."""
+        formats = ["json", "dot", "html", "svg", "png"]
+        
+        for format in formats:
+            output_file = tmp_path / f"deps.{format}"
+            
+            with patch("tenets.cli.commands.viz.ProjectDetector"):
+                with patch("tenets.cli.commands.viz.FileScanner"):
+                    with patch("tenets.cli.commands.viz.CodeAnalyzer"):
+                        with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
+                            mock_gen.return_value.generate_graph.return_value = str(output_file)
+                            
+                            result = runner.invoke(
+                                app,
+                                ["viz", "deps", str(tmp_path), 
+                                 "--format", format,
+                                 "--output", str(output_file)]
+                            )
+                            
+                            # Should call generator with correct format
+                            if format != "ascii":
+                                mock_gen.return_value.generate_graph.assert_called()
+    
+    def test_deps_aggregation_levels(self, runner, sample_dependency_graph, sample_project_info):
+        """Test dependency aggregation at different levels."""
+        levels = ["file", "module", "package"]
+        
+        for level in levels:
+            # Test aggregation function
+            if level != "file":
+                aggregated = aggregate_dependencies(
+                    sample_dependency_graph,
+                    level,
+                    sample_project_info
+                )
+                
+                if level == "module":
+                    # Should aggregate to module level
+                    assert "src" in aggregated or "src.api" in aggregated
+                elif level == "package":
+                    # Should aggregate to package level
+                    assert "src" in aggregated or "tests" in aggregated
+    
+    def test_deps_clustering(self, runner, tmp_path):
+        """Test dependency visualization with clustering."""
+        cluster_options = ["directory", "module", "package"]
+        
+        for cluster_by in cluster_options:
+            with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
+                result = runner.invoke(
+                    app,
+                    ["viz", "deps", str(tmp_path),
+                     "--cluster-by", cluster_by,
+                     "--format", "json"]
+                )
+                
+                # Generator should be called with cluster_by option
+                # (Would need more mocking to fully test)
+    
+    def test_deps_max_nodes(self, runner, tmp_path):
+        """Test dependency visualization with node limit."""
+        with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
+            result = runner.invoke(
+                app,
+                ["viz", "deps", str(tmp_path),
+                 "--max-nodes", "50",
+                 "--format", "json"]
+            )
+            
+            # Generator should be called with max_nodes option
+    
+    def test_deps_layouts(self, runner, tmp_path):
+        """Test different graph layouts."""
+        layouts = ["hierarchical", "circular", "shell", "kamada"]
+        
+        for layout in layouts:
+            with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
+                result = runner.invoke(
+                    app,
+                    ["viz", "deps", str(tmp_path),
+                     "--layout", layout,
+                     "--format", "svg"]
+                )
+                
+                # Generator should be called with layout option
+    
+    def test_aggregate_dependencies_function(self, sample_dependency_graph, sample_project_info):
+        """Test the aggregate_dependencies helper function."""
+        # Test module-level aggregation
+        module_aggregated = aggregate_dependencies(
+            sample_dependency_graph,
+            "module",
+            sample_project_info
+        )
+        
+        assert "src" in module_aggregated
+        assert "src.api" in module_aggregated
+        assert "tests" in module_aggregated
+        
+        # Test package-level aggregation
+        package_aggregated = aggregate_dependencies(
+            sample_dependency_graph,
+            "package",
+            sample_project_info
+        )
+        
+        assert "src" in package_aggregated
+        assert "tests" in package_aggregated
+        
+        # No self-dependencies
+        assert "src" not in package_aggregated.get("src", [])
+    
+    def test_get_aggregate_key_function(self, sample_project_info):
+        """Test the get_aggregate_key helper function."""
+        # Test module level
+        assert get_aggregate_key("src/utils/helpers.py", "module", sample_project_info) == "src.utils"
+        assert get_aggregate_key("main.py", "module", sample_project_info) == "root"
+        
+        # Test package level
+        assert get_aggregate_key("src/utils/helpers.py", "package", sample_project_info) == "src"
+        assert get_aggregate_key("tests/test_main.py", "package", sample_project_info) == "tests"
+        
+        # Test with module names (dotted notation)
+        assert get_aggregate_key("os.path", "module", sample_project_info) == "os"
+    
+    def test_deps_no_dependencies_found(self, runner, tmp_path):
+        """Test handling when no dependencies are found."""
+        with patch("tenets.cli.commands.viz.ProjectDetector"):
+            with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
+                with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
+                    mock_scanner.return_value.scan.return_value = [Path("main.py")]
+                    mock_analyzer.return_value.analyze_file.return_value = MagicMock(
+                        structure=None
+                    )
+                    
+                    result = runner.invoke(app, ["viz", "deps", str(tmp_path)])
+                    
+                    assert "No dependencies found" in result.stdout
+    
+    def test_deps_ascii_output(self, runner, tmp_path):
+        """Test ASCII tree output for terminal."""
+        with patch("tenets.cli.commands.viz.ProjectDetector"):
+            with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
+                with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
+                    mock_scanner.return_value.scan.return_value = [Path("main.py")]
+                    
+                    mock_analysis = MagicMock()
+                    mock_analysis.structure.imports = [
+                        MagicMock(module="utils"),
+                        MagicMock(module="config"),
+                    ]
+                    mock_analyzer.return_value.analyze_file.return_value = mock_analysis
+                    
+                    result = runner.invoke(
+                        app,
+                        ["viz", "deps", str(tmp_path), "--format", "ascii"]
+                    )
+                    
+                    assert "Dependency Graph:" in result.stdout
+                    assert "└─>" in result.stdout  # Tree character

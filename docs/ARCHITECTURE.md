@@ -1794,29 +1794,93 @@ class HTMLFormatter:
 
 ### Visualization Components
 
-The visualization system provides rich visual representations of code analysis:
+The visualization system provides rich visual representations of code analysis with intelligent project detection:
 
 ```mermaid
 graph LR
-    subgraph "Chart Types"
-        BAR[Bar Charts<br/>File metrics]
-        PIE[Pie Charts<br/>Language distribution]
-        HEAT[Heatmaps<br/>Complexity visualization]
-        GRAPH[Network Graphs<br/>Dependencies]
+    subgraph "Project Detection"
+        DETECTOR[Project Detector<br/>Auto-detects type]
+        LANGUAGES[Language Analysis<br/>% distribution]
+        FRAMEWORKS[Framework Detection<br/>Django, React, etc]
+        ENTRYPOINTS[Entry Points<br/>main.py, index.js]
     end
 
-    subgraph "Data Sources"
-        METRICS[Code Metrics]
-        RANKINGS[Relevance Rankings]
-        TOKENS[Token Distribution]
-        COVERAGE[Test Coverage]
+    subgraph "Graph Generation"
+        GRAPHGEN[Graph Generator<br/>Multiple formats]
+        NETWORKX[NetworkX<br/>Graph algorithms]
+        GRAPHVIZ[Graphviz<br/>DOT rendering]
+        PLOTLY[Plotly<br/>Interactive HTML]
+        D3JS[D3.js<br/>Web visualization]
     end
 
-    METRICS --> BAR
-    RANKINGS --> HEAT
-    TOKENS --> PIE
-    COVERAGE --> GRAPH
+    subgraph "Dependency Visualization"
+        FILE_DEPS[File-level<br/>Individual files]
+        MODULE_DEPS[Module-level<br/>Aggregated modules]
+        PACKAGE_DEPS[Package-level<br/>Top-level packages]
+        CLUSTERING[Clustering<br/>Group by criteria]
+    end
+
+    subgraph "Output Formats"
+        ASCII[ASCII Tree<br/>Terminal output]
+        SVG[SVG<br/>Vector graphics]
+        PNG[PNG/PDF<br/>Static images]
+        HTML_INT[Interactive HTML<br/>D3.js/Plotly]
+        DOT[DOT Format<br/>Graphviz source]
+        JSON_OUT[JSON<br/>Raw data]
+    end
+
+    subgraph "Layout Algorithms"
+        HIERARCHICAL[Hierarchical<br/>Tree layout]
+        CIRCULAR[Circular<br/>Radial layout]
+        SHELL[Shell<br/>Concentric circles]
+        KAMADA[Kamada-Kawai<br/>Force-directed]
+    end
+
+    DETECTOR --> LANGUAGES
+    DETECTOR --> FRAMEWORKS
+    DETECTOR --> ENTRYPOINTS
+    
+    GRAPHGEN --> NETWORKX
+    GRAPHGEN --> GRAPHVIZ
+    GRAPHGEN --> PLOTLY
+    GRAPHGEN --> D3JS
+    
+    FILE_DEPS --> MODULE_DEPS
+    MODULE_DEPS --> PACKAGE_DEPS
+    PACKAGE_DEPS --> CLUSTERING
+    
+    GRAPHGEN --> ASCII
+    GRAPHGEN --> SVG
+    GRAPHGEN --> PNG
+    GRAPHGEN --> HTML_INT
+    GRAPHGEN --> DOT
+    GRAPHGEN --> JSON_OUT
 ```
+
+#### Project Detection System
+
+The new ProjectDetector automatically identifies:
+- **Project Type**: Python package, Node.js app, Django project, React app, etc.
+- **Language Distribution**: Percentages of each language in the codebase
+- **Frameworks**: Detects Django, Flask, React, Vue, Spring, Rails, etc.
+- **Entry Points**: Finds main.py, index.js, package.json main field, etc.
+- **Project Structure**: Identifies src/, tests/, docs/ directories
+
+#### Dependency Visualization Modes
+
+Three levels of dependency aggregation:
+1. **File-level**: Shows individual file dependencies (detailed view)
+2. **Module-level**: Aggregates to module/directory level (balanced view)  
+3. **Package-level**: Shows only top-level package dependencies (high-level view)
+
+#### Graph Generation Features
+
+- **Multiple Formats**: SVG, PNG, PDF, HTML, DOT, JSON
+- **Pure Python**: All dependencies installable via pip (no system deps)
+- **Interactive HTML**: D3.js or Plotly-based interactive visualizations
+- **Clustering**: Group nodes by directory, module, or package
+- **Layout Algorithms**: Hierarchical, circular, shell, force-directed
+- **Node Limiting**: Handle large graphs with --max-nodes option
 
 ### Integration with Report Generator
 
@@ -1838,6 +1902,25 @@ tenets distill "analyze security" --format html --verbose -o security_context.ht
 
 # Generate report with custom styling
 tenets distill "refactor database" --format html --theme dark -o refactor.html
+
+# Dependency visualization with auto-detection
+tenets viz deps .  # Auto-detects project type and generates ASCII tree
+tenets viz deps . --output deps.svg  # Generate SVG dependency graph
+tenets viz deps . --format html --output interactive.html  # Interactive visualization
+
+# Different aggregation levels
+tenets viz deps . --level file  # Show all file dependencies (detailed)
+tenets viz deps . --level module  # Aggregate by module (balanced)
+tenets viz deps . --level package  # Show package architecture (high-level)
+
+# Advanced visualization options
+tenets viz deps . --cluster-by directory --layout circular  # Circular with clustering
+tenets viz deps . --max-nodes 100 --format png  # Limit to top 100 nodes
+tenets viz deps src/ --include "*.py" --exclude "*test*"  # Filter files
+
+# Export formats
+tenets viz deps . --format dot --output graph.dot  # Graphviz DOT for further processing
+tenets viz deps . --format json --output data.json  # Raw JSON for custom tools
 ```
 
 ### Performance Optimizations

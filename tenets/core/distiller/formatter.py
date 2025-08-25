@@ -367,6 +367,13 @@ class ContextFormatter:
             "files": [],
         }
 
+        # Attach NLP normalization metadata if present
+        try:
+            if isinstance(prompt_context.metadata, dict) and "nlp_normalization" in prompt_context.metadata:
+                data["analysis"]["nlp_normalization"] = prompt_context.metadata["nlp_normalization"]
+        except Exception:
+            pass
+
         # Add files
         for file_info in aggregated["included_files"]:
             file = file_info["file"]
@@ -1124,6 +1131,46 @@ class ContextFormatter:
         </section>
         """
 
+        # Build NLP normalization summary if available
+        nlp_norm_html = ""
+        try:
+            nmeta = getattr(prompt_context, "metadata", {}) or {}
+            nn = nmeta.get("nlp_normalization")
+            if isinstance(nn, dict):
+                kw = nn.get("keywords", {})
+                ent = nn.get("entities", {})
+                # Show up to 5 keyword normalization entries
+                rows = []
+                norm_map = kw.get("normalized", {})
+                count = 0
+                for k, info in norm_map.items():
+                    steps = ", ".join(info.get("steps", []))
+                    variants = ", ".join(info.get("variants", [])[:4])
+                    rows.append(f"<tr><td>{self._escape_html(k)}</td><td>{self._escape_html(steps)}</td><td>{self._escape_html(variants)}</td></tr>")
+                    count += 1
+                    if count >= 5:
+                        break
+                table_rows = "\n".join(rows) if rows else "<tr><td colspan=3>No normalization details available</td></tr>"
+                nlp_norm_html = f"""
+        <section class="metadata-section">
+            <h2>🧠 NLP Normalization</h2>
+            <table class="metadata-table">
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>Keywords (original → normalized)</td><td>{kw.get('original_total', 0)} → {kw.get('total', 0)}</td></tr>
+                <tr><td>Entities recognized</td><td>{ent.get('total', 0)}</td></tr>
+            </table>
+            <h3 style="margin-top: 1rem;">Examples</h3>
+            <div class="table-wrapper">
+              <table class="metadata-table">
+                <tr><th>Original</th><th>Steps</th><th>Variants (sample)</th></tr>
+                {table_rows}
+              </table>
+            </div>
+        </section>
+                """
+        except Exception:
+            nlp_norm_html = ""
+
         # Build statistics section with chart
         stats_section = f"""
         <section>
@@ -1225,6 +1272,7 @@ class ContextFormatter:
         files_tab_content = f"""
         <div id="files-tab" class="tab-content active">
             {prompt_section}
+            {nlp_norm_html}
             {stats_section}
             {"".join(files_section)}
             {git_section}

@@ -265,9 +265,21 @@ class CodeAnalyzer:
                     analysis_results = analyzer.analyze(content, file_path)
 
                     # Update analysis object with results
-                    analysis.imports = analysis_results.get("imports", [])
+                    # Collect results
+                    imports = analysis_results.get("imports", [])
+                    analysis.imports = imports
                     analysis.exports = analysis_results.get("exports", [])
-                    analysis.structure = analysis_results.get("structure", CodeStructure())
+                    structure = analysis_results.get("structure", CodeStructure())
+                    # Ensure imports are accessible via structure as well for downstream tools
+                    try:
+                        if hasattr(structure, "imports"):
+                            # Only set if empty to respect analyzers that already populate it
+                            if not getattr(structure, "imports", None):
+                                structure.imports = imports
+                    except Exception:
+                        # Be defensive; never fail analysis due to structure syncing
+                        pass
+                    analysis.structure = structure
                     analysis.complexity = analysis_results.get("complexity", ComplexityMetrics())
 
                     # Extract additional information
