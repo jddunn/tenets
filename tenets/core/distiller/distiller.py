@@ -66,6 +66,7 @@ class Distiller:
         remove_comments: bool = False,
         pinned_files: Optional[List[Path]] = None,
         include_tests: Optional[bool] = None,
+        docstring_weight: Optional[float] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -166,6 +167,7 @@ class Distiller:
             full=full,
             condense=condense,
             remove_comments=remove_comments,
+            docstring_weight=docstring_weight,
         )
 
         # 8. Format the output
@@ -379,6 +381,7 @@ class Distiller:
         full: bool = False,
         condense: bool = False,
         remove_comments: bool = False,
+        docstring_weight: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget."""
         return self.aggregator.aggregate(
@@ -390,6 +393,7 @@ class Distiller:
             full=full,
             condense=condense,
             remove_comments=remove_comments,
+            docstring_weight=docstring_weight,
         )
 
     def _format_output(

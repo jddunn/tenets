@@ -10,18 +10,25 @@ Consolidates all keyword extraction logic to avoid duplication.
 """
 
 import math
+import sys
 from collections import Counter, defaultdict
 from typing import Dict, List, Set, Tuple, Union
 
 from tenets.utils.logger import get_logger
 
-# Try to import YAKE
+# Try to import YAKE - disable on Python 3.13+ due to compatibility issues
 try:
-    import yake
-
-    YAKE_AVAILABLE = True
+    # YAKE 0.6.0 has a known issue with Python 3.13 causing infinite loops
+    # See: https://github.com/LIAAD/yake/issues
+    if sys.version_info[:2] >= (3, 13):
+        YAKE_AVAILABLE = False
+        yake = None
+    else:
+        import yake
+        YAKE_AVAILABLE = True
 except ImportError:
     YAKE_AVAILABLE = False
+    yake = None
 
 
 class KeywordExtractor:
@@ -54,8 +61,15 @@ class KeywordExtractor:
         self.use_stopwords = use_stopwords
         self.stopword_set = stopword_set
 
+        # Log warning for Python 3.13 users
+        if use_yake and not YAKE_AVAILABLE and sys.version_info[:2] >= (3, 13):
+            self.logger.warning(
+                "YAKE keyword extraction disabled on Python 3.13+ due to compatibility issues. "
+                "Using fallback extraction methods."
+            )
+
         # Initialize YAKE if available
-        if self.use_yake:
+        if self.use_yake and yake is not None:
             self.yake_extractor = yake.KeywordExtractor(
                 lan=language,
                 n=3,  # Max n-gram size

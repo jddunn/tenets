@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from tenets.config import TenetsConfig
-from tenets.core.git import GitAnalyzer
+from tenets.core.git.analyzer import GitAnalyzer  # Fix circular import
 from tenets.utils.logger import get_logger
 
 

@@ -46,11 +46,27 @@ import functools
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import Optional, Tuple, Callable, Any, Dict
+from typing import Optional, Tuple, Callable, Any, Dict, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rich.console import Console
 import logging
 
-from rich.console import Console
-from rich.text import Text
+# Lazy load Rich to improve import performance
+Console = None
+Text = None
+
+def _ensure_rich_imported():
+    """Import Rich when actually needed."""
+    global Console, Text
+    if Console is None:
+        try:
+            from rich.console import Console as _Console
+            from rich.text import Text as _Text
+            Console = _Console
+            Text = _Text
+        except ImportError:
+            pass
 
 
 __all__ = [
@@ -174,7 +190,7 @@ def format_time_range(start: datetime, end: datetime) -> str:
 class CommandTimer:
     """Timer for CLI commands with formatted output."""
     
-    def __init__(self, console: Optional[Console] = None, quiet: bool = False):
+    def __init__(self, console: Optional[Any] = None, quiet: bool = False):
         """
         Initialize command timer.
         
@@ -182,12 +198,15 @@ class CommandTimer:
             console: Rich console for output
             quiet: If True, suppress timing output
         """
-        self.console = console or Console()
+        _ensure_rich_imported()
+        self.console = console or (Console() if Console else None)
         self.quiet = quiet
         self.start_time: Optional[float] = None
         self.end_time: Optional[float] = None
         self.start_datetime: Optional[datetime] = None
         self.end_datetime: Optional[datetime] = None
+        # Check if we can use emojis
+        self._use_emojis = self._check_emoji_support()
         
     def start(self, message: Optional[str] = None) -> None:
         """
@@ -199,9 +218,12 @@ class CommandTimer:
         self.start_time = time.perf_counter()
         self.start_datetime = datetime.now()
         
-        if not self.quiet and message:
+        if not self.quiet and message and self.console:
             timestamp = self.start_datetime.strftime("%H:%M:%S")
-            self.console.print(f"[dim]🕐 {timestamp}[/dim] {message}")
+            if self._use_emojis:
+                self.console.print(f"[dim]🕐 {timestamp}[/dim] {message}")
+            else:
+                self.console.print(f"[dim][{timestamp}][/dim] {message}")
             
     def stop(self, message: Optional[str] = None) -> TimingResult:
         """
@@ -231,14 +253,40 @@ class CommandTimer:
             end_datetime=self.end_datetime,
         )
         
-        if not self.quiet:
+        if not self.quiet and self.console:
             timestamp = self.end_datetime.strftime("%H:%M:%S")
             if message:
-                self.console.print(f"[dim]✅ {timestamp}[/dim] {message} [green]({formatted})[/green]")
+                if self._use_emojis:
+                    self.console.print(f"[dim]✅ {timestamp}[/dim] {message} [green]({formatted})[/green]")
+                else:
+                    self.console.print(f"[dim][OK {timestamp}][/dim] {message} [green]({formatted})[/green]")
             else:
-                self.console.print(f"[dim]✅ {timestamp}[/dim] Completed in [green]{formatted}[/green]")
+                if self._use_emojis:
+                    self.console.print(f"[dim]✅ {timestamp}[/dim] Completed in [green]{formatted}[/green]")
+                else:
+                    self.console.print(f"[dim][OK {timestamp}][/dim] Completed in [green]{formatted}[/green]")
                 
         return result
+    
+    def _check_emoji_support(self) -> bool:
+        """Check if the terminal supports emoji characters.
+        
+        Returns:
+            True if emojis are supported, False otherwise
+        """
+        import sys
+        import locale
+        
+        # Check encoding
+        encoding = sys.stdout.encoding or locale.getpreferredencoding()
+        if encoding:
+            encoding = encoding.lower()
+            # Common encodings that don't support emojis
+            if any(enc in encoding for enc in ['cp1252', 'cp437', 'ascii', 'latin']):
+                return False
+        
+        # UTF-8 and similar support emojis
+        return True
     
     def display_summary(self, result: Optional[TimingResult] = None) -> None:
         """
@@ -257,7 +305,7 @@ class CommandTimer:
                 end_datetime=self.end_datetime,
             )
             
-        if result and not self.quiet:
+        if result and not self.quiet and self.console:
             self.console.print("\n[cyan]═══ Timing Summary ═══[/cyan]")
             self.console.print(f"  Started:  {result.start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
             self.console.print(f"  Finished: {result.end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -267,7 +315,7 @@ class CommandTimer:
 @contextmanager
 def timed_operation(
     name: str, 
-    console: Optional[Console] = None, 
+    console: Optional[Any] = None, 
     quiet: bool = False,
     show_summary: bool = False
 ):
@@ -323,7 +371,7 @@ def format_progress_time(elapsed: float, total: Optional[float] = None) -> str:
 def timed(
     name: Optional[str] = None,
     log_output: bool = False,
-    console: Optional[Console] = None,
+    console: Optional[Any] = None,
     quiet: bool = False,
     include_args: bool = False,
     include_result: bool = False,

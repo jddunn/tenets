@@ -5,14 +5,17 @@ maximizes relevance while staying within token constraints.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from tenets.config import TenetsConfig
-from tenets.core.summarizer import Summarizer
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
 from tenets.utils.logger import get_logger
 from tenets.utils.tokens import count_tokens
+
+# Lazy import Summarizer to avoid loading ML dependencies at import time
+if TYPE_CHECKING:
+    from tenets.core.summarizer import Summarizer
 
 
 @dataclass
@@ -37,7 +40,7 @@ class ContextAggregator:
         """
         self.config = config
         self.logger = get_logger(__name__)
-        self.summarizer = Summarizer(config)
+        self._summarizer = None  # Lazy loaded when needed
 
         # Define aggregation strategies
         # Note: min_relevance should be <= ranking threshold (default 0.1) to avoid filtering out ranked files
@@ -53,6 +56,14 @@ class ContextAggregator:
             ),
         }
 
+    @property
+    def summarizer(self):
+        """Lazy load summarizer when needed."""
+        if self._summarizer is None:
+            from tenets.core.summarizer import Summarizer
+            self._summarizer = Summarizer(self.config)
+        return self._summarizer
+
     def aggregate(
         self,
         files: List[FileAnalysis],
@@ -64,6 +75,7 @@ class ContextAggregator:
         full: bool = False,
         condense: bool = False,
         remove_comments: bool = False,
+        docstring_weight: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget.
 
@@ -181,12 +193,26 @@ class ContextAggregator:
                     # Calculate target ratio based on desired token reduction
                     target_ratio = min(0.5, summary_tokens / file_tokens)
 
-                    summary = self.summarizer.summarize_file(
-                        file=file,
-                        target_ratio=target_ratio,
-                        preserve_structure=True,
-                        prompt_keywords=prompt_context.keywords if prompt_context else None,
-                    )
+                    # Apply docstring weight override if provided
+                    if docstring_weight is not None:
+                        # Temporarily override the config
+                        original_weight = getattr(self.config.summarizer, "docstring_weight", 0.5)
+                        self.config.summarizer.docstring_weight = docstring_weight
+                        summary = self.summarizer.summarize_file(
+                            file=file,
+                            target_ratio=target_ratio,
+                            preserve_structure=True,
+                            prompt_keywords=prompt_context.keywords if prompt_context else None,
+                        )
+                        # Restore original weight
+                        self.config.summarizer.docstring_weight = original_weight
+                    else:
+                        summary = self.summarizer.summarize_file(
+                            file=file,
+                            target_ratio=target_ratio,
+                            preserve_structure=True,
+                            prompt_keywords=prompt_context.keywords if prompt_context else None,
+                        )
 
                     # Get actual token count of summary
                     summary_content = (

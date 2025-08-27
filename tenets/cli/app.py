@@ -51,13 +51,16 @@ def _check_git_availability(ctx: typer.Context) -> bool:
         git_related_commands = ["chronicle", "momentum", "examine", "distill"]
 
         if invoked_command in git_related_commands:
-            console.print(
+            # Rich console doesn't have stderr parameter, use file parameter instead
+            import sys
+            from rich.console import Console
+            err_console = Console(stderr=True, file=sys.stderr)
+            err_console.print(
                 "[yellow]⚠ Git is not available or not in PATH.[/yellow]\n"
                 "[dim]Git-related features (history analysis, authorship tracking) will be disabled.[/dim]\n"
                 "[dim]All other features will work normally. To enable git features:[/dim]\n"
                 "[dim]  • Install git: https://git-scm.com/downloads[/dim]\n"
-                "[dim]  • Ensure git is in your system PATH[/dim]\n",
-                stderr=True,
+                "[dim]  • Ensure git is in your system PATH[/dim]\n"
             )
 
     return False

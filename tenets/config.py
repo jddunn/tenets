@@ -24,7 +24,15 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import yaml
+# Lazy load yaml - only import when needed
+yaml = None
+
+def _ensure_yaml_imported():
+    """Import yaml when actually needed."""
+    global yaml
+    if yaml is None:
+        import yaml as _yaml
+        yaml = _yaml
 
 # Logger imported locally to avoid circular imports
 
@@ -621,6 +629,10 @@ class SummarizerConfig:
     docs_context_min_confidence: float = 0.6  # Minimum confidence for context relevance (0.0-1.0)
     docs_context_max_sections: int = 10  # Maximum contextual sections to preserve per document
     docs_context_preserve_examples: bool = True  # Always preserve code examples and snippets
+    
+    # Code structure extraction settings
+    docstring_weight: float = 0.5  # Weight for including docstrings (0=never, 0.5=balanced, 1.0=always)
+    include_all_signatures: bool = True  # Include all class/function signatures (not just top N)
 
 
 @dataclass
@@ -1065,6 +1077,7 @@ class TenetsConfig:
         try:
             with open(path) as f:
                 if path.suffix in [".yml", ".yaml"]:
+                    _ensure_yaml_imported()  # Import yaml when needed
                     data = yaml.safe_load(f) or {}
                 elif path.suffix == ".json":
                     data = json.load(f)
@@ -1353,6 +1366,7 @@ class TenetsConfig:
             if save_path.suffix == ".json":
                 json.dump(config_dict, f, indent=2)
             else:
+                _ensure_yaml_imported()  # Import yaml when needed
                 yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
 
         self._logger.info(f"Configuration saved to {save_path}")

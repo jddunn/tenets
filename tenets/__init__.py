@@ -204,10 +204,10 @@ class Tenets:
         self.logger = get_logger(__name__)
         self.logger.info(f"Initializing Tenets v{__version__}")
 
-        # Initialize core components using module-level factories (patchable in tests)
-        self.distiller = Distiller(self.config)
-        self.instiller = Instiller(self.config)
-        self.tenet_manager = self.instiller.manager
+        # Lazy-load core components to improve import performance
+        self._distiller = None
+        self._instiller = None
+        self._tenet_manager = None
 
         # Session management
         self._session = None
@@ -217,6 +217,29 @@ class Tenets:
         self._cache = {}
 
         self.logger.info("Tenets initialization complete")
+
+    @property
+    def distiller(self):
+        """Lazy load distiller when needed."""
+        if self._distiller is None:
+            self._distiller = Distiller(self.config)
+        return self._distiller
+
+    @property
+    def instiller(self):
+        """Lazy load instiller when needed."""
+        if self._instiller is None:
+            self._instiller = Instiller(self.config)
+        return self._instiller
+
+    @property
+    def tenet_manager(self):
+        """Lazy load tenet manager when needed."""
+        if self._tenet_manager is None:
+            if self._instiller is None:
+                self._instiller = Instiller(self.config)
+            self._tenet_manager = self._instiller.manager
+        return self._tenet_manager
 
     # ============= Core Distillation Methods =============
 
@@ -238,6 +261,7 @@ class Tenets:
         condense: bool = False,
         remove_comments: bool = False,
         include_tests: Optional[bool] = None,
+        docstring_weight: Optional[float] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -358,6 +382,7 @@ class Tenets:
             remove_comments=remove_comments,
             pinned_files=pinned_files or None,
             include_tests=include_tests,
+            docstring_weight=docstring_weight,
         )
 
         # Inject system instruction if configured

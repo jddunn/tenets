@@ -10,13 +10,32 @@ import logging
 import os
 from typing import Optional
 
-_RICH_INSTALLED = False
-try:
-    from rich.logging import RichHandler  # type: ignore
+# Lazy load Rich to improve import performance
+RichHandler = None
+Console = None
 
-    _RICH_INSTALLED = True
-except Exception:  # pragma: no cover
-    _RICH_INSTALLED = False
+def _check_rich_available():
+    """Check if Rich is available."""
+    try:
+        import importlib.util
+        spec = importlib.util.find_spec("rich")
+        return spec is not None
+    except (ImportError, AttributeError):
+        return False
+
+_RICH_INSTALLED = _check_rich_available()
+
+def _ensure_rich_imported():
+    """Import Rich when actually needed."""
+    global RichHandler, Console
+    if RichHandler is None and _RICH_INSTALLED:
+        try:
+            from rich.logging import RichHandler as _RichHandler
+            from rich.console import Console as _Console
+            RichHandler = _RichHandler
+            Console = _Console
+        except Exception:
+            pass
 
 _CONFIGURED = False
 _CURRENT_LEVEL = None
@@ -42,23 +61,22 @@ def _configure_root(level: int) -> None:
 
     # Create or update a handler
     if _RICH_INSTALLED:
+        _ensure_rich_imported()  # Import Rich when needed
         # Try to reuse an existing RichHandler if present
         handler = None
         for h in root.handlers:
             if h.__class__.__name__ == "RichHandler":
                 handler = h
                 break
-        if handler is None:
+        if handler is None and RichHandler is not None:
             # Force a reasonable width to prevent character wrapping
             import shutil
-
-            from rich.console import Console
 
             # Get terminal width or use a reasonable default
             terminal_width = shutil.get_terminal_size(fallback=(120, 24)).columns
             # Use at least 120 columns to prevent wrapping
             width = max(120, terminal_width)
-            console = Console(width=width, force_terminal=True, legacy_windows=False)
+            console = Console(width=width, force_terminal=True, legacy_windows=False) if Console else None
             handler = RichHandler(
                 rich_tracebacks=True,
                 show_time=True,

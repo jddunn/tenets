@@ -9,15 +9,17 @@ The chronicle functionality provides a narrative view of repository changes,
 making it easy to understand what happened, when, and by whom.
 """
 
+import os
 import re
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from tenets.config import TenetsConfig
-from tenets.core.git import GitAnalyzer
+from tenets.core.git.analyzer import GitAnalyzer  # Fix circular import
 from tenets.utils.logger import get_logger
 
 
@@ -391,7 +393,9 @@ class Chronicle:
             report.summary = "No commits found in the specified period"
             return report
 
-        # Process commits
+        # Process commits sequentially
+        # Note: Parallelization was attempted but GitPython commit objects
+        # are not thread-safe and accessing commit.stats is very expensive
         for commit in commits:
             commit_summary = self._process_commit(commit, include_stats)
             report.commits.append(commit_summary)
@@ -1065,7 +1069,7 @@ class ChronicleBuilder:
             author=(authors[0] if authors else None),  # basic filter support
             branch=branch,
             include_merges=include_merges,
-            include_stats=True,
+            include_stats=False,  # Disabled for performance - commit.stats is very expensive
             max_commits=limit or 1000,
         )
 
