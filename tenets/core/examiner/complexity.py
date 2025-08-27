@@ -633,12 +633,20 @@ class ComplexityAnalyzer:
 
             # Extract basic metrics
             if hasattr(file, "complexity") and file.complexity:
+                # file.complexity is a ComplexityMetrics object from models/analysis.py
                 file_complexity.metrics.cyclomatic = self._safe_int(
-                    getattr(file.complexity, "cyclomatic", 1), 1
+                    file.complexity.cyclomatic if hasattr(file.complexity, "cyclomatic") else 1, 1
                 )
                 file_complexity.metrics.cognitive = self._safe_int(
-                    getattr(file.complexity, "cognitive", 0), 0
+                    file.complexity.cognitive if hasattr(file.complexity, "cognitive") else 0, 0
                 )
+                # Copy other metrics if available
+                if hasattr(file.complexity, "halstead_volume"):
+                    file_complexity.metrics.halstead_volume = file.complexity.halstead_volume
+                if hasattr(file.complexity, "maintainability_index"):
+                    file_complexity.metrics.maintainability_index = file.complexity.maintainability_index
+                if hasattr(file.complexity, "max_depth"):
+                    file_complexity.metrics.nesting_depth = file.complexity.max_depth
 
             # Process functions
             if hasattr(file, "functions"):

@@ -10,6 +10,7 @@ import typer
 from rich import print
 from rich.console import Console
 from rich.panel import Panel
+from rich.markup import escape
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from tenets import Tenets
@@ -83,6 +84,13 @@ def distill(
         "--remove-comments",
         help="Strip comments (heuristic, language-aware) before counting tokens",
     ),
+    docstring_weight: Optional[float] = typer.Option(
+        None,
+        "--docstring-weight",
+        min=0.0,
+        max=1.0,
+        help="Weight for including docstrings in summaries (0=never, 0.5=balanced, 1.0=always)",
+    ),
     session: Optional[str] = typer.Option(
         None, "--session", "-s", help="Use session for stateful context building"
     ),
@@ -138,9 +146,10 @@ def distill(
     # Use the verbose parameter directly (it overrides context)
     quiet = state.get("quiet", False)
 
-    # Initialize timer - suppress output in JSON mode
+    # Initialize timer - suppress output in JSON/HTML modes when not outputting to file
     is_json_quiet = format.lower() == "json" and not output
-    timer = CommandTimer(console, quiet or is_json_quiet)
+    is_html_quiet = format.lower() == "html" and not output
+    timer = CommandTimer(console, quiet or is_json_quiet or is_html_quiet)
 
     try:
         # Start timing
@@ -188,6 +197,7 @@ def distill(
                     condense=condense,
                     remove_comments=remove_comments,
                     include_tests=test_inclusion,
+                    docstring_weight=docstring_weight,
                 )
         else:
             # No progress bar in quiet mode
@@ -206,6 +216,7 @@ def distill(
                 condense=condense,
                 remove_comments=remove_comments,
                 include_tests=test_inclusion,
+                docstring_weight=docstring_weight,
             )
 
         # Prepare metadata and interactivity flags
@@ -312,18 +323,25 @@ def distill(
         timing_result = timer.stop("Context distillation complete")
         
         # Build summary details
-        include_display = ",".join(include_patterns) if include_patterns else "(none)"
-        exclude_display = ",".join(exclude_patterns) if exclude_patterns else "(none)"
+        include_display_raw = ",".join(include_patterns) if include_patterns else "(none)"
+        exclude_display_raw = ",".join(exclude_patterns) if exclude_patterns else "(none)"
         git_display = "disabled" if no_git else "enabled (ranking only)"
-        session_display = session or "(none)"
+        session_display_raw = session or "(none)"
         max_tokens_display = str(max_tokens) if max_tokens else "model default"
+
+        # Escape dynamic strings for Rich markup safety
+        prompt_text = escape(str(prompt)[:80])
+        path_text = escape(str(path))
+        include_display = escape(include_display_raw)
+        exclude_display = escape(exclude_display_raw)
+        session_display = escape(session_display_raw)
 
         # Show a concise summary before content in interactive mode
         if interactive:
             console.print(
                 Panel(
-                    f"[bold]Prompt[/bold]: {str(prompt)[:80]}\n"
-                    f"Path: {path!s}\n"
+                    f"[bold]Prompt[/bold]: {prompt_text}\n"
+                    f"Path: {path_text}\n"
                     f"Mode: {metadata.get('mode', 'unknown')}  •  Format: {format}\n"
                     f"Full: {metadata.get('full_mode', full)}  •  Condense: {metadata.get('condense', condense)}  •  Remove Comments: {metadata.get('remove_comments', remove_comments)}\n"
                     f"Files: {files_included}/{files_analyzed}  •  Tokens: {token_count:,} / {max_tokens_display}\n"
@@ -340,10 +358,32 @@ def distill(
         if output:
             output.write_text(output_text, encoding="utf-8")
             if not quiet:
-                console.print(f"[green]✓[/green] Context saved to {output} [dim]({timing_result.formatted_duration})[/dim]")
+                console.print(f"[green]✓[/green] Context saved to {escape(str(output))} [dim]({timing_result.formatted_duration})[/dim]")
         elif format == "json":
             # Emit pure JSON without Rich formatting to keep stdout clean for parsers/tests
             print(output_text)
+        elif format == "html":
+            # For HTML, save to a default file if no output specified
+            if interactive:
+                # Auto-generate filename with timestamp and prompt info
+                from datetime import datetime
+                import re
+                
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                # Create safe prompt snippet for filename
+                prompt_str = prompt[:50] if prompt else "context"
+                safe_prompt = re.sub(r'[^\w\-_\s]', '', prompt_str)
+                safe_prompt = safe_prompt.replace(" ", "_")[:30]
+                safe_prompt = re.sub(r'_+', '_', safe_prompt)
+                
+                default_html = Path(f"distill_{safe_prompt}_{timestamp}.html")
+                default_html.write_text(output_text, encoding="utf-8")
+                console.print(f"[green]✓[/green] HTML context saved to {escape(str(default_html))} [dim]({timing_result.formatted_duration})[/dim]")
+                console.print(f"[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path")
+            else:
+                # Non-interactive mode: print raw HTML for piping
+                print(output_text)
         else:
             # Draw clear context boundaries in interactive TTY only
             if interactive:
@@ -478,7 +518,8 @@ def distill(
             if not quiet:
                 console.print(f"[dim]Failed after {timing_result.formatted_duration}[/dim]")
         
-        console.print(f"[red]Error:[/red] {e!s}")
+        # Escape dynamic error text to avoid Rich markup parsing issues (e.g., stray [ or ]).
+        console.print(f"[red]Error:[/red] {escape(str(e))}")
         if verbose:
             console.print_exception()
         raise typer.Exit(1)

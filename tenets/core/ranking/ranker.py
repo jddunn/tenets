@@ -31,11 +31,8 @@ from .strategies import (
     ThoroughRankingStrategy,
 )
 
-# Optional symbol for tests to patch ML model class
-try:  # pragma: no cover - optional dependency
-    from sentence_transformers import SentenceTransformer  # type: ignore
-except Exception:  # pragma: no cover
-    SentenceTransformer = None  # type: ignore
+# Optional symbol for tests to patch ML model class - lazy loaded when needed
+SentenceTransformer = None  # Will be imported lazily when ML ranking is used
 
 
 # Provide a module-level cosine_similarity function for tests to patch

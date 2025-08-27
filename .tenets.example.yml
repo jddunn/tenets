@@ -197,6 +197,31 @@ summarizer:
   # Preserve code structure (imports, function signatures)
   preserve_code_structure: true
   
+  # ---- DOCSTRING WEIGHT CONFIGURATION ----
+  # Control how much emphasis to place on docstrings when summarizing code
+  # This affects whether docstrings are included in summaries and how much space they take
+  
+  # Weight for including docstrings in code summaries
+  # Values: 0.0 to 1.0
+  #   0.0 = Never include docstrings (maximum compression, focuses on code structure only)
+  #   0.3 = Include only critical docstrings (high compression, minimal documentation)
+  #   0.5 = Default - Include important docstrings (balanced approach)
+  #   0.7 = Prefer including docstrings (less compression, more documentation context)
+  #   1.0 = Always include all docstrings (maximum documentation preservation)
+  # 
+  # Use cases:
+  # - Implementation/refactoring tasks: Use 0.0-0.3 to focus on code structure
+  # - API review/understanding: Use 0.7-1.0 to see interfaces and contracts
+  # - General analysis: Use 0.5 for balanced view (default)
+  #
+  # CLI override: tenets distill "task" --docstring-weight 0.8
+  docstring_weight: 0.5
+  
+  # Include all class and function signatures, not just top N
+  # When true: Shows ALL classes/functions found (comprehensive structure view)
+  # When false: Shows only top classes/functions (more compressed output)
+  include_all_signatures: true
+  
   # LLM Configuration (optional - requires API keys above)
   # llm_provider: ""  # openai, anthropic, openrouter
   # llm_model: ""     # gpt-3.5-turbo, gpt-4, claude-3-haiku, etc.

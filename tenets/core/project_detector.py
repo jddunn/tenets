@@ -40,9 +40,9 @@ class ProjectDetector:
             "server.ts",
             "package.json",
         ],
-        "web": [
+        "html": [
             "index.html",
-            "main.html",
+            "main.html", 
             "home.html",
             "app.html",
         ],
@@ -315,7 +315,14 @@ class ProjectDetector:
         if "django" in frameworks:
             return "django_project"
         elif "flask" in frameworks or "fastapi" in frameworks:
-            return "python_web_app"
+            # Double-check if it's actually a web app or just a package with requirements.txt
+            # Don't classify as web app if it has setup.py but no app.py/main.py
+            if ("setup.py" in entry_points or "pyproject.toml" in entry_points) and \
+               not any(ep in entry_points for ep in ["app.py", "application.py", "main.py"]):
+                # It's a package, not a web app
+                pass  # Fall through to language-based detection
+            else:
+                return "python_web_app"
         elif "react" in frameworks or "vue" in frameworks or "angular" in frameworks:
             return "frontend_spa"
         elif "next" in frameworks:

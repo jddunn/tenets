@@ -28,6 +28,55 @@ from tenets.viz import ComplexityVisualizer, HotspotVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
 
+# Initialize module logger
+logger = get_logger(__name__)
+
+
+def generate_auto_filename(path: str, format: str) -> str:
+    """Generate automatic filename for output.
+    
+    Args:
+        path: Path that was examined
+        format: Output format (html, json, etc.)
+        
+    Returns:
+        Generated filename with timestamp and normalized path
+    """
+    from datetime import datetime
+    import re
+    
+    # Get timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Normalize path for filename
+    # Convert path to a safe filename component
+    path_str = str(path).replace("\\", "/")
+    
+    # Handle special cases
+    if path_str in (".", "./", ""):
+        safe_path = "current_dir"
+    elif path_str == "..":
+        safe_path = "parent_dir"
+    else:
+        # Remove leading ./ or ../ 
+        path_str = re.sub(r'^\.+/+', '', path_str)
+        # Replace path separators with underscores
+        safe_path = path_str.replace("/", "_").replace("\\", "_")
+        # Remove any characters that aren't safe for filenames
+        safe_path = re.sub(r'[^\w\-_]', '', safe_path)
+        # Limit length
+        if len(safe_path) > 50:
+            safe_path = safe_path[:50]
+    
+    # Generate filename
+    filename = f"examine_{safe_path}_{timestamp}.{format}"
+    
+    # Ensure we don't have double underscores
+    filename = re.sub(r'_+', '_', filename)
+    
+    return filename
+
+
 # Backward-compatible aliases expected by tests
 # These allow tests to patch legacy symbols without importing core classes directly.
 CodeExaminer = Examiner  # alias for legacy name used in tests
@@ -46,6 +95,7 @@ def _run_examination(
     show_details: bool,
     hotspots: bool,
     ownership: bool,
+    complexity_trend: bool = False,
 ) -> None:
     """Core implementation for the examine command.
 
@@ -115,7 +165,7 @@ def _run_examination(
             # Map options to real API as best-effort
             real_result = examiner.examine_project(
                 normalize_path(target_path),
-                deep=True,  # Enable deep analysis to extract functions, classes, and complexity
+                deep=False,  # Disable deep AST analysis for speed (was causing 9+ minute runs)
                 include_git=True,
                 include_metrics=True,
                 include_complexity=True,
@@ -168,13 +218,28 @@ def _run_examination(
             ownership_analyzer = OwnershipAnalyzer(config)
             _own_report = ownership_analyzer.analyze_ownership(normalize_path(target_path))
             # Convert report object to dict for downstream consumers
-            if hasattr(_own_report, "to_dict"):
-                examination_results["ownership"] = _own_report.to_dict()
+            if _own_report is not None:
+                if hasattr(_own_report, "to_dict"):
+                    examination_results["ownership"] = _own_report.to_dict()
+                else:
+                    examination_results["ownership"] = dict(_own_report or {})
             else:
-                examination_results["ownership"] = dict(_own_report or {})
+                # If ownership analysis returns None, provide empty dict
+                examination_results["ownership"] = {}
 
         # Add the examined path to results for filename generation
         examination_results["path"] = str(target_path)
+
+        # If requested, attach placeholder complexity trend data for downstream renderers.
+        # This keeps CLI compatibility with README without breaking current outputs.
+        if complexity_trend:
+            # Ensure a complexity section exists
+            comp = examination_results.get("complexity")
+            if not isinstance(comp, dict):
+                comp = {}
+            # Only add "trend_data" if not already present to avoid overwriting real data
+            comp.setdefault("trend_data", [])
+            examination_results["complexity"] = comp
 
         # Stop timer
         timing_result = timer.stop("Examination complete")
@@ -192,7 +257,10 @@ def _run_examination(
             _print_summary(examination_results)
             # Show timing
             if not is_quiet:
-                click.echo(f"\n⏱  Completed in {timing_result.formatted_duration}")
+                try:
+                    click.echo(f"\n⏱  Completed in {timing_result.formatted_duration}")
+                except UnicodeEncodeError:
+                    click.echo(f"\n[TIMER] Completed in {timing_result.formatted_duration}")
         elif output_format.lower() == "json":
             _output_json_results(examination_results, output)
         else:
@@ -205,10 +273,23 @@ def _run_examination(
         if timer.start_time and not timer.end_time:
             timing_result = timer.stop("Examination failed")
             if not is_quiet:
-                click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
+                try:
+                    click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
+                except UnicodeEncodeError:
+                    click.echo(f"[WARNING] Failed after {timing_result.formatted_duration}")
         
-        logger.error(f"Examination failed: {e}")
-        click.echo(str(e))
+        import traceback
+        error_msg = str(e) if str(e) else f"{type(e).__name__}: {repr(e)}"
+        logger.error(f"Examination failed: {error_msg}")
+        logger.debug(f"Full traceback:\n{traceback.format_exc()}")
+        
+        # Show more helpful error message
+        if not str(e):
+            click.echo(f"ERROR: {type(e).__name__}")
+            click.echo("Run with --verbose or check logs for more details")
+        else:
+            click.echo(f"ERROR: {error_msg}")
+        
         raise SystemExit(1)
 
 
@@ -240,6 +321,11 @@ def run(
     show_details: bool = typer.Option(False, "--show-details", help="Show details"),
     hotspots: bool = typer.Option(False, "--hotspots", help="Include hotspot analysis"),
     ownership: bool = typer.Option(False, "--ownership", help="Include ownership analysis"),
+    complexity_trend: bool = typer.Option(
+        False,
+        "--complexity-trend",
+        help="Include complexity trend hook in results (experimental)",
+    ),
 ):
     """Typer app callback for the examine command.
 
@@ -258,6 +344,7 @@ def run(
         show_details=show_details,
         hotspots=hotspots,
         ownership=ownership,
+    complexity_trend=complexity_trend,
     )
 
 
@@ -270,10 +357,16 @@ def _display_terminal_results(results: Dict[str, Any], show_details: bool) -> No
     """
     display = TerminalDisplay()
 
-    # Display header
+    # Display header with path information
+    path_info = f"Path: {results.get('path', 'Unknown')}" if results.get('path') else ""
+    subtitle_parts = []
+    if path_info:
+        subtitle_parts.append(path_info)
+    subtitle_parts.append(f"Files analyzed: {results.get('total_files', 0)}")
+    
     display.display_header(
         "Code Examination Results",
-        subtitle=f"Files analyzed: {results.get('total_files', 0)}",
+        subtitle=" | ".join(subtitle_parts),
         style="double",
     )
 

@@ -19,6 +19,9 @@ from tenets.viz import ContributorVisualizer, MomentumVisualizer, TerminalDispla
 
 from ._utils import normalize_path
 
+# Initialize module logger
+logger = get_logger(__name__)
+
 # Expose a Typer app so tests can pass this object to typer.testing.CliRunner.
 # Use callback so invoking the app directly (without a subcommand) runs the handler.
 chronicle = typer.Typer(
@@ -395,7 +398,30 @@ def _generate_chronicle_report(
         title="Repository Chronicle Report", format=format, include_charts=True
     )
 
-    output_path = Path(output) if output else Path(f"chronicle_report.{format}")
+    if output:
+        output_path = Path(output)
+    else:
+        # Auto-generate filename with timestamp and path info
+        from datetime import datetime
+        import re
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Get safe path component from target_path
+        path_str = str(target_path).replace("\\", "/")
+        if path_str in (".", "./", ""):
+            safe_path = "current_dir"
+        else:
+            path_str = re.sub(r'^\.+/+', '', path_str)
+            safe_path = path_str.replace("/", "_").replace("\\", "_")
+            safe_path = re.sub(r'[^\w\-_]', '', safe_path)[:30]
+        
+        # Include period info in filename if available
+        period_str = period.replace(" ", "_").replace("-", "_") if period else "all"
+        
+        filename = f"chronicle_{safe_path}_{period_str}_{timestamp}.{format}"
+        filename = re.sub(r'_+', '_', filename)
+        output_path = Path(filename)
 
     generator.generate(data=chronicle, output_path=output_path, config=report_config)
 
