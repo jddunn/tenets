@@ -188,9 +188,10 @@
 /* Feature lists inside large cards */
 .feature-card-large .feature-list {
   margin: 0.5rem 0 0 0; /* keep tight to the title/description */
-  padding: 0 0 0 1.1rem; /* left-align bullets with modest indent */
-  list-style-position: outside;
-  text-align: left; /* ensure not centered by grid wrappers */
+  padding: 0; /* align exactly with the title's left edge */
+  list-style-type: disc; /* ensure default bullets appear */
+  list-style-position: inside; /* bullets + text flush with title */
+  text-align: left; /* explicit left align in case of inherited center */
 }
 .feature-card-large .feature-list li {
   margin: 0.25rem 0; /* reduce vertical spacing */

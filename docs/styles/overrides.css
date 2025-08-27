@@ -172,3 +172,30 @@ label.md-header__button[for="__search"] { display: none !important; }
     pointer-events: auto !important;
   }
 }
+
+/* ----------------------------------------------------
+   Core Features cards: force bullets fully flush-left
+   ---------------------------------------------------- */
+/* Target UL within the large feature cards on the home page */
+.md-typeset .features-grid .feature-card-large ul.feature-list,
+.features-grid .feature-card-large ul.feature-list,
+.feature-card-large ul.feature-list {
+  /* kill any theme/UA indentation */
+  margin: 0 !important;
+  margin-left: 0 !important;
+  padding: 0 !important;
+  padding-left: 0 !important;
+  padding-inline-start: 0 !important;
+  /* ensure we actually show bullets */
+  list-style-type: disc !important;
+  list-style-position: inside !important; /* bullet + text align with title edge */
+  text-align: left !important;
+}
+
+.md-typeset .features-grid .feature-card-large ul.feature-list > li,
+.features-grid .feature-card-large ul.feature-list > li,
+.feature-card-large ul.feature-list > li {
+  margin: 0 !important;
+  padding: 0 !important; /* no extra left pad on li items */
+  text-align: left !important;
+}
