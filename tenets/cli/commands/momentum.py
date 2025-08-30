@@ -621,6 +621,15 @@ def _generate_momentum_report(
     generator.generate(data=momentum_data, output_path=output_path, config=report_config)
 
     click.echo(f"Momentum report generated: {output_path}")
+    
+    # If HTML format, offer to open in browser
+    if format == "html":
+        if click.confirm("\nWould you like to open it in your browser now?", default=False):
+            import webbrowser
+            # Ensure absolute path for file URI
+            file_path = output_path.resolve()
+            webbrowser.open(file_path.as_uri())
+            click.echo("✓ Opened in browser")
 
 
 def _output_json_momentum(momentum_data: Dict[str, Any], output: Optional[str]) -> None:

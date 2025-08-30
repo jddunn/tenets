@@ -407,7 +407,8 @@ def _generate_chronicle_report(
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Get safe path component from target_path
+        # Get safe path component from current directory
+        target_path = Path.cwd()
         path_str = str(target_path).replace("\\", "/")
         if path_str in (".", "./", ""):
             safe_path = "current_dir"
@@ -417,7 +418,7 @@ def _generate_chronicle_report(
             safe_path = re.sub(r'[^\w\-_]', '', safe_path)[:30]
         
         # Include period info in filename if available
-        period_str = period.replace(" ", "_").replace("-", "_") if period else "all"
+        period_str = chronicle.get('period', 'all').replace(" ", "_").replace("-", "_")
         
         filename = f"chronicle_{safe_path}_{period_str}_{timestamp}.{format}"
         filename = re.sub(r'_+', '_', filename)
@@ -426,6 +427,15 @@ def _generate_chronicle_report(
     generator.generate(data=chronicle, output_path=output_path, config=report_config)
 
     click.echo(f"Chronicle report generated: {output_path}")
+    
+    # If HTML format, offer to open in browser
+    if format == "html":
+        if click.confirm("\nWould you like to open it in your browser now?", default=False):
+            import webbrowser
+            # Ensure absolute path for file URI
+            file_path = output_path.resolve()
+            webbrowser.open(file_path.as_uri())
+            click.echo("✓ Opened in browser")
 
 
 def _output_json_chronicle(chronicle: Dict[str, Any], output: Optional[str]) -> None:

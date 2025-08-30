@@ -251,25 +251,67 @@ def mock_external_dependencies(monkeypatch, request):
     import sys
     import types
 
-    try:
-        monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
-    except ModuleNotFoundError:
-        # Create a minimal stub so code importing sentence_transformers works
-        if importlib.util.find_spec("sentence_transformers") is None:
-            stub = types.ModuleType("sentence_transformers")
+    # On Python 3.13, use a lighter approach to prevent import issues
+    if sys.version_info[:2] >= (3, 13):
+        # Only stub the main problematic modules, not all their submodules
+        # This prevents the hanging issue while still protecting against unwanted imports
+        main_modules = [
+            'sentence_transformers',
+            'transformers',
+            'huggingface_hub',
+            'torch',
+            'nltk'
+        ]
+        
+        for module_name in main_modules:
+            if module_name not in sys.modules:
+                try:
+                    # Try to import the module first to see if it's available
+                    __import__(module_name)
+                except (ImportError, ModuleNotFoundError):
+                    # Only create stub if module doesn't exist
+                    stub = types.ModuleType(module_name)
+                    stub.__file__ = 'stub'
+                    stub.__loader__ = None
+                    stub.__package__ = None
+                    
+                    # Add SentenceTransformer for sentence_transformers
+                    if module_name == 'sentence_transformers':
+                        class SentenceTransformer:
+                            def __init__(self, *_, **__):
+                                pass
 
-            class SentenceTransformer:
-                def __init__(self, *_, **__):
-                    pass
+                            def encode(self, texts, **kwargs):
+                                if isinstance(texts, str):
+                                    texts = [texts]
+                                return [[float(len(t) % 7)] * 16 for t in texts]
+                        
+                        stub.SentenceTransformer = SentenceTransformer
+                    
+                    sys.modules[module_name] = stub
+    else:
+        # For Python < 3.13, use the original safer approach
+        try:
+            # Only try to patch if the module exists
+            if importlib.util.find_spec("sentence_transformers"):
+                monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
+        except (ModuleNotFoundError, AttributeError):
+            # Create a minimal stub so code importing sentence_transformers works
+            if "sentence_transformers" not in sys.modules:
+                stub = types.ModuleType("sentence_transformers")
 
-                def encode(self, texts, **kwargs):  # pragma: no cover - simple stub
-                    if isinstance(texts, str):
-                        texts = [texts]
-                    # Return deterministic small vectors based on text length
-                    return [[float(len(t) % 7)] * 16 for t in texts]
+                class SentenceTransformer:
+                    def __init__(self, *_, **__):
+                        pass
 
-            stub.SentenceTransformer = SentenceTransformer
-            sys.modules["sentence_transformers"] = stub
+                    def encode(self, texts, **kwargs):  # pragma: no cover - simple stub
+                        if isinstance(texts, str):
+                            texts = [texts]
+                        # Return deterministic small vectors based on text length
+                        return [[float(len(t) % 7)] * 16 for t in texts]
+
+                stub.SentenceTransformer = SentenceTransformer
+                sys.modules["sentence_transformers"] = stub
 
 
 # ============================================================================

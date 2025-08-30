@@ -975,7 +975,7 @@ class Chronicle:
 
 
 def create_chronicle(
-    repo_path: Path, since: Optional[str] = None, config: Optional[TenetsConfig] = None, **kwargs
+    repo_path: Path, since: Optional[str] = None, config: Optional[TenetsConfig] = None, **kwargs: Any
 ) -> ChronicleReport:
     """Convenience function to create a repository chronicle.
 

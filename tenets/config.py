@@ -18,6 +18,7 @@ Enhanced with comprehensive LLM provider support for optional AI-powered feature
 and centralized NLP configuration for all text processing operations.
 """
 
+import dataclasses
 import json
 import os
 from dataclasses import asdict, dataclass, field
@@ -468,6 +469,36 @@ class ScannerConfig:
     workers: int = 4
     parallel_mode: str = "auto"
     timeout: float = 5.0
+    exclude_minified: bool = True  # Exclude minified/built files by default
+    minified_patterns: List[str] = field(
+        default_factory=lambda: [
+            "*.min.js",
+            "*.min.css",
+            "bundle.js",
+            "*.bundle.js",
+            "*.bundle.css",
+            "*.production.js",
+            "*.prod.js",
+            "vendor.prod.js",
+            "*.dist.js",
+            "*.compiled.js",
+            "*.minified.*",
+            "*.uglified.*",
+        ]
+    )
+    build_directory_patterns: List[str] = field(
+        default_factory=lambda: [
+            "dist/",
+            "build/",
+            "out/",
+            "output/",
+            "public/",
+            "static/generated/",
+            ".next/",
+            "_next/",
+            "node_modules/",
+        ]
+    )
     exclude_tests_by_default: bool = True
     test_patterns: List[str] = field(
         default_factory=lambda: [
@@ -591,6 +622,8 @@ class SummarizerConfig:
         target_ratio: Default target compression ratio (0.3 = 30% of original)
         enable_cache: Whether to cache summaries
         preserve_code_structure: Whether to preserve imports/signatures in code
+        summarize_imports: Whether to condense imports into a summary (default: True)
+        import_summary_threshold: Number of imports to trigger summarization (default: 5)
         max_cache_size: Maximum number of cached summaries
         llm_provider: LLM provider for LLM mode (uses global LLM config)
         llm_model: LLM model to use (uses global LLM config)
@@ -611,6 +644,8 @@ class SummarizerConfig:
     target_ratio: float = 0.3
     enable_cache: bool = True
     preserve_code_structure: bool = True
+    summarize_imports: bool = True  # Condense imports into human-readable summary
+    import_summary_threshold: int = 5  # Minimum imports to trigger summarization
     max_cache_size: int = 100
     llm_provider: Optional[str] = None  # Uses global LLM config if not specified
     llm_model: Optional[str] = None  # Uses global LLM config if not specified
@@ -652,7 +687,6 @@ class TenetConfig:
         storage_path: Where to store tenet database
         collections_enabled: Whether to enable tenet collections
 
-        # Smart injection frequency settings
         injection_frequency: How often to inject tenets ('always', 'periodic', 'adaptive', 'manual')
         injection_interval: Numeric interval for periodic injection (e.g., every 3rd distill)
         session_complexity_threshold: Complexity threshold for smart injection (0-1)
@@ -662,18 +696,15 @@ class TenetConfig:
         decay_rate: How quickly tenet importance decays (0-1, higher = faster decay)
         reinforcement_interval: How often to reinforce critical tenets (every N injections)
 
-        # Session tracking settings
         session_aware: Enable session-aware injection patterns
         session_memory_limit: Max sessions to track in memory
         persist_session_history: Save session histories to disk
 
-        # Advanced injection settings
         complexity_weight: Weight given to complexity in injection decisions (0-1)
         priority_boost_critical: Boost factor for critical priority tenets
         priority_boost_high: Boost factor for high priority tenets
         skip_low_priority_on_complex: Skip low priority tenets when complexity > threshold
 
-        # Metrics and analysis
         track_effectiveness: Track tenet effectiveness metrics
         effectiveness_window_days: Days to consider for effectiveness analysis
         min_compliance_score: Minimum compliance score before reinforcement
@@ -978,8 +1009,14 @@ class TenetsConfig:
         4. Applies environment variables
         5. Validates configuration
         """
-        from tenets.utils.logger import get_logger
-        self._logger = get_logger(__name__)
+        # Defer logger import to avoid circular dependencies during testing
+        try:
+            from tenets.utils.logger import get_logger
+            self._logger = get_logger(__name__)
+        except (ImportError, ModuleNotFoundError):
+            # Fallback to a simple logger for testing
+            import logging
+            self._logger = logging.getLogger(__name__)
 
         # Resolve project root
         if not self.project_root:
@@ -1103,7 +1140,14 @@ class TenetsConfig:
 
             # Handle subsystem configs
             if key == "scanner" and isinstance(value, dict):
-                self.scanner = ScannerConfig(**value)
+                # Filter out unknown keys to prevent initialization errors
+                scanner_fields = {f.name for f in dataclasses.fields(ScannerConfig)}
+                filtered_value = {k: v for k, v in value.items() if k in scanner_fields}
+                # Store unknown keys in custom config
+                for k, v in value.items():
+                    if k not in scanner_fields:
+                        self.custom[f"scanner.{k}"] = v
+                self.scanner = ScannerConfig(**filtered_value)
             elif key == "ranking" and isinstance(value, dict):
                 self.ranking = RankingConfig(**value)
             elif key == "summarizer" and isinstance(value, dict):
@@ -1372,6 +1416,36 @@ class TenetsConfig:
         self._logger.info(f"Configuration saved to {save_path}")
 
     # Properties for compatibility and convenience
+    @property
+    def exclude_minified(self) -> bool:
+        """Get exclude_minified setting from scanner config."""
+        return self.scanner.exclude_minified
+    
+    @exclude_minified.setter
+    def exclude_minified(self, value: bool) -> None:
+        """Set exclude_minified setting in scanner config."""
+        self.scanner.exclude_minified = value
+    
+    @property
+    def minified_patterns(self) -> List[str]:
+        """Get minified patterns from scanner config."""
+        return self.scanner.minified_patterns
+    
+    @minified_patterns.setter
+    def minified_patterns(self, value: List[str]) -> None:
+        """Set minified patterns in scanner config."""
+        self.scanner.minified_patterns = value
+    
+    @property
+    def build_directory_patterns(self) -> List[str]:
+        """Get build directory patterns from scanner config."""
+        return self.scanner.build_directory_patterns
+    
+    @build_directory_patterns.setter
+    def build_directory_patterns(self, value: List[str]) -> None:
+        """Set build directory patterns in scanner config."""
+        self.scanner.build_directory_patterns = value
+    
     @property
     def cache_dir(self) -> Path:
         """Get the cache directory path."""

@@ -76,6 +76,7 @@ class ContextAggregator:
         condense: bool = False,
         remove_comments: bool = False,
         docstring_weight: Optional[float] = None,
+        summarize_imports: bool = True,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget.
 
@@ -193,19 +194,27 @@ class ContextAggregator:
                     # Calculate target ratio based on desired token reduction
                     target_ratio = min(0.5, summary_tokens / file_tokens)
 
-                    # Apply docstring weight override if provided
-                    if docstring_weight is not None:
+                    # Apply config overrides if provided
+                    if docstring_weight is not None or not summarize_imports:
                         # Temporarily override the config
                         original_weight = getattr(self.config.summarizer, "docstring_weight", 0.5)
-                        self.config.summarizer.docstring_weight = docstring_weight
+                        original_summarize = getattr(self.config.summarizer, "summarize_imports", True)
+                        
+                        if docstring_weight is not None:
+                            self.config.summarizer.docstring_weight = docstring_weight
+                        if not summarize_imports:
+                            self.config.summarizer.summarize_imports = False
+                            
                         summary = self.summarizer.summarize_file(
                             file=file,
                             target_ratio=target_ratio,
                             preserve_structure=True,
                             prompt_keywords=prompt_context.keywords if prompt_context else None,
                         )
-                        # Restore original weight
+                        
+                        # Restore original values
                         self.config.summarizer.docstring_weight = original_weight
+                        self.config.summarizer.summarize_imports = original_summarize
                     else:
                         summary = self.summarizer.summarize_file(
                             file=file,

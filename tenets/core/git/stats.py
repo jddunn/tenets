@@ -1108,7 +1108,7 @@ class GitStatsAnalyzer:
 
 
 def analyze_git_stats(
-    repo_path: Path, config: Optional[TenetsConfig] = None, **kwargs
+    repo_path: Path, config: Optional[TenetsConfig] = None, **kwargs: Any
 ) -> RepositoryStats:
     """Convenience function to analyze git statistics.
 

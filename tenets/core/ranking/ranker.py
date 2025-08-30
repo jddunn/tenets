@@ -35,53 +35,25 @@ from .strategies import (
 SentenceTransformer = None  # Will be imported lazily when ML ranking is used
 
 
-# Provide a module-level cosine_similarity function for tests to patch
-def cosine_similarity(a, b):  # pragma: no cover - simple fallback
-    try:
-
-        def to_vec(x):
-            try:
-                if hasattr(x, "detach"):
-                    x = x.detach()
-                if hasattr(x, "flatten"):
-                    x = x.flatten()
-                if hasattr(x, "tolist"):
-                    x = x.tolist()
-            except Exception:
-                pass
-
-            def flatten(seq):
-                for item in seq:
-                    if isinstance(item, (list, tuple)):
-                        yield from flatten(item)
-                    else:
-                        try:
-                            yield float(item)
-                        except Exception:
-                            yield 0.0
-
-            if isinstance(x, (list, tuple)):
-                return list(flatten(x))
-            try:
-                return [float(x)]
-            except Exception:
-                return [0.0]
-
-        va = to_vec(a)
-        vb = to_vec(b)
-        n = min(len(va), len(vb))
-        if n == 0:
+# Import cosine similarity from the central module
+try:
+    from tenets.core.nlp.similarity import cosine_similarity
+except ImportError:
+    # Fallback for tests or when similarity module not available
+    def cosine_similarity(a, b):  # pragma: no cover - simple fallback
+        try:
+            import math
+            # Simple dot product cosine similarity for lists
+            if not a or not b:
+                return 0.0
+            dot = sum(x * y for x, y in zip(a, b))
+            norm_a = math.sqrt(sum(x * x for x in a))
+            norm_b = math.sqrt(sum(y * y for y in b))
+            if norm_a == 0 or norm_b == 0:
+                return 0.0
+            return dot / (norm_a * norm_b)
+        except Exception:
             return 0.0
-        va = va[:n]
-        vb = vb[:n]
-        dot = sum(va[i] * vb[i] for i in range(n))
-        import math as _m
-
-        norm_a = _m.sqrt(sum(v * v for v in va)) or 1.0
-        norm_b = _m.sqrt(sum(v * v for v in vb)) or 1.0
-        return float(dot / (norm_a * norm_b))
-    except Exception:
-        return 0.0
 
 
 class RankingAlgorithm(Enum):

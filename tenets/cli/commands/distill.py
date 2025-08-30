@@ -67,6 +67,11 @@ def distill(
         "--exclude-tests",
         help="Explicitly exclude test files (even for test-related prompts)",
     ),
+    include_minified: bool = typer.Option(
+        False,
+        "--include-minified",
+        help="Include minified/built files (*.min.js, dist/, etc.) normally excluded",
+    ),
     # Features
     no_git: bool = typer.Option(False, "--no-git", help="Disable git context inclusion"),
     full: bool = typer.Option(
@@ -90,6 +95,11 @@ def distill(
         min=0.0,
         max=1.0,
         help="Weight for including docstrings in summaries (0=never, 0.5=balanced, 1.0=always)",
+    ),
+    no_summarize_imports: bool = typer.Option(
+        False,
+        "--no-summarize-imports",
+        help="Disable import summarization (show all imports verbatim)",
     ),
     session: Optional[str] = typer.Option(
         None, "--session", "-s", help="Use session for stateful context building"
@@ -197,7 +207,9 @@ def distill(
                     condense=condense,
                     remove_comments=remove_comments,
                     include_tests=test_inclusion,
+                    include_minified=include_minified,
                     docstring_weight=docstring_weight,
+                    summarize_imports=not no_summarize_imports,
                 )
         else:
             # No progress bar in quiet mode
@@ -216,7 +228,9 @@ def distill(
                 condense=condense,
                 remove_comments=remove_comments,
                 include_tests=test_inclusion,
+                include_minified=include_minified,
                 docstring_weight=docstring_weight,
+                summarize_imports=not no_summarize_imports,
             )
 
         # Prepare metadata and interactivity flags
@@ -359,6 +373,16 @@ def distill(
             output.write_text(output_text, encoding="utf-8")
             if not quiet:
                 console.print(f"[green]✓[/green] Context saved to {escape(str(output))} [dim]({timing_result.formatted_duration})[/dim]")
+                
+                # If HTML format and interactive, offer to open in browser
+                if format == "html" and interactive:
+                    import click
+                    if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                        import webbrowser
+                        # Ensure absolute path for file URI
+                        file_path = output.resolve()
+                        webbrowser.open(file_path.as_uri())
+                        console.print("[green]✓[/green] Opened in browser")
         elif format == "json":
             # Emit pure JSON without Rich formatting to keep stdout clean for parsers/tests
             print(output_text)
@@ -380,7 +404,17 @@ def distill(
                 default_html = Path(f"distill_{safe_prompt}_{timestamp}.html")
                 default_html.write_text(output_text, encoding="utf-8")
                 console.print(f"[green]✓[/green] HTML context saved to {escape(str(default_html))} [dim]({timing_result.formatted_duration})[/dim]")
-                console.print(f"[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path")
+                
+                # Offer to open in browser
+                import click
+                if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                    import webbrowser
+                    # Ensure absolute path for file URI
+                    file_path = default_html.resolve()
+                    webbrowser.open(file_path.as_uri())
+                    console.print("[green]✓[/green] Opened in browser")
+                else:
+                    console.print(f"[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path")
             else:
                 # Non-interactive mode: print raw HTML for piping
                 print(output_text)

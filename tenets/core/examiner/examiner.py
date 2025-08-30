@@ -738,7 +738,7 @@ class Examiner:
 
 
 def examine_directory(
-    path: Path, config: Optional[TenetsConfig] = None, **kwargs
+    path: Path, config: Optional[TenetsConfig] = None, **kwargs: Any
 ) -> ExaminationResult:
     """Convenience function to examine a directory.
 

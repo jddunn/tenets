@@ -262,6 +262,7 @@ class Tenets:
         remove_comments: bool = False,
         include_tests: Optional[bool] = None,
         docstring_weight: Optional[float] = None,
+        summarize_imports: bool = True,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -289,7 +290,7 @@ class Tenets:
             The metadata field includes timing information when available:
                 metadata['timing'] = {
                     'duration': 2.34,  # seconds
-                    'formatted_duration': '2.34s',
+                    'formatted_duration': '2.34s',  # Human-readable duration string
                     'start_datetime': '2024-01-15T10:30:45',
                     'end_datetime': '2024-01-15T10:30:47'
                 }
@@ -383,6 +384,7 @@ class Tenets:
             pinned_files=pinned_files or None,
             include_tests=include_tests,
             docstring_weight=docstring_weight,
+            summarize_imports=summarize_imports,
         )
 
         # Inject system instruction if configured

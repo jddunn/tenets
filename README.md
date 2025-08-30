@@ -649,17 +649,20 @@ Generate beautiful, interactive dependency graphs to understand your codebase st
 # Install visualization dependencies
 pip install tenets[viz]
 
-# Auto-detect project and generate dependency graph
-tenets viz deps . --output architecture.svg
+# Auto-detect project and generate dependency graph (ASCII by default)
+tenets viz deps
+
+# Generate SVG dependency graph
+tenets viz deps --output architecture.svg
 
 # Interactive HTML for exploration
-tenets viz deps . --format html --output interactive.html
+tenets viz deps --format html --output interactive.html
 # Open in browser for D3.js/Plotly interactive graph
 
 # Different views for different needs
-tenets viz deps . --level file      # Detailed file-level dependencies
-tenets viz deps . --level module    # Module-level aggregation (recommended)
-tenets viz deps . --level package   # High-level package architecture
+tenets viz deps --level file      # Detailed file-level dependencies
+tenets viz deps --level module    # Module-level aggregation (recommended)
+tenets viz deps --level package   # High-level package architecture
 
 # Understand specific subsystems
 tenets viz deps src/api --include "*.py" --exclude "*test*" --output api.svg
@@ -670,16 +673,16 @@ tenets viz deps frontend/ --include "*.js,*.jsx" --format html -o frontend.html
 
 ```bash
 # For documentation - clean package architecture
-tenets viz deps . --level package --format png --output docs/architecture.png
+tenets viz deps --level package --format png --output docs/architecture.png
 
 # For code review - module dependencies with clustering
-tenets viz deps . --level module --cluster-by directory --format html -o review.html
+tenets viz deps --level module --cluster-by directory --format html -o review.html
 
 # For refactoring - find tightly coupled components
-tenets viz deps . --layout circular --format svg --output coupling.svg
+tenets viz deps --layout circular --format svg --output coupling.svg
 
 # For large projects - limit to most connected files
-tenets viz deps . --max-nodes 100 --format html --output top100.html
+tenets viz deps --max-nodes 100 --format html --output top100.html
 ```
 
 ### Features
@@ -752,10 +755,43 @@ Choose the algorithm that fits your needs:
 When files exceed token budgets, tenets intelligently preserves:
 
 - Function/class signatures
-- Import statements
+- Import statements (with smart condensing - see below)
 - Complex logic blocks
 - Recent changes
 - Documentation
+
+#### Import Summarization
+
+NEW: Tenets can automatically condense verbose import statements into concise summaries:
+
+```python
+# Instead of showing 20+ import lines:
+import os
+import sys
+from typing import Dict, List
+import numpy as np
+import pandas as pd
+# ... many more imports
+
+# Tenets produces:
+# Imports: 20 total
+# Dependencies: numpy, pandas, requests, flask, sqlalchemy
+# Local imports: 3
+```
+
+Control import summarization:
+```bash
+# Enabled by default (condenses imports when > 5 lines)
+tenets distill "review code"
+
+# Disable import summarization - show all imports verbatim
+tenets distill "review code" --no-summarize-imports
+
+# Configure via .tenets.yaml
+summarizer:
+  summarize_imports: true  # Enable/disable globally
+  import_summary_threshold: 5  # Min imports to trigger summarization
+```
 
 #### Context-Aware Documentation Summarization
 
