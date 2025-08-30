@@ -13,6 +13,6 @@ Welcome to the Tenets documentation hub. Explore guides and references below.
 - Configuration: [Config guide](CONFIG.md)
 - Architecture: [System overview](ARCHITECTURE.md)
 
-- API Reference: [Browse API](api/reference.md)
+- API Reference: [Browse API](api/index.md)
 
 If you were looking for the homepage, go to [/](./index.md).

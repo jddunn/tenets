@@ -1,4 +1,9 @@
-"""Tests for keyword extraction utilities."""
+"""Tests for keyword extraction utilities.
+
+This module provides comprehensive tests for the keyword extraction functionality,
+including RAKE, YAKE, TF-IDF, and BM25 algorithms. Tests cover basic extraction,
+scoring, edge cases, and Python version compatibility.
+"""
 
 from unittest.mock import Mock, patch
 
@@ -14,10 +19,18 @@ class TestKeywordExtractor:
     """Test suite for KeywordExtractor."""
 
     def test_initialization(self):
-        """Test KeywordExtractor initialization."""
-        extractor = KeywordExtractor(use_yake=True, use_stopwords=True)
+        """Test KeywordExtractor initialization with default settings."""
+        extractor = KeywordExtractor(use_rake=True, use_yake=True, use_stopwords=True)
         assert extractor.use_stopwords is True
         assert extractor.stopword_set == "prompt"
+        assert extractor.language == "en"
+
+    def test_initialization_without_rake(self):
+        """Test KeywordExtractor initialization with RAKE disabled."""
+        extractor = KeywordExtractor(use_rake=False, use_yake=False)
+        assert extractor.use_rake is False
+        assert extractor.use_yake is False
+        # Should still work with fallback methods
 
     def test_extract_basic(self):
         """Test basic keyword extraction."""
@@ -54,11 +67,105 @@ class TestKeywordExtractor:
         mock_extractor.extract_keywords.return_value = [("python", 0.1), ("programming", 0.2)]
         mock_yake.KeywordExtractor.return_value = mock_extractor
 
-        extractor = KeywordExtractor(use_yake=True)
+        extractor = KeywordExtractor(use_yake=True, use_rake=False)  # Disable RAKE to test YAKE
         keywords = extractor.extract("Python programming", max_keywords=2)
 
         # YAKE scores are inverted (lower is better)
         assert len(keywords) > 0
+
+    @patch("tenets.core.nlp.keyword_extractor.Rake")
+    def test_rake_extraction(self, mock_rake_class):
+        """Test RAKE extraction when available."""
+        mock_rake = Mock()
+        mock_rake.extract_keywords_from_text.return_value = None
+        mock_rake.get_ranked_phrases_with_scores.return_value = [
+            (8.5, "machine learning"),
+            (4.0, "python programming"),
+            (2.0, "data"),
+        ]
+        mock_rake_class.return_value = mock_rake
+
+        with patch("tenets.core.nlp.keyword_extractor.RAKE_AVAILABLE", True):
+            extractor = KeywordExtractor(use_rake=True, use_yake=False)
+            keywords = extractor.extract(
+                "Machine learning with Python programming and data", max_keywords=3
+            )
+
+            assert len(keywords) == 3
+            assert "machine learning" in keywords
+            assert "python programming" in keywords
+            mock_rake.extract_keywords_from_text.assert_called_once()
+
+    @patch("tenets.core.nlp.keyword_extractor.Rake")
+    def test_rake_extraction_with_scores(self, mock_rake_class):
+        """Test RAKE extraction with scores."""
+        mock_rake = Mock()
+        mock_rake.extract_keywords_from_text.return_value = None
+        mock_rake.get_ranked_phrases_with_scores.return_value = [
+            (10.0, "natural language processing"),
+            (7.5, "deep learning"),
+            (5.0, "neural networks"),
+        ]
+        mock_rake_class.return_value = mock_rake
+
+        with patch("tenets.core.nlp.keyword_extractor.RAKE_AVAILABLE", True):
+            extractor = KeywordExtractor(use_rake=True, use_yake=False)
+            keywords = extractor.extract(
+                "Natural language processing with deep learning and neural networks",
+                max_keywords=3,
+                include_scores=True,
+            )
+
+            assert len(keywords) == 3
+            assert all(isinstance(k, tuple) and len(k) == 2 for k in keywords)
+            assert keywords[0][0] == "natural language processing"
+            assert keywords[0][1] == 1.0  # Should be normalized to 1.0 for highest score
+            assert 0 <= keywords[2][1] <= 1.0  # All scores should be normalized
+
+    def test_rake_fallback_to_yake(self):
+        """Test fallback from RAKE to YAKE when RAKE fails."""
+        with patch("tenets.core.nlp.keyword_extractor.RAKE_AVAILABLE", True):
+            with patch("tenets.core.nlp.keyword_extractor.YAKE_AVAILABLE", True):
+                with patch("tenets.core.nlp.keyword_extractor.Rake") as mock_rake:
+                    # Make RAKE raise an exception
+                    mock_rake.return_value.extract_keywords_from_text.side_effect = Exception(
+                        "RAKE failed"
+                    )
+
+                    with patch("tenets.core.nlp.keyword_extractor.yake") as mock_yake:
+                        mock_extractor = Mock()
+                        mock_extractor.extract_keywords.return_value = [("fallback", 0.1)]
+                        mock_yake.KeywordExtractor.return_value = mock_extractor
+
+                        extractor = KeywordExtractor(use_rake=True, use_yake=True)
+                        keywords = extractor.extract("Test text", max_keywords=1)
+
+                        # Should have attempted RAKE and fallen back to YAKE
+                        assert len(keywords) > 0
+
+    def test_python_313_compatibility(self):
+        """Test that YAKE is disabled on Python 3.13+."""
+        with patch("tenets.core.nlp.keyword_extractor.sys.version_info", (3, 13, 0)):
+            with patch("tenets.core.nlp.keyword_extractor.YAKE_AVAILABLE", False):
+                extractor = KeywordExtractor(use_yake=True)
+                # YAKE should be disabled even if requested
+                assert extractor.use_yake is False
+                assert extractor.yake_extractor is None
+
+    def test_rake_with_empty_results(self):
+        """Test RAKE handling when no keywords are found."""
+        with patch("tenets.core.nlp.keyword_extractor.Rake") as mock_rake_class:
+            mock_rake = Mock()
+            mock_rake.extract_keywords_from_text.return_value = None
+            mock_rake.get_ranked_phrases_with_scores.return_value = []
+            mock_rake_class.return_value = mock_rake
+
+            with patch("tenets.core.nlp.keyword_extractor.RAKE_AVAILABLE", True):
+                extractor = KeywordExtractor(use_rake=True, use_yake=False)
+                keywords = extractor.extract("a the of", max_keywords=5)
+
+                # Should fallback to TF-IDF/frequency methods
+                assert isinstance(keywords, list)
 
 
 class TestTFIDFCalculator:

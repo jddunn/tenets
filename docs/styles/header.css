@@ -122,6 +122,8 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   justify-content: flex-start;
   margin: 0 0.5rem 0 0.25rem;
   order: 1;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 /* Theme toggle: show only one label (opposite scheme) based on order (first = default, second = slate)
   and keep it before search */
@@ -133,28 +135,111 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 @media screen and (min-width:601px){
   .md-header-nav {display:flex !important; visibility:visible !important; opacity:1 !important;}
   .md-header-nav__link {display:inline-flex !important; visibility:visible !important;}
-  .md-tabs {display:flex !important;}
+  .md-tabs {display:flex !important; visibility:visible !important; opacity:1 !important;}
+  .md-tabs__list {display:flex !important; visibility:visible !important;}
+  .md-tabs__item {display:block !important; visibility:visible !important;}
+  .md-tabs__link {display:inline-flex !important; visibility:visible !important; opacity:1 !important;}
 }
 
-/* Inline primary nav tabs inside header */
-.md-tabs { margin:0 !important; padding:0 !important; background:transparent !important; box-shadow:none !important; }
-.md-tabs__list { display:flex; gap:0.35rem; align-items:center; }
-.md-tabs__item { margin:0; }
-.md-tabs__link { position:relative; padding:0.32rem 0.65rem; font-size:0.72rem; font-weight:600; border-radius:18px; background:transparent; color:#2a2723; text-decoration:none; transition:all .3s ease; }
-.md-tabs__link:hover { transform:translateY(-2px); color:#f59e0b; }
-.md-tabs__link--active { color:#1a2332 !important; }
-[data-md-color-scheme="slate"] .md-tabs__link { background:transparent; color:#e6dcc6; }
-[data-md-color-scheme="slate"] .md-tabs__link--active { color:#fbbf24 !important; }
+/* Tabs list and items styling */
+.md-tabs__list { 
+  display:flex !important; 
+  gap:0.35rem; 
+  align-items:center;
+  margin: 0;
+  padding: 0.5rem 1rem;
+}
+.md-tabs__item { 
+  margin:0; 
+  display: inline-block !important;
+}
+.md-tabs__link { 
+  position:relative; 
+  padding:0.32rem 0.65rem !important; 
+  font-size:0.72rem !important; 
+  font-weight:600 !important; 
+  border-radius:18px;
+  color:#2a2723 !important; 
+  text-decoration:none !important;
+  transition:all .3s ease;
+  display: inline-flex !important;
+  align-items: center;
+}
+.md-tabs__link:hover { 
+  transform:translateY(-2px); 
+  color:#f59e0b !important; 
+}
+.md-tabs__link--active { 
+  color:#1a2332 !important; 
+}
+[data-md-color-scheme="slate"] .md-tabs__link { 
+  color:#e6dcc6 !important; 
+}
+[data-md-color-scheme="slate"] .md-tabs__link--active { 
+  color:#fbbf24 !important; 
+}
 /* Safety: if both toggle labels end up visible, hide redundant one by scheme */
 [data-md-color-scheme="default"] .md-header__inner label.md-header__button[for^="__palette_"]:not(:last-of-type) { display:none !important; }
 [data-md-color-scheme="slate"] .md-header__inner label.md-header__button[for^="__palette_"]:not(:first-of-type) { display:none !important; }
 
-/* Ensure tabs area occupies same line */
+/* Ensure tabs area occupies same line and is visible on desktop */
 .md-header__inner { gap:0.4rem; }
-.md-header__inner > .md-tabs { order:1; display:flex; flex:1 1 auto; }
+.md-header__inner .md-tabs,
+.md-container > .md-tabs,
+.md-tabs { order:1; display:flex !important; flex:1 1 auto; }
+
+/* Desktop: ensure tabs are visible regardless of container */
+@media screen and (min-width:1100px){
+  /* Force tabs visible wherever they are */
+  .md-tabs,
+  .md-header + .md-tabs,
+  .md-container > .md-tabs,
+  .md-header__inner .md-tabs { 
+    display:flex !important; 
+    visibility:visible !important; 
+    opacity:1 !important;
+    position: relative !important;
+    z-index: 100;
+  }
+  .md-tabs__list {
+    display:flex !important;
+    visibility:visible !important;
+    opacity: 1 !important;
+  }
+  .md-tabs__item {
+    display: block !important;
+    visibility: visible !important;
+  }
+  .md-tabs__link {
+    display: inline-flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+  }
+}
 
 @media screen and (max-width:600px){
   .md-header__inner > .md-tabs { display:none !important; }
+}
+
+/* Navigation tabs positioning - let Material handle most of it */
+@media screen and (min-width: 1100px) {
+  .md-tabs {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: transparent !important;
+  }
+  
+  [data-md-color-scheme="slate"] .md-tabs {
+    background: transparent !important;
+  }
+}
+
+/* Hide tabs only on mobile */
+@media screen and (max-width: 1099px) {
+  .md-tabs {
+    display: none !important;
+  }
 }
 
 /* Navigation Links - Neumorphic Style with tighter spacing */
@@ -378,8 +463,9 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   display: flex;
   align-items: center;
   padding: 0.3rem 0.45rem;
-  background: #fdfdf9;
+  background: linear-gradient(135deg, #fff5e6 0%, #ffedcc 100%);
   border-radius: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
   box-shadow:
     2px 2px 5px rgba(26, 35, 50, 0.04),
     -2px -2px 5px rgba(255, 255, 255, 0.7),
@@ -395,6 +481,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 
 [data-md-color-scheme="slate"] .md-source {
   background: #263244;
+  border: 1px solid rgba(251, 191, 36, 0.15);
   box-shadow:
     2px 2px 6px rgba(0, 0, 0, 0.15),
     -2px -2px 6px rgba(255, 255, 255, 0.02),
@@ -411,14 +498,21 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 
 /* Theme GitHub icon to match flame (amber) */
 .md-header .md-source__icon svg {
-  width: 12px;
-  height: 12px;
-  fill: #f59e0b; /* amber in light mode */
+  width: 14px;
+  height: 14px;
+  fill: #f59e0b !important; /* amber in light mode - force override */
   transition: all 0.3s ease;
 }
 
-[data-md-color-scheme="slate"] .md-header .md-source__icon svg {
-  fill: #fbbf24;
+/* Explicit light mode override */
+[data-md-color-scheme="default"] .md-header .md-source__icon svg,
+[data-md-color-scheme="default"] .md-source__icon svg {
+  fill: #f59e0b !important;
+}
+
+[data-md-color-scheme="slate"] .md-header .md-source__icon svg,
+[data-md-color-scheme="slate"] .md-source__icon svg {
+  fill: #fbbf24 !important;
 }
 
 /* Subtle lamp glow ring */
@@ -441,7 +535,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 
 .md-source:hover::after { opacity: 1; }
 
-/* Ensure hamburger stays top-right whenever it’s visible (desktop or mobile) */
+/* Ensure hamburger stays top-right whenever it's visible (desktop or mobile) */
 .md-header__button[for="__drawer"] {
   position: fixed;
   top: 8px;
@@ -450,10 +544,22 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   z-index: 15000;
   color: #1a2332; /* ensure visible in light */
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
 [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
   color: #fbbf24; /* amber for visibility on dark */
+}
+
+/* Ensure the hamburger icon is visible */
+.md-header__button[for="__drawer"] svg {
+  fill: currentColor !important;
+  width: 24px;
+  height: 24px;
 }
 
 /* On desktop, keep drawer button in normal flow so it doesn't overlay other controls */
@@ -722,6 +828,14 @@ label.md-header__button[for="__search"] {
 /* Content padding */
 .md-container {
   padding-top: 76px;
+}
+
+/* If tabs are below header, add more padding */
+@media screen and (min-width: 1100px) {
+  .md-container:has(> .md-tabs),
+  body:has(> .md-tabs) .md-container {
+    padding-top: 124px; /* header 76px + tabs 48px */
+  }
 }
 
 @media screen and (max-width: 600px) {
