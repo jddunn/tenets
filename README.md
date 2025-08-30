@@ -36,6 +36,14 @@ Plus powerful development intelligence:
 
 ## Installation / Quick Start
 
+### Python Compatibility
+
+**Python 3.13 Note:** Tenets is compatible with Python 3.13, but some optional dependencies have compatibility issues:
+
+- **YAKE keyword extraction** is automatically disabled on Python 3.13 due to an infinite loop bug
+- **RAKE** is used as the primary keyword extraction method (fast, accurate, Python 3.13 compatible)
+- For full ML features, consider using Python 3.12 until upstream dependencies are updated
+
 ### Pip
 
 ```bash
@@ -43,9 +51,9 @@ Plus powerful development intelligence:
 pip install tenets
 
 # Add specific features
-pip install tenets[light]  # Adds numpy, scikit-learn for TF-IDF ranking
+pip install tenets[light]  # Adds RAKE, numpy, scikit-learn for keyword extraction & TF-IDF ranking
 pip install tenets[viz]    # Adds visualization capabilities
-pip install tenets[ml]     # Adds deep learning models (large dependencies)
+pip install tenets[ml]     # Adds deep learning models (large dependencies, limited Python 3.13 support)
 
 # Everything
 pip install tenets[all]
@@ -124,7 +132,8 @@ Tenets uses a sophisticated multi-stage pipeline to understand your code:
 
 When you provide a prompt like "implement OAuth2 authentication", Tenets:
 
-- Extracts key concepts (OAuth2, authentication)
+- Extracts key concepts using RAKE (Rapid Automatic Keyword Extraction) - fast & Python 3.13 compatible
+- Falls back to TF-IDF and frequency-based extraction if needed
 - Identifies intent (implementation/feature)
 - Detects any file patterns or specific mentions
 - Understands temporal context ("recent changes")
@@ -773,6 +782,7 @@ tenets distill "database connection settings" config/
 ```
 
 **Benefits**:
+
 - **Focused Context**: Get exactly the documentation sections you need
 - **Preserved Examples**: Code snippets and configs stay intact
 - **Intelligent Filtering**: Irrelevant sections are filtered out

@@ -5,6 +5,10 @@
 
 INHERIT: mkdocs.yml
 
+# Add navigation fix CSS
+extra_css:
+  - styles/nav-fix.css
+
 # Keep only light/essential plugins for rapid reloads
 plugins:
   - search:
@@ -32,11 +36,12 @@ plugins:
 theme:
   features:
     - navigation.instant
-    - navigation.instant.prefetch
-    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
     - toc.follow
     - search.suggest
     - search.highlight
     - content.code.copy
     - content.tabs.link
-    - header.autohide

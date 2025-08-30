@@ -54,8 +54,8 @@ tenets examine
 # Track recent changes
 tenets chronicle --since yesterday
 
-# Visualize dependencies (ASCII)
-tenets viz deps --format ascii
+# Visualize dependencies (ASCII by default)
+tenets viz deps
 ```
 
 ## Core Commands

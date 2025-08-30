@@ -1,7 +1,7 @@
 # tenets Development Makefile
 # Simplifies common development tasks
 
-.PHONY: help install dev test lint format clean build docs docs-serve docs-deploy docs-build release viz
+.PHONY: help install dev install-light install-ml install-viz test lint format clean build docs docs-serve docs-deploy docs-build release viz
 
 # Default target
 help:
@@ -10,6 +10,7 @@ help:
 	@echo "Installation:"
 	@echo "  make install       - Install tenets in production mode"
 	@echo "  make dev           - Install tenets in development mode with all extras"
+	@echo "  make install-light - Install with light NLP features (RAKE, TF-IDF)"
 	@echo "  make install-ml    - Install with ML features (ranking, summarization)"
 	@echo "  make install-viz   - Install with visualization features"
 	@echo ""
@@ -51,6 +52,12 @@ dev:
 	pre-commit install --hook-type commit-msg
 	pre-commit install --hook-type push
 	@echo "✓ Development environment ready!"
+
+# Install with light NLP features (RAKE, TF-IDF, etc.)
+install-light:
+	pip install --upgrade pip
+	pip install -e ".[light]"
+	@echo "✓ Light NLP features installed (RAKE keyword extraction, TF-IDF ranking)"
 
 # Install with ML features
 install-ml:
