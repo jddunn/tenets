@@ -91,6 +91,7 @@ def _run_examination(
     threshold: int,
     include: List[str],
     exclude: List[str],
+    include_minified: bool,
     max_depth: int,
     show_details: bool,
     hotspots: bool,
@@ -125,6 +126,10 @@ def _run_examination(
 
     logger = get_logger(__name__)
     config = TenetsConfig()
+    
+    # Override minified exclusion if flag is set
+    if include_minified:
+        config.exclude_minified = False
 
     # Initialize timer
     is_quiet = output_format.lower() == "json" and not output
@@ -317,6 +322,11 @@ def run(
     exclude: List[str] = typer.Option(
         [], "--exclude", "-e", help="File patterns to exclude", show_default=False
     ),
+    include_minified: bool = typer.Option(
+        False,
+        "--include-minified",
+        help="Include minified/built files (*.min.js, dist/, etc.) normally excluded",
+    ),
     max_depth: int = typer.Option(5, "--max-depth", help="Maximum directory depth"),
     show_details: bool = typer.Option(False, "--show-details", help="Show details"),
     hotspots: bool = typer.Option(False, "--hotspots", help="Include hotspot analysis"),
@@ -340,11 +350,12 @@ def run(
         threshold=threshold,
         include=list(include) if include else [],
         exclude=list(exclude) if exclude else [],
+        include_minified=include_minified,
         max_depth=max_depth,
         show_details=show_details,
         hotspots=hotspots,
         ownership=ownership,
-    complexity_trend=complexity_trend,
+        complexity_trend=complexity_trend,
     )
 
 
@@ -549,6 +560,15 @@ def _generate_report(
     generator.generate(data=results, output_path=output_path, config=report_config)
 
     click.echo(f"Report generated: {output_path}")
+    
+    # If HTML format, offer to open in browser
+    if format == "html":
+        if click.confirm("\nWould you like to open it in your browser now?", default=False):
+            import webbrowser
+            # Ensure absolute path for file URI
+            file_path = output_path.resolve()
+            webbrowser.open(file_path.as_uri())
+            click.echo("✓ Opened in browser")
 
 
 def _output_json_results(results: Dict[str, Any], output: Optional[str]) -> None:

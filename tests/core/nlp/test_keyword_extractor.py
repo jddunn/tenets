@@ -73,7 +73,7 @@ class TestKeywordExtractor:
         # YAKE scores are inverted (lower is better)
         assert len(keywords) > 0
 
-    @patch("tenets.core.nlp.keyword_extractor.Rake")
+    @patch("tenets.core.nlp.keyword_extractor.SimpleRAKE")
     def test_rake_extraction(self, mock_rake_class):
         """Test RAKE extraction when available."""
         mock_rake = Mock()
@@ -86,15 +86,16 @@ class TestKeywordExtractor:
         mock_rake_class.return_value = mock_rake
 
         with patch("tenets.core.nlp.keyword_extractor.RAKE_AVAILABLE", True):
-            extractor = KeywordExtractor(use_rake=True, use_yake=False)
-            keywords = extractor.extract(
-                "Machine learning with Python programming and data", max_keywords=3
-            )
+            with patch("tenets.core.nlp.keyword_extractor.Rake", object):  # Mock Rake to be not None
+                extractor = KeywordExtractor(use_rake=True, use_yake=False)
+                keywords = extractor.extract(
+                    "Machine learning with Python programming and data", max_keywords=3
+                )
 
-            assert len(keywords) == 3
-            assert "machine learning" in keywords
-            assert "python programming" in keywords
-            mock_rake.extract_keywords_from_text.assert_called_once()
+                assert len(keywords) == 3
+                assert "machine learning" in keywords
+                assert "python programming" in keywords
+                mock_rake.extract_keywords_from_text.assert_called_once()
 
     @patch("tenets.core.nlp.keyword_extractor.Rake")
     def test_rake_extraction_with_scores(self, mock_rake_class):

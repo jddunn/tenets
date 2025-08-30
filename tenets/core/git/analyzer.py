@@ -115,6 +115,7 @@ class GitAnalyzer:
 
     # Compatibility helper used by CLI chronicle already
     def changed_files(self, ref: str = "HEAD", diff_with: Optional[str] = None) -> List[Path]:
+        self._ensure_repo()  # Ensure repo is initialized
         if not self.repo:
             return []
         repo = self.repo
@@ -464,6 +465,7 @@ class GitAnalyzer:
     def recent_commits(
         self, limit: int = 50, paths: Optional[List[Path]] = None
     ) -> List[CommitInfo]:
+        self._ensure_repo()  # Ensure repo is initialized
         if not self.repo:
             return []
         commits = []
@@ -487,6 +489,7 @@ class GitAnalyzer:
 
     def blame(self, file_path: Path) -> List[Tuple[str, str]]:
         """Return list of (author, line) for a file using git blame."""
+        self._ensure_repo()  # Ensure repo is initialized
         if not self.repo:
             return []
         try:

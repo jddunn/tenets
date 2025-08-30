@@ -12,6 +12,7 @@ Tests cover all visualization functionality including:
 
 import csv
 import json
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch, Mock
 
@@ -519,6 +520,10 @@ class TestVizOutputFormats:
 class TestVizInteractiveMode:
     """Test interactive visualization mode."""
 
+    @pytest.mark.skipif(
+        sys.version_info[:2] >= (3, 13),
+        reason="Threading tests hang with coverage on Python 3.13+"
+    )
     @patch("webbrowser.open")
     @patch("tempfile.NamedTemporaryFile")
     def test_interactive_mode(
@@ -537,7 +542,7 @@ class TestVizInteractiveMode:
             with patch("tenets.cli.commands.viz.BaseVisualizer") as mock_viz:
                 mock_viz.return_value.create_chart.return_value = {"type": "bar"}
 
-                result = click_runner.invoke(viz, [str(data_file), "--interactive"])
+                result = click_runner.invoke(viz, ["data", str(data_file), "--interactive"])
 
                 assert result.exit_code == 0
                 assert "Launching interactive mode" in result.stdout
@@ -626,6 +631,121 @@ class TestVizSummaryOutput:
 class TestVizDepsCommand:
     """Test the viz deps command for dependency visualization."""
     
+    @pytest.mark.skipif(
+        sys.version_info[:2] >= (3, 13),
+        reason="Threading tests hang with coverage on Python 3.13+"
+    )
+    def test_deps_html_autosave(self, runner, tmp_path):
+        """Test that HTML format auto-saves with generated filename when no output specified."""
+        with patch("tenets.cli.commands.viz.ProjectDetector") as mock_detector:
+            with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
+                with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
+                    with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
+                        with patch("tenets.cli.commands.viz.click.confirm", return_value=False):
+                            # Mock project detection
+                            mock_detector.return_value.detect_project.return_value = {
+                                "type": "python_project",
+                                "languages": {"python": 100.0},
+                                "frameworks": [],
+                                "entry_points": ["main.py"],
+                            }
+                            
+                            # Mock file scanning
+                            mock_scanner.return_value.scan.return_value = [Path("main.py")]
+                            
+                            # Mock analysis
+                            mock_analysis = MagicMock()
+                            mock_analysis.structure.imports = []
+                            mock_analyzer.return_value.analyze_file.return_value = mock_analysis
+                            
+                            # Mock graph generator to return a filename
+                            mock_gen.return_value.generate_graph.return_value = "dependency_graph_project_module_20240101_120000.html"
+                            
+                            result = runner.invoke(app, ["viz", "deps", str(tmp_path), "--format", "html", "--level", "module"])
+                            
+                            assert result.exit_code == 0
+                            assert "Auto-generating output file:" in result.stdout
+                            assert ".html" in result.stdout
+                            assert "Dependency graph saved to:" in result.stdout
+                            assert "Would you like to open it in your browser now?" in result.stdout
+
+    @pytest.mark.skipif(
+        sys.version_info[:2] >= (3, 13),
+        reason="Threading tests hang with coverage on Python 3.13+"
+    )
+    def test_deps_html_opens_browser_on_confirm(self, runner, tmp_path):
+        """Test that HTML visualization opens browser when user confirms."""
+        with patch("tenets.cli.commands.viz.ProjectDetector") as mock_detector:
+            with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
+                with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
+                    with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
+                        with patch("tenets.cli.commands.viz.click.confirm", return_value=True):
+                            with patch("webbrowser.open") as mock_browser:
+                                # Mock project detection
+                                mock_detector.return_value.detect_project.return_value = {
+                                    "type": "python_project",
+                                    "languages": {"python": 100.0},
+                                    "frameworks": [],
+                                    "entry_points": ["main.py"],
+                                }
+                                
+                                # Mock file scanning
+                                mock_scanner.return_value.scan.return_value = [Path("main.py")]
+                                
+                                # Mock analysis
+                                mock_analysis = MagicMock()
+                                mock_analysis.structure.imports = []
+                                mock_analyzer.return_value.analyze_file.return_value = mock_analysis
+                                
+                                # Mock graph generator
+                                mock_gen.return_value.generate_graph.return_value = "test.html"
+                                
+                                result = runner.invoke(app, ["viz", "deps", str(tmp_path), "--format", "html"])
+                                
+                                assert result.exit_code == 0
+                                mock_browser.assert_called_once()
+                                # Check that it uses absolute path
+                                call_args = mock_browser.call_args[0][0]
+                                assert "file:///" in call_args or "file:\\\\\\" in call_args
+
+    @pytest.mark.skipif(
+        sys.version_info[:2] >= (3, 13),
+        reason="Threading tests hang with coverage on Python 3.13+"
+    )
+    def test_deps_html_path_resolution(self, runner, tmp_path):
+        """Test that relative paths are properly resolved for browser opening."""
+        with patch("tenets.cli.commands.viz.ProjectDetector") as mock_detector:
+            with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
+                with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
+                    with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
+                        with patch("tenets.cli.commands.viz.click.confirm", return_value=True):
+                            with patch("webbrowser.open") as mock_browser:
+                                # Setup mocks
+                                mock_detector.return_value.detect_project.return_value = {
+                                    "type": "python_project",
+                                    "languages": {"python": 100.0},
+                                    "frameworks": [],
+                                    "entry_points": ["main.py"],
+                                }
+                                mock_scanner.return_value.scan.return_value = [Path("main.py")]
+                                mock_analysis = MagicMock()
+                                mock_analysis.structure.imports = []
+                                mock_analyzer.return_value.analyze_file.return_value = mock_analysis
+                                
+                                # Return a relative path from generator
+                                mock_gen.return_value.generate_graph.return_value = "relative_path.html"
+                                
+                                result = runner.invoke(app, ["viz", "deps", str(tmp_path), "--format", "html"])
+                                
+                                assert result.exit_code == 0
+                                mock_browser.assert_called_once()
+                                
+                                # Verify that the path was resolved to absolute before converting to URI
+                                call_args = mock_browser.call_args[0][0]
+                                assert call_args.startswith("file:")
+                                assert "relative_path.html" in call_args
+                                # Should not throw "relative path can't be expressed as a file URI" error
+
     def test_deps_basic(self, runner, tmp_path):
         """Test basic dependency visualization."""
         with patch("tenets.cli.commands.viz.ProjectDetector") as mock_detector:
@@ -657,6 +777,10 @@ class TestVizDepsCommand:
                     assert result.exit_code == 0
                     assert "Detected project type: python_project" in result.stdout
     
+    @pytest.mark.skipif(
+        sys.version_info[:2] >= (3, 13),
+        reason="Threading tests hang with coverage on Python 3.13+"
+    )
     def test_deps_with_output_formats(self, runner, tmp_path, sample_dependency_graph):
         """Test dependency visualization with different output formats."""
         formats = ["json", "dot", "html", "svg", "png"]

@@ -6,6 +6,7 @@ including dependency graphs, complexity visualizations, and more.
 
 import json
 from collections import defaultdict
+from datetime import datetime
 import glob
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -35,6 +36,253 @@ from tenets.viz import (
     DisplayConfig,
     detect_visualization_type,
 )
+
+def _generate_complexity_html(data: list, project_path: str, hotspots_only: bool = False) -> str:
+    """Generate HTML visualization for complexity data."""
+    from datetime import datetime
+    
+    # Data is already a list of complexity items
+    items = data if isinstance(data, list) else []
+    if hotspots_only:
+        items = [i for i in items if i.get("complexity", 0) >= 10]
+    
+    # Sort by complexity
+    items = sorted(items, key=lambda x: x.get("complexity", 0), reverse=True)
+    
+    # Calculate average complexity
+    avg_complexity = sum(i.get("complexity", 0) for i in items) / len(items) if items else 0
+    
+    # Generate HTML
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Complexity Analysis - {project_path}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }}
+        h1 {{
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }}
+        .summary {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+        .metric-card {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }}
+        .metric-value {{
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }}
+        .metric-label {{
+            font-size: 0.9em;
+            opacity: 0.9;
+        }}
+        .chart-container {{
+            margin: 30px 0;
+            height: 400px;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }}
+        th {{
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }}
+        td {{
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }}
+        tr:hover {{
+            background: #f8f9fa;
+        }}
+        .complexity-badge {{
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-align: center;
+            min-width: 40px;
+        }}
+        .complexity-low {{ background: #28a745; color: white; }}
+        .complexity-medium {{ background: #ffc107; color: #333; }}
+        .complexity-high {{ background: #dc3545; color: white; }}
+        .complexity-extreme {{ background: #6f42c1; color: white; }}
+        .file-path {{
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9em;
+            color: #555;
+        }}
+        .timestamp {{
+            text-align: right;
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 20px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Code Complexity Analysis</h1>
+        <p style="color: #666;">Project: <strong>{project_path}</strong></p>
+        
+        <div class="summary">
+            <div class="metric-card">
+                <div class="metric-label">Total Files</div>
+                <div class="metric-value">{len(items)}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Average Complexity</div>
+                <div class="metric-value">{avg_complexity:.1f}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">High Complexity Files</div>
+                <div class="metric-value">{len([i for i in items if i.get('complexity', 0) >= 10])}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Max Complexity</div>
+                <div class="metric-value">{max((i.get('complexity', 0) for i in items), default=0)}</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="complexityChart"></canvas>
+        </div>
+        
+        <h2>{'🔥 Complexity Hotspots' if hotspots_only else '📊 File Complexity Details'}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Complexity</th>
+                    <th>Lines</th>
+                    <th>Functions</th>
+                    <th>Classes</th>
+                </tr>
+            </thead>
+            <tbody>
+"""
+    
+    for item in items[:50]:  # Limit to top 50 for performance
+        complexity = item.get("complexity", 0)
+        if complexity < 5:
+            badge_class = "complexity-low"
+        elif complexity < 10:
+            badge_class = "complexity-medium"
+        elif complexity < 20:
+            badge_class = "complexity-high"
+        else:
+            badge_class = "complexity-extreme"
+            
+        html += f"""
+                <tr>
+                    <td><span class="file-path">{item.get('file', 'Unknown')}</span></td>
+                    <td><span class="complexity-badge {badge_class}">{complexity}</span></td>
+                    <td>{item.get('lines', 0)}</td>
+                    <td>{item.get('functions', 0)}</td>
+                    <td>{item.get('classes', 0)}</td>
+                </tr>
+"""
+    
+    html += f"""
+            </tbody>
+        </table>
+        
+        <div class="timestamp">Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+    </div>
+    
+    <script>
+        // Create bar chart
+        const ctx = document.getElementById('complexityChart').getContext('2d');
+        const data = {json.dumps(items[:20])};  // Top 20 for chart
+        
+        new Chart(ctx, {{
+            type: 'bar',
+            data: {{
+                labels: data.map(d => {{
+                    const parts = d.file.split('/');
+                    return parts[parts.length - 1];
+                }}),
+                datasets: [{{
+                    label: 'Complexity',
+                    data: data.map(d => d.complexity || 0),
+                    backgroundColor: data.map(d => {{
+                        const c = d.complexity || 0;
+                        if (c < 5) return 'rgba(40, 167, 69, 0.8)';
+                        if (c < 10) return 'rgba(255, 193, 7, 0.8)';
+                        if (c < 20) return 'rgba(220, 53, 69, 0.8)';
+                        return 'rgba(111, 66, 193, 0.8)';
+                    }}),
+                    borderWidth: 1
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{ display: false }},
+                    title: {{
+                        display: true,
+                        text: 'Top 20 Files by Complexity'
+                    }}
+                }},
+                scales: {{
+                    y: {{
+                        beginAtZero: true,
+                        title: {{
+                            display: true,
+                            text: 'Cyclomatic Complexity'
+                        }}
+                    }},
+                    x: {{
+                        ticks: {{
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }}
+                    }}
+                }}
+            }}
+        }});
+    </script>
+</body>
+</html>"""
+    
+    return html
+
 
 viz_app = typer.Typer(
     add_completion=False,
@@ -78,6 +326,7 @@ def deps(
     include: Optional[str] = typer.Option(None, "--include", "-i", help="Include file patterns"),
     exclude: Optional[str] = typer.Option(None, "--exclude", "-e", help="Exclude file patterns"),
     layout: str = typer.Option("hierarchical", "--layout", help="Graph layout (hierarchical, circular, shell, kamada)"),
+    include_minified: bool = typer.Option(False, "--include-minified", help="Include minified files"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose/debug output"),
 ):
     """Visualize dependencies between files and modules.
@@ -114,6 +363,10 @@ def deps(
             config = ctx.obj.get("config") if isinstance(ctx.obj, dict) else getattr(ctx.obj, "config", None)
         if not config:
             config = TenetsConfig()
+        
+        # Override minified exclusion if flag is set
+        if include_minified:
+            config.exclude_minified = False
 
         # Create analyzer and scanner
         analyzer = CodeAnalyzer(config)
@@ -248,6 +501,35 @@ def deps(
         else:
             # Use GraphGenerator for all other formats
             generator = GraphGenerator()
+            
+            # Auto-generate output filename if format requires a file but none specified
+            if not output and format in ["html", "svg", "png", "pdf", "dot"]:
+                # Generate a descriptive filename
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                # Get project name, handle "." and empty cases
+                if path == "." or not path:
+                    project_name = Path.cwd().name
+                else:
+                    project_name = Path(path).name
+                    
+                # Clean up project name for filename
+                project_name = project_name.replace(" ", "_").replace("-", "_")
+                if not project_name or project_name == ".":
+                    project_name = "project"
+                
+                # Include level and other options in filename for clarity
+                filename_parts = ["dependency_graph", project_name]
+                if level != "file":
+                    filename_parts.append(level)
+                if cluster_by:
+                    filename_parts.append(f"by_{cluster_by}")
+                if max_nodes:
+                    filename_parts.append(f"top{max_nodes}")
+                filename_parts.append(timestamp)
+                
+                output = "_".join(filename_parts) + f".{format}"
+                click.echo(f"Auto-generating output file: {output}")
 
             try:
                 result = generator.generate_graph(
@@ -269,13 +551,22 @@ def deps(
                     # Provide helpful messages based on format
                     if format == "html":
                         click.echo("\nOpen the HTML file in a browser for an interactive visualization.")
+                        # Optionally offer to open it
+                        if click.confirm("Would you like to open it in your browser now?", default=False):
+                            import webbrowser
+                            # Ensure absolute path for file URI
+                            file_path = Path(result).resolve()
+                            webbrowser.open(file_path.as_uri())
                     elif format == "dot":
                         click.echo("\nYou can render this DOT file with Graphviz tools.")
                     elif format in ["svg", "png", "pdf"]:
                         click.echo(f"\nGenerated {format.upper()} image with dependency graph.")
                 else:
-                    # Output to terminal if no file specified
-                    click.echo(result)
+                    # Only output to terminal for formats that make sense (json, ascii)
+                    if format in ["json", "ascii"]:
+                        click.echo(result)
+                    else:
+                        click.echo(f"Error: Format '{format}' requires an output file. Use --output or let auto-naming handle it.")
 
             except Exception as e:
                 logger.error(f"Failed to generate {format} visualization: {e}")
@@ -314,6 +605,11 @@ def complexity(
     hotspots: bool = typer.Option(False, "--hotspots", help="Show only hotspot files"),
     include: Optional[str] = typer.Option(None, "--include", "-i", help="Include file patterns"),
     exclude: Optional[str] = typer.Option(None, "--exclude", "-e", help="Exclude file patterns"),
+    include_minified: bool = typer.Option(
+        False,
+        "--include-minified",
+        help="Include minified/built files (*.min.js, dist/, etc.) normally excluded",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose/debug output"),
 ):
     """Visualize code complexity metrics.
@@ -368,12 +664,28 @@ def complexity(
                     "file": str(file),
                     "complexity": complexity_score,
                     "cognitive": getattr(analysis.complexity, "cognitive", 0),
-                    "lines": len(file.read_text().splitlines()) if file.exists() else 0,
+                    "lines": len(file.read_text(encoding='utf-8', errors='ignore').splitlines()) if file.exists() else 0,
                 }
             )
 
     # Sort by complexity
     complexity_data.sort(key=lambda x: x["complexity"], reverse=True)
+
+    # Auto-generate output filename if format requires a file but none specified
+    if not output and format in ["html", "svg", "png", "json"] and format != "ascii":
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        project_name = Path(path).name if Path(path).name != "." else "project"
+        
+        filename_parts = ["complexity", project_name]
+        if threshold:
+            filename_parts.append(f"threshold{threshold}")
+        if hotspots:
+            filename_parts.append("hotspots")
+        filename_parts.append(timestamp)
+        
+        output = "_".join(filename_parts) + f".{format if format != 'html' else 'json'}"
+        click.echo(f"Auto-generating output file: {output}")
 
     # Generate visualization based on format
     if format == "ascii":
@@ -392,23 +704,48 @@ def complexity(
                 bar = "█" * bar_length
                 click.echo(f"{file_name:30} {bar} {complexity}")
 
-    elif output:
+    elif output or format != "ascii":
         # Save to file
-        output_path = Path(output)
-        if format == "json":
+        if output:
+            output_path = Path(output)
+        else:
+            # Auto-generate filename based on format
+            if format == "html":
+                output_path = Path(f"complexity__hotspots_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
+            else:
+                output_path = Path(f"complexity__hotspots_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+        
+        if format == "html":
+            # Generate HTML visualization
+            html_content = _generate_complexity_html(complexity_data, path, hotspots)
+            output_path = output_path.with_suffix(".html")
+            output_path.write_text(html_content, encoding='utf-8')
+            click.echo(f"Complexity HTML visualization saved to {output_path}")
+            
+            # Offer to open in browser
+            if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                import webbrowser
+                file_path = output_path.resolve()
+                webbrowser.open(file_path.as_uri())
+                click.echo("✓ Opened in browser")
+        elif format in ["json", "svg", "png"]:
+            # Save as JSON for now (SVG/PNG can be added later)
+            output_path = output_path.with_suffix(".json")
             with open(output_path, "w") as f:
                 json.dump(complexity_data, f, indent=2)
             click.echo(f"Complexity data saved to {output_path}")
         else:
-            # TODO: Implement other formats
-            click.echo(f"Format {format} not yet implemented. Saving as JSON.")
+            # Default to JSON
             output_path = output_path.with_suffix(".json")
             with open(output_path, "w") as f:
                 json.dump(complexity_data, f, indent=2)
             click.echo(f"Complexity data saved to {output_path}")
     else:
-        # Output JSON to stdout
-        click.echo(json.dumps(complexity_data, indent=2))
+        # Output JSON to stdout only if explicitly no output and format is compatible
+        if format == "json":
+            click.echo(json.dumps(complexity_data, indent=2))
+        else:
+            click.echo("Use --output to specify output file or --format ascii for terminal display")
 @viz_app.command("data")
 def data(
     input_file: str = typer.Argument(help="Data file to visualize (JSON/CSV)"),

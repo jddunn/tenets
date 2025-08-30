@@ -430,10 +430,20 @@ class Summarizer:
         lines = file.content.split("\n")
         summary_lines = []
 
-        # Always preserve imports
+        # Handle imports based on configuration
+        import_lines = []
         for line in lines[:50]:  # Check first 50 lines for imports
             if self._is_import_line(line, file.language):
-                summary_lines.append(line)
+                import_lines.append(line)
+        
+        # Check if we should summarize imports
+        summarize_imports = getattr(self.config.summarizer, "summarize_imports", True)
+        if summarize_imports and len(import_lines) > 5:  # Only summarize if more than 5 imports
+            import_summary = self._summarize_imports(import_lines, file.language)
+            summary_lines.append(import_summary)
+        else:
+            # Preserve imports as-is
+            summary_lines.extend(import_lines)
 
         # Add separator if we have imports
         if summary_lines:
@@ -743,6 +753,121 @@ class Summarizer:
         else:
             # Generic patterns
             return any(line.startswith(p) for p in ["import", "include", "require", "use"])
+    
+    def _summarize_imports(self, import_lines: List[str], language: str) -> str:
+        """Summarize import statements into a concise description.
+        
+        Args:
+            import_lines: List of import statement lines
+            language: Programming language
+            
+        Returns:
+            Human-readable summary of imports
+        """
+        import re
+        
+        if not import_lines:
+            return ""
+        
+        # Parse imports to extract library names
+        libraries = set()
+        local_imports = 0
+        
+        for line in import_lines:
+            line = line.strip()
+            
+            if language == "python":
+                if line.startswith("from "):
+                    # Extract module name from "from X import Y"
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        module = parts[1].split('.')[0]
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            libraries.add(module)
+                elif line.startswith("import "):
+                    # Extract module name from "import X"
+                    parts = line.replace("import ", "").split(',')
+                    for part in parts:
+                        module = part.strip().split('.')[0].split(' as ')[0]
+                        libraries.add(module)
+                        
+            elif language in ["javascript", "typescript"]:
+                if "from " in line:
+                    # Extract module from import statements
+                    match = re.search(r'from\s+["\']([^"\']+)["\']', line)
+                    if match:
+                        module = match.group(1)
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            # Extract package name (first part before /)
+                            package = module.split('/')[0].replace('@', '')
+                            libraries.add(package)
+                elif "require(" in line:
+                    match = re.search(r'require\(["\']([^"\']+)["\']\)', line)
+                    if match:
+                        module = match.group(1)
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            libraries.add(module.split('/')[0])
+                            
+            elif language == "java":
+                # Extract package from import statement
+                parts = line.replace("import ", "").replace(";", "").split('.')
+                if len(parts) >= 2:
+                    # First two parts usually form the main package
+                    libraries.add('.'.join(parts[:2]))
+                    
+            elif language in ["c", "cpp"]:
+                # Extract header file
+                match = re.search(r'#include\s*[<"]([^>"]+)[>"]', line)
+                if match:
+                    header = match.group(1)
+                    if '/' in header:
+                        libraries.add(header.split('/')[0])
+                    else:
+                        libraries.add(header.replace('.h', '').replace('.hpp', ''))
+                        
+            elif language == "rust":
+                # Extract crate name
+                parts = line.replace("use ", "").replace(";", "").split("::")
+                if parts[0] not in ["self", "super", "crate"]:
+                    libraries.add(parts[0])
+                elif parts[0] == "crate" and len(parts) > 1:
+                    local_imports += 1
+                    
+            elif language == "go":
+                # Extract package name
+                if '"' in line:
+                    match = re.search(r'"([^"]+)"', line)
+                    if match:
+                        pkg = match.group(1)
+                        if not pkg.startswith('.'):
+                            # Extract main package name
+                            libraries.add(pkg.split('/')[0])
+        
+        # Build summary
+        total_imports = len(import_lines)
+        unique_libs = sorted(libraries)
+        
+        summary_parts = [f"# Imports: {total_imports} total"]
+        
+        if unique_libs:
+            if len(unique_libs) <= 8:
+                summary_parts.append(f"# Dependencies: {', '.join(unique_libs)}")
+            else:
+                # Show first 6 libraries and count of others
+                shown_libs = unique_libs[:6]
+                remaining = len(unique_libs) - 6
+                summary_parts.append(f"# Dependencies: {', '.join(shown_libs)}, and {remaining} others")
+        
+        if local_imports > 0:
+            summary_parts.append(f"# Local imports: {local_imports}")
+            
+        return '\n'.join(summary_parts)
 
     def _extract_comments(self, code: str, language: str) -> str:
         """Extract comments and docstrings from code.

@@ -11,6 +11,7 @@ Consolidates all keyword extraction logic to avoid duplication.
 """
 
 import math
+import re
 import sys
 from collections import Counter, defaultdict
 from typing import Dict, List, Set, Tuple, Union
@@ -40,6 +41,92 @@ try:
 except ImportError:
     YAKE_AVAILABLE = False
     yake = None
+
+
+class SimpleRAKE:
+    """Simple RAKE-like keyword extraction without NLTK dependencies.
+    
+    Implements the core RAKE algorithm without requiring NLTK's punkt tokenizer.
+    Uses simple regex-based sentence splitting and word tokenization.
+    """
+    
+    def __init__(self, stopwords: Set[str] = None, max_length: int = 3):
+        """Initialize SimpleRAKE.
+        
+        Args:
+            stopwords: Set of stopwords to use
+            max_length: Maximum n-gram length
+        """
+        self.stopwords = stopwords or set()
+        self.max_length = max_length
+        self.keywords = []
+    
+    def extract_keywords_from_text(self, text: str):
+        """Extract keywords from text.
+        
+        Args:
+            text: Input text
+        """
+        # Simple sentence splitting (period, exclamation, question mark, newline)
+        sentences = re.split(r'[.!?\n]+', text.lower())
+        
+        # Extract candidate keywords from each sentence
+        candidates = []
+        for sentence in sentences:
+            # Remove non-word characters except spaces
+            sentence = re.sub(r'[^\w\s]', ' ', sentence)
+            
+            # Split by stopwords to get candidate phrases
+            words = sentence.split()
+            current_phrase = []
+            
+            for word in words:
+                if word and word not in self.stopwords:
+                    current_phrase.append(word)
+                elif current_phrase:
+                    # End of phrase, add if within max length
+                    if len(current_phrase) <= self.max_length:
+                        candidates.append(' '.join(current_phrase))
+                    current_phrase = []
+            
+            # Don't forget the last phrase
+            if current_phrase and len(current_phrase) <= self.max_length:
+                candidates.append(' '.join(current_phrase))
+        
+        # Calculate word scores (degree/frequency)
+        word_freq = Counter()
+        word_degree = Counter()
+        
+        for phrase in candidates:
+            words_in_phrase = phrase.split()
+            degree = len(words_in_phrase)
+            
+            for word in words_in_phrase:
+                word_freq[word] += 1
+                word_degree[word] += degree
+        
+        # Calculate word scores
+        word_scores = {}
+        for word in word_freq:
+            word_scores[word] = word_degree[word] / word_freq[word]
+        
+        # Calculate phrase scores
+        phrase_scores = {}
+        for phrase in candidates:
+            phrase_words = phrase.split()
+            phrase_scores[phrase] = sum(word_scores.get(w, 0) for w in phrase_words)
+        
+        # Sort phrases by score
+        self.keywords = sorted(phrase_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    def get_ranked_phrases_with_scores(self):
+        """Get ranked phrases with scores.
+        
+        Returns:
+            List of (score, phrase) tuples
+        """
+        # Return in RAKE format: (score, phrase)
+        return [(score, phrase) for phrase, score in self.keywords]
 
 
 class KeywordExtractor:
@@ -143,11 +230,50 @@ class KeywordExtractor:
 
         # Initialize RAKE if available (primary method)
         if self.use_rake and Rake is not None:
-            self.rake_extractor = Rake(
-                language=language if language != "en" else None,
-                include_repeated_phrases=False,
-                max_length=3,  # Max n-gram size
-            )
+            # Always use our bundled stopwords to avoid NLTK data dependency issues
+            from pathlib import Path
+            
+            # Try to load bundled stopwords first
+            stopwords_path = Path(__file__).parent.parent.parent / "data" / "stopwords" / "minimal.txt"
+            
+            if stopwords_path.exists():
+                try:
+                    with open(stopwords_path, 'r', encoding='utf-8') as f:
+                        stopwords = set(line.strip().lower() for line in f 
+                                      if line.strip() and not line.startswith('#'))
+                    self.logger.debug(f"Loaded {len(stopwords)} stopwords from {stopwords_path}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to load stopwords file: {e}, using fallback")
+                    stopwords = None
+            else:
+                stopwords = None
+            
+            # Fallback to basic English stopwords if file not found
+            if not stopwords:
+                stopwords = {
+                    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+                    'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during',
+                    'before', 'after', 'above', 'below', 'between', 'under', 'again',
+                    'further', 'then', 'once', 'is', 'am', 'are', 'was', 'were', 'be',
+                    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+                    'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these',
+                    'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'which',
+                    'who', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more',
+                    'some', 'such', 'only', 'own', 'same', 'so', 'than', 'too', 'very'
+                }
+                self.logger.debug("Using built-in fallback stopwords")
+            
+            try:
+                # Initialize RAKE with our custom stopwords (avoiding NLTK data dependency)
+                # We'll create a simple RAKE-like extractor to avoid NLTK punkt dependency
+                self.rake_extractor = SimpleRAKE(
+                    stopwords=stopwords,
+                    max_length=3,  # Max n-gram size
+                )
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize RAKE: {e}")
+                self.rake_extractor = None
+                self.use_rake = False
         else:
             self.rake_extractor = None
 
@@ -229,6 +355,7 @@ class KeywordExtractor:
         # Try RAKE first (primary method, Python 3.13 compatible)
         if self.use_rake and self.rake_extractor:
             try:
+                # SimpleRAKE handles its own tokenization
                 self.rake_extractor.extract_keywords_from_text(text)
                 keywords_with_scores = self.rake_extractor.get_ranked_phrases_with_scores()
 
@@ -537,13 +664,9 @@ class TFIDFCalculator:
         else:
             return 0.0
 
-        # Compute dot product (cosine similarity)
-        similarity = 0.0
-        for term, query_score in query_vector.items():
-            if term in doc_vector:
-                similarity += query_score * doc_vector[term]
-
-        return max(0.0, min(1.0, similarity))
+        # Use sparse cosine similarity from similarity module
+        from .similarity import sparse_cosine_similarity
+        return sparse_cosine_similarity(query_vector, doc_vector)
 
     def build_corpus(self, documents: List[Tuple[str, str]]) -> None:
         """Build TF-IDF corpus from multiple documents.
