@@ -1,7 +1,5 @@
 """Tests for tokenization utilities."""
 
-import pytest
-
 from tenets.core.nlp.tokenizer import CodeTokenizer, TextTokenizer
 
 

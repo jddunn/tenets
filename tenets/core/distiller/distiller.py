@@ -66,6 +66,8 @@ class Distiller:
         remove_comments: bool = False,
         pinned_files: Optional[List[Path]] = None,
         include_tests: Optional[bool] = None,
+        docstring_weight: Optional[float] = None,
+        summarize_imports: bool = True,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -166,6 +168,8 @@ class Distiller:
             full=full,
             condense=condense,
             remove_comments=remove_comments,
+            docstring_weight=docstring_weight,
+            summarize_imports=summarize_imports,
         )
 
         # 8. Format the output
@@ -187,6 +191,9 @@ class Distiller:
             "full_mode": full,
             "condense": condense,
             "remove_comments": remove_comments,
+            # Include the aggregated data for _build_result to use
+            "included_files": aggregated["included_files"],
+            "total_tokens": aggregated.get("total_tokens", 0),
         }
 
         # Add debug information for verbose mode
@@ -198,6 +205,13 @@ class Distiller:
             "synonyms": getattr(prompt_context, "synonyms", []),
             "entities": prompt_context.entities,
         }
+
+        # Expose NLP normalization metrics if available from parser
+        try:
+            if isinstance(prompt_context.metadata, dict) and "nlp_normalization" in prompt_context.metadata:
+                metadata["nlp_normalization"] = prompt_context.metadata["nlp_normalization"]
+        except Exception:
+            pass
 
         # Add ranking details
         metadata["ranking_details"] = {
@@ -372,6 +386,8 @@ class Distiller:
         full: bool = False,
         condense: bool = False,
         remove_comments: bool = False,
+        docstring_weight: Optional[float] = None,
+        summarize_imports: bool = True,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget."""
         return self.aggregator.aggregate(
@@ -383,6 +399,8 @@ class Distiller:
             full=full,
             condense=condense,
             remove_comments=remove_comments,
+            docstring_weight=docstring_weight,
+            summarize_imports=summarize_imports,
         )
 
     def _format_output(
@@ -402,9 +420,20 @@ class Distiller:
 
     def _build_result(self, formatted: str, metadata: Dict[str, Any]) -> ContextResult:
         """Build the final context result."""
+        # Extract file paths from the aggregated included_files structure
+        included_files = []
+        for file_info in metadata.get("included_files", []):
+            if isinstance(file_info, dict) and "file" in file_info:
+                # file_info["file"] is a FileAnalysis object with a path attribute
+                included_files.append(str(file_info["file"].path))
+            elif hasattr(file_info, "path"):
+                # Direct FileAnalysis object
+                included_files.append(str(file_info.path))
+                
         return ContextResult(
             context=formatted,
             format=metadata.get("format", "markdown"),
             metadata=metadata,
-            files_included=[f["path"] for f in metadata.get("included_files", [])],
+            files_included=included_files,
+            token_count=metadata.get("total_tokens", 0),
         )

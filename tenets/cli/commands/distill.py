@@ -10,9 +10,11 @@ import typer
 from rich import print
 from rich.console import Console
 from rich.panel import Panel
+from rich.markup import escape
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from tenets import Tenets
+from tenets.utils.timing import CommandTimer, format_duration
 
 console = Console()
 
@@ -65,6 +67,11 @@ def distill(
         "--exclude-tests",
         help="Explicitly exclude test files (even for test-related prompts)",
     ),
+    include_minified: bool = typer.Option(
+        False,
+        "--include-minified",
+        help="Include minified/built files (*.min.js, dist/, etc.) normally excluded",
+    ),
     # Features
     no_git: bool = typer.Option(False, "--no-git", help="Disable git context inclusion"),
     full: bool = typer.Option(
@@ -81,6 +88,18 @@ def distill(
         False,
         "--remove-comments",
         help="Strip comments (heuristic, language-aware) before counting tokens",
+    ),
+    docstring_weight: Optional[float] = typer.Option(
+        None,
+        "--docstring-weight",
+        min=0.0,
+        max=1.0,
+        help="Weight for including docstrings in summaries (0=never, 0.5=balanced, 1.0=always)",
+    ),
+    no_summarize_imports: bool = typer.Option(
+        False,
+        "--no-summarize-imports",
+        help="Disable import summarization (show all imports verbatim)",
     ),
     session: Optional[str] = typer.Option(
         None, "--session", "-s", help="Use session for stateful context building"
@@ -137,7 +156,15 @@ def distill(
     # Use the verbose parameter directly (it overrides context)
     quiet = state.get("quiet", False)
 
+    # Initialize timer - suppress output in JSON/HTML modes when not outputting to file
+    is_json_quiet = format.lower() == "json" and not output
+    is_html_quiet = format.lower() == "html" and not output
+    timer = CommandTimer(console, quiet or is_json_quiet or is_html_quiet)
+
     try:
+        # Start timing
+        timer.start("Initializing tenets...")
+        
         # Initialize tenets
         tenets = Tenets()
 
@@ -180,6 +207,8 @@ def distill(
                     condense=condense,
                     remove_comments=remove_comments,
                     include_tests=test_inclusion,
+                    docstring_weight=docstring_weight,
+                    summarize_imports=not no_summarize_imports,
                 )
         else:
             # No progress bar in quiet mode
@@ -198,6 +227,8 @@ def distill(
                 condense=condense,
                 remove_comments=remove_comments,
                 include_tests=test_inclusion,
+                docstring_weight=docstring_weight,
+                summarize_imports=not no_summarize_imports,
             )
 
         # Prepare metadata and interactivity flags
@@ -217,6 +248,34 @@ def distill(
                 console.print(f"  Keywords: {pc.get('keywords', [])}")
                 console.print(f"  Synonyms: {pc.get('synonyms', [])}")
                 console.print(f"  Entities: {pc.get('entities', [])}")
+
+            # Show NLP normalization details
+            if "nlp_normalization" in metadata:
+                nn = metadata["nlp_normalization"]
+                console.print("\n[cyan]NLP Normalization:[/cyan]")
+                kw = nn.get("keywords", {})
+                console.print(
+                    f"  Keywords normalized: {kw.get('original_total', 0)} -> {kw.get('total', 0)}"
+                )
+                # Print up to 5 examples of normalization steps
+                norm_map = kw.get("normalized", {})
+                shown = 0
+                for k, info in norm_map.items():
+                    console.print(f"    - {k}: steps={info.get('steps', [])}, variants={info.get('variants', [])}")
+                    shown += 1
+                    if shown >= 5:
+                        break
+                ent = nn.get("entities", {})
+                console.print(
+                    f"  Entities recognized: {ent.get('total', 0)} (variation counts: top {min(5, len(ent.get('variation_counts', {})))} shown)"
+                )
+                vc = ent.get("variation_counts", {})
+                shown = 0
+                for name, cnt in vc.items():
+                    console.print(f"    - {name}: {cnt} variants")
+                    shown += 1
+                    if shown >= 5:
+                        break
 
             # Show ranking details
             if "ranking_details" in metadata:
@@ -272,25 +331,36 @@ def distill(
         else:
             output_text = result.context
 
+        # Stop timing
+        timing_result = timer.stop("Context distillation complete")
+        
         # Build summary details
-        include_display = ",".join(include_patterns) if include_patterns else "(none)"
-        exclude_display = ",".join(exclude_patterns) if exclude_patterns else "(none)"
+        include_display_raw = ",".join(include_patterns) if include_patterns else "(none)"
+        exclude_display_raw = ",".join(exclude_patterns) if exclude_patterns else "(none)"
         git_display = "disabled" if no_git else "enabled (ranking only)"
-        session_display = session or "(none)"
+        session_display_raw = session or "(none)"
         max_tokens_display = str(max_tokens) if max_tokens else "model default"
+
+        # Escape dynamic strings for Rich markup safety
+        prompt_text = escape(str(prompt)[:80])
+        path_text = escape(str(path))
+        include_display = escape(include_display_raw)
+        exclude_display = escape(exclude_display_raw)
+        session_display = escape(session_display_raw)
 
         # Show a concise summary before content in interactive mode
         if interactive:
             console.print(
                 Panel(
-                    f"[bold]Prompt[/bold]: {str(prompt)[:80]}\n"
-                    f"Path: {path!s}\n"
+                    f"[bold]Prompt[/bold]: {prompt_text}\n"
+                    f"Path: {path_text}\n"
                     f"Mode: {metadata.get('mode', 'unknown')}  •  Format: {format}\n"
                     f"Full: {metadata.get('full_mode', full)}  •  Condense: {metadata.get('condense', condense)}  •  Remove Comments: {metadata.get('remove_comments', remove_comments)}\n"
                     f"Files: {files_included}/{files_analyzed}  •  Tokens: {token_count:,} / {max_tokens_display}\n"
                     f"Include: {include_display}\n"
                     f"Exclude: {exclude_display}\n"
-                    f"Git: {git_display}  •  Session: {session_display}",
+                    f"Git: {git_display}  •  Session: {session_display}\n"
+                    f"[dim]Time: {timing_result.formatted_duration}[/dim]",
                     title="Tenets Context",
                     border_style="green",
                 )
@@ -300,10 +370,52 @@ def distill(
         if output:
             output.write_text(output_text, encoding="utf-8")
             if not quiet:
-                console.print(f"[green]✓[/green] Context saved to {output}")
+                console.print(f"[green]✓[/green] Context saved to {escape(str(output))} [dim]({timing_result.formatted_duration})[/dim]")
+                
+                # If HTML format and interactive, offer to open in browser
+                if format == "html" and interactive:
+                    import click
+                    if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                        import webbrowser
+                        # Ensure absolute path for file URI
+                        file_path = output.resolve()
+                        webbrowser.open(file_path.as_uri())
+                        console.print("[green]✓[/green] Opened in browser")
         elif format == "json":
             # Emit pure JSON without Rich formatting to keep stdout clean for parsers/tests
             print(output_text)
+        elif format == "html":
+            # For HTML, save to a default file if no output specified
+            if interactive:
+                # Auto-generate filename with timestamp and prompt info
+                from datetime import datetime
+                import re
+                
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                # Create safe prompt snippet for filename
+                prompt_str = prompt[:50] if prompt else "context"
+                safe_prompt = re.sub(r'[^\w\-_\s]', '', prompt_str)
+                safe_prompt = safe_prompt.replace(" ", "_")[:30]
+                safe_prompt = re.sub(r'_+', '_', safe_prompt)
+                
+                default_html = Path(f"distill_{safe_prompt}_{timestamp}.html")
+                default_html.write_text(output_text, encoding="utf-8")
+                console.print(f"[green]✓[/green] HTML context saved to {escape(str(default_html))} [dim]({timing_result.formatted_duration})[/dim]")
+                
+                # Offer to open in browser
+                import click
+                if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                    import webbrowser
+                    # Ensure absolute path for file URI
+                    file_path = default_html.resolve()
+                    webbrowser.open(file_path.as_uri())
+                    console.print("[green]✓[/green] Opened in browser")
+                else:
+                    console.print(f"[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path")
+            else:
+                # Non-interactive mode: print raw HTML for piping
+                print(output_text)
         else:
             # Draw clear context boundaries in interactive TTY only
             if interactive:
@@ -363,7 +475,7 @@ def distill(
                 except Exception:
                     copied = False
             if copied and not quiet:
-                console.print("[cyan]📋 Context copied to clipboard[/cyan]")
+                console.print(f"[cyan]📋 Context copied to clipboard[/cyan] [dim]({timing_result.formatted_duration} total)[/dim]")
             elif not copied and do_copy and not quiet:
                 console.print(
                     "[yellow]Warning:[/yellow] Unable to copy to clipboard (missing pyperclip/xclip/pbcopy)."
@@ -424,14 +536,22 @@ def distill(
                     f"Files found: {files_analyzed}\n"
                     f"Files included: {files_included}\n"
                     f"Token usage: {token_count:,} / {max_tokens or 'model default'}\n"
-                    f"Analysis time: {metadata.get('analysis_time', '?')}s",
+                    f"Analysis time: {metadata.get('analysis_time', '?')}s\n"
+                    f"Total time: [green]{timing_result.formatted_duration}[/green]",
                     title="📊 Statistics",
                     border_style="blue",
                 )
             )
 
     except Exception as e:
-        console.print(f"[red]Error:[/red] {e!s}")
+        # Stop timer on error
+        if timer.start_time and not timer.end_time:
+            timing_result = timer.stop("Operation failed")
+            if not quiet:
+                console.print(f"[dim]Failed after {timing_result.formatted_duration}[/dim]")
+        
+        # Escape dynamic error text to avoid Rich markup parsing issues (e.g., stray [ or ]).
+        console.print(f"[red]Error:[/red] {escape(str(e))}")
         if verbose:
             console.print_exception()
         raise typer.Exit(1)

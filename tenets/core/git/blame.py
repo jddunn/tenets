@@ -939,7 +939,7 @@ class BlameAnalyzer:
 
 
 def analyze_blame(
-    repo_path: Path, target: str = ".", config: Optional[TenetsConfig] = None, **kwargs
+    repo_path: Path, target: str = ".", config: Optional[TenetsConfig] = None, **kwargs: Any
 ) -> BlameReport:
     """Convenience function to analyze blame.
 

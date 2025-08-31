@@ -1,7 +1,5 @@
 """Tests for content transformation utilities."""
 
-import pytest
-
 from tenets.core.distiller.transform import (
     apply_transformations,
     condense_whitespace,
@@ -237,15 +235,15 @@ class TestCondenseWhitespace:
     def test_condense_complex_whitespace(self):
         """Test condensing complex whitespace patterns."""
         text = """def function():
-    
+
 
 
     x = 1
-    
-    
-    
+
+
+
     y = 2
-    
+
     return x + y"""
 
         result = condense_whitespace(text)
@@ -297,11 +295,11 @@ class TestApplyTransformations:
 
 def test():
     \"\"\"Docstring.\"\"\"
-    
+
 
     x = 1  # Set x
-    
-    
+
+
     return x"""
 
         result, stats = apply_transformations(code, "python", remove_comments=True, condense=True)
@@ -357,13 +355,13 @@ def test():
     # Validate inputs
     if x < 0:  # Check x
         x = 0
-    
-    
+
+
     # Calculate result
     result = x + y  # Add them
-    
-    
-    
+
+
+
     return result'''
 
         result, stats = apply_transformations(code, "python", remove_comments=True, condense=True)

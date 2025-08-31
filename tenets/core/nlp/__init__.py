@@ -22,7 +22,13 @@ from .tokenizer import CodeTokenizer, TextTokenizer
 try:
     from .cache import EmbeddingCache
     from .embeddings import EmbeddingModel, LocalEmbeddings
-    from .similarity import SemanticSimilarity, cosine_similarity
+    from .similarity import (
+        SemanticSimilarity, 
+        cosine_similarity,
+        sparse_cosine_similarity,
+        euclidean_distance,
+        manhattan_distance
+    )
 
     ML_AVAILABLE = True
 except ImportError:
@@ -46,6 +52,18 @@ except ImportError:
     def cosine_similarity(a, b):
         """Stub for when ML features not available."""
         return 0.0
+    
+    def sparse_cosine_similarity(a, b):
+        """Stub for when ML features not available."""
+        return 0.0
+    
+    def euclidean_distance(a, b):
+        """Stub for when ML features not available."""
+        return 1.0
+        
+    def manhattan_distance(a, b):
+        """Stub for when ML features not available."""
+        return 1.0
 
     class EmbeddingCache:
         """Stub for when ML features not available."""
@@ -68,6 +86,9 @@ __all__ = [
     "LocalEmbeddings",
     "SemanticSimilarity",
     "cosine_similarity",
+    "sparse_cosine_similarity",
+    "euclidean_distance",
+    "manhattan_distance",
     "EmbeddingCache",
     # Convenience functions
     "extract_keywords",

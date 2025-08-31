@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Set
 from tenets.core.nlp.programming_patterns import get_programming_patterns
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
-from tenets.utils.logger import get_logger
+# Note: get_logger imported locally in each class to avoid circular imports
 
 from .factors import RankingFactors
 
@@ -60,6 +60,7 @@ class FastRankingStrategy(RankingStrategy):
 
     def __init__(self):
         """Initialize fast ranking strategy."""
+        from tenets.utils.logger import get_logger
         self.logger = get_logger(__name__)
 
     def rank_file(
@@ -207,6 +208,7 @@ class BalancedRankingStrategy(RankingStrategy):
 
     def __init__(self):
         """Initialize balanced ranking strategy."""
+        from tenets.utils.logger import get_logger
         self.logger = get_logger(__name__)
 
     def rank_file(
@@ -519,6 +521,7 @@ class ThoroughRankingStrategy(RankingStrategy):
 
     def __init__(self):
         """Initialize thorough ranking strategy with NLP components."""
+        from tenets.utils.logger import get_logger
         self.logger = get_logger(__name__)
         # Get centralized programming patterns
         self.programming_patterns = get_programming_patterns()
@@ -597,13 +600,15 @@ class ThoroughRankingStrategy(RankingStrategy):
         pattern_scores = self.programming_patterns.analyze_code_patterns(
             file.content or "", prompt_context.keywords
         )
+        
+        # Store overall score
         factors.code_patterns = pattern_scores.get("overall", 0.0)
-        factors.custom_scores.update(pattern_scores)
-        # Provide alias keys expected by tests (e.g., auth_patterns)
-        for k, v in list(pattern_scores.items()):
-            if k.startswith("pattern_"):
-                cat = k.split("_", 1)[1]
-                factors.custom_scores[f"{cat}_patterns"] = v
+        
+        # Store individual category scores with clean naming
+        for category, score in pattern_scores.items():
+            if category != "overall":
+                # Use consistent naming: category_patterns
+                factors.custom_scores[f"{category}_patterns"] = score
 
         # AST-based analysis
         if file.structure:
@@ -642,7 +647,7 @@ class ThoroughRankingStrategy(RankingStrategy):
                     p_emb = p_emb.unsqueeze(0)
                 sim = self._cosine_similarity(f_emb, p_emb)
                 # Handle numpy/tensor scalars with .item()
-                if hasattr(sim, "item") and callable(getattr(sim, "item")):
+                if hasattr(sim, "item") and callable(sim.item):
                     sim = sim.item()
                 factors.semantic_similarity = float(sim) if sim is not None else 0.0
         except Exception:
@@ -846,10 +851,12 @@ class MLRankingStrategy(RankingStrategy):
 
     def __init__(self):
         """Initialize ML ranking strategy."""
+        from tenets.utils.logger import get_logger
         self.logger = get_logger(__name__)
         self._model = None
         self._embeddings_cache = {}
-        self._load_model()
+        self._model_loaded = False
+        # Don't load model in __init__ - load lazily when needed
 
     def _load_model(self):
         """Load ML model lazily."""
@@ -865,6 +872,11 @@ class MLRankingStrategy(RankingStrategy):
         self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
     ) -> RankingFactors:
         """ML-based ranking with semantic similarity."""
+        # Load model lazily on first use
+        if not self._model_loaded:
+            self._load_model()
+            self._model_loaded = True
+            
         # Start with thorough ranking
         thorough = ThoroughRankingStrategy()
         factors = thorough.rank_file(file, prompt_context, corpus_stats)

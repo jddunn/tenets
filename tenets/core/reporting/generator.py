@@ -222,22 +222,23 @@ class ReportGenerator:
             self.sections.append(self._create_readme_section(readme_info))
 
         # Add analysis sections based on available data
-        if "complexity" in data:
+        # Add defensive checks to prevent NoneType errors
+        if "complexity" in data and data["complexity"] is not None:
             self.sections.append(self._create_complexity_section(data["complexity"], config))
 
-        if "contributors" in data:
+        if "contributors" in data and data["contributors"] is not None:
             self.sections.append(self._create_contributors_section(data["contributors"], config))
 
-        if "hotspots" in data:
+        if "hotspots" in data and data["hotspots"] is not None:
             self.sections.append(self._create_hotspots_section(data["hotspots"], config))
 
-        if "dependencies" in data:
+        if "dependencies" in data and data["dependencies"] is not None:
             self.sections.append(self._create_dependencies_section(data["dependencies"], config))
 
-        if "coupling" in data:
+        if "coupling" in data and data["coupling"] is not None:
             self.sections.append(self._create_coupling_section(data["coupling"], config))
 
-        if "momentum" in data:
+        if "momentum" in data and data["momentum"] is not None:
             self.sections.append(self._create_momentum_section(data["momentum"], config))
 
         if config.include_recommendations:
@@ -277,9 +278,17 @@ class ReportGenerator:
             "analysis_summary": self._extract_summary_metrics(data),
         }
 
+        # Add path information - this is the directory/file that was examined
+        if "path" in data:
+            metadata["examined_path"] = data["path"]
+        
         # Add data source information
         if "source" in data:
             metadata["source"] = data["source"]
+        
+        # Add timing information if available
+        if "timing" in data:
+            metadata["timing"] = data["timing"]
 
         return metadata
 
@@ -302,15 +311,15 @@ class ReportGenerator:
         }
 
         # Count issues from various sources
-        if "complexity" in data:
+        if "complexity" in data and data["complexity"] is not None:
             summary["critical_issues"] += data["complexity"].get("critical_count", 0)
             summary["total_issues"] += data["complexity"].get("complex_functions", 0)
 
-        if "hotspots" in data:
+        if "hotspots" in data and data["hotspots"] is not None:
             summary["critical_issues"] += data["hotspots"].get("critical_count", 0)
             summary["total_issues"] += data["hotspots"].get("total_hotspots", 0)
 
-        if "dependencies" in data:
+        if "dependencies" in data and data["dependencies"] is not None:
             summary["total_issues"] += data["dependencies"].get("circular_count", 0)
 
         return summary
@@ -328,7 +337,7 @@ class ReportGenerator:
             id="summary", title="Executive Summary", level=1, order=1, icon="📊"
         )
 
-        summary = self.metadata.get("analysis_summary", {})
+        summary = self.metadata.get("analysis_summary", {}) if self.metadata else {}
         metrics = data.get("metrics", {})
 
         # Build summary content
@@ -379,6 +388,14 @@ class ReportGenerator:
         content.append(
             f"- 📊 Analyzed **{summary.get('total_files', 0)} files** with **{summary.get('total_lines', 0):,} lines** of code"
         )
+        
+        # Add timing information if available
+        if "timing" in data:
+            timing = data["timing"]
+            if "formatted_duration" in timing:
+                content.append(
+                    f"- ⏱️ Analysis completed in **{timing['formatted_duration']}**"
+                )
 
         # Add language distribution info
         if metrics.get("languages"):
@@ -1046,7 +1063,7 @@ class ReportGenerator:
         metrics = data.get("metrics", {})
 
         # Complexity recommendations
-        if "complexity" in data:
+        if "complexity" in data and data["complexity"] is not None:
             complexity = data["complexity"]
             avg_complexity = complexity.get("avg_complexity", 0)
             max_complexity = complexity.get("max_complexity", 0)
@@ -1080,7 +1097,7 @@ class ReportGenerator:
                 )
 
         # Hotspot recommendations
-        if "hotspots" in data:
+        if "hotspots" in data and data["hotspots"] is not None:
             hotspots = data["hotspots"]
             total_hotspots = hotspots.get("total_hotspots", 0)
             critical_count = hotspots.get("critical_count", 0)
@@ -1121,7 +1138,7 @@ class ReportGenerator:
                     {
                         "priority": "high",
                         "category": "testing",
-                        "action": f"Increase test coverage from {test_coverage*100:.1f}% to at least 70%",
+                        "action": f"Increase test coverage from {test_coverage * 100:.1f}% to at least 70%",
                         "impact": "Reduced regression bugs and safer refactoring",
                     }
                 )
@@ -1130,7 +1147,7 @@ class ReportGenerator:
                     {
                         "priority": "medium",
                         "category": "testing",
-                        "action": f"Improve test coverage from {test_coverage*100:.1f}% to 80% or higher",
+                        "action": f"Improve test coverage from {test_coverage * 100:.1f}% to 80% or higher",
                         "impact": "Better confidence in code changes",
                     }
                 )

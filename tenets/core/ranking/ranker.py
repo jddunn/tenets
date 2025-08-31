@@ -31,60 +31,29 @@ from .strategies import (
     ThoroughRankingStrategy,
 )
 
-# Optional symbol for tests to patch ML model class
-try:  # pragma: no cover - optional dependency
-    from sentence_transformers import SentenceTransformer  # type: ignore
-except Exception:  # pragma: no cover
-    SentenceTransformer = None  # type: ignore
+# Optional symbol for tests to patch ML model class - lazy loaded when needed
+SentenceTransformer = None  # Will be imported lazily when ML ranking is used
 
 
-# Provide a module-level cosine_similarity function for tests to patch
-def cosine_similarity(a, b):  # pragma: no cover - simple fallback
-    try:
-
-        def to_vec(x):
-            try:
-                if hasattr(x, "detach"):
-                    x = x.detach()
-                if hasattr(x, "flatten"):
-                    x = x.flatten()
-                if hasattr(x, "tolist"):
-                    x = x.tolist()
-            except Exception:
-                pass
-
-            def flatten(seq):
-                for item in seq:
-                    if isinstance(item, (list, tuple)):
-                        yield from flatten(item)
-                    else:
-                        try:
-                            yield float(item)
-                        except Exception:
-                            yield 0.0
-
-            if isinstance(x, (list, tuple)):
-                return list(flatten(x))
-            try:
-                return [float(x)]
-            except Exception:
-                return [0.0]
-
-        va = to_vec(a)
-        vb = to_vec(b)
-        n = min(len(va), len(vb))
-        if n == 0:
+# Import cosine similarity from the central module
+try:
+    from tenets.core.nlp.similarity import cosine_similarity
+except ImportError:
+    # Fallback for tests or when similarity module not available
+    def cosine_similarity(a, b):  # pragma: no cover - simple fallback
+        try:
+            import math
+            # Simple dot product cosine similarity for lists
+            if not a or not b:
+                return 0.0
+            dot = sum(x * y for x, y in zip(a, b))
+            norm_a = math.sqrt(sum(x * x for x in a))
+            norm_b = math.sqrt(sum(y * y for y in b))
+            if norm_a == 0 or norm_b == 0:
+                return 0.0
+            return dot / (norm_a * norm_b)
+        except Exception:
             return 0.0
-        va = va[:n]
-        vb = vb[:n]
-        dot = sum(va[i] * vb[i] for i in range(n))
-        import math as _m
-
-        norm_a = _m.sqrt(sum(v * v for v in va)) or 1.0
-        norm_b = _m.sqrt(sum(v * v for v in vb)) or 1.0
-        return float(dot / (norm_a * norm_b))
-    except Exception:
-        return 0.0
 
 
 class RankingAlgorithm(Enum):
@@ -207,13 +176,9 @@ class RelevanceRanker:
             use_stopwords if use_stopwords is not None else config.ranking.use_stopwords
         )
 
-        # Initialize strategies
-        self.strategies: Dict[RankingAlgorithm, RankingStrategy] = {
-            RankingAlgorithm.FAST: FastRankingStrategy(),
-            RankingAlgorithm.BALANCED: BalancedRankingStrategy(),
-            RankingAlgorithm.THOROUGH: ThoroughRankingStrategy(),
-            RankingAlgorithm.ML: MLRankingStrategy(),
-        }
+        # Initialize strategies lazily to avoid loading unnecessary models
+        self._strategies_cache: Dict[RankingAlgorithm, RankingStrategy] = {}
+        self.strategies = self._strategies_cache  # Alias for compatibility
 
         # Custom rankers list (keep public and test-expected private alias)
         self.custom_rankers: List[Callable] = []
@@ -286,8 +251,7 @@ class RelevanceRanker:
         # Select strategy
         if algorithm:
             try:
-                algo_enum = RankingAlgorithm(algorithm)
-                strategy = self.strategies.get(algo_enum)
+                strategy = self._get_strategy(algorithm)
             except ValueError:
                 raise ValueError(f"Unknown ranking algorithm: {algorithm}")
         else:
@@ -370,13 +334,26 @@ class RelevanceRanker:
         """Return the strategy instance for the given algorithm string.
 
         If algorithm is None, use the current instance algorithm.
+        Strategies are created lazily on first use to avoid loading unnecessary models.
         """
         algo = algorithm or self.algorithm.value
         try:
             algo_enum = RankingAlgorithm(algo)
         except ValueError:
             algo_enum = self.algorithm
-        return self.strategies.get(algo_enum)
+            
+        # Lazy creation of strategies
+        if algo_enum not in self._strategies_cache:
+            if algo_enum == RankingAlgorithm.FAST:
+                self._strategies_cache[algo_enum] = FastRankingStrategy()
+            elif algo_enum == RankingAlgorithm.BALANCED:
+                self._strategies_cache[algo_enum] = BalancedRankingStrategy()
+            elif algo_enum == RankingAlgorithm.THOROUGH:
+                self._strategies_cache[algo_enum] = ThoroughRankingStrategy()
+            elif algo_enum == RankingAlgorithm.ML:
+                self._strategies_cache[algo_enum] = MLRankingStrategy()
+                
+        return self._strategies_cache.get(algo_enum)
 
     def _rank_with_strategy(
         self,
@@ -562,7 +539,7 @@ class RelevanceRanker:
         use_sw = self.use_stopwords
         try:
             if hasattr(self.config, "use_tfidf_stopwords"):
-                use_sw = bool(getattr(self.config, "use_tfidf_stopwords"))
+                use_sw = bool(self.config.use_tfidf_stopwords)
         except Exception:
             pass
 

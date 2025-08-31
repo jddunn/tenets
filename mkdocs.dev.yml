@@ -32,11 +32,12 @@ plugins:
 theme:
   features:
     - navigation.instant
-    - navigation.instant.prefetch
-    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
     - toc.follow
     - search.suggest
     - search.highlight
     - content.code.copy
     - content.tabs.link
-    - header.autohide

@@ -114,8 +114,33 @@ class FileScanner:
 
         # Build ignore patterns
         self.ignore_patterns = set(self.DEFAULT_IGNORE_PATTERNS)
-        if config.additional_ignore_patterns:
+        if config and hasattr(config, 'additional_ignore_patterns') and config.additional_ignore_patterns:
             self.ignore_patterns.update(config.additional_ignore_patterns)
+        
+        # Add minified file patterns if exclude_minified is True (default)
+        self.exclude_minified = getattr(config, 'exclude_minified', True) if config else True
+        if self.exclude_minified:
+            # Add minified patterns
+            minified_patterns = getattr(config, 'minified_patterns', []) if config else []
+            if minified_patterns:
+                self.ignore_patterns.update(minified_patterns)
+            else:
+                # Default minified patterns
+                self.ignore_patterns.update([
+                    '*.min.js', '*.min.css', 'bundle.js', '*.bundle.js', '*.bundle.css',
+                    '*.production.js', '*.prod.js', 'vendor.prod.js', '*.dist.js', '*.compiled.js'
+                ])
+            
+            # Add build directory patterns
+            build_dirs = getattr(config, 'build_directory_patterns', []) if config else []
+            if build_dirs:
+                # Remove trailing slashes for directory name matching
+                self.ignore_patterns.update(d.rstrip('/') for d in build_dirs)
+            else:
+                # Default build directories (without trailing slashes)
+                self.ignore_patterns.update([
+                    'dist', 'build', 'out', 'output', 'node_modules'
+                ])
 
     def scan(
         self,
@@ -269,8 +294,12 @@ class FileScanner:
         """Check if a directory should be ignored."""
         dir_name = dir_path.name
 
-        # Check default ignore patterns
+        # Check default ignore patterns (exact match and glob patterns)
         if dir_name in self.ignore_patterns:
+            return True
+        
+        # Check if directory name matches any glob patterns
+        if any(fnmatch.fnmatch(dir_name, pattern) for pattern in self.ignore_patterns):
             return True
 
         # Check gitignore

@@ -106,7 +106,6 @@ Example error response:
             language="markdown",
             lines=len(content.splitlines()),
             size=len(content),
-            encoding="utf-8",
         )
 
     @pytest.fixture
@@ -150,7 +149,6 @@ logging:
             language="yaml",
             lines=len(content.splitlines()),
             size=len(content),
-            encoding="utf-8",
         )
 
     def test_is_documentation_file(self, summarizer):
@@ -258,7 +256,6 @@ logging:
             language="python",
             lines=4,
             size=60,
-            encoding="utf-8",
         )
 
         prompt_keywords = ["main", "function", "print"]
@@ -279,7 +276,6 @@ logging:
             language="markdown",
             lines=4,
             size=100,
-            encoding="utf-8",
         )
 
         prompt_keywords = ["api", "database", "authentication"]
@@ -314,9 +310,11 @@ logging:
         mock_extract.assert_called_once()
         args, kwargs = mock_extract.call_args
 
-        assert args[0] == markdown_file.content  # content
-        assert str(args[1]) == markdown_file.path  # file_path
-        assert args[2] == prompt_keywords  # prompt_keywords
+        # All args are passed as kwargs
+        assert kwargs.get("content") == markdown_file.content
+        # Convert both paths to Path objects for comparison to handle OS differences
+        assert Path(kwargs.get("file_path")) == Path(markdown_file.path)
+        assert kwargs.get("prompt_keywords") == prompt_keywords
         assert kwargs.get("search_depth") == 2
         assert kwargs.get("min_confidence") == 0.6
         assert kwargs.get("max_sections") == 10
@@ -338,7 +336,6 @@ logging:
             language="markdown",
             lines=3,
             size=40,
-            encoding="utf-8",
         )
 
         with patch(

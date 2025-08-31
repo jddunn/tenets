@@ -8,7 +8,9 @@ The VelocityTracker class orchestrates the analysis of commits, code changes,
 and contributor activity to provide actionable insights into team momentum.
 """
 
+import os
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -26,6 +28,77 @@ from .metrics import (
     VelocityTrend,
     calculate_momentum_metrics,
 )
+
+
+# Common bot patterns for Git services
+BOT_PATTERNS = {
+    # GitHub bots
+    "github-actions[bot]",
+    "dependabot[bot]",
+    "renovate[bot]",
+    "greenkeeper[bot]",
+    "semantic-release-bot",
+    "release-bot",
+    "github-classroom[bot]",
+    "codecov[bot]",
+    "coveralls[bot]",
+    "mergify[bot]",
+    "allcontributors[bot]",
+    "imgbot[bot]",
+    "restyled-io[bot]",
+    "whitesource-bolt-for-github[bot]",
+    "snyk-bot",
+    "pull[bot]",
+    "stale[bot]",
+    
+    # GitLab bots
+    "gitlab-bot",
+    "gitlab-ci",
+    
+    # Generic bot patterns
+    "bot@",
+    "noreply@",
+    "automated",
+    "auto-commit",
+    "auto-merge",
+}
+
+
+def is_bot_commit(author_name: str, author_email: str) -> bool:
+    """Check if a commit is from a bot or automated system.
+    
+    Args:
+        author_name: Commit author name
+        author_email: Commit author email
+        
+    Returns:
+        bool: True if commit appears to be from a bot
+    """
+    # Convert to lowercase for case-insensitive comparison
+    name_lower = author_name.lower() if author_name else ""
+    email_lower = author_email.lower() if author_email else ""
+    
+    # Check exact matches
+    if name_lower in BOT_PATTERNS or email_lower in BOT_PATTERNS:
+        return True
+    
+    # Check patterns in name
+    bot_indicators = ["[bot]", "bot", "automation", "ci", "release", "deploy"]
+    for indicator in bot_indicators:
+        if indicator in name_lower:
+            return True
+    
+    # Check email patterns
+    if "noreply" in email_lower or "bot@" in email_lower or "automated" in email_lower:
+        return True
+    
+    # Check for GitHub/GitLab automated emails
+    if email_lower.endswith("@users.noreply.github.com"):
+        # Could be a real user, check if it has bot indicators
+        if any(bot in name_lower for bot in ["bot", "action", "automated"]):
+            return True
+    
+    return False
 
 
 @dataclass
@@ -371,6 +444,8 @@ class VelocityTracker:
         sprint_duration: int = 14,
         daily_breakdown: bool = False,
         interval: str = "weekly",
+        exclude_bots: bool = True,
+        **kwargs,  # Accept additional parameters for compatibility
     ) -> MomentumReport:
         """Track development momentum for a repository.
 
@@ -386,6 +461,7 @@ class VelocityTracker:
             sprint_duration: Sprint length in days for sprint metrics
             daily_breakdown: Whether to include daily velocity data
             interval: Aggregation interval (daily, weekly, monthly)
+            exclude_bots: Whether to exclude bot commits from analysis
 
         Returns:
             MomentumReport: Comprehensive momentum analysis
@@ -400,6 +476,8 @@ class VelocityTracker:
             >>> print(f"Team velocity: {report.avg_daily_velocity}")
         """
         self.logger.debug(f"Tracking momentum for {repo_path} over {period}")
+        import time
+        start_time = time.time()
 
         # Initialize git analyzer
         self.git_analyzer = GitAnalyzer(repo_path)
@@ -408,21 +486,36 @@ class VelocityTracker:
             self.logger.warning(f"Not a git repository: {repo_path}")
             return MomentumReport(period_start=datetime.now(), period_end=datetime.now())
 
-        # Parse period
-        period_start, period_end = self._parse_period(period)
+        # Parse period - check if since/until are provided in kwargs
+        if 'since' in kwargs and 'until' in kwargs:
+            period_start = kwargs['since']
+            period_end = kwargs['until']
+        elif 'since' in kwargs:
+            period_start = kwargs['since']
+            period_end = datetime.now()
+        else:
+            period_start, period_end = self._parse_period(period)
 
         # Initialize report
         report = MomentumReport(period_start=period_start, period_end=period_end)
 
         # Get commit data
-        commits = self._get_commits_in_period(period_start, period_end, author)
+        self.logger.info(f"Fetching commits from {period_start} to {period_end}")
+        fetch_start = time.time()
+        commits = self._get_commits_in_period(period_start, period_end, author, exclude_bots)
+        self.logger.info(f"Fetched {len(commits)} commits in {time.time() - fetch_start:.2f}s")
 
         if not commits:
             self.logger.info("No commits found in period")
             return report
 
         # Analyze daily velocity
+        analyze_start = time.time()
         daily_data = self._analyze_daily_velocity(commits, period_start, period_end)
+        # Human-friendly timing (avoid confusing 0.00s output)
+        _elapsed = time.time() - analyze_start
+        _elapsed_str = "<0.01s" if _elapsed < 0.01 else f"{_elapsed:.2f}s"
+        self.logger.info(f"Analyzed daily velocity in {_elapsed_str}")
         if daily_breakdown:
             report.daily_breakdown = daily_data
 
@@ -442,6 +535,10 @@ class VelocityTracker:
                 c.author.email
                 for c in commits
                 if hasattr(c, "author") and hasattr(c.author, "email")
+                and not is_bot_commit(
+                    getattr(c.author, "name", ""),
+                    getattr(c.author, "email", "")
+                )
             )
         )
         report.active_contributors = sum(
@@ -533,7 +630,7 @@ class VelocityTracker:
         return start_date, end_date
 
     def _get_commits_in_period(
-        self, start_date: datetime, end_date: datetime, author: Optional[str] = None
+        self, start_date: datetime, end_date: datetime, author: Optional[str] = None, exclude_bots: bool = True, max_commits: int = 500
     ) -> List[Any]:
         """Get commits within a date range.
 
@@ -541,17 +638,27 @@ class VelocityTracker:
             start_date: Start date
             end_date: End date
             author: Optional author filter
+            exclude_bots: Whether to exclude bot commits
+            max_commits: Maximum number of commits to fetch
 
         Returns:
             List[Any]: List of commit objects
         """
-        commits = self.git_analyzer.get_commits_since(start_date)
+        commits = self.git_analyzer.get_commits_since(start_date, max_count=max_commits)
 
-        # Filter by end date
+        # Filter by end date and optionally exclude bots
         filtered_commits = []
         for commit in commits:
             commit_date = datetime.fromtimestamp(commit.committed_date)
             if commit_date <= end_date:
+                # Check if it's a bot commit
+                if exclude_bots and hasattr(commit, "author"):
+                    author_name = getattr(commit.author, "name", "")
+                    author_email = getattr(commit.author, "email", "")
+                    if is_bot_commit(author_name, author_email):
+                        self.logger.debug(f"Excluding bot commit from {author_name} <{author_email}>")
+                        continue
+                
                 # Filter by author if specified
                 if author:
                     if hasattr(commit, "author"):
@@ -599,12 +706,18 @@ class VelocityTracker:
             daily = daily_map[day_key]
             daily.commits += 1
 
-            # Add contributor
+            # Add contributor (excluding bots)
             if hasattr(commit, "author") and hasattr(commit.author, "email"):
-                daily.contributors.add(commit.author.email)
+                author_name = getattr(commit.author, "name", "")
+                author_email = getattr(commit.author, "email", "")
+                if not is_bot_commit(author_name, author_email):
+                    daily.contributors.add(commit.author.email)
 
-            # Process file changes
-            if hasattr(commit, "stats") and hasattr(commit.stats, "files"):
+            # Process file changes (skip by default for performance)
+            # Note: Accessing commit.stats is VERY expensive in GitPython
+            # Only enable if explicitly needed
+            include_file_stats = False  # Disabled for performance
+            if include_file_stats and hasattr(commit, "stats") and hasattr(commit.stats, "files"):
                 for file_path, stats in commit.stats.files.items():
                     daily.files_changed += 1
                     daily.lines_added += stats.get("insertions", 0)
@@ -703,6 +816,11 @@ class VelocityTracker:
 
             email = getattr(commit.author, "email", "unknown")
             name = getattr(commit.author, "name", "Unknown")
+            
+            # Skip bot contributors
+            if is_bot_commit(name, email):
+                self.logger.debug(f"Skipping bot contributor: {name} <{email}>")
+                continue
 
             if email not in contributor_map:
                 contributor_map[email] = ContributorVelocity(name=name, email=email)
@@ -721,8 +839,10 @@ class VelocityTracker:
             day_key = commit_date.strftime("%Y-%m-%d")
             contributor.active_days.add(day_key)
 
-            # Process file changes
-            if hasattr(commit, "stats") and hasattr(commit.stats, "files"):
+            # Process file changes (skip by default for performance)
+            # Note: Accessing commit.stats is VERY expensive in GitPython
+            include_file_stats = False  # Disabled for performance
+            if include_file_stats and hasattr(commit, "stats") and hasattr(commit.stats, "files"):
                 for file_path, stats in commit.stats.files.items():
                     contributor.files_touched.add(file_path)
                     contributor.lines_added += stats.get("insertions", 0)
@@ -1100,6 +1220,9 @@ class VelocityTracker:
         metrics = TeamMetrics()
 
         metrics.total_members = len(individual_velocities)
+        # For solo repos, ensure at least one member when there is any activity
+        if metrics.total_members == 0 and individual_velocities:
+            metrics.total_members = 1
         metrics.active_members = sum(
             1 for v in individual_velocities if v.velocity_trend != "inactive"
         )
@@ -1126,7 +1249,7 @@ class VelocityTracker:
         if metrics.total_members > 0:
             metrics.efficiency_score = (metrics.active_members / metrics.total_members) * 100
 
-        # Team health
+    # Team health
         avg_productivity = sum(v.productivity_score for v in individual_velocities) / max(
             1, len(individual_velocities)
         )
@@ -1153,6 +1276,21 @@ class VelocityTracker:
                         "avg_productivity": sum(v.productivity_score for v in team_contributors)
                         / len(team_contributors),
                     }
+
+        # Derive a pragmatic bus factor:
+        # - If only one active member, bus factor should be 1
+        # - Otherwise count contributors with at least 10% of commits in the period
+        total_commits = sum(v.commits for v in individual_velocities)
+        if metrics.active_members <= 1:
+            metrics.bus_factor = 1 if (metrics.active_members + metrics.total_members) > 0 else 0
+        elif total_commits > 0:
+            critical = 0
+            for v in individual_velocities:
+                if v.commits / total_commits >= 0.10:
+                    critical += 1
+            metrics.bus_factor = max(1, critical)
+        else:
+            metrics.bus_factor = 1 if metrics.total_members == 1 else 0
 
         return metrics
 

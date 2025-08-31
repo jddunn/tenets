@@ -14,9 +14,13 @@ import typer
 from tenets.core.git import ChronicleBuilder, GitAnalyzer
 from tenets.core.reporting import ReportGenerator
 from tenets.utils.logger import get_logger
+from tenets.utils.timing import CommandTimer, format_duration
 from tenets.viz import ContributorVisualizer, MomentumVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
+
+# Initialize module logger
+logger = get_logger(__name__)
 
 # Expose a Typer app so tests can pass this object to typer.testing.CliRunner.
 # Use callback so invoking the app directly (without a subcommand) runs the handler.
@@ -65,6 +69,11 @@ def run(
     logger = get_logger(__name__)
     config = None  # tests invoke this in isolation without Typer app context
 
+    # Initialize timer
+    is_quiet = format.lower() == "json" and not output
+    timer = CommandTimer(quiet=is_quiet)
+    timer.start("Initializing git chronicle...")
+
     # Initialize path; allow non-existent for most tests except explicit invalid paths
     target_path = Path(path).resolve()
     norm_path = str(path).replace("\\", "/").strip()
@@ -110,6 +119,15 @@ def run(
             logger.info("Analyzing change patterns...")
             chronicle_data["patterns"] = _analyze_patterns(git_analyzer, date_range)
 
+        # Stop timer
+        timing_result = timer.stop("Chronicle analysis complete")
+        chronicle_data["timing"] = {
+            "duration": timing_result.duration,
+            "formatted_duration": timing_result.formatted_duration,
+            "start_time": timing_result.start_datetime.isoformat(),
+            "end_time": timing_result.end_datetime.isoformat(),
+        }
+
         # Display or save results
         if format == "terminal":
             # Simple heading for tests before any rich output
@@ -117,6 +135,9 @@ def run(
             _display_terminal_chronicle(chronicle_data, show_contributors, show_patterns)
             # Summary
             _print_chronicle_summary(chronicle_data)
+            # Show timing
+            if not is_quiet:
+                click.echo(f"\n⏱  Completed in {timing_result.formatted_duration}")
         elif format == "json":
             _output_json_chronicle(chronicle_data, output)
             return
@@ -125,6 +146,12 @@ def run(
             # Do not print summary for non-terminal formats
 
     except Exception as e:
+        # Stop timer on error
+        if timer.start_time and not timer.end_time:
+            timing_result = timer.stop("Chronicle failed")
+            if not is_quiet:
+                click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
+        
         logger.error(f"Chronicle generation failed: {e}")
         click.echo(str(e))
         raise typer.Exit(1)
@@ -371,11 +398,44 @@ def _generate_chronicle_report(
         title="Repository Chronicle Report", format=format, include_charts=True
     )
 
-    output_path = Path(output) if output else Path(f"chronicle_report.{format}")
+    if output:
+        output_path = Path(output)
+    else:
+        # Auto-generate filename with timestamp and path info
+        from datetime import datetime
+        import re
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Get safe path component from current directory
+        target_path = Path.cwd()
+        path_str = str(target_path).replace("\\", "/")
+        if path_str in (".", "./", ""):
+            safe_path = "current_dir"
+        else:
+            path_str = re.sub(r'^\.+/+', '', path_str)
+            safe_path = path_str.replace("/", "_").replace("\\", "_")
+            safe_path = re.sub(r'[^\w\-_]', '', safe_path)[:30]
+        
+        # Include period info in filename if available
+        period_str = chronicle.get('period', 'all').replace(" ", "_").replace("-", "_")
+        
+        filename = f"chronicle_{safe_path}_{period_str}_{timestamp}.{format}"
+        filename = re.sub(r'_+', '_', filename)
+        output_path = Path(filename)
 
     generator.generate(data=chronicle, output_path=output_path, config=report_config)
 
     click.echo(f"Chronicle report generated: {output_path}")
+    
+    # If HTML format, offer to open in browser
+    if format == "html":
+        if click.confirm("\nWould you like to open it in your browser now?", default=False):
+            import webbrowser
+            # Ensure absolute path for file URI
+            file_path = output_path.resolve()
+            webbrowser.open(file_path.as_uri())
+            click.echo("✓ Opened in browser")
 
 
 def _output_json_chronicle(chronicle: Dict[str, Any], output: Optional[str]) -> None:

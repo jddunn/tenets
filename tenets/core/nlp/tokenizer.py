@@ -5,8 +5,7 @@ constructs and can handle camelCase, snake_case, and other patterns.
 """
 
 import re
-from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional
 
 from tenets.utils.logger import get_logger
 
@@ -119,11 +118,7 @@ class CodeTokenizer:
             tokens = [p.lower() for p in self.camel_case_pattern.findall(identifier)]
 
         # snake_case
-        elif "_" in identifier:
-            tokens = [p.lower() for p in identifier.split("_") if p]
-
-        # SCREAMING_SNAKE_CASE
-        elif identifier.isupper() and "_" in identifier:
+        elif "_" in identifier or (identifier.isupper() and "_" in identifier):
             tokens = [p.lower() for p in identifier.split("_") if p]
 
         else:

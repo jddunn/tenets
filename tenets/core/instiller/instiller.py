@@ -261,8 +261,12 @@ class ComplexityAnalyzer:
         self.config = config
         self.logger = get_logger(__name__)
 
-        # Initialize NLP components if available
-        self._init_nlp_components()
+        # Lazy initialization flags
+        self._nlp_initialized = False
+        self.tokenizer = None
+        self.keyword_extractor = None
+        self.semantic_analyzer = None
+        self.ml_available = False
 
     def _init_nlp_components(self) -> None:
         """Initialize NLP components for analysis."""
@@ -270,12 +274,15 @@ class ComplexityAnalyzer:
             from tenets.core.nlp import ML_AVAILABLE, CodeTokenizer, KeywordExtractor
 
             self.tokenizer = CodeTokenizer(use_stopwords=True)
+            # Don't force YAKE since it has issues on Python 3.13
             self.keyword_extractor = KeywordExtractor(
-                use_yake=True, use_stopwords=True, stopword_set="code"
+                use_yake=False, use_stopwords=True, stopword_set="code"
             )
             self.ml_available = ML_AVAILABLE
 
-            if ML_AVAILABLE:
+            # Don't initialize SemanticSimilarity - it loads ML models unnecessarily
+            # Only initialize if ML is explicitly enabled in config
+            if ML_AVAILABLE and self.config.ranking.use_ml:
                 from tenets.core.nlp import SemanticSimilarity
 
                 self.semantic_analyzer = SemanticSimilarity()
@@ -298,6 +305,11 @@ class ComplexityAnalyzer:
         Returns:
             Complexity score between 0 and 1
         """
+        # Initialize NLP components lazily on first use
+        if not self._nlp_initialized:
+            self._init_nlp_components()
+            self._nlp_initialized = True
+            
         if isinstance(context, ContextResult):
             text = context.context
             metadata = context.metadata
@@ -989,12 +1001,12 @@ class Instiller:
             f"{f' for session {session}' if session else ''}"
         )
 
-        # Inject tenets
+        # Inject tenets - TenetInjector doesn't have a strategy parameter
         modified_text, injection_metadata = self.injector.inject_tenets(
             content=text,
             tenets=tenets,
             format=format_type,
-            strategy=strategy,
+            context_metadata={"strategy": strategy}
         )
 
         # Update tenet metrics

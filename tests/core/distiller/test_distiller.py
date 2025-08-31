@@ -192,7 +192,9 @@ class TestDistiller:
         mock_components.scanner.scan.assert_called()
         call_args = mock_components.scanner.scan.call_args
         assert call_args[1]["include_patterns"] == ["*.py", "*.js"]
-        assert call_args[1]["exclude_patterns"] == ["test_*.py"]
+        # Check that the user-provided pattern is in the exclude list
+        # (other test patterns may be added automatically)
+        assert "test_*.py" in call_args[1]["exclude_patterns"]
 
     def test_parse_prompt(self, mock_components):
         """Test prompt parsing."""

@@ -12,10 +12,29 @@
   /* Hide mobile-only elements on desktop */
   .md-header__button[for="__drawer"],
   .md-nav__toggle,
+  .md-toggle--drawer,
+  #__drawer,
   .md-overlay { display: none !important; }
-  /* Do not render drawer on desktop; use header tabs only */
-  .md-sidebar--primary,
-  .md-nav--primary { display: none; }
+  /* Keep tabs visible on desktop */
+  .md-tabs { 
+    display: flex !important; 
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .md-tabs__list { 
+    display: flex !important; 
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .md-tabs__item { 
+    display: block !important; 
+    visibility: visible !important;
+  }
+  .md-tabs__link { 
+    display: inline-flex !important; 
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
 }
 
 /* =====================================================
@@ -30,32 +49,17 @@
     padding: 0 0.5rem;
     position: fixed;
     width: 100%;
-  /* Ensure header (and search modal within it) stacks above page overlays */
-  z-index: 24000;
+    z-index: 4;
   }
 
   .md-header__inner {
-  padding: 0 0.5rem;
+    padding: 0 0.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  /* Reserve space on the right for the fixed hamburger so controls don't crowd it */
-  padding-right: 140px !important;
   }
 
-  /* Hide desktop nav on mobile */
-  .md-header-nav {
-    display: none !important;
-  }
-
-  /* Hide header title on mobile to avoid duplication with content title */
-  .md-header__title { display: none !important; }
-
-  [data-md-color-scheme="slate"] .md-header__title {
-    color: #fbbf24;
-  }
-
-  /* Hamburger menu button - left side */
+  /* Style the hamburger button */
   .md-header__button[for="__drawer"] {
     display: flex !important;
     width: 2.25rem;
@@ -69,8 +73,6 @@
       -3px -3px 8px rgba(255, 255, 255, 0.9);
     cursor: pointer;
     order: 1;
-    position: relative;
-    z-index: 10002;
   }
 
   [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
@@ -97,6 +99,19 @@
   /* Keep GitHub inline next to theme toggle (no fixed positioning) */
   .md-header__source,
   .md-header .md-source { position: static !important; margin-right: 0.25rem !important; }
+  
+  /* Fix GitHub icon color on mobile */
+  .md-source__icon svg,
+  .md-header .md-source__icon svg,
+  .md-source svg {
+    fill: #f59e0b !important;
+  }
+  
+  [data-md-color-scheme="slate"] .md-source__icon svg,
+  [data-md-color-scheme="slate"] .md-header .md-source__icon svg,
+  [data-md-color-scheme="slate"] .md-source svg {
+    fill: #fbbf24 !important;
+  }
 
   /* Hide any GitHub/source block that theme may render inside drawer */
   .md-nav__source,
@@ -116,112 +131,199 @@
   .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
   }
 
-  /* Mobile navigation drawer */
-  .md-nav--primary,
+  /* Force mobile drawer to be visible and styled */
   .md-sidebar--primary {
-    display: block !important;
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    width: 85% !important;
-    max-width: 320px !important;
-    height: 100vh !important;
-    background: linear-gradient(180deg, #fdfdf9 0%, #f7f5f0 100%) !important;
-    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.2) !important;
+    width: 242px !important;
+    height: 100% !important;
     transform: translateX(-100%) !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    z-index: 10010 !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  /* Prevent hidden drawer from intercepting clicks when off-canvas */
-  pointer-events: none;
+    transition: transform .25s cubic-bezier(.4,0,.2,1) !important;
+    z-index: 200 !important;
+    background: #fff !important;
+    overflow: hidden !important;
   }
   
-  /* Use theme-provided nav; no custom header injection */
-
-  [data-md-color-scheme="slate"] .md-nav--primary,
-  [data-md-color-scheme="slate"] .md-sidebar--primary {
-    background: linear-gradient(180deg, #1a2332 0%, #263244 100%) !important;
-    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.4) !important;
+  /* Show drawer when checkbox is checked - Material for MkDocs structure */
+  .md-toggle--drawer:checked ~ .md-container .md-sidebar--primary,
+  #__drawer:checked ~ .md-container .md-sidebar--primary,
+  input[type="checkbox"]#__drawer:checked ~ .md-container .md-sidebar--primary {
+    transform: translateX(0) !important;
+  }
+  
+  /* Style the drawer content */
+  .md-sidebar--primary .md-sidebar__scrollwrap {
+    height: 100% !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  .md-sidebar--primary .md-nav--primary {
+    background: linear-gradient(180deg, #fdfdf9 0%, #f7f5f0 100%) !important;
+    height: 100% !important;
   }
 
-  /* Show drawer when checkbox is checked */
-  input[type="checkbox"]#__drawer:checked ~ .md-container .md-nav--primary,
-  input[type="checkbox"]#__drawer:checked ~ .md-container .md-sidebar--primary,
-  .md-toggle--drawer:checked ~ .md-container .md-nav--primary,
-  .md-toggle--drawer:checked ~ .md-container .md-sidebar--primary {
-    transform: translateX(0) !important;
-  /* Re-enable interactions only when visible */
-  pointer-events: auto !important;
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav--primary {
+    background: linear-gradient(180deg, #1a2332 0%, #263244 100%) !important;
+  }
+  
+  /* Overlay styling */
+  .md-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    transition: opacity .25s !important;
+    background-color: rgba(0,0,0,.54) !important;
+    opacity: 0 !important;
+    z-index: 199 !important;
+    pointer-events: none !important;
+    cursor: pointer !important;
+  }
+  
+  .md-toggle--drawer:checked ~ .md-overlay,
+  #__drawer:checked ~ .md-overlay,
+  input[type="checkbox"]#__drawer:checked ~ .md-overlay {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    display: block !important;
   }
 
   /* Mobile nav header with logo */
-  .md-nav--primary .md-nav__title,
-  .md-sidebar--primary .md-nav__title {
+  .md-nav--primary .md-nav__title:first-child,
+  .md-sidebar--primary .md-nav__title:first-child {
     background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    color: #1a2332;
     padding: 1rem;
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
-    font-size: 1.15rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: center;
     border-bottom: 1px solid rgba(26, 35, 50, 0.1);
     margin-bottom: 0;
-    text-transform: lowercase;
     position: sticky;
     top: 0;
     z-index: 10;
+    height: 60px;
+    font-size: 0 !important; /* Hide text */
+    color: transparent !important; /* Hide text */
+    overflow: hidden;
+  }
+  
+  /* Hide the text content but keep the container */
+  .md-nav--primary .md-nav__title:first-child::after,
+  .md-sidebar--primary .md-nav__title:first-child::after {
+    display: none !important;
+  }
+  
+  /* Hide any duplicate titles */
+  .md-nav--primary .md-nav__title ~ .md-nav__title,
+  .md-sidebar--primary .md-nav__title ~ .md-nav__title {
+    display: none !important;
   }
 
-  /* Logo in drawer header */
-  .md-nav--primary .md-nav__title::before,
-  .md-sidebar--primary .md-nav__title::before {
+  /* Hide any actual img logos that Material might inject */
+  .md-nav--primary .md-nav__title img,
+  .md-sidebar--primary .md-nav__title img,
+  .md-nav--primary .md-logo img,
+  .md-sidebar--primary .md-logo img,
+  .md-nav--primary .md-nav__title .md-nav__button img,
+  .md-sidebar--primary .md-nav__title .md-nav__button img {
+    display: none !important;
+  }
+  
+  /* Hide any text spans in the title */
+  .md-nav--primary .md-nav__title span,
+  .md-sidebar--primary .md-nav__title span,
+  .md-nav--primary .md-nav__title .md-ellipsis,
+  .md-sidebar--primary .md-nav__title .md-ellipsis {
+    display: none !important;
+  }
+  
+  /* Logo in drawer header - use pseudo element to show only icon */
+  .md-nav--primary .md-nav__title:first-child::before,
+  .md-sidebar--primary .md-nav__title:first-child::before {
     content: '';
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    background: url('../logos/tenets_light_icon_transparent.png') no-repeat center;
+    display: block;
+    width: 50px;
+    height: 50px;
+    background: url('../logos/tenets_dark_icon_transparent_cropped.png') no-repeat center;
     background-size: contain;
-    flex-shrink: 0;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Light mode should use dark logo on amber background for contrast */
+  [data-md-color-scheme="default"] .md-nav--primary .md-nav__title:first-child::before,
+  [data-md-color-scheme="default"] .md-sidebar--primary .md-nav__title:first-child::before {
+    background-image: url('../logos/tenets_dark_icon_transparent_cropped.png');
   }
 
-  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title::before,
-  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title::before {
-    background-image: url('../logos/tenets_dark_icon_transparent.png');
+  /* Dark mode uses dark logo too since background is amber */
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title:first-child::before,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title:first-child::before {
+    background-image: url('../logos/tenets_dark_icon_transparent_cropped.png');
+  }
+  
+  /* Ensure we're hiding ALL possible logo/title elements */
+  .md-nav--primary *[class*="logo"],
+  .md-sidebar--primary *[class*="logo"],
+  .md-nav--primary .md-nav__title > *,
+  .md-sidebar--primary .md-nav__title > *,
+  .md-nav--primary .md-nav__title a,
+  .md-sidebar--primary .md-nav__title a,
+  .md-nav--primary .md-nav__title .md-nav__button,
+  .md-sidebar--primary .md-nav__title .md-nav__button {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    font-size: 0 !important;
   }
 
   /* Navigation list container */
   .md-nav--primary .md-nav__list,
   .md-sidebar--primary .md-nav__list {
     padding: 0 !important;
-    margin: 0;
-    list-style: none;
+    margin: 0 !important;
+    list-style: none !important;
+    display: block !important;
   }
 
+  /* Hide any nested titles or back buttons */
+  .md-nav--primary .md-nav__item .md-nav__title,
+  .md-sidebar--primary .md-nav__item .md-nav__title,
+  .md-nav--primary .md-nav__back,
+  .md-sidebar--primary .md-nav__back {
+    display: none !important;
+  }
+  
   /* Navigation items */
-  .md-nav--primary .md-nav__item,
-  .md-sidebar--primary .md-nav__item {
+  .md-nav--primary > .md-nav__list > .md-nav__item,
+  .md-sidebar--primary > .md-nav__list > .md-nav__item {
     border-bottom: 1px solid rgba(245, 158, 11, 0.06);
-    margin: 0;
+    margin: 0 !important;
+    display: block !important;
   }
 
   .md-nav--primary .md-nav__link,
   .md-sidebar--primary .md-nav__link {
     padding: 0.9rem 1.25rem !important;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #3e342a;
-    display: block;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: #3e342a !important;
+    display: block !important;
     transition: all 0.2s ease;
-    text-decoration: none;
-    position: relative;
+    text-decoration: none !important;
+    position: relative !important;
+    background: transparent !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link {
-    color: #d4ccb8;
+    color: #f3f0e8 !important;
   }
 
   .md-nav--primary .md-nav__link:hover,
@@ -229,16 +331,31 @@
   .md-sidebar--primary .md-nav__link:hover,
   .md-sidebar--primary .md-nav__link:active {
     background: rgba(245, 158, 11, 0.08);
-    color: #f59e0b;
+    color: #f59e0b !important;
     padding-left: 1.75rem !important;
+  }
+
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link:hover,
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link:active,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link:hover,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link:active {
+    background: rgba(251, 191, 36, 0.15) !important;
+    color: #fbbf24 !important;
   }
 
   .md-nav--primary .md-nav__link--active,
   .md-sidebar--primary .md-nav__link--active {
     background: rgba(245, 158, 11, 0.12);
-    color: #f59e0b;
+    color: #f59e0b !important;
     font-weight: 600;
     border-left: 3px solid #f59e0b;
+  }
+
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link--active,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link--active {
+    background: rgba(251, 191, 36, 0.2) !important;
+    color: #fbbf24 !important;
+    border-left-color: #fbbf24 !important;
   }
 
   /* Ornate decoration on hover */
@@ -263,45 +380,28 @@
   .md-nav--primary .md-nav__link[href*="contact"],
   .md-sidebar--primary .md-nav__link[href*="blog"],
   .md-sidebar--primary .md-nav__link[href*="contact"] {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%);
-    color: #f59e0b;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
+    color: #1a2332 !important;
     font-weight: 700;
     margin: 0.5rem 1rem;
     padding: 0.875rem 1.25rem !important;
     border-radius: 12px;
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+  }
+  
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link[href*="blog"],
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link[href*="contact"],
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link[href*="blog"],
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link[href*="contact"] {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    color: #0f1419 !important;
+    border: 1px solid rgba(251, 191, 36, 0.4);
   }
 
-  /* Mobile overlay */
-  .md-overlay {
-    display: block !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(26, 35, 50, 0.7);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-  /* Keep drawer overlay below header/search modal */
-  z-index: 10005;
-    /* Remove backdrop blur to prevent the drawer appearing blurry */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    pointer-events: none;
-  }
-
+  /* Let Material theme handle overlay, just style it */
   [data-md-color-scheme="slate"] .md-overlay {
     background: rgba(0, 0, 0, 0.7);
-  }
-
-  /* Show overlay when drawer is open */
-  input[type="checkbox"]#__drawer:checked ~ .md-overlay,
-  .md-toggle--drawer:checked ~ .md-overlay {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
   }
 
   /* Ensure search components are above everything on mobile and interactive */
@@ -318,8 +418,6 @@
     max-width: min(92vw, 720px) !important;
   }
 
-  /* Hide tabs on mobile; keep TOC except on very small screens */
-  .md-tabs { display: none !important; }
 
   /* Phones only: hide the right-hand TOC */
   @media screen and (max-width: 720px) {
@@ -347,6 +445,7 @@
     .md-header__inner { padding-right: 148px !important; }
   }
 }
+
 
 /* =====================================================
    INSTALL COMMANDS WRAPPING ON SMALL SCREENS
@@ -399,19 +498,6 @@
   }
 }
 
-/* =====================================================
-   CHECKBOX TOGGLE STRUCTURE
-   ===================================================== */
-
-/* Ensure drawer checkbox exists and is hidden */
-.md-toggle--drawer,
-#__drawer {
-  position: absolute !important;
-  width: 0 !important;
-  height: 0 !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
 
 /* =====================================================
    MOBILE CONTENT ADJUSTMENTS
@@ -517,12 +603,12 @@
   }
 
   /* Prevent body scroll when drawer is open */
-  body:has(#__drawer:checked),
-  body:has(.md-toggle--drawer:checked) {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
+  body:has(.md-toggle--drawer:checked),
+  body.drawer-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
   }
 }
 

@@ -12,15 +12,11 @@ Fixtures provided:
     - Utility fixtures (loggers, temporary paths)
 """
 
-import json
 import os
-import shutil
-import tempfile
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Generator, List
-from unittest.mock import MagicMock, Mock, patch
+from typing import Dict, Generator
+from unittest.mock import MagicMock, Mock
 
 import pytest
 import yaml
@@ -59,8 +55,8 @@ os.environ.setdefault("TENETS_LLM_ENABLED", "false")
 # Import the modules we're testing
 from tenets.config import TenetsConfig
 from tenets.models.analysis import ComplexityMetrics, FileAnalysis, ImportInfo
-from tenets.models.context import ContextResult, PromptContext
-from tenets.models.tenet import Priority, Tenet, TenetStatus
+from tenets.models.context import PromptContext
+from tenets.models.tenet import Priority, Tenet
 
 # ============================================================================
 # Configuration Fixtures
@@ -255,25 +251,67 @@ def mock_external_dependencies(monkeypatch, request):
     import sys
     import types
 
-    try:
-        monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
-    except ModuleNotFoundError:
-        # Create a minimal stub so code importing sentence_transformers works
-        if importlib.util.find_spec("sentence_transformers") is None:
-            stub = types.ModuleType("sentence_transformers")
+    # On Python 3.13, use a lighter approach to prevent import issues
+    if sys.version_info[:2] >= (3, 13):
+        # Only stub the main problematic modules, not all their submodules
+        # This prevents the hanging issue while still protecting against unwanted imports
+        main_modules = [
+            'sentence_transformers',
+            'transformers',
+            'huggingface_hub',
+            'torch',
+            'nltk'
+        ]
+        
+        for module_name in main_modules:
+            if module_name not in sys.modules:
+                try:
+                    # Try to import the module first to see if it's available
+                    __import__(module_name)
+                except (ImportError, ModuleNotFoundError):
+                    # Only create stub if module doesn't exist
+                    stub = types.ModuleType(module_name)
+                    stub.__file__ = 'stub'
+                    stub.__loader__ = None
+                    stub.__package__ = None
+                    
+                    # Add SentenceTransformer for sentence_transformers
+                    if module_name == 'sentence_transformers':
+                        class SentenceTransformer:
+                            def __init__(self, *_, **__):
+                                pass
 
-            class SentenceTransformer:  # noqa: N801 (match real class name)
-                def __init__(self, *_, **__):
-                    pass
+                            def encode(self, texts, **kwargs):
+                                if isinstance(texts, str):
+                                    texts = [texts]
+                                return [[float(len(t) % 7)] * 16 for t in texts]
+                        
+                        stub.SentenceTransformer = SentenceTransformer
+                    
+                    sys.modules[module_name] = stub
+    else:
+        # For Python < 3.13, use the original safer approach
+        try:
+            # Only try to patch if the module exists
+            if importlib.util.find_spec("sentence_transformers"):
+                monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
+        except (ModuleNotFoundError, AttributeError):
+            # Create a minimal stub so code importing sentence_transformers works
+            if "sentence_transformers" not in sys.modules:
+                stub = types.ModuleType("sentence_transformers")
 
-                def encode(self, texts, **kwargs):  # pragma: no cover - simple stub
-                    if isinstance(texts, str):
-                        texts = [texts]
-                    # Return deterministic small vectors based on text length
-                    return [[float(len(t) % 7)] * 16 for t in texts]
+                class SentenceTransformer:
+                    def __init__(self, *_, **__):
+                        pass
 
-            stub.SentenceTransformer = SentenceTransformer
-            sys.modules["sentence_transformers"] = stub
+                    def encode(self, texts, **kwargs):  # pragma: no cover - simple stub
+                        if isinstance(texts, str):
+                            texts = [texts]
+                        # Return deterministic small vectors based on text length
+                        return [[float(len(t) % 7)] * 16 for t in texts]
+
+                stub.SentenceTransformer = SentenceTransformer
+                sys.modules["sentence_transformers"] = stub
 
 
 # ============================================================================
@@ -299,14 +337,14 @@ from typing import List, Optional
 
 class SampleClass:
     """A sample class for testing."""
-    
+
     def __init__(self, name: str):
         self.name = name
-        
+
     def greet(self, greeting: str = "Hello") -> str:
         """Return a greeting message."""
         return f"{greeting}, {self.name}!"
-        
+
 def sample_function(items: List[str]) -> Optional[str]:
     """Process a list of items."""
     if not items:
@@ -337,11 +375,11 @@ import axios from 'axios';
 export default function SampleComponent({ name }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    
+
     useEffect(() => {
         fetchData();
     }, []);
-    
+
     async function fetchData() {
         try {
             const response = await axios.get('/api/data');
@@ -352,7 +390,7 @@ export default function SampleComponent({ name }) {
             setLoading(false);
         }
     }
-    
+
     return (
         <div className="sample-component">
             <h1>Hello, {name}!</h1>
@@ -491,10 +529,11 @@ def create_test_repo(temp_dir: Path):
         # Initialize git repo
         import subprocess
 
-        subprocess.run(["git", "init"], cwd=temp_dir, capture_output=True)
-        subprocess.run(["git", "add", "."], cwd=temp_dir, capture_output=True)
+        subprocess.run(["git", "init"], check=False, cwd=temp_dir, capture_output=True)
+        subprocess.run(["git", "add", "."], check=False, cwd=temp_dir, capture_output=True)
         subprocess.run(
             ["git", "commit", "-m", "Initial commit"],
+            check=False,
             cwd=temp_dir,
             capture_output=True,
             env={

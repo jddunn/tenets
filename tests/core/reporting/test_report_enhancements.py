@@ -8,14 +8,9 @@ Tests cover:
 - Enhanced data rendering
 """
 
-import json
-from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock
 
-import pytest
-
-from tenets.core.reporting.generator import ReportConfig, ReportGenerator, ReportSection
+from tenets.core.reporting.generator import ReportConfig, ReportGenerator
 
 
 class TestReadmeDetection:

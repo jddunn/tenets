@@ -358,19 +358,21 @@ def detect_visualization_type(data: Any) -> str:
         return "custom"
 
     if isinstance(data, dict):
+        # Check for key indicators - if ANY of these keys exist, detect that type
         checks = [
             ("complexity", ["complexity", "avg_complexity", "complex_functions"]),
             ("contributors", ["contributors", "total_contributors", "bus_factor"]),
             ("hotspots", ["hotspots", "risk_score", "critical_count"]),
-            ("momentum", ["velocity", "sprint", "velocity_trend"]),
+            ("momentum", ["velocity", "momentum", "sprint", "velocity_trend"]),
             (
                 "dependencies",
                 ["dependencies", "circular_dependencies", "dependency_graph"],
             ),
-            ("coupling", ["coupling", "afferent_coupling", "instability"]),
+            ("coupling", ["coupling", "coupling_data", "afferent_coupling", "instability"]),
         ]
         for name, keys in checks:
-            if has_keys(data, keys):
+            # If ANY of the keys exist, detect that type
+            if any(k in data for k in keys):
                 return name
         return "custom"
 
