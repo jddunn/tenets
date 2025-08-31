@@ -1,5 +1,6 @@
 """Tenet management commands."""
 
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -9,7 +10,108 @@ from rich.panel import Panel
 from rich.prompt import Confirm
 from rich.table import Table
 
-from tenets import Tenets
+# Track startup time
+_start_time = time.time()
+
+# Lazy import to avoid loading heavy dependencies for simple tenet management
+_manager = None
+
+def get_tenet_manager():
+    """Get or create a lightweight tenet manager without loading heavy ML dependencies."""
+    global _manager
+    if _manager is None:
+        # Import minimal dependencies directly without triggering main package import
+        import os
+        import sqlite3
+        from pathlib import Path
+        
+        # Create a minimal manager without full config
+        class MinimalTenetManager:
+            def __init__(self):
+                self.db_path = Path.home() / ".tenets" / "tenets.db"
+                self.db_path.parent.mkdir(parents=True, exist_ok=True)
+                self._init_db()
+            
+            def _init_db(self):
+                conn = sqlite3.connect(self.db_path)
+                conn.execute('''
+                    CREATE TABLE IF NOT EXISTS tenets (
+                        id TEXT PRIMARY KEY,
+                        content TEXT NOT NULL,
+                        priority TEXT DEFAULT 'medium',
+                        category TEXT,
+                        session TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        instilled_at TIMESTAMP,
+                        status TEXT DEFAULT 'pending'
+                    )
+                ''')
+                conn.commit()
+                conn.close()
+            
+            def add_tenet(self, tenet):
+                conn = sqlite3.connect(self.db_path)
+                # Get first session from session_bindings if any
+                session = tenet.session_bindings[0] if tenet.session_bindings else None
+                conn.execute(
+                    "INSERT INTO tenets (id, content, priority, category, session, status) VALUES (?, ?, ?, ?, ?, ?)",
+                    (tenet.id, tenet.content, str(tenet.priority.value), str(tenet.category) if tenet.category else None, session, 'pending')
+                )
+                conn.commit()
+                conn.close()
+            
+            def get_all_tenets(self):
+                from tenets.models.tenet import Tenet, Priority
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.execute("SELECT * FROM tenets")
+                tenets = []
+                for row in cursor:
+                    tenet = Tenet(
+                        content=row[1],
+                        priority=Priority(row[2]),
+                        category=row[3]
+                    )
+                    tenet.id = row[0]
+                    if row[4]:  # session
+                        tenet.session_bindings = [row[4]]
+                    tenet.instilled_at = row[6]
+                    # For compatibility with filtering
+                    tenet.session = row[4]
+                    tenets.append(tenet)
+                conn.close()
+                return tenets
+            
+            def get_tenet(self, id):
+                from tenets.models.tenet import Tenet, Priority
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.execute("SELECT * FROM tenets WHERE id = ?", (id,))
+                row = cursor.fetchone()
+                conn.close()
+                if row:
+                    tenet = Tenet(
+                        content=row[1],
+                        priority=Priority(row[2]),
+                        category=row[3]
+                    )
+                    tenet.id = row[0]
+                    if row[4]:  # session
+                        tenet.session_bindings = [row[4]]
+                    tenet.instilled_at = row[6]
+                    # For compatibility
+                    tenet.session = row[4]
+                    return tenet
+                return None
+            
+            def remove_tenet(self, id):
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.execute("DELETE FROM tenets WHERE id = ?", (id,))
+                conn.commit()
+                affected = cursor.rowcount > 0
+                conn.close()
+                return affected
+        
+        _manager = MinimalTenetManager()
+    return _manager
 
 console = Console()
 
@@ -40,19 +142,62 @@ def add_tenet(
 
         tenets tenet add "Use async/await for I/O" --session feature-x
     """
+    # Setup logging
+    import logging
+    logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s %(message)s', datefmt='%H:%M:%S')
+    logger = logging.getLogger(__name__)
+    
+    # Log startup time
+    startup_time = time.time() - _start_time
+    logger.info(f"Command startup took {startup_time:.2f}s")
+    
     try:
-        tenets = Tenets()
+        logger.info("Initializing tenet manager...")
+        manager = get_tenet_manager()
+        logger.info("Tenet manager ready")
 
-        if not tenets.tenet_manager:
-            console.print("[red]Error:[/red] Tenet system is not available.")
-            raise typer.Exit(1)
-
-        # Add the tenet
-        tenet = tenets.add_tenet(
-            content=content, priority=priority, category=category, session=session
+        # Add the tenet directly via manager
+        from tenets.models.tenet import Tenet, Priority, TenetCategory
+        
+        # Parse priority
+        priority_map = {
+            "low": Priority.LOW,
+            "medium": Priority.MEDIUM,
+            "high": Priority.HIGH,
+            "critical": Priority.CRITICAL
+        }
+        priority_enum = priority_map.get(priority.lower(), Priority.MEDIUM)
+        
+        # Parse category if provided
+        category_enum = None
+        if category:
+            try:
+                category_enum = TenetCategory(category.lower())
+            except ValueError:
+                # Custom category
+                pass
+        
+        # Create and add the tenet
+        tenet = Tenet(
+            content=content,
+            priority=priority_enum,
+            category=category_enum or category
         )
+        # Add session binding if specified
+        if session:
+            tenet.session_bindings = [session]
+        
+        # Time the actual add operation
+        add_start = time.time()
+        manager.add_tenet(tenet)
+        add_time = time.time() - add_start
+        logger.info(f"Added tenet to database in {add_time:.3f}s")
+        
+        # Total operation time
+        total_time = time.time() - _start_time
+        logger.info(f"Total operation time: {total_time:.2f}s")
 
-        console.print(f"[green]✓[/green] Added tenet: {tenet.content}")
+        console.print(f"[green]+[/green] Added tenet: {tenet.content}")
         console.print(f"ID: {tenet.id[:8]}... | Priority: {tenet.priority.value}")
 
         if category:
@@ -85,19 +230,33 @@ def list_tenets(
         tenets tenet list --category security --verbose
     """
     try:
-        tenets = Tenets()
+        manager = get_tenet_manager()
 
-        all_tenets = tenets.list_tenets(
-            pending_only=pending, instilled_only=instilled, session=session
-        )
-
-        # Filter by category if specified
-        if category:
-            # Note: if mocked data isn't a list of dicts, skip filtering gracefully
-            try:
-                all_tenets = [t for t in all_tenets if t.get("category") == category]
-            except Exception:
-                all_tenets = []
+        # Get tenets directly from manager
+        all_tenets = manager.get_all_tenets()
+        
+        # Apply filters
+        filtered_tenets = []
+        for tenet in all_tenets:
+            # Filter by pending/instilled status
+            if pending and tenet.instilled_at:
+                continue
+            if instilled and not tenet.instilled_at:
+                continue
+            
+            # Filter by session
+            if session and tenet.session != session:
+                continue
+            
+            # Filter by category
+            if category:
+                tenet_cat = getattr(tenet, 'category', None)
+                if tenet_cat and str(tenet_cat).lower() != category.lower():
+                    continue
+            
+            filtered_tenets.append(tenet)
+        
+        all_tenets = filtered_tenets
 
         if category:
             console.print(f"Category: {category}")
@@ -138,7 +297,7 @@ def list_tenets(
                 tenet["id"][:8] + "...",
                 content,
                 tenet["priority"],
-                "✓ Instilled" if tenet["instilled"] else "⏳ Pending",
+                "[OK] Instilled" if tenet["instilled"] else "[..] Pending",
                 tenet.get("category", "-"),
             ]
 
@@ -201,10 +360,10 @@ def remove_tenet(
         tenets tenet remove abc123 --force
     """
     try:
-        tenets = Tenets()
+        manager = get_tenet_manager()
 
         # Get tenet details first
-        tenet = tenets.get_tenet(id)
+        tenet = manager.get_tenet(id)
         if not tenet:
             console.print(f"[red]Tenet not found: {id}[/red]")
             raise typer.Exit(1)
@@ -219,8 +378,8 @@ def remove_tenet(
                 return
 
         # Remove it
-        if tenets.remove_tenet(id):
-            console.print(f"[green]✓[/green] Removed tenet: {tenet.content[:50]}...")
+        if manager.remove_tenet(id):
+            console.print(f"[green]+[/green] Removed tenet: {tenet.content[:50]}...")
         else:
             console.print("[red]Failed to remove tenet.[/red]")
             raise typer.Exit(1)
@@ -240,9 +399,9 @@ def show_tenet(
         tenets tenet show abc123
     """
     try:
-        tenets = Tenets()
+        manager = get_tenet_manager()
 
-        tenet = tenets.get_tenet(id)
+        tenet = manager.get_tenet(id)
         if not tenet:
             console.print(f"[red]Tenet not found: {id}[/red]")
             raise typer.Exit(1)
@@ -293,9 +452,22 @@ def export_tenets(
         tenets tenet export --format json --session oauth
     """
     try:
-        tenets = Tenets()
+        manager = get_tenet_manager()
 
-        exported = tenets.export_tenets(format=format, session=session)
+        # Export tenets directly from manager
+        all_tenets = manager.get_all_tenets()
+        
+        # Filter by session if specified
+        if session:
+            all_tenets = [t for t in all_tenets if t.session == session]
+        
+        # Format the export
+        if format == "json":
+            import json
+            exported = json.dumps([t.to_dict() for t in all_tenets], indent=2)
+        else:  # yaml
+            import yaml
+            exported = yaml.dump([t.to_dict() for t in all_tenets], default_flow_style=False)
 
         if output:
             output.write_text(exported, encoding="utf-8")
@@ -327,7 +499,7 @@ def import_tenets(
         tenets tenet import standards.yml --dry-run
     """
     try:
-        tenets = Tenets()
+        manager = get_tenet_manager()
 
         if not file.exists():
             console.print(f"[red]File not found: {file}[/red]")
@@ -340,8 +512,29 @@ def import_tenets(
             console.print(content[:500] + "..." if len(content) > 500 else content)
             return
 
-        count = tenets.import_tenets(file, session=session)
-        console.print(f"[green]✓[/green] Imported {count} tenet(s) from {file}")
+        # Import the tenets
+        content = file.read_text(encoding="utf-8")
+        
+        if file.suffix.lower() == ".json":
+            import json
+            data = json.loads(content)
+        else:  # yaml
+            import yaml
+            data = yaml.safe_load(content)
+        
+        # Import each tenet
+        count = 0
+        from tenets.models.tenet import Tenet
+        for item in data:
+            if isinstance(item, dict):
+                # Override session if specified
+                if session:
+                    item['session'] = session
+                tenet = Tenet.from_dict(item)
+                manager.add_tenet(tenet)
+                count += 1
+        
+        console.print(f"[green]+[/green] Imported {count} tenet(s) from {file}")
 
         if session:
             console.print(f"Imported into session: {session}")

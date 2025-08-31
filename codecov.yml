@@ -1,0 +1,82 @@
+# Codecov configuration
+# https://docs.codecov.com/docs/codecov-yaml
+
+# Coverage configuration
+coverage:
+  # How much coverage you require
+  status:
+    project:
+      default:
+        # Overall project coverage
+        target: 70%  # Target coverage percentage
+        threshold: 2%  # Allow coverage to drop by 2%
+        base: auto
+        if_not_found: success
+        if_ci_failed: success
+        only_pulls: false
+    patch:
+      default:
+        # Coverage for new/modified code in PRs
+        target: 80%  # New code should have higher coverage
+        threshold: 5%
+        base: auto
+        if_not_found: success
+        if_ci_failed: success
+
+# Parser configuration
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+# Comment configuration for PR comments
+comment:
+  layout: "reach,diff,flags,tree,reach"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  hide_project_coverage: false
+
+# Ignore certain files/paths from coverage
+ignore:
+  - "tests/**/*"
+  - "**/*_test.py"
+  - "**/test_*.py"
+  - "setup.py"
+  - "docs/**/*"
+  - "examples/**/*"
+  - "scripts/**/*"
+  - ".github/**/*"
+  - "**/__pycache__/**/*"
+  - "**/migrations/**/*"
+
+# Flag configuration for different test types
+flags:
+  unittests:
+    paths:
+      - tenets/
+    carryforward: true
+  optional-ml:
+    paths:
+      - tenets/core/ml/
+    carryforward: true
+  optional-viz:
+    paths:
+      - tenets/viz/
+    carryforward: true
+  optional-web:
+    paths:
+      - tenets/web/
+    carryforward: true
+  optional-all:
+    paths:
+      - tenets/
+    carryforward: true
+
+# GitHub integration settings
+github_checks:
+  annotations: true
