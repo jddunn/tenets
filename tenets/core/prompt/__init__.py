@@ -74,13 +74,14 @@ from .intent_detector import (
     SemanticIntentDetector,
 )
 
-# Import main parser
+# Import temporal parser classes
 from .temporal_parser import (
     TemporalExpression,
     TemporalParser,
     TemporalPatternMatcher,
+)
 
-# Import main classes
+# Import main parser classes
 from .parser import (
     ExternalReference,
     IntentType,
@@ -164,7 +165,7 @@ def create_parser(
         use_ml: Whether to use ML features (None = auto-detect from config)
         cache_manager: Optional cache manager for persistence
 
-Uses centralized NLP components for all text processing.
+    Uses centralized NLP components for all text processing.
 
     Returns:
         Configured PromptParser instance
@@ -179,7 +180,12 @@ Uses centralized NLP components for all text processing.
 
         config = TenetsConfig()
 
-    return PromptParser(config, cache_manager=cache_manager, use_cache=use_cache, use_ml=use_ml)
+    return PromptParser(
+        config, 
+        cache_manager=cache_manager, 
+        use_cache=use_cache, 
+        use_ml=use_ml
+    )
 
 
 def parse_prompt(
@@ -228,22 +234,22 @@ def extract_keywords(text: str, max_keywords: int = 20) -> List[str]:
     from tenets.core.nlp.keyword_extractor import KeywordExtractor
 
     extractor = KeywordExtractor(
-        use_stopwords=True, stopword_set="prompt"  # Use aggressive stopwords for prompts
+        use_stopwords=True, 
+        stopword_set="prompt"  # Use aggressive stopwords for prompts
     )
 
     return extractor.extract(text, max_keywords=max_keywords, include_scores=False)
 
 
 def detect_intent(prompt: str, use_ml: bool = False) -> str:
-    """
-    Analyzes prompt text to determine user intent.
+    """Analyzes prompt text to determine user intent.
 
     Args:
         prompt: The prompt text to analyze
         use_ml: Whether to use ML-based detection (requires ML dependencies)
 
     Returns:
-        Intent type string (implement, debug, understand, etc.
+        Intent type string (implement, debug, understand, etc.)
 
     Example:
         >>> intent = detect_intent("fix the authentication bug")
@@ -286,7 +292,12 @@ def extract_entities(
     entities = recognizer.recognize(text, min_confidence=min_confidence)
 
     return [
-        {"name": e.name, "type": e.type, "confidence": e.confidence, "context": e.context}
+        {
+            "name": e.name, 
+            "type": e.type, 
+            "confidence": e.confidence, 
+            "context": e.context
+        }
         for e in entities
     ]
 
@@ -296,7 +307,6 @@ def parse_external_reference(url: str) -> Optional[Dict[str, Any]]:
 
     Extracts information from GitHub issues, JIRA tickets, GitLab MRs,
     Linear issues, Asana tasks, Notion pages, and other external references.
-    and other external references.
 
     Args:
         url: URL to parse
@@ -359,17 +369,3 @@ def extract_temporal(text: str) -> List[Dict[str, Any]]:
         }
         for e in expressions
     ]
-    from tenets.config import TenetsConfig
-
-    parser = PromptParser(TenetsConfig())
-    ref = parser._detect_external_reference(url)
-
-    if ref:
-        return {
-            "type": ref.type,
-            "url": ref.url,
-            "identifier": ref.identifier,
-            "metadata": ref.metadata,
-        }
-
-    return None

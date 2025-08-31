@@ -9,10 +9,8 @@ The chronicle functionality provides a narrative view of repository changes,
 making it easy to understand what happened, when, and by whom.
 """
 
-import os
 import re
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -975,7 +973,10 @@ class Chronicle:
 
 
 def create_chronicle(
-    repo_path: Path, since: Optional[str] = None, config: Optional[TenetsConfig] = None, **kwargs: Any
+    repo_path: Path,
+    since: Optional[str] = None,
+    config: Optional[TenetsConfig] = None,
+    **kwargs: Any,
 ) -> ChronicleReport:
     """Convenience function to create a repository chronicle.
 

@@ -14,7 +14,7 @@ import typer
 from tenets.core.git import ChronicleBuilder, GitAnalyzer
 from tenets.core.reporting import ReportGenerator
 from tenets.utils.logger import get_logger
-from tenets.utils.timing import CommandTimer, format_duration
+from tenets.utils.timing import CommandTimer
 from tenets.viz import ContributorVisualizer, MomentumVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
@@ -151,7 +151,7 @@ def run(
             timing_result = timer.stop("Chronicle failed")
             if not is_quiet:
                 click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
-        
+
         logger.error(f"Chronicle generation failed: {e}")
         click.echo(str(e))
         raise typer.Exit(1)
@@ -402,36 +402,37 @@ def _generate_chronicle_report(
         output_path = Path(output)
     else:
         # Auto-generate filename with timestamp and path info
-        from datetime import datetime
         import re
-        
+        from datetime import datetime
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         # Get safe path component from current directory
         target_path = Path.cwd()
         path_str = str(target_path).replace("\\", "/")
         if path_str in (".", "./", ""):
             safe_path = "current_dir"
         else:
-            path_str = re.sub(r'^\.+/+', '', path_str)
+            path_str = re.sub(r"^\.+/+", "", path_str)
             safe_path = path_str.replace("/", "_").replace("\\", "_")
-            safe_path = re.sub(r'[^\w\-_]', '', safe_path)[:30]
-        
+            safe_path = re.sub(r"[^\w\-_]", "", safe_path)[:30]
+
         # Include period info in filename if available
-        period_str = chronicle.get('period', 'all').replace(" ", "_").replace("-", "_")
-        
+        period_str = chronicle.get("period", "all").replace(" ", "_").replace("-", "_")
+
         filename = f"chronicle_{safe_path}_{period_str}_{timestamp}.{format}"
-        filename = re.sub(r'_+', '_', filename)
+        filename = re.sub(r"_+", "_", filename)
         output_path = Path(filename)
 
     generator.generate(data=chronicle, output_path=output_path, config=report_config)
 
     click.echo(f"Chronicle report generated: {output_path}")
-    
+
     # If HTML format, offer to open in browser
     if format == "html":
         if click.confirm("\nWould you like to open it in your browser now?", default=False):
             import webbrowser
+
             # Ensure absolute path for file URI
             file_path = output_path.resolve()
             webbrowser.open(file_path.as_uri())

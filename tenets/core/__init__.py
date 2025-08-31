@@ -15,26 +15,33 @@ It exposes a stable import path for documentation and users:
 # Use lazy loading to avoid importing heavy ML dependencies at startup
 # Submodules are imported on first access via __getattr__
 
-__all__ = ["analysis", "ranking", "session", "instiller", "git", "summarizer"]
+__all__ = ["analysis", "git", "instiller", "ranking", "session", "summarizer"]
+
 
 def __getattr__(name):
     """Lazy load submodules to improve import performance."""
     if name == "analysis":
         from . import analysis
+
         return analysis
     elif name == "ranking":
         from . import ranking
+
         return ranking
     elif name == "session":
         from . import session
+
         return session
     elif name == "instiller":
         from . import instiller
+
         return instiller
     elif name == "git":
         from . import git
+
         return git
     elif name == "summarizer":
         from . import summarizer
+
         return summarizer
     raise AttributeError(f"module 'tenets.core' has no attribute '{name}'")

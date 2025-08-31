@@ -55,11 +55,12 @@ class TerminalDisplay:
             style: Border style (single, double, heavy)
         """
         # Border characters - check if terminal supports Unicode
-        import sys
         import locale
+        import sys
+
         encoding = sys.stdout.encoding or locale.getpreferredencoding()
-        supports_unicode = encoding and 'utf' in encoding.lower()
-        
+        supports_unicode = encoding and "utf" in encoding.lower()
+
         if supports_unicode:
             borders = {
                 "single": {"h": "─", "v": "│", "tl": "┌", "tr": "┐", "bl": "└", "br": "┘"},

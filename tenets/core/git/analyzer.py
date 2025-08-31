@@ -10,15 +10,18 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+
 # Lazy import check for GitPython
 def _check_git_available():
     """Check if GitPython is available without importing."""
     try:
         import importlib.util
+
         spec = importlib.util.find_spec("git")
         return spec is not None
     except (ImportError, AttributeError):
         return False
+
 
 GIT_AVAILABLE = _check_git_available()
 
@@ -27,17 +30,22 @@ Repo = None
 InvalidGitRepositoryError = None
 NoSuchPathError = None
 
+
 def _ensure_git_imported():
     """Import git modules when actually needed."""
     global Repo, InvalidGitRepositoryError, NoSuchPathError
     if Repo is None:
         try:
-            from git import InvalidGitRepositoryError as _InvalidGit, NoSuchPathError as _NoPath, Repo as _Repo
+            from git import InvalidGitRepositoryError as _InvalidGit
+            from git import NoSuchPathError as _NoPath
+            from git import Repo as _Repo
+
             Repo = _Repo
             InvalidGitRepositoryError = _InvalidGit
             NoSuchPathError = _NoPath
         except ImportError as e:
             raise ImportError(f"GitPython is required but not installed: {e}")
+
 
 from tenets.utils.logger import get_logger
 
@@ -73,7 +81,7 @@ class GitAnalyzer:
         if self._repo_initialized:
             return
         self._repo_initialized = True
-        
+
         if not GIT_AVAILABLE:
             self.repo = None
             logger.warning(
@@ -354,48 +362,51 @@ class GitAnalyzer:
         self._ensure_repo()  # Lazy load git repo
         if not self.repo:
             return []
-            
+
         # Try using subprocess as a fallback for Windows performance issues
         try:
             import subprocess
             import time
+
             from tenets.utils.logger import get_logger
+
             logger = get_logger(__name__)
-            
+
             start = time.time()
-            
+
             # Limit max_count for performance
             max_count = min(max_count, 200)  # Hard limit for performance
-            
+
             # Build git log command
-            cmd = ["git", "log", f"--since={since.isoformat()}", f"--max-count={max_count}", "--format=%H"]
+            cmd = [
+                "git",
+                "log",
+                f"--since={since.isoformat()}",
+                f"--max-count={max_count}",
+                "--format=%H",
+            ]
             if author:
                 cmd.append(f"--author={author}")
             if not include_merges:
                 cmd.append("--no-merges")
             if branch:
                 cmd.append(branch)
-                
+
             logger.debug(f"Running git command: {' '.join(cmd)}")
-            
+
             # Run git command with timeout
             try:
                 result = subprocess.run(
-                    cmd,
-                    cwd=str(self.root),
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=False
+                    cmd, cwd=str(self.root), capture_output=True, text=True, timeout=5, check=False
                 )
-                
+
                 if result.returncode != 0:
                     logger.debug(f"Git command failed: {result.stderr}")
                     return []
-                    
+
                 # Parse commit hashes
-                commit_hashes = [h.strip() for h in result.stdout.strip().split('\n') if h.strip()]
-                
+                commit_hashes = [h.strip() for h in result.stdout.strip().split("\n") if h.strip()]
+
                 # Convert to GitPython commit objects if possible
                 commits = []
                 for hash in commit_hashes[:max_count]:  # Extra safety limit
@@ -404,21 +415,22 @@ class GitAnalyzer:
                         commits.append(commit)
                     except:
                         pass  # Skip commits that can't be loaded
-                        
+
                 elapsed = time.time() - start
                 logger.debug(f"Fetched {len(commits)} commits in {elapsed:.2f}s")
-                
+
                 return commits
-                
+
             except subprocess.TimeoutExpired:
                 logger.warning("Git command timed out after 5 seconds")
                 return []
-                
+
         except Exception as e:
             from tenets.utils.logger import get_logger
+
             logger = get_logger(__name__)
             logger.debug(f"Error fetching commits: {e}")
-            
+
             # Fall back to empty list if subprocess fails
             return []
 
@@ -431,25 +443,25 @@ class GitAnalyzer:
         branch: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Return commits between two dates.
-        
+
         This method was missing and called by momentum.py.
-        
+
         Args:
             since: Start datetime (inclusive)
-            until: End datetime (exclusive) 
+            until: End datetime (exclusive)
             max_count: Maximum number of commits
             author: Optional author filter
             branch: Optional branch name
-            
+
         Returns:
             List of commit dictionaries with standard fields
         """
         if not since:
             since = datetime(1970, 1, 1)
-        
+
         # Use existing get_commits_since
         commits = self.get_commits_since(since, max_count, author, branch)
-        
+
         # Filter by until date if provided
         if until:
             filtered = []
@@ -458,7 +470,7 @@ class GitAnalyzer:
                 if commit_date <= until:
                     filtered.append(commit)
             return filtered
-        
+
         return commits
 
     # Existing APIs retained

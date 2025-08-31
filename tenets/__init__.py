@@ -201,6 +201,7 @@ class Tenets:
 
         # Initialize logger (import locally to avoid circular import)
         from tenets.utils.logger import get_logger
+
         self.logger = get_logger(__name__)
         self.logger.info(f"Initializing Tenets v{__version__}")
 

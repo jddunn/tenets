@@ -293,8 +293,7 @@ class TestExamineOutputFormats:
                     assert data["total_files"] == 50
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_examine_html_output(self, runner, mock_examiner, mock_report_generator):
         """Test HTML report generation."""
@@ -314,8 +313,7 @@ class TestExamineOutputFormats:
                         mock_report_generator.generate.assert_called_once()
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_examine_html_opens_browser(self, runner, mock_examiner, mock_report_generator):
         """Test HTML report opens browser when confirmed."""
@@ -635,8 +633,7 @@ class TestAutoFilenameGeneration:
         assert "_" in parts
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_examine_auto_filename_integration(
         self, runner, mock_examiner, mock_report_generator, tmp_path

@@ -2,7 +2,7 @@
 
 Tests cover all visualization functionality including:
 - Dependency graph generation
-- Project type detection  
+- Project type detection
 - Multiple output formats (ASCII, SVG, PNG, HTML, JSON, DOT)
 - Clustering and aggregation
 - Complexity visualization
@@ -14,20 +14,21 @@ import csv
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import MagicMock, patch
 
 import pytest
+from click.testing import CliRunner as ClickRunner
 from typer.testing import CliRunner
 
-from click.testing import CliRunner as ClickRunner
 from tenets.cli.app import app
-from tenets.cli.commands.viz import viz_app, viz, aggregate_dependencies, get_aggregate_key
+from tenets.cli.commands.viz import aggregate_dependencies, get_aggregate_key, viz
 
 
 @pytest.fixture
 def runner():
     """Create a CLI test runner."""
     return CliRunner()
+
 
 @pytest.fixture
 def click_runner():
@@ -76,7 +77,7 @@ def sample_project_info():
         "structure": {
             "directories": {"src": "Source code", "tests": "Tests"},
             "test_directories": ["tests"],
-        }
+        },
     }
 
 
@@ -403,7 +404,9 @@ class TestVizChartOptions:
 
         with patch("tenets.cli.commands.viz.get_logger"):
             with patch("tenets.cli.commands.viz.BaseVisualizer"):
-                result = click_runner.invoke(viz, [str(data_file), "--width", "1200", "--height", "600"])
+                result = click_runner.invoke(
+                    viz, [str(data_file), "--width", "1200", "--height", "600"]
+                )
 
                 assert result.exit_code == 0
 
@@ -521,8 +524,7 @@ class TestVizInteractiveMode:
     """Test interactive visualization mode."""
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     @patch("webbrowser.open")
     @patch("tempfile.NamedTemporaryFile")
@@ -630,10 +632,9 @@ class TestVizSummaryOutput:
 
 class TestVizDepsCommand:
     """Test the viz deps command for dependency visualization."""
-    
+
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_deps_html_autosave(self, runner, tmp_path):
         """Test that HTML format auto-saves with generated filename when no output specified."""
@@ -649,20 +650,33 @@ class TestVizDepsCommand:
                                 "frameworks": [],
                                 "entry_points": ["main.py"],
                             }
-                            
+
                             # Mock file scanning
                             mock_scanner.return_value.scan.return_value = [Path("main.py")]
-                            
+
                             # Mock analysis
                             mock_analysis = MagicMock()
                             mock_analysis.structure.imports = []
                             mock_analyzer.return_value.analyze_file.return_value = mock_analysis
-                            
+
                             # Mock graph generator to return a filename
-                            mock_gen.return_value.generate_graph.return_value = "dependency_graph_project_module_20240101_120000.html"
-                            
-                            result = runner.invoke(app, ["viz", "deps", str(tmp_path), "--format", "html", "--level", "module"])
-                            
+                            mock_gen.return_value.generate_graph.return_value = (
+                                "dependency_graph_project_module_20240101_120000.html"
+                            )
+
+                            result = runner.invoke(
+                                app,
+                                [
+                                    "viz",
+                                    "deps",
+                                    str(tmp_path),
+                                    "--format",
+                                    "html",
+                                    "--level",
+                                    "module",
+                                ],
+                            )
+
                             assert result.exit_code == 0
                             assert "Auto-generating output file:" in result.stdout
                             assert ".html" in result.stdout
@@ -670,8 +684,7 @@ class TestVizDepsCommand:
                             assert "Would you like to open it in your browser now?" in result.stdout
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_deps_html_opens_browser_on_confirm(self, runner, tmp_path):
         """Test that HTML visualization opens browser when user confirms."""
@@ -688,20 +701,22 @@ class TestVizDepsCommand:
                                     "frameworks": [],
                                     "entry_points": ["main.py"],
                                 }
-                                
+
                                 # Mock file scanning
                                 mock_scanner.return_value.scan.return_value = [Path("main.py")]
-                                
+
                                 # Mock analysis
                                 mock_analysis = MagicMock()
                                 mock_analysis.structure.imports = []
                                 mock_analyzer.return_value.analyze_file.return_value = mock_analysis
-                                
+
                                 # Mock graph generator
                                 mock_gen.return_value.generate_graph.return_value = "test.html"
-                                
-                                result = runner.invoke(app, ["viz", "deps", str(tmp_path), "--format", "html"])
-                                
+
+                                result = runner.invoke(
+                                    app, ["viz", "deps", str(tmp_path), "--format", "html"]
+                                )
+
                                 assert result.exit_code == 0
                                 mock_browser.assert_called_once()
                                 # Check that it uses absolute path
@@ -709,8 +724,7 @@ class TestVizDepsCommand:
                                 assert "file:///" in call_args or "file:\\\\\\" in call_args
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_deps_html_path_resolution(self, runner, tmp_path):
         """Test that relative paths are properly resolved for browser opening."""
@@ -731,15 +745,19 @@ class TestVizDepsCommand:
                                 mock_analysis = MagicMock()
                                 mock_analysis.structure.imports = []
                                 mock_analyzer.return_value.analyze_file.return_value = mock_analysis
-                                
+
                                 # Return a relative path from generator
-                                mock_gen.return_value.generate_graph.return_value = "relative_path.html"
-                                
-                                result = runner.invoke(app, ["viz", "deps", str(tmp_path), "--format", "html"])
-                                
+                                mock_gen.return_value.generate_graph.return_value = (
+                                    "relative_path.html"
+                                )
+
+                                result = runner.invoke(
+                                    app, ["viz", "deps", str(tmp_path), "--format", "html"]
+                                )
+
                                 assert result.exit_code == 0
                                 mock_browser.assert_called_once()
-                                
+
                                 # Verify that the path was resolved to absolute before converting to URI
                                 call_args = mock_browser.call_args[0][0]
                                 assert call_args.startswith("file:")
@@ -758,187 +776,175 @@ class TestVizDepsCommand:
                         "frameworks": [],
                         "entry_points": ["main.py"],
                     }
-                    
+
                     # Mock file scanning
                     mock_scanner.return_value.scan.return_value = [
                         Path("main.py"),
                         Path("utils.py"),
                     ]
-                    
+
                     # Mock analysis
                     mock_analysis = MagicMock()
                     mock_analysis.structure.imports = [
                         MagicMock(module="utils", from_module=None),
                     ]
                     mock_analyzer.return_value.analyze_file.return_value = mock_analysis
-                    
+
                     result = runner.invoke(app, ["viz", "deps", str(tmp_path)])
-                    
+
                     assert result.exit_code == 0
                     assert "Detected project type: python_project" in result.stdout
-    
+
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_deps_with_output_formats(self, runner, tmp_path, sample_dependency_graph):
         """Test dependency visualization with different output formats."""
         formats = ["json", "dot", "html", "svg", "png"]
-        
+
         for format in formats:
             output_file = tmp_path / f"deps.{format}"
-            
+
             with patch("tenets.cli.commands.viz.ProjectDetector"):
                 with patch("tenets.cli.commands.viz.FileScanner"):
                     with patch("tenets.cli.commands.viz.CodeAnalyzer"):
                         with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
                             mock_gen.return_value.generate_graph.return_value = str(output_file)
-                            
+
                             result = runner.invoke(
                                 app,
-                                ["viz", "deps", str(tmp_path), 
-                                 "--format", format,
-                                 "--output", str(output_file)]
+                                [
+                                    "viz",
+                                    "deps",
+                                    str(tmp_path),
+                                    "--format",
+                                    format,
+                                    "--output",
+                                    str(output_file),
+                                ],
                             )
-                            
+
                             # Should call generator with correct format
                             if format != "ascii":
                                 mock_gen.return_value.generate_graph.assert_called()
-    
+
     def test_deps_aggregation_levels(self, runner, sample_dependency_graph, sample_project_info):
         """Test dependency aggregation at different levels."""
         levels = ["file", "module", "package"]
-        
+
         for level in levels:
             # Test aggregation function
             if level != "file":
                 aggregated = aggregate_dependencies(
-                    sample_dependency_graph,
-                    level,
-                    sample_project_info
+                    sample_dependency_graph, level, sample_project_info
                 )
-                
+
                 if level == "module":
                     # Should aggregate to module level
                     assert "src" in aggregated or "src.api" in aggregated
                 elif level == "package":
                     # Should aggregate to package level
                     assert "src" in aggregated or "tests" in aggregated
-    
+
     def test_deps_clustering(self, runner, tmp_path):
         """Test dependency visualization with clustering."""
         cluster_options = ["directory", "module", "package"]
-        
+
         for cluster_by in cluster_options:
             with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
                 result = runner.invoke(
                     app,
-                    ["viz", "deps", str(tmp_path),
-                     "--cluster-by", cluster_by,
-                     "--format", "json"]
+                    ["viz", "deps", str(tmp_path), "--cluster-by", cluster_by, "--format", "json"],
                 )
-                
+
                 # Generator should be called with cluster_by option
                 # (Would need more mocking to fully test)
-    
+
     def test_deps_max_nodes(self, runner, tmp_path):
         """Test dependency visualization with node limit."""
         with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
             result = runner.invoke(
-                app,
-                ["viz", "deps", str(tmp_path),
-                 "--max-nodes", "50",
-                 "--format", "json"]
+                app, ["viz", "deps", str(tmp_path), "--max-nodes", "50", "--format", "json"]
             )
-            
+
             # Generator should be called with max_nodes option
-    
+
     def test_deps_layouts(self, runner, tmp_path):
         """Test different graph layouts."""
         layouts = ["hierarchical", "circular", "shell", "kamada"]
-        
+
         for layout in layouts:
             with patch("tenets.cli.commands.viz.GraphGenerator") as mock_gen:
                 result = runner.invoke(
-                    app,
-                    ["viz", "deps", str(tmp_path),
-                     "--layout", layout,
-                     "--format", "svg"]
+                    app, ["viz", "deps", str(tmp_path), "--layout", layout, "--format", "svg"]
                 )
-                
+
                 # Generator should be called with layout option
-    
+
     def test_aggregate_dependencies_function(self, sample_dependency_graph, sample_project_info):
         """Test the aggregate_dependencies helper function."""
         # Test module-level aggregation
         module_aggregated = aggregate_dependencies(
-            sample_dependency_graph,
-            "module",
-            sample_project_info
+            sample_dependency_graph, "module", sample_project_info
         )
-        
+
         assert "src" in module_aggregated
         assert "src.api" in module_aggregated
         assert "tests" in module_aggregated
-        
+
         # Test package-level aggregation
         package_aggregated = aggregate_dependencies(
-            sample_dependency_graph,
-            "package",
-            sample_project_info
+            sample_dependency_graph, "package", sample_project_info
         )
-        
+
         assert "src" in package_aggregated
         assert "tests" in package_aggregated
-        
+
         # No self-dependencies
         assert "src" not in package_aggregated.get("src", [])
-    
+
     def test_get_aggregate_key_function(self, sample_project_info):
         """Test the get_aggregate_key helper function."""
         # Test module level
-        assert get_aggregate_key("src/utils/helpers.py", "module", sample_project_info) == "src.utils"
+        assert (
+            get_aggregate_key("src/utils/helpers.py", "module", sample_project_info) == "src.utils"
+        )
         assert get_aggregate_key("main.py", "module", sample_project_info) == "root"
-        
+
         # Test package level
         assert get_aggregate_key("src/utils/helpers.py", "package", sample_project_info) == "src"
         assert get_aggregate_key("tests/test_main.py", "package", sample_project_info) == "tests"
-        
+
         # Test with module names (dotted notation)
         assert get_aggregate_key("os.path", "module", sample_project_info) == "os"
-    
+
     def test_deps_no_dependencies_found(self, runner, tmp_path):
         """Test handling when no dependencies are found."""
         with patch("tenets.cli.commands.viz.ProjectDetector"):
             with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
                 with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
                     mock_scanner.return_value.scan.return_value = [Path("main.py")]
-                    mock_analyzer.return_value.analyze_file.return_value = MagicMock(
-                        structure=None
-                    )
-                    
+                    mock_analyzer.return_value.analyze_file.return_value = MagicMock(structure=None)
+
                     result = runner.invoke(app, ["viz", "deps", str(tmp_path)])
-                    
+
                     assert "No dependencies found" in result.stdout
-    
+
     def test_deps_ascii_output(self, runner, tmp_path):
         """Test ASCII tree output for terminal."""
         with patch("tenets.cli.commands.viz.ProjectDetector"):
             with patch("tenets.cli.commands.viz.FileScanner") as mock_scanner:
                 with patch("tenets.cli.commands.viz.CodeAnalyzer") as mock_analyzer:
                     mock_scanner.return_value.scan.return_value = [Path("main.py")]
-                    
+
                     mock_analysis = MagicMock()
                     mock_analysis.structure.imports = [
                         MagicMock(module="utils"),
                         MagicMock(module="config"),
                     ]
                     mock_analyzer.return_value.analyze_file.return_value = mock_analysis
-                    
-                    result = runner.invoke(
-                        app,
-                        ["viz", "deps", str(tmp_path), "--format", "ascii"]
-                    )
-                    
+
+                    result = runner.invoke(app, ["viz", "deps", str(tmp_path), "--format", "ascii"])
+
                     assert "Dependency Graph:" in result.stdout
                     assert "└─>" in result.stdout  # Tree character

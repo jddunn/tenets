@@ -405,16 +405,16 @@ class TestDistillOutputFormatting:
     def test_html_format_autosave_with_browser_prompt(self, runner, mock_tenets):
         """Test HTML format auto-saves and prompts for browser."""
         mock_tenets.distill.return_value.context = "<html><body>Test HTML</body></html>"
-        
+
         with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
             with patch("sys.stdout.isatty", return_value=True):
                 with patch("tenets.cli.commands.distill.click.confirm", return_value=False):
                     with patch("pathlib.Path.write_text") as mock_write:
                         app = typer.Typer()
                         app.command()(distill)
-                        
+
                         result = runner.invoke(app, ["test", ".", "--format", "html"])
-                        
+
                         assert result.exit_code == 0
                         # In test environment, HTML is printed since isatty() returns False
                         assert "<html>" in result.stdout
@@ -424,7 +424,7 @@ class TestDistillOutputFormatting:
     def test_html_format_opens_browser_on_yes(self, runner, mock_tenets):
         """Test HTML format opens browser when user confirms."""
         mock_tenets.distill.return_value.context = "<html><body>Test HTML</body></html>"
-        
+
         with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
             with patch("sys.stdout.isatty", return_value=True):
                 with patch("tenets.cli.commands.distill.click.confirm", return_value=True):
@@ -432,9 +432,9 @@ class TestDistillOutputFormatting:
                         with patch("pathlib.Path.write_text"):
                             app = typer.Typer()
                             app.command()(distill)
-                            
+
                             result = runner.invoke(app, ["test", ".", "--format", "html"])
-                            
+
                             assert result.exit_code == 0
                             # In test environment, HTML is printed
                             assert "<html>" in result.stdout
@@ -444,15 +444,17 @@ class TestDistillOutputFormatting:
         """Test HTML output with explicit path also prompts for browser."""
         mock_tenets.distill.return_value.context = "<html><body>Test HTML</body></html>"
         output_file = tmp_path / "output.html"
-        
+
         with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
             with patch("sys.stdout.isatty", return_value=True):
                 with patch("tenets.cli.commands.distill.click.confirm", return_value=False):
                     app = typer.Typer()
                     app.command()(distill)
-                    
-                    result = runner.invoke(app, ["test", ".", "--format", "html", "--output", str(output_file)])
-                    
+
+                    result = runner.invoke(
+                        app, ["test", ".", "--format", "html", "--output", str(output_file)]
+                    )
+
                     assert result.exit_code == 0
                     assert "Context saved to" in result.stdout
                     # Browser prompt is shown when output is specified

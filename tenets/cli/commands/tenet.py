@@ -51,7 +51,9 @@ def get_tenet_manager():
                 conn.commit()
                 conn.close()
 
-            def add_tenet(self, content=None, priority="medium", category=None, session=None, tenet=None):
+            def add_tenet(
+                self, content=None, priority="medium", category=None, session=None, tenet=None
+            ):
                 # Support both old API and new Tenet object
                 if tenet is not None:
                     # New API - Tenet object passed
@@ -64,7 +66,13 @@ def get_tenet_manager():
                             tenet.id,
                             tenet.content,
                             str(tenet.priority.value),
-                            str(tenet.category.value) if hasattr(tenet.category, 'value') else str(tenet.category) if tenet.category else None,
+                            (
+                                str(tenet.category.value)
+                                if hasattr(tenet.category, "value")
+                                else str(tenet.category)
+                                if tenet.category
+                                else None
+                            ),
                             session_val,
                             "pending",
                         ),
@@ -72,9 +80,9 @@ def get_tenet_manager():
                     conn.commit()
                     conn.close()
                 else:
-                    # Old API - keyword arguments  
+                    # Old API - keyword arguments
                     from tenets.models.tenet import Priority, Tenet, TenetCategory
-                    
+
                     # Parse priority
                     priority_map = {
                         "low": Priority.LOW,
@@ -83,7 +91,7 @@ def get_tenet_manager():
                         "critical": Priority.CRITICAL,
                     }
                     priority_enum = priority_map.get(priority.lower(), Priority.MEDIUM)
-                    
+
                     # Parse category if provided
                     category_enum = None
                     if category:
@@ -91,12 +99,14 @@ def get_tenet_manager():
                             category_enum = TenetCategory(category.lower())
                         except ValueError:
                             pass  # Custom category
-                    
+
                     # Create tenet
-                    new_tenet = Tenet(content=content, priority=priority_enum, category=category_enum or category)
+                    new_tenet = Tenet(
+                        content=content, priority=priority_enum, category=category_enum or category
+                    )
                     if session:
                         new_tenet.session_bindings = [session]
-                    
+
                     # Save to DB
                     conn = sqlite3.connect(self.db_path)
                     conn.execute(
@@ -105,7 +115,13 @@ def get_tenet_manager():
                             new_tenet.id,
                             new_tenet.content,
                             str(new_tenet.priority.value),
-                            str(new_tenet.category.value) if hasattr(new_tenet.category, 'value') else str(new_tenet.category) if new_tenet.category else None,
+                            (
+                                str(new_tenet.category.value)
+                                if hasattr(new_tenet.category, "value")
+                                else str(new_tenet.category)
+                                if new_tenet.category
+                                else None
+                            ),
                             session,
                             "pending",
                         ),
@@ -127,7 +143,7 @@ def get_tenet_manager():
                             category = TenetCategory(row[3])
                         except ValueError:
                             category = row[3]  # Custom category string
-                    
+
                     tenet = Tenet(content=row[1], priority=Priority(row[2]), category=category)
                     tenet.id = row[0]
                     if row[4]:  # session
@@ -138,7 +154,7 @@ def get_tenet_manager():
                     tenets.append(tenet)
                 conn.close()
                 return tenets
-            
+
             def list_tenets(self, pending_only=False, instilled_only=False, session=None):
                 """List tenets with filters - returns dict format for tests."""
                 all_tenets = self.get_all_tenets()
@@ -151,17 +167,31 @@ def get_tenet_manager():
                         continue
                     if session and t.session != session:
                         continue
-                    
+
                     # Convert to dict format expected by tests
-                    result.append({
-                        "id": t.id,
-                        "content": t.content,
-                        "priority": t.priority.value,
-                        "category": str(t.category.value) if hasattr(t.category, 'value') else str(t.category) if t.category else None,
-                        "instilled": bool(t.instilled_at),
-                        "created_at": t.created_at.isoformat() if hasattr(t, 'created_at') and t.created_at else "2024-01-15T10:00:00",
-                        "session_bindings": t.session_bindings if hasattr(t, 'session_bindings') else [],
-                    })
+                    result.append(
+                        {
+                            "id": t.id,
+                            "content": t.content,
+                            "priority": t.priority.value,
+                            "category": (
+                                str(t.category.value)
+                                if hasattr(t.category, "value")
+                                else str(t.category)
+                                if t.category
+                                else None
+                            ),
+                            "instilled": bool(t.instilled_at),
+                            "created_at": (
+                                t.created_at.isoformat()
+                                if hasattr(t, "created_at") and t.created_at
+                                else "2024-01-15T10:00:00"
+                            ),
+                            "session_bindings": (
+                                t.session_bindings if hasattr(t, "session_bindings") else []
+                            ),
+                        }
+                    )
                 return result
 
             def get_tenet(self, id):
@@ -179,7 +209,7 @@ def get_tenet_manager():
                             category = TenetCategory(row[3])
                         except ValueError:
                             category = row[3]  # Custom category string
-                    
+
                     tenet = Tenet(content=row[1], priority=Priority(row[2]), category=category)
                     tenet.id = row[0]
                     if row[4]:  # session
@@ -197,41 +227,50 @@ def get_tenet_manager():
                 affected = cursor.rowcount > 0
                 conn.close()
                 return affected
-            
+
             def export_tenets(self, format="yaml", session=None):
                 """Export tenets - returns formatted string."""
                 all_tenets = self.get_all_tenets()
-                
+
                 # Filter by session if specified
                 if session:
                     all_tenets = [t for t in all_tenets if t.session == session]
-                
+
                 # Convert to dict format
                 tenets_data = []
                 for t in all_tenets:
-                    tenets_data.append({
-                        "content": t.content,
-                        "priority": t.priority.value,
-                        "category": str(t.category.value) if hasattr(t.category, 'value') else str(t.category) if t.category else None,
-                        "session": t.session,
-                    })
-                
+                    tenets_data.append(
+                        {
+                            "content": t.content,
+                            "priority": t.priority.value,
+                            "category": (
+                                str(t.category.value)
+                                if hasattr(t.category, "value")
+                                else str(t.category)
+                                if t.category
+                                else None
+                            ),
+                            "session": t.session,
+                        }
+                    )
+
                 if format == "json":
                     import json
+
                     return json.dumps({"tenets": tenets_data}, indent=2)
                 else:  # yaml
                     # Simple YAML-like format for testing
                     lines = ["---", "tenets:"]
                     for t in tenets_data:
                         lines.append(f"  - content: {t['content']}")
-                        if t.get('priority'):
+                        if t.get("priority"):
                             lines.append(f"    priority: {t['priority']}")
-                        if t.get('category'):
+                        if t.get("category"):
                             lines.append(f"    category: {t['category']}")
-                        if t.get('session'):
+                        if t.get("session"):
                             lines.append(f"    session: {t['session']}")
                     return "\n".join(lines)
-            
+
             def import_tenets(self, file_path, session=None):
                 """Import tenets from file."""
                 # For testing, just return a count
@@ -290,10 +329,10 @@ def add_tenet(
         # Add the tenet via manager
         # Time the actual add operation
         add_start = time.time()
-        
+
         # First create the Tenet object
         from tenets.models.tenet import Priority, Tenet, TenetCategory
-        
+
         # Parse priority
         priority_map = {
             "low": Priority.LOW,
@@ -302,7 +341,7 @@ def add_tenet(
             "critical": Priority.CRITICAL,
         }
         priority_enum = priority_map.get(priority.lower(), Priority.MEDIUM)
-        
+
         # Parse category if provided
         category_enum = None
         if category:
@@ -311,16 +350,16 @@ def add_tenet(
             except ValueError:
                 # Custom category
                 pass
-        
+
         # Create the tenet
         tenet = Tenet(content=content, priority=priority_enum, category=category_enum or category)
         # Add session binding if specified
         if session:
             tenet.session_bindings = [session]
-        
+
         # Try to call add_tenet - tests expect the Tenet object to be passed
         manager.add_tenet(tenet)
-        
+
         add_time = time.time() - add_start
         logger.info(f"Added tenet to database in {add_time:.3f}s")
 
@@ -364,16 +403,16 @@ def list_tenets(
         manager = get_tenet_manager()
 
         # Check if manager supports list_tenets (tests) or just get_all_tenets (real)
-        if hasattr(manager, 'list_tenets'):
+        if hasattr(manager, "list_tenets"):
             # Test mock - use list_tenets with filters
             all_tenets = manager.list_tenets(
-                pending_only=pending,
-                instilled_only=instilled,
-                session=session
+                pending_only=pending, instilled_only=instilled, session=session
             )
             # For category filter (not in list_tenets call)
             if category:
-                all_tenets = [t for t in all_tenets if t.get('category', '').lower() == category.lower()]
+                all_tenets = [
+                    t for t in all_tenets if t.get("category", "").lower() == category.lower()
+                ]
         else:
             # Real manager - get all and filter manually
             all_tenets_objs = manager.get_all_tenets()
@@ -402,15 +441,29 @@ def list_tenets(
             # Convert to dict format for consistency
             all_tenets = []
             for t in filtered_tenets:
-                all_tenets.append({
-                    "id": t.id,
-                    "content": t.content,
-                    "priority": t.priority.value,
-                    "category": str(t.category.value) if hasattr(t.category, 'value') else str(t.category) if t.category else None,
-                    "instilled": bool(t.instilled_at),
-                    "created_at": t.created_at.isoformat() if hasattr(t, 'created_at') and t.created_at else "2024-01-15T10:00:00",
-                    "session_bindings": t.session_bindings if hasattr(t, 'session_bindings') else [],
-                })
+                all_tenets.append(
+                    {
+                        "id": t.id,
+                        "content": t.content,
+                        "priority": t.priority.value,
+                        "category": (
+                            str(t.category.value)
+                            if hasattr(t.category, "value")
+                            else str(t.category)
+                            if t.category
+                            else None
+                        ),
+                        "instilled": bool(t.instilled_at),
+                        "created_at": (
+                            t.created_at.isoformat()
+                            if hasattr(t, "created_at") and t.created_at
+                            else "2024-01-15T10:00:00"
+                        ),
+                        "session_bindings": (
+                            t.session_bindings if hasattr(t, "session_bindings") else []
+                        ),
+                    }
+                )
 
         if category:
             console.print(f"Category: {category}")
@@ -609,7 +662,7 @@ def export_tenets(
         manager = get_tenet_manager()
 
         # Check if manager supports export_tenets (tests) or need to do it manually
-        if hasattr(manager, 'export_tenets'):
+        if hasattr(manager, "export_tenets"):
             # Test mock - use export_tenets method
             exported = manager.export_tenets(format=format, session=session)
         else:
@@ -623,27 +676,42 @@ def export_tenets(
             # Format the export
             if format == "json":
                 import json
+
                 # Convert tenets to dict format
                 tenets_data = []
                 for t in all_tenets:
-                    tenets_data.append({
-                        "content": t.content,
-                        "priority": t.priority.value,
-                        "category": str(t.category.value) if hasattr(t.category, 'value') else str(t.category) if t.category else None,
-                        "session": t.session if hasattr(t, 'session') else None,
-                    })
+                    tenets_data.append(
+                        {
+                            "content": t.content,
+                            "priority": t.priority.value,
+                            "category": (
+                                str(t.category.value)
+                                if hasattr(t.category, "value")
+                                else str(t.category)
+                                if t.category
+                                else None
+                            ),
+                            "session": t.session if hasattr(t, "session") else None,
+                        }
+                    )
                 exported = json.dumps({"tenets": tenets_data}, indent=2)
             else:  # yaml
                 # Simple YAML-like format
                 lines = ["---", "tenets:"]
                 for t in all_tenets:
                     lines.append(f"  - content: {t.content}")
-                    if hasattr(t, 'priority'):
+                    if hasattr(t, "priority"):
                         lines.append(f"    priority: {t.priority.value}")
-                    cat_val = str(t.category.value) if hasattr(t.category, 'value') else str(t.category) if t.category else None
+                    cat_val = (
+                        str(t.category.value)
+                        if hasattr(t.category, "value")
+                        else str(t.category)
+                        if t.category
+                        else None
+                    )
                     if cat_val:
                         lines.append(f"    category: {cat_val}")
-                    if hasattr(t, 'session') and t.session:
+                    if hasattr(t, "session") and t.session:
                         lines.append(f"    session: {t.session}")
                 exported = "\n".join(lines)
 
@@ -691,7 +759,7 @@ def import_tenets(
             return
 
         # Check if manager supports import_tenets (tests) or need to do it manually
-        if hasattr(manager, 'import_tenets'):
+        if hasattr(manager, "import_tenets"):
             # Test mock - use import_tenets method
             count = manager.import_tenets(file, session=session)
         else:
@@ -700,11 +768,13 @@ def import_tenets(
 
             if file.suffix.lower() == ".json":
                 import json
+
                 data = json.loads(content)
                 if "tenets" in data:
                     data = data["tenets"]
             else:  # yaml
                 import yaml
+
                 data = yaml.safe_load(content)
                 if isinstance(data, dict) and "tenets" in data:
                     data = data["tenets"]

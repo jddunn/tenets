@@ -76,7 +76,7 @@ def cosine_similarity(vec1, vec2) -> float:
     # Check if inputs are sparse vectors (dicts)
     if isinstance(vec1, dict) and isinstance(vec2, dict):
         return sparse_cosine_similarity(vec1, vec2)
-    
+
     # Handle different input types for dense vectors
     vec1 = np.asarray(vec1).flatten()
     vec2 = np.asarray(vec2).flatten()
@@ -101,29 +101,29 @@ def cosine_similarity(vec1, vec2) -> float:
 
 def sparse_cosine_similarity(vec1: dict, vec2: dict) -> float:
     """Compute cosine similarity between two sparse vectors.
-    
+
     Sparse vectors are represented as dictionaries mapping indices/keys to values.
     This is efficient for high-dimensional vectors with many zero values.
-    
+
     Args:
         vec1: First sparse vector as {key: value} dict
         vec2: Second sparse vector as {key: value} dict
-    
+
     Returns:
         Cosine similarity (-1 to 1)
     """
     # Compute dot product (only for common keys)
     dot_product = sum(vec1.get(key, 0) * vec2.get(key, 0) for key in set(vec1) | set(vec2))
-    
+
     # Compute norms
     norm1 = math.sqrt(sum(v**2 for v in vec1.values()))
     norm2 = math.sqrt(sum(v**2 for v in vec2.values()))
-    
+
     if norm1 == 0 or norm2 == 0:
         return 0.0
-    
+
     similarity = dot_product / (norm1 * norm2)
-    
+
     # Clamp to [-1, 1] to handle floating point errors
     return max(-1.0, min(1.0, similarity))
 

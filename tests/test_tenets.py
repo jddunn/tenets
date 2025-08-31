@@ -14,16 +14,13 @@ Test Coverage:
     - Error handling and edge cases
 """
 
-import json
 import sys
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
-import yaml
 
-from tenets import ContextResult, Priority, Tenet, TenetCategory, Tenets, TenetsConfig
+from tenets import ContextResult, Tenet, Tenets, TenetsConfig
 
 
 class TestTenetsInitialization:
@@ -32,7 +29,6 @@ class TestTenetsInitialization:
     def test_init_with_default_config(self):
         """Test initialization with default configuration."""
         with patch("tenets.Distiller"), patch("tenets.Instiller"), patch("tenets.get_logger"):
-
             tenets = Tenets()
 
             assert tenets.config is not None
@@ -48,18 +44,17 @@ class TestTenetsInitialization:
             patch("tenets.Instiller") as mock_instiller,
             patch("tenets.get_logger"),
         ):
-
             tenets = Tenets(config=test_config)
 
             assert tenets.config == test_config
             # Distiller and Instiller are lazy-loaded, not called during init
             mock_distiller.assert_not_called()
             mock_instiller.assert_not_called()
-            
+
             # They should be called when accessed
             _ = tenets.distiller
             mock_distiller.assert_called_once_with(test_config)
-            
+
             _ = tenets.instiller
             mock_instiller.assert_called_once_with(test_config)
 
@@ -68,7 +63,6 @@ class TestTenetsInitialization:
         config_dict = {"max_tokens": 50000, "debug": True, "ranking_algorithm": "thorough"}
 
         with patch("tenets.Distiller"), patch("tenets.Instiller"), patch("tenets.get_logger"):
-
             tenets = Tenets(config=config_dict)
 
             assert tenets.config.max_tokens == 50000
@@ -77,7 +71,6 @@ class TestTenetsInitialization:
     def test_init_with_config_file(self, config_file):
         """Test initialization with a configuration file path."""
         with patch("tenets.Distiller"), patch("tenets.Instiller"), patch("tenets.get_logger"):
-
             tenets = Tenets(config=config_file)
 
             assert tenets.config.max_tokens == 5000  # From config file
@@ -111,7 +104,6 @@ class TestDistillMethod:
             patch("tenets.Instiller", return_value=self.mock_instiller),
             patch("tenets.get_logger", return_value=self.mock_logger),
         ):
-
             self.tenets = Tenets()
 
     def test_distill_basic(self):
@@ -126,7 +118,7 @@ class TestDistillMethod:
         self.mock_distiller.distill.return_value = mock_result
 
         # Patch the distiller property to return our mock
-        with patch.object(self.tenets, '_distiller', self.mock_distiller):
+        with patch.object(self.tenets, "_distiller", self.mock_distiller):
             # Call distill
             result = self.tenets.distill("implement OAuth2 authentication")
 
@@ -148,7 +140,7 @@ class TestDistillMethod:
         self.mock_distiller.distill.return_value = mock_result
 
         # Patch the distiller property to return our mock
-        with patch.object(self.tenets, '_distiller', self.mock_distiller):
+        with patch.object(self.tenets, "_distiller", self.mock_distiller):
             result = self.tenets.distill(
                 prompt="fix authentication bug",
                 files=["src/auth.py", "src/api.py"],
@@ -182,7 +174,7 @@ class TestDistillMethod:
         mock_tenet = Mock(spec=Tenet)
         mock_manager = Mock()
         mock_manager.get_pending_tenets.return_value = [mock_tenet]
-        
+
         # Mock the instiller's manager
         self.mock_instiller.manager = mock_manager
 
@@ -201,8 +193,8 @@ class TestDistillMethod:
         self.mock_instiller.instill.return_value = mock_instill_result
 
         # Patch the distiller and instiller properties
-        with patch.object(self.tenets, '_distiller', self.mock_distiller):
-            with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_distiller", self.mock_distiller):
+            with patch.object(self.tenets, "_instiller", self.mock_instiller):
                 # Call distill with apply_tenets=True
                 result = self.tenets.distill("implement feature", apply_tenets=True)
 
@@ -216,8 +208,7 @@ class TestDistillMethod:
             self.tenets.distill("")
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with tiktoken on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with tiktoken on Python 3.13+"
     )
     def test_distill_caches_result(self):
         """Test that distill results are cached."""
@@ -248,7 +239,6 @@ class TestTenetManagement:
             patch("tenets.Instiller") as mock_instiller_class,
             patch("tenets.get_logger"),
         ):
-
             # Setup the mock instiller to have a manager
             self.mock_instiller = Mock()
             self.mock_instiller.manager = self.mock_manager
@@ -265,7 +255,7 @@ class TestTenetManagement:
         self.mock_manager.add_tenet.return_value = mock_tenet
 
         # Patch the instiller to return our mock manager
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.add_tenet("Always use type hints")
 
             assert result == mock_tenet
@@ -283,7 +273,7 @@ class TestTenetManagement:
         mock_tenet.id = "test-id"  # Add id attribute for comparison
         self.mock_manager.add_tenet.return_value = mock_tenet
 
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.add_tenet(
                 content="Use dependency injection",
                 priority="high",
@@ -310,7 +300,7 @@ class TestTenetManagement:
         self.mock_manager.list_tenets.return_value = mock_tenets
 
         # Test basic listing
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.list_tenets()
             assert result == mock_tenets
 
@@ -326,7 +316,7 @@ class TestTenetManagement:
         mock_tenet = Mock(spec=Tenet)
         self.mock_manager.get_tenet.return_value = mock_tenet
 
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.get_tenet("abc123")
 
             assert result == mock_tenet
@@ -336,7 +326,7 @@ class TestTenetManagement:
         """Test removing a tenet."""
         self.mock_manager.remove_tenet.return_value = True
 
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.remove_tenet("abc123")
 
             assert result is True
@@ -347,7 +337,7 @@ class TestTenetManagement:
         mock_result = {"count": 3, "tenets": ["Tenet 1", "Tenet 2", "Tenet 3"]}
         self.mock_manager.instill_tenets.return_value = mock_result
 
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.instill_tenets(session="test-session", force=True)
 
             assert result == mock_result
@@ -358,7 +348,7 @@ class TestTenetManagement:
         export_data = "tenets:\n  - content: Test tenet\n"
         self.mock_manager.export_tenets.return_value = export_data
 
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.export_tenets(format="yaml", session="test")
 
             assert result == export_data
@@ -372,7 +362,7 @@ class TestTenetManagement:
 
         self.mock_manager.import_tenets.return_value = 5
 
-        with patch.object(self.tenets, '_instiller', self.mock_instiller):
+        with patch.object(self.tenets, "_instiller", self.mock_instiller):
             result = self.tenets.import_tenets(import_file, session="imported")
 
             assert result == 5
@@ -393,7 +383,6 @@ class TestAnalysisMethods:
             patch("tenets.get_logger"),
             patch("tenets.CodeAnalyzer") as mock_analyzer_class,
         ):
-
             self.mock_analyzer = Mock()
             mock_analyzer_class.return_value = self.mock_analyzer
 
@@ -467,7 +456,6 @@ class TestEdgeCasesAndErrorHandling:
             patch("tenets.Instiller") as mock_instiller_class,
             patch("tenets.get_logger"),
         ):
-
             self.mock_distiller = Mock()
             self.mock_instiller = Mock()
             mock_distiller_class.return_value = self.mock_distiller
@@ -480,13 +468,13 @@ class TestEdgeCasesAndErrorHandling:
         """Test distill handles distiller errors gracefully."""
         self.mock_distiller.distill.side_effect = RuntimeError("Distiller failed")
 
-        with patch.object(self.tenets, '_distiller', self.mock_distiller):
+        with patch.object(self.tenets, "_distiller", self.mock_distiller):
             with pytest.raises(RuntimeError, match="Distiller failed"):
                 self.tenets.distill("test prompt")
 
     @pytest.mark.skipif(
         sys.version_info[:2] >= (3, 13),
-        reason="BeautifulSoup has regex compilation issues on Python 3.13"
+        reason="BeautifulSoup has regex compilation issues on Python 3.13",
     )
     def test_distill_with_very_long_prompt(self):
         """Test distill handles very long prompts."""
@@ -500,13 +488,12 @@ class TestEdgeCasesAndErrorHandling:
         )
         self.mock_distiller.distill.return_value = mock_result
 
-        with patch.object(self.tenets, '_distiller', self.mock_distiller):
+        with patch.object(self.tenets, "_distiller", self.mock_distiller):
             result = self.tenets.distill(long_prompt)
             assert result == mock_result
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_concurrent_distill_calls(self):
         """Test that concurrent distill calls work correctly."""
@@ -555,7 +542,7 @@ class TestEdgeCasesAndErrorHandling:
         self.mock_distiller.distill.return_value = mock_result
 
         # Distill should use the session
-        with patch.object(self.tenets, '_distiller', self.mock_distiller):
+        with patch.object(self.tenets, "_distiller", self.mock_distiller):
             result = self.tenets.distill("test prompt")
 
             call_kwargs = self.mock_distiller.distill.call_args[1]

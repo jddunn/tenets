@@ -13,6 +13,7 @@ from typing import Dict, List, Tuple
 
 try:  # Optional lemmatization via nltk if available
     from nltk.stem import WordNetLemmatizer  # type: ignore
+
     _LEM = WordNetLemmatizer()
     _HAS_NLTK = True
 except Exception:  # pragma: no cover - optional
@@ -84,7 +85,9 @@ class EntityNormalizer:
                 variants.append(base)
 
         canonical = base or t2
-        return NormalizationResult(canonical=canonical, steps=steps, variants=list(dict.fromkeys(variants)))
+        return NormalizationResult(
+            canonical=canonical, steps=steps, variants=list(dict.fromkeys(variants))
+        )
 
 
 def normalize_list(items: List[str]) -> Tuple[List[str], Dict[str, Dict[str, List[str]]]]:
