@@ -6,14 +6,11 @@ import typer
 from rich import print
 from rich.console import Console
 
+# Import lightweight commands immediately
 from tenets.cli.commands.config import config_app
 from tenets.cli.commands.session import session_app
-from tenets.cli.commands.system_instruction import app as system_instruction_app
-from tenets.cli.commands.momentum import momentum as momentum_app
-from tenets.cli.commands.chronicle import chronicle as chronicle_app
-from tenets.cli.commands.examine import examine as examine_app
 from tenets.cli.commands.tenet import tenet_app
-from tenets.cli.commands.viz import viz_app
+from tenets.cli.commands.system_instruction import app as system_instruction_app
 
 # Create main app
 app = typer.Typer(
@@ -66,26 +63,73 @@ def _check_git_availability(ctx: typer.Context) -> bool:
     return False
 
 
-# Add subcommand groups
+# Register subcommand groups
+# Lightweight commands are already imported above
 app.add_typer(tenet_app, name="tenet", help="Manage guiding principles (tenets)")
 app.add_typer(session_app, name="session", help="Manage development sessions")
-app.add_typer(viz_app, name="viz", help="Visualize codebase insights")
 app.add_typer(config_app, name="config", help="Configuration management")
 app.add_typer(
     system_instruction_app,
     name="system-instruction",
     help="Manage system instruction (system prompt)",
 )
+
+# Delay import of heavy commands until they're actually called
+# These imports are the slow ones that load ML libraries
+
+# Import momentum (relatively lightweight)
+from tenets.cli.commands.momentum import momentum as momentum_app
 app.add_typer(momentum_app, name="momentum", help="Track team momentum and velocity")
+
+# Import chronicle (medium weight, git operations)
+from tenets.cli.commands.chronicle import chronicle as chronicle_app
 app.add_typer(chronicle_app, name="chronicle", help="Analyze git history over time")
+
+# Import examine (medium weight)
+from tenets.cli.commands.examine import examine as examine_app
 app.add_typer(examine_app, name="examine", help="Comprehensive code examination")
 
-# Register main commands
-from tenets.cli.commands.distill import distill
-from tenets.cli.commands.instill import instill
+# Import viz (medium weight)
+from tenets.cli.commands.viz import viz_app
+app.add_typer(viz_app, name="viz", help="Visualize codebase insights")
 
-app.command()(distill)
-app.command()(instill)
+# Register the heavy main commands - these are what's slowing us down
+# We'll import them conditionally only when they're actually needed
+import sys as _sys
+if len(_sys.argv) > 1 and _sys.argv[1] in ["distill", "instill"]:
+    # Only import these heavy commands if they're being called
+    from tenets.cli.commands.distill import distill
+    from tenets.cli.commands.instill import instill
+    
+    app.command()(distill)
+    app.command()(instill)
+else:
+    # Create placeholder commands for help text
+    @app.command(name="distill")
+    def distill_placeholder(
+        ctx: typer.Context,
+        prompt: str = typer.Argument(..., help="Query or task to build context for"),
+    ):
+        """Distill relevant context from codebase for AI prompts."""
+        # Import and run the real command
+        from tenets.cli.commands.distill import distill
+        # Remove the placeholder and register the real command
+        app.registered_commands = [c for c in app.registered_commands if c.name != "distill"]
+        app.command()(distill)
+        # Re-invoke with the real command
+        ctx.obj = ctx.obj or {}
+        return ctx.invoke(distill, prompt=prompt)
+    
+    @app.command(name="instill")
+    def instill_placeholder(ctx: typer.Context):
+        """Apply tenets (guiding principles) to context."""
+        # Import and run the real command
+        from tenets.cli.commands.instill import instill
+        # Remove the placeholder and register the real command
+        app.registered_commands = [c for c in app.registered_commands if c.name != "instill"]
+        app.command()(instill)
+        # Re-invoke with the real command
+        return ctx.invoke(instill)
 
 
 @app.command()
