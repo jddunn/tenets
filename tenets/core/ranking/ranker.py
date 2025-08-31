@@ -176,13 +176,9 @@ class RelevanceRanker:
             use_stopwords if use_stopwords is not None else config.ranking.use_stopwords
         )
 
-        # Initialize strategies
-        self.strategies: Dict[RankingAlgorithm, RankingStrategy] = {
-            RankingAlgorithm.FAST: FastRankingStrategy(),
-            RankingAlgorithm.BALANCED: BalancedRankingStrategy(),
-            RankingAlgorithm.THOROUGH: ThoroughRankingStrategy(),
-            RankingAlgorithm.ML: MLRankingStrategy(),
-        }
+        # Initialize strategies lazily to avoid loading unnecessary models
+        self._strategies_cache: Dict[RankingAlgorithm, RankingStrategy] = {}
+        self.strategies = self._strategies_cache  # Alias for compatibility
 
         # Custom rankers list (keep public and test-expected private alias)
         self.custom_rankers: List[Callable] = []
@@ -255,8 +251,7 @@ class RelevanceRanker:
         # Select strategy
         if algorithm:
             try:
-                algo_enum = RankingAlgorithm(algorithm)
-                strategy = self.strategies.get(algo_enum)
+                strategy = self._get_strategy(algorithm)
             except ValueError:
                 raise ValueError(f"Unknown ranking algorithm: {algorithm}")
         else:
@@ -339,13 +334,26 @@ class RelevanceRanker:
         """Return the strategy instance for the given algorithm string.
 
         If algorithm is None, use the current instance algorithm.
+        Strategies are created lazily on first use to avoid loading unnecessary models.
         """
         algo = algorithm or self.algorithm.value
         try:
             algo_enum = RankingAlgorithm(algo)
         except ValueError:
             algo_enum = self.algorithm
-        return self.strategies.get(algo_enum)
+            
+        # Lazy creation of strategies
+        if algo_enum not in self._strategies_cache:
+            if algo_enum == RankingAlgorithm.FAST:
+                self._strategies_cache[algo_enum] = FastRankingStrategy()
+            elif algo_enum == RankingAlgorithm.BALANCED:
+                self._strategies_cache[algo_enum] = BalancedRankingStrategy()
+            elif algo_enum == RankingAlgorithm.THOROUGH:
+                self._strategies_cache[algo_enum] = ThoroughRankingStrategy()
+            elif algo_enum == RankingAlgorithm.ML:
+                self._strategies_cache[algo_enum] = MLRankingStrategy()
+                
+        return self._strategies_cache.get(algo_enum)
 
     def _rank_with_strategy(
         self,

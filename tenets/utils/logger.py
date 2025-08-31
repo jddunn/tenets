@@ -17,17 +17,23 @@ Console = None
 def _check_rich_available():
     """Check if Rich is available."""
     try:
-        import importlib.util
-        spec = importlib.util.find_spec("rich")
-        return spec is not None
-    except (ImportError, AttributeError):
+        # Try a simple import instead of using importlib.util which seems to hang
+        import rich
+        return True
+    except ImportError:
         return False
 
-_RICH_INSTALLED = _check_rich_available()
+# Defer the check to avoid import-time hangs
+_RICH_INSTALLED = None
 
 def _ensure_rich_imported():
     """Import Rich when actually needed."""
-    global RichHandler, Console
+    global RichHandler, Console, _RICH_INSTALLED
+    
+    # Check Rich availability on first use if not already checked
+    if _RICH_INSTALLED is None:
+        _RICH_INSTALLED = _check_rich_available()
+    
     if RichHandler is None and _RICH_INSTALLED:
         try:
             from rich.logging import RichHandler as _RichHandler
@@ -59,6 +65,11 @@ def _configure_root(level: int) -> None:
         _CURRENT_LEVEL = level
         return
 
+    # Check Rich availability if not already checked
+    global _RICH_INSTALLED
+    if _RICH_INSTALLED is None:
+        _RICH_INSTALLED = _check_rich_available()
+    
     # Create or update a handler
     if _RICH_INSTALLED:
         _ensure_rich_imported()  # Import Rich when needed

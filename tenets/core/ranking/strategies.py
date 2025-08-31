@@ -855,7 +855,8 @@ class MLRankingStrategy(RankingStrategy):
         self.logger = get_logger(__name__)
         self._model = None
         self._embeddings_cache = {}
-        self._load_model()
+        self._model_loaded = False
+        # Don't load model in __init__ - load lazily when needed
 
     def _load_model(self):
         """Load ML model lazily."""
@@ -871,6 +872,11 @@ class MLRankingStrategy(RankingStrategy):
         self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
     ) -> RankingFactors:
         """ML-based ranking with semantic similarity."""
+        # Load model lazily on first use
+        if not self._model_loaded:
+            self._load_model()
+            self._model_loaded = True
+            
         # Start with thorough ranking
         thorough = ThoroughRankingStrategy()
         factors = thorough.rank_file(file, prompt_context, corpus_stats)

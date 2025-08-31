@@ -191,6 +191,9 @@ class Distiller:
             "full_mode": full,
             "condense": condense,
             "remove_comments": remove_comments,
+            # Include the aggregated data for _build_result to use
+            "included_files": aggregated["included_files"],
+            "total_tokens": aggregated.get("total_tokens", 0),
         }
 
         # Add debug information for verbose mode
@@ -417,9 +420,20 @@ class Distiller:
 
     def _build_result(self, formatted: str, metadata: Dict[str, Any]) -> ContextResult:
         """Build the final context result."""
+        # Extract file paths from the aggregated included_files structure
+        included_files = []
+        for file_info in metadata.get("included_files", []):
+            if isinstance(file_info, dict) and "file" in file_info:
+                # file_info["file"] is a FileAnalysis object with a path attribute
+                included_files.append(str(file_info["file"].path))
+            elif hasattr(file_info, "path"):
+                # Direct FileAnalysis object
+                included_files.append(str(file_info.path))
+                
         return ContextResult(
             context=formatted,
             format=metadata.get("format", "markdown"),
             metadata=metadata,
-            files_included=[f["path"] for f in metadata.get("included_files", [])],
+            files_included=included_files,
+            token_count=metadata.get("total_tokens", 0),
         )

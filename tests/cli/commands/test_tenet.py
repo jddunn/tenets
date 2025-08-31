@@ -27,7 +27,7 @@ def runner():
 
 @pytest.fixture
 def mock_tenets():
-    """Create a mock Tenets instance."""
+    """Create a mock tenet manager instance."""
     mock = MagicMock()
 
     # Mock tenet object
@@ -44,25 +44,15 @@ def mock_tenets():
         injection_count=5, contexts_appeared_in=3, reinforcement_needed=False
     )
 
-    # Mock tenet manager
-    mock.tenet_manager = MagicMock()
-    mock.add_tenet.return_value = mock_tenet
-    mock.list_tenets.return_value = [
-        {
-            "id": "abc123def456",
-            "content": "Always use type hints in Python",
-            "priority": "high",
-            "category": "style",
-            "instilled": False,
-            "created_at": datetime.now().isoformat(),
-            "session_bindings": [],
-        }
-    ]
+    # Mock manager methods - add_tenet doesn't return anything in the actual implementation
+    mock.add_tenet = MagicMock(side_effect=lambda t: setattr(t, 'id', 'abc123def456'))
+    mock.get_all_tenets.return_value = [mock_tenet]
     mock.get_tenet.return_value = mock_tenet
     mock.remove_tenet.return_value = True
-    mock.export_tenets.return_value = "---\ntenets:\n  - content: Always use type hints"
-    mock.import_tenets.return_value = 2
-    mock.get_pending_tenets.return_value = [mock_tenet]
+    # These methods aren't part of the minimal manager
+    # mock.export_tenets.return_value = "---\ntenets:\n  - content: Always use type hints"
+    # mock.import_tenets.return_value = 2
+    # mock.get_pending_tenets.return_value = [mock_tenet]
 
     return mock
 
@@ -72,7 +62,7 @@ class TestTenetAdd:
 
     def test_add_basic_tenet(self, runner, mock_tenets):
         """Test adding a basic tenet."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["add", "Always use type hints"])
 
             assert result.exit_code == 0
@@ -90,7 +80,7 @@ class TestTenetAdd:
 
     def test_add_tenet_with_priority(self, runner, mock_tenets):
         """Test adding tenet with priority."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(
                 tenet_app, ["add", "Validate all inputs", "--priority", "critical"]
             )
@@ -102,20 +92,23 @@ class TestTenetAdd:
 
     def test_add_tenet_with_category(self, runner, mock_tenets):
         """Test adding tenet with category."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(
                 tenet_app, ["add", "Use async for I/O", "--category", "performance"]
             )
 
             assert result.exit_code == 0
             assert "Category: performance" in result.stdout
-            mock_tenets.add_tenet.assert_called_once_with(
-                content="Use async for I/O", priority="medium", category="performance", session=None
-            )
+            # Check that add_tenet was called with a Tenet object
+            mock_tenets.add_tenet.assert_called_once()
+            tenet_arg = mock_tenets.add_tenet.call_args[0][0]
+            assert tenet_arg.content == "Use async for I/O"
+            assert tenet_arg.priority.value == "medium"
+            assert tenet_arg.category == "performance"
 
     def test_add_tenet_with_session(self, runner, mock_tenets):
         """Test adding tenet bound to session."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(
                 tenet_app, ["add", "Feature-specific rule", "--session", "feature-x"]
             )
@@ -131,7 +124,7 @@ class TestTenetAdd:
 
     def test_add_tenet_all_options(self, runner, mock_tenets):
         """Test adding tenet with all options."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(
                 tenet_app,
                 [
@@ -159,7 +152,7 @@ class TestTenetAdd:
         mock_tenets = MagicMock()
         mock_tenets.tenet_manager = None
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["add", "Test"])
 
             assert result.exit_code == 1
@@ -190,7 +183,7 @@ class TestTenetList:
             },
         ]
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list"])
 
             assert result.exit_code == 0
@@ -203,7 +196,7 @@ class TestTenetList:
 
     def test_list_pending_only(self, runner, mock_tenets):
         """Test listing only pending tenets."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list", "--pending"])
 
             assert result.exit_code == 0
@@ -214,7 +207,7 @@ class TestTenetList:
 
     def test_list_instilled_only(self, runner, mock_tenets):
         """Test listing only instilled tenets."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list", "--instilled"])
 
             assert result.exit_code == 0
@@ -225,7 +218,7 @@ class TestTenetList:
 
     def test_list_by_session(self, runner, mock_tenets):
         """Test listing tenets filtered by session."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list", "--session", "oauth"])
 
             assert result.exit_code == 0
@@ -236,7 +229,7 @@ class TestTenetList:
 
     def test_list_by_category(self, runner, mock_tenets):
         """Test listing tenets filtered by category."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list", "--category", "security"])
 
             assert result.exit_code == 0
@@ -256,7 +249,7 @@ class TestTenetList:
             }
         ]
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list", "--verbose"])
 
             assert result.exit_code == 0
@@ -267,7 +260,7 @@ class TestTenetList:
         """Test listing when no tenets exist."""
         mock_tenets.list_tenets.return_value = []
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list"])
 
             assert result.exit_code == 0
@@ -280,7 +273,7 @@ class TestTenetRemove:
 
     def test_remove_tenet_with_confirmation(self, runner, mock_tenets):
         """Test removing tenet with confirmation."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             with patch("rich.prompt.Confirm.ask", return_value=True):
                 result = runner.invoke(tenet_app, ["remove", "abc123"])
 
@@ -291,7 +284,7 @@ class TestTenetRemove:
 
     def test_remove_tenet_cancelled(self, runner, mock_tenets):
         """Test cancelling tenet removal."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             with patch("rich.prompt.Confirm.ask", return_value=False):
                 result = runner.invoke(tenet_app, ["remove", "abc123"])
 
@@ -301,7 +294,7 @@ class TestTenetRemove:
 
     def test_remove_tenet_forced(self, runner, mock_tenets):
         """Test forced tenet removal without confirmation."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["remove", "abc123", "--force"])
 
             assert result.exit_code == 0
@@ -312,7 +305,7 @@ class TestTenetRemove:
         """Test removing non-existent tenet."""
         mock_tenets.get_tenet.return_value = None
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["remove", "nonexistent"])
 
             assert result.exit_code == 1
@@ -322,7 +315,7 @@ class TestTenetRemove:
         """Test failed tenet removal."""
         mock_tenets.remove_tenet.return_value = False
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["remove", "abc123", "--force"])
 
             assert result.exit_code == 1
@@ -334,7 +327,7 @@ class TestTenetShow:
 
     def test_show_tenet(self, runner, mock_tenets):
         """Test showing tenet details."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["show", "abc123"])
 
             assert result.exit_code == 0
@@ -351,7 +344,7 @@ class TestTenetShow:
         """Test showing tenet with session bindings."""
         mock_tenets.get_tenet.return_value.session_bindings = ["session1", "session2"]
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["show", "abc123"])
 
             assert result.exit_code == 0
@@ -361,7 +354,7 @@ class TestTenetShow:
         """Test showing non-existent tenet."""
         mock_tenets.get_tenet.return_value = None
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["show", "nonexistent"])
 
             assert result.exit_code == 1
@@ -373,7 +366,7 @@ class TestTenetExportImport:
 
     def test_export_tenets_stdout(self, runner, mock_tenets):
         """Test exporting tenets to stdout."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["export"])
 
             assert result.exit_code == 0
@@ -385,7 +378,7 @@ class TestTenetExportImport:
         """Test exporting tenets to file."""
         output_file = tmp_path / "tenets.yml"
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["export", "--output", str(output_file)])
 
             assert result.exit_code == 0
@@ -397,7 +390,7 @@ class TestTenetExportImport:
         output_file = tmp_path / "tenets.json"
         mock_tenets.export_tenets.return_value = '{"tenets": []}'
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(
                 tenet_app, ["export", "--format", "json", "--output", str(output_file)]
             )
@@ -407,7 +400,7 @@ class TestTenetExportImport:
 
     def test_export_session_tenets(self, runner, mock_tenets):
         """Test exporting session-specific tenets."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["export", "--session", "oauth"])
 
             assert result.exit_code == 0
@@ -418,7 +411,7 @@ class TestTenetExportImport:
         import_file = tmp_path / "tenets.yml"
         import_file.write_text("tenets:\n  - content: Test tenet")
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["import", str(import_file)])
 
             assert result.exit_code == 0
@@ -431,7 +424,7 @@ class TestTenetExportImport:
         import_file = tmp_path / "tenets.yml"
         import_file.write_text("tenets:\n  - content: Test")
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(
                 tenet_app, ["import", str(import_file), "--session", "feature-x"]
             )
@@ -446,7 +439,7 @@ class TestTenetExportImport:
         content = "tenets:\n  - content: Test tenet\n    priority: high"
         import_file.write_text(content)
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["import", str(import_file), "--dry-run"])
 
             assert result.exit_code == 0
@@ -456,7 +449,7 @@ class TestTenetExportImport:
 
     def test_import_nonexistent_file(self, runner, mock_tenets):
         """Test importing from non-existent file."""
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["import", "nonexistent.yml"])
 
             assert result.exit_code == 1
@@ -470,7 +463,7 @@ class TestTenetErrorHandling:
         """Test error when adding tenet."""
         mock_tenets.add_tenet.side_effect = Exception("Database error")
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["add", "Test"])
 
             assert result.exit_code == 1
@@ -481,7 +474,7 @@ class TestTenetErrorHandling:
         """Test error when listing tenets."""
         mock_tenets.list_tenets.side_effect = Exception("Query failed")
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["list"])
 
             assert result.exit_code == 1
@@ -492,7 +485,7 @@ class TestTenetErrorHandling:
         """Test error during export."""
         mock_tenets.export_tenets.side_effect = Exception("Export failed")
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["export"])
 
             assert result.exit_code == 1
@@ -505,7 +498,7 @@ class TestTenetErrorHandling:
         import_file.write_text("invalid: yaml")
         mock_tenets.import_tenets.side_effect = Exception("Invalid format")
 
-        with patch("tenets.cli.commands.tenet.Tenets", return_value=mock_tenets):
+        with patch("tenets.cli.commands.tenet.get_tenet_manager", return_value=mock_tenets):
             result = runner.invoke(tenet_app, ["import", str(import_file)])
 
             assert result.exit_code == 1
