@@ -318,7 +318,7 @@ class TemporalParser:
             List of temporal expressions
         """
         expressions = []
-        
+
         # Limit text length for very long prompts to prevent timeouts
         MAX_TEXT_LENGTH = 10000  # Characters for temporal parsing
         if len(text) > MAX_TEXT_LENGTH:
@@ -667,28 +667,28 @@ class TemporalParser:
             return expressions
 
         # Limit text length to prevent excessive parsing attempts on very long texts
-        MAX_TEXT_LENGTH = 2000  # Characters  
+        MAX_TEXT_LENGTH = 2000  # Characters
         MAX_WORDS = 200  # Maximum words to process
-        
+
         if len(text) > MAX_TEXT_LENGTH:
             # Only process the first part of very long texts
             text = text[:MAX_TEXT_LENGTH]
 
         # Try to find date-like substrings
         words = text.split()
-        
+
         # Limit words to prevent timeout
         if len(words) > MAX_WORDS:
             words = words[:MAX_WORDS]
-            
+
         # Skip if still too many words (defensive)
         if len(words) > 500:
             return expressions
-        
+
         for i in range(len(words)):
             for j in range(i + 1, min(i + 5, len(words) + 1)):  # Max 5 words
                 phrase = " ".join(words[i:j])
-                
+
                 # Skip very long phrases that are unlikely to be dates
                 if len(phrase) > 50:
                     continue
@@ -696,29 +696,32 @@ class TemporalParser:
                 try:
                     # Use a timeout wrapper for dateutil parse to prevent hangs
                     import threading
+
                     result = [None]
                     exception = [None]
-                    
+
                     def parse_with_timeout():
                         try:
-                            result[0] = dateutil_parser.parse(phrase, fuzzy=False, default=datetime(2024, 1, 1))  # type: ignore[attr-defined]
+                            result[0] = dateutil_parser.parse(
+                                phrase, fuzzy=False, default=datetime(2024, 1, 1)
+                            )  # type: ignore[attr-defined]
                         except Exception as e:
                             exception[0] = e
-                    
+
                     # Run parser in a thread with timeout
                     thread = threading.Thread(target=parse_with_timeout)
                     thread.daemon = True
                     thread.start()
                     thread.join(timeout=0.1)  # 100ms timeout
-                    
+
                     if thread.is_alive():
                         # Parsing is taking too long, skip this phrase
                         continue
-                        
+
                     if exception[0]:
                         # Parser raised an exception
                         continue
-                        
+
                     parsed = result[0]
                     if not parsed:
                         continue

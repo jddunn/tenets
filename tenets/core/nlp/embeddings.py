@@ -11,15 +11,18 @@ import numpy as np
 
 from tenets.utils.logger import get_logger
 
+
 # Lazy load check for sentence transformers
 def _check_sentence_transformers():
     """Check if sentence transformers is available without importing."""
     try:
         import importlib.util
+
         spec = importlib.util.find_spec("sentence_transformers")
         return spec is not None
     except (ImportError, AttributeError):
         return False
+
 
 # Check availability but don't import yet
 SENTENCE_TRANSFORMERS_AVAILABLE = _check_sentence_transformers()
@@ -93,7 +96,7 @@ class LocalEmbeddings(EmbeddingModel):
             global SentenceTransformer
             if SentenceTransformer is None:
                 from sentence_transformers import SentenceTransformer
-            
+
             # Determine device
             if device:
                 self.device = device

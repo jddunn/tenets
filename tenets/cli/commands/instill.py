@@ -100,10 +100,8 @@ def instill(
     show_config: bool = typer.Option(
         False, "--show-config", help="Show current injection configuration"
     ),
-
     # Context
     ctx: typer.Context = typer.Context,
-
 ):
     """
     Smart injection of guiding principles (tenets) into your context.
@@ -733,8 +731,9 @@ def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None
 
     console.print(f"\n[dim]Frequency: {frequency}")
     console.print(
-        f"Total: {len(pending[:tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]"
+        f"Total: {len(pending[: tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]"
     )
+
 
 def _export_history(instiller, output_path: Path, format: str, session: Optional[str]) -> None:
     """Export injection history."""

@@ -807,7 +807,7 @@ class HTMLReporter:
         <div class="examined-path" style="margin: 10px 0; font-size: 1.1em; color: var(--primary-color);">
             <strong>Examined Path:</strong> {metadata.get("examined_path")}
         </div>"""
-        
+
         return f"""
     <header class="header">
         {logo_html}

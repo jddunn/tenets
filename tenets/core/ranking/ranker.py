@@ -43,6 +43,7 @@ except ImportError:
     def cosine_similarity(a, b):  # pragma: no cover - simple fallback
         try:
             import math
+
             # Simple dot product cosine similarity for lists
             if not a or not b:
                 return 0.0
@@ -180,6 +181,10 @@ class RelevanceRanker:
         self._strategies_cache: Dict[RankingAlgorithm, RankingStrategy] = {}
         self.strategies = self._strategies_cache  # Alias for compatibility
 
+        # Pre-populate core strategies for tests that expect them
+        # These are lightweight and don't load ML models until actually used
+        self._init_core_strategies()
+
         # Custom rankers list (keep public and test-expected private alias)
         self.custom_rankers: List[Callable] = []
         self._custom_rankers: List[Callable] = self.custom_rankers
@@ -205,6 +210,17 @@ class RelevanceRanker:
             f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
             f"workers={max_workers}, use_stopwords={self.use_stopwords}"
         )
+
+    def _init_core_strategies(self):
+        """Initialize core ranking strategies.
+
+        Pre-populates the strategies cache with lightweight strategy instances.
+        These don't load heavy ML models until actually used.
+        """
+        # Initialize core strategies that don't require ML models
+        self._strategies_cache[RankingAlgorithm.FAST] = FastRankingStrategy()
+        self._strategies_cache[RankingAlgorithm.BALANCED] = BalancedRankingStrategy()
+        self._strategies_cache[RankingAlgorithm.THOROUGH] = ThoroughRankingStrategy()
 
     def rank_files(
         self,
@@ -340,8 +356,12 @@ class RelevanceRanker:
         try:
             algo_enum = RankingAlgorithm(algo)
         except ValueError:
+            # If algorithm was explicitly provided and is invalid, raise error
+            if algorithm:
+                raise ValueError(f"Unknown ranking algorithm: {algorithm}")
+            # Otherwise fall back to the instance algorithm
             algo_enum = self.algorithm
-            
+
         # Lazy creation of strategies
         if algo_enum not in self._strategies_cache:
             if algo_enum == RankingAlgorithm.FAST:
@@ -352,7 +372,7 @@ class RelevanceRanker:
                 self._strategies_cache[algo_enum] = ThoroughRankingStrategy()
             elif algo_enum == RankingAlgorithm.ML:
                 self._strategies_cache[algo_enum] = MLRankingStrategy()
-                
+
         return self._strategies_cache.get(algo_enum)
 
     def _rank_with_strategy(

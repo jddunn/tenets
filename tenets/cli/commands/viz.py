@@ -4,54 +4,54 @@ This command provides visualization capabilities for codebase analysis,
 including dependency graphs, complexity visualizations, and more.
 """
 
+import glob
 import json
 from collections import defaultdict
 from datetime import datetime
-import glob
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import click
 import typer
 
 from tenets.config import TenetsConfig
-# Expose FileScanner and CodeAnalyzer under expected names for tests/patching
-from tenets.utils.scanner import FileScanner
 from tenets.core.analysis.analyzer import CodeAnalyzer
 from tenets.core.project_detector import ProjectDetector
-from tenets.viz.graph_generator import GraphGenerator
 from tenets.utils.logger import get_logger
+
+# Expose FileScanner and CodeAnalyzer under expected names for tests/patching
+from tenets.utils.scanner import FileScanner
 
 # Re-export visualizer classes used in tests for patching
 from tenets.viz import (
     BaseVisualizer,
+    ChartConfig,
+    ChartType,
     ComplexityVisualizer,
     ContributorVisualizer,
     CouplingVisualizer,
     DependencyVisualizer,
     HotspotVisualizer,
     MomentumVisualizer,
-    ChartConfig,
-    ChartType,
-    DisplayConfig,
     detect_visualization_type,
 )
+from tenets.viz.graph_generator import GraphGenerator
+
 
 def _generate_complexity_html(data: list, project_path: str, hotspots_only: bool = False) -> str:
     """Generate HTML visualization for complexity data."""
-    from datetime import datetime
-    
+
     # Data is already a list of complexity items
     items = data if isinstance(data, list) else []
     if hotspots_only:
         items = [i for i in items if i.get("complexity", 0) >= 10]
-    
+
     # Sort by complexity
     items = sorted(items, key=lambda x: x.get("complexity", 0), reverse=True)
-    
+
     # Calculate average complexity
     avg_complexity = sum(i.get("complexity", 0) for i in items) / len(items) if items else 0
-    
+
     # Generate HTML
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -158,7 +158,7 @@ def _generate_complexity_html(data: list, project_path: str, hotspots_only: bool
     <div class="container">
         <h1>🔍 Code Complexity Analysis</h1>
         <p style="color: #666;">Project: <strong>{project_path}</strong></p>
-        
+
         <div class="summary">
             <div class="metric-card">
                 <div class="metric-label">Total Files</div>
@@ -170,19 +170,19 @@ def _generate_complexity_html(data: list, project_path: str, hotspots_only: bool
             </div>
             <div class="metric-card">
                 <div class="metric-label">High Complexity Files</div>
-                <div class="metric-value">{len([i for i in items if i.get('complexity', 0) >= 10])}</div>
+                <div class="metric-value">{len([i for i in items if i.get("complexity", 0) >= 10])}</div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Max Complexity</div>
-                <div class="metric-value">{max((i.get('complexity', 0) for i in items), default=0)}</div>
+                <div class="metric-value">{max((i.get("complexity", 0) for i in items), default=0)}</div>
             </div>
         </div>
-        
+
         <div class="chart-container">
             <canvas id="complexityChart"></canvas>
         </div>
-        
-        <h2>{'🔥 Complexity Hotspots' if hotspots_only else '📊 File Complexity Details'}</h2>
+
+        <h2>{"🔥 Complexity Hotspots" if hotspots_only else "📊 File Complexity Details"}</h2>
         <table>
             <thead>
                 <tr>
@@ -195,7 +195,7 @@ def _generate_complexity_html(data: list, project_path: str, hotspots_only: bool
             </thead>
             <tbody>
 """
-    
+
     for item in items[:50]:  # Limit to top 50 for performance
         complexity = item.get("complexity", 0)
         if complexity < 5:
@@ -206,29 +206,29 @@ def _generate_complexity_html(data: list, project_path: str, hotspots_only: bool
             badge_class = "complexity-high"
         else:
             badge_class = "complexity-extreme"
-            
+
         html += f"""
                 <tr>
-                    <td><span class="file-path">{item.get('file', 'Unknown')}</span></td>
+                    <td><span class="file-path">{item.get("file", "Unknown")}</span></td>
                     <td><span class="complexity-badge {badge_class}">{complexity}</span></td>
-                    <td>{item.get('lines', 0)}</td>
-                    <td>{item.get('functions', 0)}</td>
-                    <td>{item.get('classes', 0)}</td>
+                    <td>{item.get("lines", 0)}</td>
+                    <td>{item.get("functions", 0)}</td>
+                    <td>{item.get("classes", 0)}</td>
                 </tr>
 """
-    
+
     html += f"""
             </tbody>
         </table>
-        
-        <div class="timestamp">Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+
+        <div class="timestamp">Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</div>
     </div>
-    
+
     <script>
         // Create bar chart
         const ctx = document.getElementById('complexityChart').getContext('2d');
         const data = {json.dumps(items[:20])};  // Top 20 for chart
-        
+
         new Chart(ctx, {{
             type: 'bar',
             data: {{
@@ -280,20 +280,18 @@ def _generate_complexity_html(data: list, project_path: str, hotspots_only: bool
     </script>
 </body>
 </html>"""
-    
+
     return html
 
 
 viz_app = typer.Typer(
-    add_completion=False,
-    no_args_is_help=True,
-    help="Visualize codebase insights"
+    add_completion=False, no_args_is_help=True, help="Visualize codebase insights"
 )
 
 
 def setup_verbose_logging(verbose: bool, command_name: str = "") -> bool:
     """Setup verbose logging, checking both command flag and global context.
-    
+
     Returns:
         True if verbose mode is enabled
     """
@@ -301,39 +299,54 @@ def setup_verbose_logging(verbose: bool, command_name: str = "") -> bool:
     ctx = click.get_current_context(silent=True)
     global_verbose = ctx.obj.get("verbose", False) if ctx and ctx.obj else False
     verbose = verbose or global_verbose
-    
+
     # Set logging level based on verbose flag
     if verbose:
         import logging
+
         logging.getLogger("tenets").setLevel(logging.DEBUG)
         logger = get_logger(__name__)
         if command_name:
             logger.debug(f"Verbose mode enabled for {command_name}")
         else:
             logger.debug("Verbose mode enabled")
-    
+
     return verbose
 
 
 @viz_app.command("deps")
 def deps(
-    path: str = typer.Argument(".", help="Path to analyze (use quotes for globs, e.g., ""**/*.py"")"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file (e.g., architecture.svg)"),
-    format: str = typer.Option("ascii", "--format", "-f", help="Output format (ascii, svg, png, html, json, dot)"),
-    level: str = typer.Option("file", "--level", "-l", help="Dependency level (file, module, package)"),
-    cluster_by: Optional[str] = typer.Option(None, "--cluster-by", help="Cluster nodes by (directory, module, package)"),
-    max_nodes: Optional[int] = typer.Option(None, "--max-nodes", help="Maximum number of nodes to display"),
+    path: str = typer.Argument(".", help="Path to analyze (use quotes for globs, e.g., **/*.py)"),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Output file (e.g., architecture.svg)"
+    ),
+    format: str = typer.Option(
+        "ascii", "--format", "-f", help="Output format (ascii, svg, png, html, json, dot)"
+    ),
+    level: str = typer.Option(
+        "file", "--level", "-l", help="Dependency level (file, module, package)"
+    ),
+    cluster_by: Optional[str] = typer.Option(
+        None, "--cluster-by", help="Cluster nodes by (directory, module, package)"
+    ),
+    max_nodes: Optional[int] = typer.Option(
+        None, "--max-nodes", help="Maximum number of nodes to display"
+    ),
     include: Optional[str] = typer.Option(None, "--include", "-i", help="Include file patterns"),
     exclude: Optional[str] = typer.Option(None, "--exclude", "-e", help="Exclude file patterns"),
-    layout: str = typer.Option("hierarchical", "--layout", help="Graph layout (hierarchical, circular, shell, kamada)"),
-    include_minified: bool = typer.Option(False, "--include-minified", help="Include minified files"),
+    layout: str = typer.Option(
+        "hierarchical", "--layout", help="Graph layout (hierarchical, circular, shell, kamada)"
+    ),
+    include_minified: bool = typer.Option(
+        False, "--include-minified", help="Include minified files"
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose/debug output"),
 ):
     """Visualize dependencies between files and modules.
-    
-    Automatically detects project type (Python, Node.js, Java, Go, etc.) and 
+
+    Automatically detects project type (Python, Node.js, Java, Go, etc.) and
     generates dependency graphs in multiple formats.
-    
+
     Examples:
         tenets viz deps                              # Auto-detect and show ASCII tree
         tenets viz deps . --output arch.svg          # Generate SVG dependency graph
@@ -342,12 +355,12 @@ def deps(
         tenets viz deps --level package --cluster-by package  # Package architecture
         tenets viz deps --layout circular --max-nodes 50      # Circular layout
         tenets viz deps src/ --include "*.py" --exclude "*test*"  # Filter files
-        
+
     Install visualization libraries:
         pip install tenets[viz]  # For SVG, PNG, HTML support
     """
     logger = get_logger(__name__)
-    
+
     # Setup verbose logging
     verbose = setup_verbose_logging(verbose, "viz deps")
     if verbose:
@@ -360,10 +373,14 @@ def deps(
         ctx = click.get_current_context(silent=True)
         config = None
         if ctx and ctx.obj:
-            config = ctx.obj.get("config") if isinstance(ctx.obj, dict) else getattr(ctx.obj, "config", None)
+            config = (
+                ctx.obj.get("config")
+                if isinstance(ctx.obj, dict)
+                else getattr(ctx.obj, "config", None)
+            )
         if not config:
             config = TenetsConfig()
-        
+
         # Override minified exclusion if flag is set
         if include_minified:
             config.exclude_minified = False
@@ -386,11 +403,11 @@ def deps(
         click.echo(f"Detected project type: {project_info['type']}")
         logger.info(f"Detected project type: {project_info['type']}")
         logger.info(
-            ", ".join(f"{lang} ({pct}%)" for lang, pct in project_info.get('languages', {}).items())
+            ", ".join(f"{lang} ({pct}%)" for lang, pct in project_info.get("languages", {}).items())
         )
-        if project_info.get('frameworks'):
+        if project_info.get("frameworks"):
             logger.info(f"Frameworks: {', '.join(project_info['frameworks'])}")
-        if project_info.get('entry_points'):
+        if project_info.get("entry_points"):
             logger.info(f"Entry points: {', '.join(project_info['entry_points'][:5])}")
 
         if verbose:
@@ -432,7 +449,9 @@ def deps(
             if analysis:
                 # Prefer imports on structure; fall back to analysis.imports
                 imports = []
-                if getattr(analysis, "structure", None) and getattr(analysis.structure, "imports", None):
+                if getattr(analysis, "structure", None) and getattr(
+                    analysis.structure, "imports", None
+                ):
                     imports = analysis.structure.imports
                 elif getattr(analysis, "imports", None):
                     imports = analysis.imports
@@ -454,20 +473,16 @@ def deps(
                         dependency_graph[str(file)] = deps
                         if verbose:
                             logger.debug(f"Found {len(deps)} dependencies in {file}")
-                else:
-                    if verbose:
-                        logger.debug(f"No imports found in {file}")
-            else:
-                if verbose:
-                    logger.debug(f"No analysis for {file}")
+                elif verbose:
+                    logger.debug(f"No imports found in {file}")
+            elif verbose:
+                logger.debug(f"No analysis for {file}")
 
         logger.info(f"Found dependencies in {len(dependency_graph)} files")
 
         # Aggregate dependencies based on level
         if level != "file":
-            dependency_graph = aggregate_dependencies(
-                dependency_graph, level, project_info
-            )
+            dependency_graph = aggregate_dependencies(dependency_graph, level, project_info)
             logger.info(f"Aggregated to {len(dependency_graph)} {level}s")
 
         if not dependency_graph:
@@ -477,7 +492,7 @@ def deps(
             click.echo("  - File types are not supported yet")
             click.echo("  - Analysis couldn't extract import information")
             if output:
-                click.echo(f"\nNo output file created as there's no data to save.")
+                click.echo("\nNo output file created as there's no data to save.")
             raise typer.Exit(0)
 
         # Generate visualization using GraphGenerator
@@ -489,7 +504,7 @@ def deps(
             # Apply max_nodes limit for ASCII output
             items = list(dependency_graph.items())
             if max_nodes:
-                items = items[: max_nodes]
+                items = items[:max_nodes]
 
             for file_path, deps in sorted(items):
                 click.echo(f"\n{Path(file_path).name}")
@@ -501,23 +516,24 @@ def deps(
         else:
             # Use GraphGenerator for all other formats
             generator = GraphGenerator()
-            
+
             # Auto-generate output filename if format requires a file but none specified
             if not output and format in ["html", "svg", "png", "pdf", "dot"]:
                 # Generate a descriptive filename
                 from datetime import datetime
+
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 # Get project name, handle "." and empty cases
                 if path == "." or not path:
                     project_name = Path.cwd().name
                 else:
                     project_name = Path(path).name
-                    
+
                 # Clean up project name for filename
                 project_name = project_name.replace(" ", "_").replace("-", "_")
                 if not project_name or project_name == ".":
                     project_name = "project"
-                
+
                 # Include level and other options in filename for clarity
                 filename_parts = ["dependency_graph", project_name]
                 if level != "file":
@@ -527,7 +543,7 @@ def deps(
                 if max_nodes:
                     filename_parts.append(f"top{max_nodes}")
                 filename_parts.append(timestamp)
-                
+
                 output = "_".join(filename_parts) + f".{format}"
                 click.echo(f"Auto-generating output file: {output}")
 
@@ -550,10 +566,15 @@ def deps(
 
                     # Provide helpful messages based on format
                     if format == "html":
-                        click.echo("\nOpen the HTML file in a browser for an interactive visualization.")
+                        click.echo(
+                            "\nOpen the HTML file in a browser for an interactive visualization."
+                        )
                         # Optionally offer to open it
-                        if click.confirm("Would you like to open it in your browser now?", default=False):
+                        if click.confirm(
+                            "Would you like to open it in your browser now?", default=False
+                        ):
                             import webbrowser
+
                             # Ensure absolute path for file URI
                             file_path = Path(result).resolve()
                             webbrowser.open(file_path.as_uri())
@@ -561,12 +582,13 @@ def deps(
                         click.echo("\nYou can render this DOT file with Graphviz tools.")
                     elif format in ["svg", "png", "pdf"]:
                         click.echo(f"\nGenerated {format.upper()} image with dependency graph.")
+                # Only output to terminal for formats that make sense (json, ascii)
+                elif format in ["json", "ascii"]:
+                    click.echo(result)
                 else:
-                    # Only output to terminal for formats that make sense (json, ascii)
-                    if format in ["json", "ascii"]:
-                        click.echo(result)
-                    else:
-                        click.echo(f"Error: Format '{format}' requires an output file. Use --output or let auto-naming handle it.")
+                    click.echo(
+                        f"Error: Format '{format}' requires an output file. Use --output or let auto-naming handle it."
+                    )
 
             except Exception as e:
                 logger.error(f"Failed to generate {format} visualization: {e}")
@@ -592,7 +614,9 @@ def deps(
         logger.error(f"Failed to generate dependency visualization: {e}")
         # Provide a helpful hint for Windows users about quoting globs
         if any(ch in path for ch in ["*", "?", "["]):
-            click.echo("Hint: Quote your glob patterns to avoid shell parsing issues, e.g., \"**/*.py\".")
+            click.echo(
+                'Hint: Quote your glob patterns to avoid shell parsing issues, e.g., "**/*.py".'
+            )
         raise typer.Exit(1)
 
 
@@ -600,8 +624,12 @@ def deps(
 def complexity(
     path: str = typer.Argument(".", help="Path to analyze"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file"),
-    format: str = typer.Option("ascii", "--format", "-f", help="Output format (ascii, svg, png, html)"),
-    threshold: Optional[int] = typer.Option(None, "--threshold", help="Minimum complexity threshold"),
+    format: str = typer.Option(
+        "ascii", "--format", "-f", help="Output format (ascii, svg, png, html)"
+    ),
+    threshold: Optional[int] = typer.Option(
+        None, "--threshold", help="Minimum complexity threshold"
+    ),
     hotspots: bool = typer.Option(False, "--hotspots", help="Show only hotspot files"),
     include: Optional[str] = typer.Option(None, "--include", "-i", help="Include file patterns"),
     exclude: Optional[str] = typer.Option(None, "--exclude", "-e", help="Exclude file patterns"),
@@ -613,14 +641,14 @@ def complexity(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose/debug output"),
 ):
     """Visualize code complexity metrics.
-    
+
     Examples:
         tenets viz complexity              # ASCII bar chart
         tenets viz complexity --threshold 10 --hotspots  # High complexity only
         tenets viz complexity --output complexity.png    # Save as image
     """
     logger = get_logger(__name__)
-    
+
     # Setup verbose logging
     verbose = setup_verbose_logging(verbose, "viz complexity")
 
@@ -628,7 +656,9 @@ def complexity(
     ctx = click.get_current_context(silent=True)
     config = None
     if ctx and ctx.obj:
-        config = ctx.obj.get("config") if isinstance(ctx.obj, dict) else getattr(ctx.obj, "config", None)
+        config = (
+            ctx.obj.get("config") if isinstance(ctx.obj, dict) else getattr(ctx.obj, "config", None)
+        )
     if not config:
         config = TenetsConfig()
 
@@ -664,7 +694,11 @@ def complexity(
                     "file": str(file),
                     "complexity": complexity_score,
                     "cognitive": getattr(analysis.complexity, "cognitive", 0),
-                    "lines": len(file.read_text(encoding='utf-8', errors='ignore').splitlines()) if file.exists() else 0,
+                    "lines": (
+                        len(file.read_text(encoding="utf-8", errors="ignore").splitlines())
+                        if file.exists()
+                        else 0
+                    ),
                 }
             )
 
@@ -674,16 +708,17 @@ def complexity(
     # Auto-generate output filename if format requires a file but none specified
     if not output and format in ["html", "svg", "png", "json"] and format != "ascii":
         from datetime import datetime
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         project_name = Path(path).name if Path(path).name != "." else "project"
-        
+
         filename_parts = ["complexity", project_name]
         if threshold:
             filename_parts.append(f"threshold{threshold}")
         if hotspots:
             filename_parts.append("hotspots")
         filename_parts.append(timestamp)
-        
+
         output = "_".join(filename_parts) + f".{format if format != 'html' else 'json'}"
         click.echo(f"Auto-generating output file: {output}")
 
@@ -708,23 +743,27 @@ def complexity(
         # Save to file
         if output:
             output_path = Path(output)
+        # Auto-generate filename based on format
+        elif format == "html":
+            output_path = Path(
+                f"complexity__hotspots_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+            )
         else:
-            # Auto-generate filename based on format
-            if format == "html":
-                output_path = Path(f"complexity__hotspots_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
-            else:
-                output_path = Path(f"complexity__hotspots_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-        
+            output_path = Path(
+                f"complexity__hotspots_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            )
+
         if format == "html":
             # Generate HTML visualization
             html_content = _generate_complexity_html(complexity_data, path, hotspots)
             output_path = output_path.with_suffix(".html")
-            output_path.write_text(html_content, encoding='utf-8')
+            output_path.write_text(html_content, encoding="utf-8")
             click.echo(f"Complexity HTML visualization saved to {output_path}")
-            
+
             # Offer to open in browser
             if click.confirm("\nWould you like to open it in your browser now?", default=False):
                 import webbrowser
+
                 file_path = output_path.resolve()
                 webbrowser.open(file_path.as_uri())
                 click.echo("✓ Opened in browser")
@@ -740,12 +779,13 @@ def complexity(
             with open(output_path, "w") as f:
                 json.dump(complexity_data, f, indent=2)
             click.echo(f"Complexity data saved to {output_path}")
+    # Output JSON to stdout only if explicitly no output and format is compatible
+    elif format == "json":
+        click.echo(json.dumps(complexity_data, indent=2))
     else:
-        # Output JSON to stdout only if explicitly no output and format is compatible
-        if format == "json":
-            click.echo(json.dumps(complexity_data, indent=2))
-        else:
-            click.echo("Use --output to specify output file or --format ascii for terminal display")
+        click.echo("Use --output to specify output file or --format ascii for terminal display")
+
+
 @viz_app.command("data")
 def data(
     input_file: str = typer.Argument(help="Data file to visualize (JSON/CSV)"),
@@ -756,17 +796,17 @@ def data(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose/debug output"),
 ):
     """Create visualizations from data files.
-    
+
     This command generates visualizations from pre-analyzed data files
     without needing to re-run analysis.
     """
     logger = get_logger(__name__)
-    
+
     input_path = Path(input_file)
     if not input_path.exists():
         click.echo(f"Error: File not found: {input_file}")
         raise typer.Exit(1)
-    
+
     # Load data
     if input_path.suffix == ".json":
         with open(input_path) as f:
@@ -779,74 +819,95 @@ def data(
         raise typer.Exit(1)
 
 
-def aggregate_dependencies(dependency_graph: Dict[str, List[str]], level: str, project_info: Dict) -> Dict[str, List[str]]:
+def aggregate_dependencies(
+    dependency_graph: Dict[str, List[str]], level: str, project_info: Dict
+) -> Dict[str, List[str]]:
     """Aggregate file-level dependencies to module or package level.
-    
+
     Args:
         dependency_graph: File-level dependency graph
         level: Aggregation level (module or package)
         project_info: Project detection information
-        
+
     Returns:
         Aggregated dependency graph
     """
     aggregated = defaultdict(set)
-    
+
     # First, ensure all source modules are in the result
-    for source_file in dependency_graph.keys():
+    for source_file in dependency_graph:
         source_key = get_aggregate_key(source_file, level, project_info)
         if source_key not in aggregated:
             aggregated[source_key] = set()
-    
+
     # Then add dependencies
     for source_file, dependencies in dependency_graph.items():
         # Get aggregate key for source
         source_key = get_aggregate_key(source_file, level, project_info)
-        
+
         for dep in dependencies:
             # Get aggregate key for dependency
             dep_key = get_aggregate_key(dep, level, project_info)
-            
+
             # Don't add self-dependencies
             if source_key != dep_key:
                 aggregated[source_key].add(dep_key)
-    
+
     # Convert sets to lists
     return {k: sorted(list(v)) for k, v in aggregated.items()}
 
 
 def get_aggregate_key(path_str: str, level: str, project_info: Dict) -> str:
     """Get the aggregate key for a path based on the specified level.
-    
+
     Args:
         path_str: File path or module name
         level: Aggregation level (module or package)
         project_info: Project information for context
-        
+
     Returns:
         Aggregate key string
     """
     # Handle different path formats
     path_str = path_str.replace("\\", "/")
-    
+
     # Check if it's a module name (not a file) - module names use dots as separators
     # but don't have file extensions like .py, .js, etc.
-    is_module_name = ("." in path_str and "/" not in path_str and 
-                      not any(path_str.endswith(ext) for ext in [".py", ".js", ".java", ".go", ".rs", ".rb", ".ts", ".jsx", ".tsx", ".cpp", ".c", ".h"]))
-    
+    is_module_name = (
+        "." in path_str
+        and "/" not in path_str
+        and not any(
+            path_str.endswith(ext)
+            for ext in [
+                ".py",
+                ".js",
+                ".java",
+                ".go",
+                ".rs",
+                ".rb",
+                ".ts",
+                ".jsx",
+                ".tsx",
+                ".cpp",
+                ".c",
+                ".h",
+            ]
+        )
+    )
+
     if is_module_name:
         # It's already a module name like "src.utils.helpers"
         parts = path_str.split(".")
     else:
         # Convert file path to parts
         parts = path_str.split("/")
-        
+
         # Remove file extension from last part if it's a file
         if parts and "." in parts[-1]:
             filename = parts[-1]
             name_without_ext = filename.rsplit(".", 1)[0]
             parts[-1] = name_without_ext
-    
+
     if level == "module":
         # Module level - group by immediate parent directory
         if len(parts) > 1:
@@ -859,7 +920,7 @@ def get_aggregate_key(path_str: str, level: str, project_info: Dict) -> str:
         else:
             # Single file at root level always returns "root" for module level
             return "root"
-    
+
     elif level == "package":
         # Package level - group by top-level package
         if len(parts) > 1:
@@ -874,7 +935,7 @@ def get_aggregate_key(path_str: str, level: str, project_info: Dict) -> str:
         else:
             # Single file at root level
             return "root"
-    
+
     return path_str  # Default to original path
 
 
@@ -883,7 +944,9 @@ def get_aggregate_key(path_str: str, level: str, project_info: Dict) -> str:
 @click.argument("input_path")
 @click.option("--type", default="auto", help="Visualization type or 'auto'")
 @click.option("--chart", "-c", default=None, help="Chart type for custom viz")
-@click.option("--format", "-f", default="terminal", help="Output format (terminal,json,html,svg,png)")
+@click.option(
+    "--format", "-f", default="terminal", help="Output format (terminal,json,html,svg,png)"
+)
 @click.option("--output", "-o", default=None, help="Output file path")
 @click.option("--title", default=None, help="Chart title")
 @click.option("--width", type=int, default=None, help="Chart width")
@@ -953,7 +1016,9 @@ def viz(
             chart_data = viz_.create_distribution_chart(data.get("complexity") or data)
         elif viz_type == "contributors":
             viz_ = ContributorVisualizer(chart_config=chart_cfg)
-            chart_data = viz_.create_contribution_chart(data if isinstance(data, list) else data.get("contributors", []))
+            chart_data = viz_.create_contribution_chart(
+                data if isinstance(data, list) else data.get("contributors", [])
+            )
         elif viz_type == "hotspots":
             viz_ = HotspotVisualizer(chart_config=chart_cfg)
             chart_data = viz_.create_hotspot_bubble(data.get("hotspots") or data)
@@ -963,7 +1028,9 @@ def viz(
             chart_data = viz_.create_velocity_chart(data)
         elif viz_type in ("dependencies", "deps"):
             viz_ = DependencyVisualizer(chart_config=chart_cfg)  # type: ignore[name-defined]
-            chart_data = viz_.create_dependency_graph(data.get("dependencies") or data.get("dependency_graph") or data)
+            chart_data = viz_.create_dependency_graph(
+                data.get("dependencies") or data.get("dependency_graph") or data
+            )
         elif viz_type == "coupling":
             viz_ = CouplingVisualizer(chart_config=chart_cfg)
             chart_data = viz_.create_coupling_network(data.get("coupling_data") or data)
@@ -985,7 +1052,12 @@ def viz(
                     else:
                         payload = {
                             "labels": [str(r.get(x_field, "")) for r in rows],
-                            "datasets": [{"label": y_field or "value", "data": [float(r.get(y_field, 0) or 0) for r in rows]}],
+                            "datasets": [
+                                {
+                                    "label": y_field or "value",
+                                    "data": [float(r.get(y_field, 0) or 0) for r in rows],
+                                }
+                            ],
                         }
                 else:
                     # Fallback minimal structure
@@ -996,15 +1068,19 @@ def viz(
 
         # Output handling
         fmt = (format or "terminal").lower()
-        
+
         # If interactive requested, prefer HTML regardless of requested format
         if interactive:
             fmt = "html"
-        
+
         # Terminal output only if not overridden by interactive or other formats
         if fmt == "terminal" and hasattr(viz_, "display_terminal"):
             # Show summary style output expected by tests
-            click.echo("Custom Visualization Generated" if viz_type == "custom" else "Visualization Generated")
+            click.echo(
+                "Custom Visualization Generated"
+                if viz_type == "custom"
+                else "Visualization Generated"
+            )
             click.echo(f"Type: {chart_data.get('type', 'unknown')}")
             if isinstance(chart_data.get("data"), dict) and chart_data["data"].get("datasets"):
                 click.echo(f"Datasets: {len(chart_data['data']['datasets'])}")
@@ -1040,8 +1116,10 @@ def viz(
             click.echo(json.dumps(chart_data))
         elif fmt == "html":
             # Create temp HTML and open if interactive
+            import tempfile
+            import webbrowser
+
             from tenets.viz import export_visualization
-            import tempfile, webbrowser
 
             with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False) as tf:
                 export_visualization(chart_data, Path(tf.name), format="html", config=chart_cfg)

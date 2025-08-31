@@ -13,7 +13,7 @@ aggregation.
 import hashlib
 import json
 import os
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -240,10 +240,11 @@ class Examiner:
         self.complexity_analyzer = ComplexityAnalyzer(config)
         self.ownership_tracker = OwnershipTracker(config)
         self.hotspot_detector = HotspotDetector(config)
-        
+
         # Initialize cache for file analysis results
         try:
             from tenets.core.cache import CacheManager
+
             self.cache = CacheManager(config)
         except Exception:
             # If cache manager fails, continue without caching
@@ -530,11 +531,11 @@ class Examiner:
             List[Any]: List of file analysis objects
         """
         analyzed = []
-        
+
         # Determine optimal number of workers
         # Use CPU count but cap at 8 to avoid overwhelming the system
         num_workers = min(os.cpu_count() or 4, 8)
-        
+
         # Use ThreadPoolExecutor for I/O-bound file analysis
         # (ProcessPoolExecutor has too much overhead for small files)
         with ThreadPoolExecutor(max_workers=num_workers) as executor:
@@ -543,19 +544,21 @@ class Examiner:
             for file_path in files:
                 future = executor.submit(self._analyze_single_file, file_path, deep)
                 future_to_file[future] = file_path
-            
+
             # Collect results as they complete
             completed = 0
             total = len(files)
-            
+
             for future in as_completed(future_to_file):
                 file_path = future_to_file[future]
                 completed += 1
-                
+
                 # Log progress every 10% of files
                 if completed % max(1, total // 10) == 0:
-                    self.logger.info(f"Analyzed {completed}/{total} files ({100*completed//total}%)")
-                
+                    self.logger.info(
+                        f"Analyzed {completed}/{total} files ({100 * completed // total}%)"
+                    )
+
                 try:
                     analysis = future.result(timeout=10)  # 10 second timeout per file
                     if analysis:
@@ -565,17 +568,17 @@ class Examiner:
                     continue
 
         return analyzed
-    
+
     def _analyze_single_file(self, file_path: Path, deep: bool = False) -> Optional[Any]:
         """Analyze a single file with caching support.
-        
+
         Wrapper method for parallel processing of file analysis.
         Checks cache first to avoid re-analyzing unchanged files.
-        
+
         Args:
             file_path: Path to the file to analyze
             deep: Whether to perform deep analysis
-            
+
         Returns:
             Optional[Any]: File analysis object or None if failed
         """
@@ -584,36 +587,36 @@ class Examiner:
             if self.cache:
                 # Generate cache key based on file content and analysis depth
                 cache_key = self._generate_cache_key(file_path, deep)
-                
+
                 # Try to get from cache
                 cached_result = self.cache.get(f"analysis_{cache_key}")
                 if cached_result:
                     return cached_result
-                
+
                 # Analyze file
                 result = self.analyzer.analyze_file(str(file_path), deep=deep)
-                
+
                 # Store in cache
                 if result:
                     self.cache.set(f"analysis_{cache_key}", result, ttl=3600)  # 1 hour TTL
-                
+
                 return result
             else:
                 # No cache, analyze directly
                 return self.analyzer.analyze_file(str(file_path), deep=deep)
-        except Exception as e:
+        except Exception:
             # Log is handled in parent method
             return None
-    
+
     def _generate_cache_key(self, file_path: Path, deep: bool) -> str:
         """Generate a cache key for file analysis.
-        
+
         Creates a unique key based on file path, content hash, and analysis depth.
-        
+
         Args:
             file_path: Path to the file
             deep: Whether deep analysis is enabled
-            
+
         Returns:
             str: Cache key
         """
@@ -622,15 +625,10 @@ class Examiner:
             stat = file_path.stat()
             mtime = int(stat.st_mtime)
             size = stat.st_size
-            
+
             # Include file path, mtime, size, and deep flag in key
-            key_parts = [
-                str(file_path),
-                str(mtime),
-                str(size),
-                str(deep)
-            ]
-            
+            key_parts = [str(file_path), str(mtime), str(size), str(deep)]
+
             # Generate hash of key parts
             key_str = "_".join(key_parts)
             return hashlib.md5(key_str.encode()).hexdigest()
@@ -638,6 +636,7 @@ class Examiner:
             # If we can't generate a proper key, return a unique one
             # that won't match anything in cache
             import uuid
+
             return str(uuid.uuid4())
 
     def _extract_languages(self, files: List[Any]) -> List[str]:

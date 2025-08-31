@@ -9,7 +9,7 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 
 from tenets.utils.logger import get_logger
 
@@ -60,7 +60,7 @@ class ProgrammingPatterns:
             with open(patterns_file, encoding="utf-8") as f:
                 data = json.load(f)
                 self.logger.info(f"Loaded programming patterns from {patterns_file}")
-                
+
                 # Always convert to standardized format
                 if "concepts" in data:
                     return self._convert_concepts_format(data["concepts"])
@@ -73,13 +73,13 @@ class ProgrammingPatterns:
         except json.JSONDecodeError as e:
             self.logger.error(f"Failed to parse patterns JSON: {e}, using defaults")
             return self._get_default_patterns()
-    
+
     def _convert_concepts_format(self, concepts: Dict) -> Dict:
         """Convert concepts format to standardized pattern format.
-        
+
         Args:
             concepts: Dictionary of concept -> keywords
-            
+
         Returns:
             Standardized pattern dictionary
         """
@@ -88,37 +88,39 @@ class ProgrammingPatterns:
             if isinstance(keywords, list):
                 converted[category] = {
                     "keywords": keywords[:10],  # Top 10 keywords
-                    "patterns": self._generate_patterns_for_keywords(keywords[:5]),  # Pattern from top 5
-                    "importance": self._calculate_importance(category)
+                    "patterns": self._generate_patterns_for_keywords(
+                        keywords[:5]
+                    ),  # Pattern from top 5
+                    "importance": self._calculate_importance(category),
                 }
         return converted
-    
+
     def _calculate_importance(self, category: str) -> float:
         """Calculate importance score for a category.
-        
+
         Args:
             category: Category name
-            
+
         Returns:
             Importance score between 0 and 1
         """
         # Core categories get higher importance
         high_importance = {"auth", "authentication", "security", "api", "database"}
         medium_importance = {"frontend", "backend", "testing", "configuration"}
-        
+
         if category in high_importance:
             return 0.9
         elif category in medium_importance:
             return 0.7
         else:
             return 0.5
-    
+
     def _generate_patterns_for_keywords(self, keywords: List[str]) -> List[str]:
         """Generate regex patterns from keywords.
-        
+
         Args:
             keywords: List of keywords
-            
+
         Returns:
             List of regex patterns
         """
@@ -136,27 +138,100 @@ class ProgrammingPatterns:
         """
         return {
             "auth": {
-                "keywords": ["auth", "authentication", "login", "oauth", "jwt", "token", "session", "credential", "password", "signin"],
-                "patterns": [r"\bauth\w*\b", r"\blogin\b", r"\btoken\b", r"\boauth\w*\b", r"\bjwt\b"],
+                "keywords": [
+                    "auth",
+                    "authentication",
+                    "login",
+                    "oauth",
+                    "jwt",
+                    "token",
+                    "session",
+                    "credential",
+                    "password",
+                    "signin",
+                ],
+                "patterns": [
+                    r"\bauth\w*\b",
+                    r"\blogin\b",
+                    r"\btoken\b",
+                    r"\boauth\w*\b",
+                    r"\bjwt\b",
+                ],
                 "importance": 0.9,
             },
             "api": {
-                "keywords": ["api", "rest", "endpoint", "route", "http", "graphql", "grpc", "webhook", "request", "response"],
-                "patterns": [r"\bapi\b", r"\bendpoint\b", r"\broute\b", r"\brest\w*\b", r"\bhttp\w*\b"],
+                "keywords": [
+                    "api",
+                    "rest",
+                    "endpoint",
+                    "route",
+                    "http",
+                    "graphql",
+                    "grpc",
+                    "webhook",
+                    "request",
+                    "response",
+                ],
+                "patterns": [
+                    r"\bapi\b",
+                    r"\bendpoint\b",
+                    r"\broute\b",
+                    r"\brest\w*\b",
+                    r"\bhttp\w*\b",
+                ],
                 "importance": 0.9,
             },
             "database": {
-                "keywords": ["database", "db", "sql", "query", "model", "schema", "migration", "orm", "transaction", "index"],
-                "patterns": [r"\bSELECT\b", r"\bINSERT\b", r"\.query\(", r"\bdatabase\b", r"\bdb\b"],
+                "keywords": [
+                    "database",
+                    "db",
+                    "sql",
+                    "query",
+                    "model",
+                    "schema",
+                    "migration",
+                    "orm",
+                    "transaction",
+                    "index",
+                ],
+                "patterns": [
+                    r"\bSELECT\b",
+                    r"\bINSERT\b",
+                    r"\.query\(",
+                    r"\bdatabase\b",
+                    r"\bdb\b",
+                ],
                 "importance": 0.8,
             },
             "testing": {
-                "keywords": ["test", "testing", "unit", "integration", "mock", "stub", "assertion", "coverage", "spec", "tdd"],
+                "keywords": [
+                    "test",
+                    "testing",
+                    "unit",
+                    "integration",
+                    "mock",
+                    "stub",
+                    "assertion",
+                    "coverage",
+                    "spec",
+                    "tdd",
+                ],
                 "patterns": [r"\btest\w*\b", r"\bspec\b", r"\bmock\b", r"\bassert\w*\b"],
                 "importance": 0.7,
             },
             "frontend": {
-                "keywords": ["ui", "ux", "frontend", "component", "react", "vue", "angular", "dom", "css", "html"],
+                "keywords": [
+                    "ui",
+                    "ux",
+                    "frontend",
+                    "component",
+                    "react",
+                    "vue",
+                    "angular",
+                    "dom",
+                    "css",
+                    "html",
+                ],
                 "patterns": [r"\bcomponent\b", r"\brender\b", r"\bdom\b", r"\bui\b"],
                 "importance": 0.7,
             },
@@ -221,17 +296,17 @@ class ProgrammingPatterns:
             Dictionary of pattern scores by category
         """
         scores = {}
-        
+
         # Lower case keywords for comparison
         keywords_lower = [kw.lower() for kw in keywords]
 
         for category, config in self.patterns.items():
             # Check if category is relevant to keywords
             category_keywords = config.get("keywords", [])
-            
+
             # More sophisticated relevance check
             relevance_score = self._calculate_relevance(category_keywords, keywords_lower)
-            
+
             if relevance_score > 0 and category in self.compiled_patterns:
                 category_score = 0.0
                 patterns = self.compiled_patterns[category]
@@ -241,7 +316,9 @@ class ProgrammingPatterns:
                     matches = pattern.findall(content)
                     if matches:
                         # Use logarithmic scaling with base 2 for smoother curve
-                        match_score = math.log2(len(matches) + 1) / math.log2(11)  # Normalized to ~1.0 at 10 matches
+                        match_score = math.log2(len(matches) + 1) / math.log2(
+                            11
+                        )  # Normalized to ~1.0 at 10 matches
                         category_score += min(1.0, match_score)
 
                 # Normalize and apply importance and relevance
@@ -254,26 +331,31 @@ class ProgrammingPatterns:
         # Calculate overall pattern score as weighted average
         if scores:
             total_weight = sum(self.patterns[cat].get("importance", 0.5) for cat in scores)
-            scores["overall"] = sum(scores[cat] * self.patterns[cat].get("importance", 0.5) / total_weight 
-                                   for cat in scores if cat != "overall")
+            scores["overall"] = sum(
+                scores[cat] * self.patterns[cat].get("importance", 0.5) / total_weight
+                for cat in scores
+                if cat != "overall"
+            )
         else:
             scores["overall"] = 0.0
 
         return scores
-    
-    def _calculate_relevance(self, category_keywords: List[str], prompt_keywords: List[str]) -> float:
+
+    def _calculate_relevance(
+        self, category_keywords: List[str], prompt_keywords: List[str]
+    ) -> float:
         """Calculate relevance score between category and prompt keywords.
-        
+
         Args:
             category_keywords: Keywords for the category
             prompt_keywords: Keywords from the prompt (lowercase)
-            
+
         Returns:
             Relevance score between 0 and 1
         """
         if not category_keywords or not prompt_keywords:
             return 0.0
-            
+
         matches = 0
         for cat_kw in category_keywords:
             cat_kw_lower = cat_kw.lower()
@@ -286,7 +368,7 @@ class ProgrammingPatterns:
                     if cat_kw_lower in prompt_kw or prompt_kw in cat_kw_lower:
                         matches += 0.5
                         break
-        
+
         # Return normalized score
         return min(1.0, matches / max(3, len(category_keywords) * 0.3))
 
@@ -314,7 +396,7 @@ class ProgrammingPatterns:
             "db": "database",
         }
         actual_category = category_map.get(category, category)
-        
+
         if actual_category in self.patterns:
             return self.patterns[actual_category].get("keywords", [])
         return []
@@ -335,7 +417,7 @@ class ProgrammingPatterns:
             "db": "database",
         }
         actual_category = category_map.get(category, category)
-        
+
         if actual_category in self.patterns:
             return self.patterns[actual_category].get("importance", 0.5)
         return 0.5
@@ -351,7 +433,7 @@ class ProgrammingPatterns:
             List of (matched_text, start_pos, end_pos) tuples
         """
         matches = []
-        
+
         # Handle common aliases
         category_map = {
             "auth": "authentication",
