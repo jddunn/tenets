@@ -17,7 +17,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 from typer.testing import CliRunner
 
-from tenets.cli.commands.system_instruction import app, system_app
+from tenets.cli.commands.system_instruction import app
+from tenets.cli.commands.system_instruction import system_app
 from tenets.cli.commands.system_instruction import system_app as sys_app
 
 

@@ -1,832 +1,1671 @@
-"""Summarization strategies with NLP integration.
+"""Main summarizer orchestrator for content compression.
 
-This module provides various summarization strategies that leverage the
-centralized NLP components for improved text processing and analysis.
+This module provides the main Summarizer class that coordinates different
+summarization strategies to compress code, documentation, and other text
+content while preserving important information.
 
-Strategies:
-- ExtractiveStrategy: Selects important sentences using NLP keyword extraction
-- CompressiveStrategy: Removes redundancy using NLP tokenization
-- TextRankStrategy: Graph-based ranking with NLP preprocessing
-- TransformerStrategy: Neural summarization (requires ML)
-- NLPEnhancedStrategy: Advanced strategy using all NLP features
+The summarizer supports multiple strategies:
+- Extractive: Selects important sentences
+- Compressive: Removes redundant content
+- TextRank: Graph-based ranking
+- Transformer: Neural summarization (requires ML)
+- LLM: Large language model summarization (costs $)
 """
 
-import re
-from abc import ABC, abstractmethod
-from typing import List, Optional, Set
+import ast
+import hashlib
+import time
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from tenets.config import TenetsConfig
+from tenets.models.analysis import FileAnalysis
 from tenets.utils.logger import get_logger
+from tenets.utils.tokens import count_tokens
 
-# Import centralized NLP components
-try:
-    from tenets.core.nlp.embeddings import create_embedding_model
-    from tenets.core.nlp.keyword_extractor import KeywordExtractor, TFIDFCalculator
-    from tenets.core.nlp.similarity import SemanticSimilarity
-    from tenets.core.nlp.stopwords import StopwordManager
-    from tenets.core.nlp.tokenizer import TextTokenizer
-
-    NLP_AVAILABLE = True
-except ImportError:
-    NLP_AVAILABLE = False
-
-# Try ML imports
-try:
-    import nltk
-    import numpy as np
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-
-    SKLEARN_AVAILABLE = True
-except ImportError:
-    SKLEARN_AVAILABLE = False
-
-try:
-    from transformers import pipeline
-
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
+from .llm import create_llm_summarizer
+from .strategies import (
+    CompressiveStrategy,
+    ExtractiveStrategy,
+    SummarizationStrategy,
+    TextRankStrategy,
+    TransformerStrategy,
+)
 
 
-class SummarizationStrategy(ABC):
-    """Abstract base class for summarization strategies."""
+class SummarizationMode(Enum):
+    """Available summarization modes."""
 
-    name: str = "base"
-    description: str = "Base summarization strategy"
-    requires_ml: bool = False
-
-    @abstractmethod
-    def summarize(
-        self,
-        text: str,
-        target_ratio: float = 0.3,
-        max_length: Optional[int] = None,
-        min_length: Optional[int] = None,
-    ) -> str:
-        """Summarize text.
-
-        Args:
-            text: Input text
-            target_ratio: Target compression ratio
-            max_length: Maximum summary length
-            min_length: Minimum summary length
-
-        Returns:
-            Summarized text
-        """
-        pass
+    EXTRACTIVE = "extractive"
+    COMPRESSIVE = "compressive"
+    TEXTRANK = "textrank"
+    TRANSFORMER = "transformer"
+    LLM = "llm"
+    AUTO = "auto"  # Automatically select best strategy
 
 
-class ExtractiveStrategy(SummarizationStrategy):
-    """Extractive summarization using NLP components.
+@dataclass
+class SummarizationResult:
+    """Result from summarization operation.
 
-    Selects the most important sentences based on keyword density,
-    position, and optionally semantic similarity. Uses centralized
-    NLP components for improved sentence scoring.
+    Attributes:
+        original_text: Original text
+        summary: Summarized text
+        original_length: Original text length
+        summary_length: Summary length
+        compression_ratio: Actual compression ratio achieved
+        strategy_used: Which strategy was used
+        time_elapsed: Time taken to summarize
+        metadata: Additional metadata
     """
 
-    name = "extractive"
-    description = "Extract important sentences using NLP analysis"
-    requires_ml = False
+    original_text: str
+    summary: str
+    original_length: int
+    summary_length: int
+    compression_ratio: float
+    strategy_used: str
+    time_elapsed: float
+    metadata: Dict[str, Any] = None
 
-    def __init__(self, use_nlp: bool = True):
-        """Initialize extractive strategy.
+    @property
+    def reduction_percent(self) -> float:
+        """Get reduction percentage."""
+        if self.original_length == 0:
+            return 0.0
+        return (1 - self.compression_ratio) * 100
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "summary": self.summary,
+            "original_length": self.original_length,
+            "summary_length": self.summary_length,
+            "compression_ratio": self.compression_ratio,
+            "reduction_percent": self.reduction_percent,
+            "strategy_used": self.strategy_used,
+            "time_elapsed": self.time_elapsed,
+            "metadata": self.metadata or {},
+        }
+
+
+@dataclass
+class BatchSummarizationResult:
+    """Result from batch summarization."""
+
+    results: List[SummarizationResult]
+    total_original_length: int
+    total_summary_length: int
+    overall_compression_ratio: float
+    total_time_elapsed: float
+    files_processed: int
+    files_failed: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "total_original_length": self.total_original_length,
+            "total_summary_length": self.total_summary_length,
+            "overall_compression_ratio": self.overall_compression_ratio,
+            "total_time_elapsed": self.total_time_elapsed,
+            "files_processed": self.files_processed,
+            "files_failed": self.files_failed,
+            "reduction_percent": (1 - self.overall_compression_ratio) * 100,
+        }
+
+
+class Summarizer:
+    """Main summarization orchestrator.
+
+    Coordinates different summarization strategies and provides a unified
+    interface for content compression. Supports single and batch processing,
+    strategy selection, and caching.
+
+    Attributes:
+        config: TenetsConfig instance
+        logger: Logger instance
+        strategies: Available summarization strategies
+        cache: Summary cache for repeated content
+        stats: Summarization statistics
+    """
+
+    def __init__(
+        self,
+        config: Optional[TenetsConfig] = None,
+        default_mode: Optional[str] = None,
+        enable_cache: bool = True,
+    ):
+        """Initialize summarizer.
 
         Args:
-            use_nlp: Whether to use NLP components for enhanced extraction
+            config: Tenets configuration
+            default_mode: Default summarization mode
+            enable_cache: Whether to enable caching
         """
+        self.config = config or TenetsConfig()
         self.logger = get_logger(__name__)
-        self.use_nlp = use_nlp and NLP_AVAILABLE
 
-        if self.use_nlp:
-            # Initialize NLP components
-            self.keyword_extractor = KeywordExtractor(
-                use_stopwords=True,
-                stopword_set="prompt",  # Use aggressive stopwords for summarization
+        # Determine default mode
+        if default_mode:
+            self.default_mode = SummarizationMode(default_mode)
+        else:
+            self.default_mode = SummarizationMode.AUTO
+
+        # Initialize strategies
+        self.strategies: Dict[SummarizationMode, SummarizationStrategy] = {
+            SummarizationMode.EXTRACTIVE: ExtractiveStrategy(),
+            SummarizationMode.COMPRESSIVE: CompressiveStrategy(),
+            SummarizationMode.TEXTRANK: TextRankStrategy(),
+        }
+
+        # Try to initialize ML strategies
+        self._init_ml_strategies()
+
+        # Cache for summaries
+        self.enable_cache = enable_cache
+        self.cache: Dict[str, SummarizationResult] = {}
+
+        # Statistics
+        self.stats = {
+            "total_summarized": 0,
+            "total_time": 0.0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "strategies_used": {},
+        }
+
+        self.logger.info(
+            f"Summarizer initialized with mode={self.default_mode.value}, "
+            f"strategies={list(self.strategies.keys())}"
+        )
+
+    def _init_ml_strategies(self):
+        """Initialize ML-based strategies if available."""
+        # Honor configuration to enable/disable ML strategies (avoids heavy downloads in tests/CI)
+        try:
+            enable_ml = True
+            if hasattr(self, "config") and hasattr(self.config, "summarizer"):
+                enable_ml = bool(getattr(self.config.summarizer, "enable_ml_strategies", True))
+        except Exception:
+            enable_ml = True
+
+        if not enable_ml:
+            self.logger.info(
+                "ML strategies disabled by config; skipping transformer/LLM initialization"
             )
-            self.tokenizer = TextTokenizer(use_stopwords=True)
-            self.logger.info("ExtractiveStrategy using NLP components")
-        else:
-            self.logger.info("ExtractiveStrategy using basic extraction")
+            return
+
+        # Try transformer strategy
+        try:
+            self.strategies[SummarizationMode.TRANSFORMER] = TransformerStrategy()
+            self.logger.info("Transformer strategy available")
+        except Exception as e:
+            self.logger.debug(f"Transformer strategy not available: {e}")
+
+        # LLM strategy is initialized on demand due to API keys
 
     def summarize(
         self,
         text: str,
+        mode: Optional[Union[str, SummarizationMode]] = None,
         target_ratio: float = 0.3,
         max_length: Optional[int] = None,
         min_length: Optional[int] = None,
-    ) -> str:
-        """Extract important sentences to create summary.
+        force_strategy: Optional[SummarizationStrategy] = None,
+    ) -> SummarizationResult:
+        """Summarize text content.
 
         Args:
-            text: Input text
-            target_ratio: Target compression ratio
-            max_length: Maximum summary length
-            min_length: Minimum summary length
+            text: Text to summarize
+            mode: Summarization mode (uses default if None)
+            target_ratio: Target compression ratio (0.3 = 30% of original)
+            max_length: Maximum summary length in characters
+            min_length: Minimum summary length in characters
+            force_strategy: Force specific strategy instance
 
         Returns:
-            Extractive summary
+            SummarizationResult with summary and metadata
+
+        Example:
+            >>> summarizer = Summarizer()
+            >>> result = summarizer.summarize(
+            ...     long_text,
+            ...     mode="extractive",
+            ...     target_ratio=0.25
+            ... )
+            >>> print(f"Reduced by {result.reduction_percent:.1f}%")
         """
-        # Split into sentences
-        sentences = self._split_sentences(text)
+        if not text:
+            return SummarizationResult(
+                original_text="",
+                summary="",
+                original_length=0,
+                summary_length=0,
+                compression_ratio=1.0,
+                strategy_used="none",
+                time_elapsed=0.0,
+            )
 
-        if not sentences:
-            return text
+        start_time = time.time()
 
-        # Score sentences
-        if self.use_nlp:
-            scores = self._score_sentences_nlp(sentences, text)
+        # Check cache
+        if self.enable_cache:
+            cache_key = self._get_cache_key(text, target_ratio, max_length, min_length)
+            if cache_key in self.cache:
+                self.stats["cache_hits"] += 1
+                self.logger.debug("Cache hit for summary")
+                return self.cache[cache_key]
+            else:
+                self.stats["cache_misses"] += 1
+
+        # Select strategy
+        if force_strategy:
+            strategy = force_strategy
+            strategy_name = getattr(strategy, "name", "custom")
         else:
-            scores = self._score_sentences_basic(sentences)
+            strategy, strategy_name = self._select_strategy(text, mode, target_ratio)
 
-        # Select top sentences
-        target_length = int(len(text) * target_ratio)
-        if max_length:
-            target_length = min(target_length, max_length)
+        if not strategy:
+            # Fallback to extractive
+            strategy = self.strategies[SummarizationMode.EXTRACTIVE]
+            strategy_name = "extractive"
 
-        selected = self._select_sentences(sentences, scores, target_length, min_length)
+        self.logger.debug(f"Using {strategy_name} strategy for summarization")
 
-        return " ".join(selected)
+        # Perform summarization
+        try:
+            summary = strategy.summarize(
+                text, target_ratio=target_ratio, max_length=max_length, min_length=min_length
+            )
+        except Exception as e:
+            self.logger.error(f"Summarization failed with {strategy_name}: {e}")
+            # Fallback to simple truncation
+            summary = self._simple_truncate(text, target_ratio, max_length)
+            strategy_name = "truncate"
 
-    def _split_sentences(self, text: str) -> List[str]:
-        """Split text into sentences.
+        # Enforce min_length: if requested min_length exceeds original, do not make it shorter
+        if min_length and min_length > len(text) and len(text) > 0 and len(summary) < len(text):
+            summary = text
 
-        Args:
-            text: Input text
+        # Create result
+        result = SummarizationResult(
+            original_text=text,
+            summary=summary,
+            original_length=len(text),
+            summary_length=len(summary),
+            compression_ratio=len(summary) / len(text) if text else 1.0,
+            strategy_used=strategy_name,
+            time_elapsed=time.time() - start_time,
+            metadata={
+                "target_ratio": target_ratio,
+                "max_length": max_length,
+                "min_length": min_length,
+            },
+        )
 
-        Returns:
-            List of sentences
-        """
-        # Simple sentence splitting (could use NLTK if available)
-        sentences = re.split(r"[.!?]+", text)
-        sentences = [s.strip() for s in sentences if s.strip()]
-        return sentences
+        # Update statistics
+        self.stats["total_summarized"] += 1
+        self.stats["total_time"] += result.time_elapsed
+        self.stats["strategies_used"][strategy_name] = (
+            self.stats["strategies_used"].get(strategy_name, 0) + 1
+        )
 
-    def _score_sentences_nlp(self, sentences: List[str], full_text: str) -> List[float]:
-        """Score sentences using NLP components.
+        # Cache result
+        if self.enable_cache:
+            self.cache[cache_key] = result
 
-        Args:
-            sentences: List of sentences
-            full_text: Full text for context
-
-        Returns:
-            List of scores
-        """
-        # Extract keywords from full text
-        keywords = self.keyword_extractor.extract(full_text, max_keywords=20, include_scores=True)
-
-        keyword_dict = dict(keywords) if keywords else {}
-
-        scores = []
-        for i, sentence in enumerate(sentences):
-            score = 0.0
-
-            # Position score (earlier sentences more important)
-            position_score = 1.0 - (i / len(sentences)) * 0.5
-            score += position_score * 0.3
-
-            # Keyword density score
-            sentence_tokens = self.tokenizer.tokenize(sentence)
-            if sentence_tokens:
-                keyword_score = sum(keyword_dict.get(token, 0) for token in sentence_tokens) / len(
-                    sentence_tokens
-                )
-                score += keyword_score * 0.5
-
-            # Length score (prefer medium-length sentences)
-            length_score = min(1.0, len(sentence) / 100)
-            score += length_score * 0.2
-
-            scores.append(score)
-
-        return scores
-
-    def _score_sentences_basic(self, sentences: List[str]) -> List[float]:
-        """Score sentences using basic heuristics.
-
-        Args:
-            sentences: List of sentences
-
-        Returns:
-            List of scores
-        """
-        scores = []
-
-        # Simple word frequency
-        words = []
-        for sentence in sentences:
-            words.extend(sentence.lower().split())
-
-        word_freq = {}
-        for word in words:
-            if len(word) > 3:  # Skip short words
-                word_freq[word] = word_freq.get(word, 0) + 1
-
-        for i, sentence in enumerate(sentences):
-            score = 0.0
-
-            # Position score
-            position_score = 1.0 - (i / len(sentences)) * 0.5
-            score += position_score * 0.3
-
-            # Word frequency score
-            sentence_words = sentence.lower().split()
-            if sentence_words:
-                freq_score = sum(word_freq.get(word, 0) for word in sentence_words) / len(
-                    sentence_words
-                )
-                score += freq_score * 0.5
-
-            # Length score
-            length_score = min(1.0, len(sentence) / 100)
-            score += length_score * 0.2
-
-            scores.append(score)
-
-        return scores
-
-    def _select_sentences(
-        self,
-        sentences: List[str],
-        scores: List[float],
-        target_length: int,
-        min_length: Optional[int],
-    ) -> List[str]:
-        """Select top sentences to meet target length.
-
-        Args:
-            sentences: List of sentences
-            scores: Sentence scores
-            target_length: Target total length
-            min_length: Minimum length
-
-        Returns:
-            Selected sentences in original order
-        """
-        # Sort by score
-        sentence_scores = list(zip(sentences, scores, range(len(sentences))))
-        sentence_scores.sort(key=lambda x: x[1], reverse=True)
-
-        selected = []
-        selected_indices = []
-        current_length = 0
-
-        for sentence, score, idx in sentence_scores:
-            sentence_length = len(sentence)
-
-            if current_length + sentence_length <= target_length:
-                selected.append(sentence)
-                selected_indices.append(idx)
-                current_length += sentence_length
-            elif min_length and current_length < min_length:
-                # Add anyway to meet minimum
-                selected.append(sentence)
-                selected_indices.append(idx)
-                current_length += sentence_length
-            else:
-                break
-
-        # Sort back to original order
-        selected_indices.sort()
-        return [sentences[i] for i in selected_indices]
-
-
-class CompressiveStrategy(SummarizationStrategy):
-    """Compressive summarization using NLP tokenization.
-
-    Removes redundant words and phrases while maintaining meaning.
-    Uses NLP tokenizer for better word processing.
-    """
-
-    name = "compressive"
-    description = "Remove redundancy using NLP tokenization"
-    requires_ml = False
-
-    def __init__(self, use_nlp: bool = True):
-        """Initialize compressive strategy.
-
-        Args:
-            use_nlp: Whether to use NLP components
-        """
-        self.logger = get_logger(__name__)
-        self.use_nlp = use_nlp and NLP_AVAILABLE
-
-        if self.use_nlp:
-            self.tokenizer = TextTokenizer(use_stopwords=True)
-            self.stopword_manager = StopwordManager()
-            self.stopwords = self.stopword_manager.get_set("prompt")
-            self.logger.info("CompressiveStrategy using NLP components")
-
-    def summarize(
-        self,
-        text: str,
-        target_ratio: float = 0.3,
-        max_length: Optional[int] = None,
-        min_length: Optional[int] = None,
-    ) -> str:
-        """Compress text by removing redundancy.
-
-        Args:
-            text: Input text
-            target_ratio: Target compression ratio
-            max_length: Maximum summary length
-            min_length: Minimum summary length
-
-        Returns:
-            Compressed text
-        """
-        sentences = re.split(r"[.!?]+", text)
-        sentences = [s.strip() for s in sentences if s.strip()]
-
-        compressed = []
-        seen_concepts = set()
-        current_length = 0
-        target_length = int(len(text) * target_ratio)
-
-        if max_length:
-            target_length = min(target_length, max_length)
-
-        for sentence in sentences:
-            # Compress sentence
-            if self.use_nlp:
-                compressed_sent = self._compress_sentence_nlp(sentence, seen_concepts)
-            else:
-                compressed_sent = self._compress_sentence_basic(sentence, seen_concepts)
-
-            if compressed_sent:
-                compressed.append(compressed_sent)
-                current_length += len(compressed_sent)
-
-                # Update seen concepts
-                if self.use_nlp:
-                    tokens = self.tokenizer.tokenize(compressed_sent)
-                    seen_concepts.update(tokens)
-                else:
-                    words = compressed_sent.lower().split()
-                    seen_concepts.update(words)
-
-                if current_length >= target_length:
-                    break
-
-        result = " ".join(compressed)
-
-        # Check minimum length
-        if min_length and len(result) < min_length:
-            # Add more sentences
-            for sentence in sentences[len(compressed) :]:
-                compressed.append(sentence)
-                if len(" ".join(compressed)) >= min_length:
-                    break
-            result = " ".join(compressed)
+        self.logger.info(
+            f"Summarized {result.original_length} chars to {result.summary_length} chars "
+            f"({result.reduction_percent:.1f}% reduction) using {strategy_name}"
+        )
 
         return result
 
-    def _compress_sentence_nlp(self, sentence: str, seen_concepts: Set[str]) -> str:
-        """Compress sentence using NLP components.
+    def summarize_file(
+        self,
+        file: FileAnalysis,
+        mode: Optional[Union[str, SummarizationMode]] = None,
+        target_ratio: float = 0.3,
+        preserve_structure: bool = True,
+        prompt_keywords: Optional[List[str]] = None,
+    ) -> SummarizationResult:
+        """Summarize a code file intelligently.
+
+        Handles code files specially by preserving important elements
+        like class/function signatures while summarizing implementations.
+        Enhanced with context-aware documentation summarization that preserves
+        relevant sections based on prompt keywords.
 
         Args:
-            sentence: Input sentence
-            seen_concepts: Already seen concepts
+            file: FileAnalysis object
+            mode: Summarization mode
+            target_ratio: Target compression ratio
+            preserve_structure: Whether to preserve code structure
+            prompt_keywords: Keywords from user prompt for context-aware summarization
 
         Returns:
-            Compressed sentence
+            SummarizationResult
         """
-        tokens = self.tokenizer.tokenize(sentence)
-
-        # Remove redundant tokens
-        important_tokens = []
-        for token in tokens:
-            if token not in seen_concepts or len(important_tokens) < 3:
-                important_tokens.append(token)
-
-        if not important_tokens:
-            return ""
-
-        # Reconstruct sentence (simplified)
-        return " ".join(important_tokens)
-
-    def _compress_sentence_basic(self, sentence: str, seen_concepts: Set[str]) -> str:
-        """Compress sentence using basic method.
-
-        Args:
-            sentence: Input sentence
-            seen_concepts: Already seen concepts
-
-        Returns:
-            Compressed sentence
-        """
-        words = sentence.split()
-
-        # Remove common words and redundancy
-        important_words = []
-        for word in words:
-            word_lower = word.lower()
-            if (word_lower not in seen_concepts or len(important_words) < 3) and len(word) > 2:
-                important_words.append(word)
-
-        if not important_words:
-            return ""
-
-        return " ".join(important_words)
-
-
-class TextRankStrategy(SummarizationStrategy):
-    """TextRank summarization with NLP preprocessing.
-
-    Graph-based ranking algorithm that uses NLP components for
-    better text preprocessing and similarity computation.
-    """
-
-    name = "textrank"
-    description = "Graph-based summarization with NLP preprocessing"
-    requires_ml = True  # Requires sklearn
-
-    def __init__(self, use_nlp: bool = True):
-        """Initialize TextRank strategy.
-
-        Args:
-            use_nlp: Whether to use NLP components
-        """
-        self.logger = get_logger(__name__)
-        self.use_nlp = use_nlp and NLP_AVAILABLE and SKLEARN_AVAILABLE
-
-        if not SKLEARN_AVAILABLE:
-            raise ImportError(
-                "TextRank requires scikit-learn. Install with: pip install scikit-learn"
+        if not file.content:
+            return SummarizationResult(
+                original_text="",
+                summary="",
+                original_length=0,
+                summary_length=0,
+                compression_ratio=1.0,
+                strategy_used="none",
+                time_elapsed=0.0,
             )
 
-        if self.use_nlp:
-            self.tfidf_calc = TFIDFCalculator(use_stopwords=True)
-            self.logger.info("TextRankStrategy using NLP components")
+        # Determine if this is a documentation file
+        file_path = Path(file.path)
+        is_documentation = self._is_documentation_file(file_path)
 
-    def summarize(
-        self,
-        text: str,
-        target_ratio: float = 0.3,
-        max_length: Optional[int] = None,
-        min_length: Optional[int] = None,
-    ) -> str:
-        """Summarize using TextRank algorithm.
+        # Check if context-aware documentation summarization is enabled
+        docs_context_aware = getattr(self.config.summarizer, "docs_context_aware", True)
+        docs_show_in_place_context = getattr(
+            self.config.summarizer, "docs_show_in_place_context", True
+        )
 
-        Args:
-            text: Input text
-            target_ratio: Target compression ratio
-            max_length: Maximum summary length
-            min_length: Minimum summary length
+        # Apply documentation-specific summarization if enabled and applicable
+        if (
+            is_documentation
+            and docs_context_aware
+            and docs_show_in_place_context
+            and prompt_keywords
+        ):
+            summary = self._summarize_documentation_with_context(
+                file, target_ratio, prompt_keywords
+            )
 
-        Returns:
-            TextRank summary
-        """
-        sentences = re.split(r"[.!?]+", text)
-        sentences = [s.strip() for s in sentences if s.strip()]
+            return SummarizationResult(
+                original_text=file.content,
+                summary=summary,
+                original_length=len(file.content),
+                summary_length=len(summary),
+                compression_ratio=len(summary) / len(file.content),
+                strategy_used="docs-context-aware",
+                time_elapsed=0.0,
+                metadata={
+                    "file": file.path,
+                    "is_documentation": True,
+                    "prompt_keywords": prompt_keywords,
+                    "context_aware": True,
+                },
+            )
+        elif preserve_structure and file.language and not is_documentation:
+            # Intelligent code summarization (skip for documentation files)
+            summary = self._summarize_code(file, target_ratio)
 
-        if len(sentences) <= 2:
-            return text
-
-        # Build similarity matrix
-        if self.use_nlp:
-            similarity_matrix = self._build_similarity_matrix_nlp(sentences)
+            return SummarizationResult(
+                original_text=file.content,
+                summary=summary,
+                original_length=len(file.content),
+                summary_length=len(summary),
+                compression_ratio=len(summary) / len(file.content),
+                strategy_used="code-aware",
+                time_elapsed=0.0,
+                metadata={"file": file.path, "language": file.language},
+            )
         else:
-            similarity_matrix = self._build_similarity_matrix_sklearn(sentences)
+            # Regular text summarization
+            return self.summarize(file.content, mode, target_ratio)
 
-        # Calculate scores using PageRank-style algorithm
-        scores = self._calculate_scores(similarity_matrix)
+    def _summarize_code(self, file: FileAnalysis, target_ratio: float) -> str:
+        """Intelligently summarize code files.
 
-        # Select top sentences
-        target_length = int(len(text) * target_ratio)
-        if max_length:
-            target_length = min(target_length, max_length)
+        Preserves structure (imports, class definitions, method signatures,
+        function signatures with arguments and return types) while compressing
+        implementations and removing verbose comments.
 
-        ranked_sentences = sorted(
-            zip(sentences, scores, range(len(sentences))), key=lambda x: x[1], reverse=True
-        )
+        Args:
+            file: FileAnalysis with code
+            target_ratio: Target compression ratio
 
-        selected = []
-        selected_indices = []
-        current_length = 0
+        Returns:
+            Summarized code with enhanced structure information
+        """
+        lines = file.content.split("\n")
+        summary_lines = []
 
-        for sentence, score, idx in ranked_sentences:
-            if current_length + len(sentence) <= target_length or (
-                min_length and current_length < min_length
-            ):
-                selected.append(sentence)
-                selected_indices.append(idx)
-                current_length += len(sentence)
+        # Handle imports based on configuration
+        import_lines = []
+        for line in lines[:50]:  # Check first 50 lines for imports
+            if self._is_import_line(line, file.language):
+                import_lines.append(line)
+        
+        # Check if we should summarize imports
+        summarize_imports = getattr(self.config.summarizer, "summarize_imports", True)
+        if summarize_imports and len(import_lines) > 5:  # Only summarize if more than 5 imports
+            import_summary = self._summarize_imports(import_lines, file.language)
+            summary_lines.append(import_summary)
+        else:
+            # Preserve imports as-is
+            summary_lines.extend(import_lines)
+
+        # Add separator if we have imports
+        if summary_lines:
+            summary_lines.append("")
+
+        # Get docstring weight configuration
+        docstring_weight = getattr(self.config.summarizer, "docstring_weight", 0.5)
+        include_all_signatures = getattr(self.config.summarizer, "include_all_signatures", True)
+        
+        # Determine limits based on configuration
+        max_classes = None if include_all_signatures else 10  # Show more classes by default
+        max_functions = None if include_all_signatures else 20  # Show more functions by default
+        
+        # Preserve class and function signatures with enhanced details
+        if file.structure:
+            # Add class signatures with methods
+            # Handle both list and Mock objects for classes
+            if hasattr(file.structure.classes, '__iter__') and not isinstance(file.structure.classes, str):
+                all_classes = list(file.structure.classes)
+                classes_to_include = all_classes[:max_classes] if max_classes else all_classes
             else:
-                break
+                classes_to_include = []
+            for cls in classes_to_include:
+                # Include class definition
+                if hasattr(cls, "definition"):
+                    summary_lines.append(cls.definition)
+                elif hasattr(cls, "name"):
+                    # Fallback: construct class definition
+                    base_classes = getattr(cls, "base_classes", [])
+                    if base_classes:
+                        summary_lines.append(f"class {cls.name}({', '.join(base_classes)}):")  
+                    else:
+                        summary_lines.append(f"class {cls.name}:")
+                
+                # Include class docstring based on weight
+                doc = getattr(cls, "docstring", None)
+                if isinstance(doc, str) and doc and docstring_weight > 0:
+                    # Include docstring based on weight (1.0 = always, 0.5 = sometimes, 0 = never)
+                    if docstring_weight >= 1.0 or (docstring_weight > 0 and len(doc) < 200):
+                        doc_lines = doc.split("\n")
+                        if len(doc_lines) <= 3 or docstring_weight >= 0.8:
+                            # Include full docstring for short ones or high weight
+                            summary_lines.append(f'    """{doc}"""')
+                        else:
+                            # Include first line only for longer docstrings with lower weight
+                            summary_lines.append(f'    """{doc_lines[0]}..."""')
+                
+                # Include class methods with signatures
+                methods = getattr(cls, "methods", [])
+                if methods:
+                    # Handle both list and Mock objects
+                    if hasattr(methods, '__iter__') and not isinstance(methods, str):
+                        methods_to_process = list(methods)[:10]  # Limit methods per class
+                    else:
+                        methods_to_process = []
+                    
+                    for method in methods_to_process:
+                        method_name = getattr(method, "name", "")
+                        method_args = getattr(method, "arguments", [])
+                        method_return = getattr(method, "return_type", None)
+                        
+                        # Build method signature
+                        if method_name:
+                            args_str = ", ".join(method_args) if method_args else ""
+                            sig = f"    def {method_name}({args_str})"
+                            if method_return:
+                                sig += f" -> {method_return}"
+                            sig += ": ..."
+                            summary_lines.append(sig)
+                        elif hasattr(method, "signature"):
+                            summary_lines.append(f"    {method.signature}: ...")
+                    
+                summary_lines.append("    # ... additional methods ...")
+                summary_lines.append("")
 
-        # Sort back to original order
-        selected_indices.sort()
-        return " ".join([sentences[i] for i in selected_indices])
+            # Add function signatures with enhanced details
+            # Handle both list and Mock objects for functions
+            if hasattr(file.structure.functions, '__iter__') and not isinstance(file.structure.functions, str):
+                all_functions = list(file.structure.functions)
+                functions_to_include = all_functions[:max_functions] if max_functions else all_functions
+            else:
+                functions_to_include = []
+            for func in functions_to_include:
+                # Build enhanced function signature
+                func_name = getattr(func, "name", "")
+                func_args = getattr(func, "arguments", [])
+                func_return = getattr(func, "return_type", None)
+                
+                if func_name:
+                    # Build detailed signature
+                    # Handle different types of func_args
+                    if func_args:
+                        if isinstance(func_args, (list, tuple)):
+                            args_str = ", ".join(func_args)
+                        elif isinstance(func_args, str):
+                            args_str = func_args
+                        else:
+                            args_str = ""
+                    else:
+                        args_str = ""
+                    sig = f"def {func_name}({args_str})"
+                    if func_return:
+                        sig += f" -> {func_return}"
+                    sig += ":"
+                    summary_lines.append(sig)
+                elif hasattr(func, "signature"):
+                    summary_lines.append(func.signature)
+                else:
+                    continue
+                    
+                # Include docstring based on weight
+                doc = getattr(func, "docstring", None)
+                if isinstance(doc, str) and doc and docstring_weight > 0:
+                    if docstring_weight >= 1.0:
+                        # Always include full docstring
+                        summary_lines.append(f'    """{doc}"""')
+                    elif docstring_weight >= 0.7:
+                        # Include first paragraph or up to 3 lines
+                        doc_lines = doc.split("\n")
+                        if len(doc_lines) <= 3:
+                            summary_lines.append(f'    """{doc}"""')
+                        else:
+                            first_para = doc.split("\n\n")[0]
+                            summary_lines.append(f'    """{first_para}..."""')
+                    elif docstring_weight > 0:
+                        # Include only first line
+                        doc_first = doc.split("\n")[0]
+                        if doc_first:
+                            summary_lines.append(f'    """{doc_first}"""')
+                            
+                summary_lines.append("    # ... implementation ...")
+                summary_lines.append("")
 
-    def _build_similarity_matrix_nlp(self, sentences: List[str]) -> np.ndarray:
-        """Build similarity matrix using NLP components.
+        # If structure is missing, fall back to AST/regex extraction with enhanced parsing
+        if not file.structure or len(summary_lines) < 10:  # Also use if we got too little from structure
+            try:
+                # Python-specific AST parse for enhanced function/class signatures
+                if file.language == "python":
+                    module = ast.parse(file.content)
+                    
+                    # Get docstring weight for fallback extraction
+                    docstring_weight = getattr(self.config.summarizer, "docstring_weight", 0.5)
+                    
+                    for node in module.body:
+                        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                            # Extract detailed function signature
+                            args = []
+                            for arg in node.args.args:
+                                arg_str = arg.arg
+                                # Add type annotation if available
+                                if arg.annotation:
+                                    try:
+                                        arg_str += f": {ast.unparse(arg.annotation)}"
+                                    except:
+                                        pass
+                                args.append(arg_str)
+                            
+                            # Add return type if available
+                            sig = f"def {node.name}({', '.join(args)})"
+                            if node.returns:
+                                try:
+                                    sig += f" -> {ast.unparse(node.returns)}"
+                                except:
+                                    pass
+                            sig += ": ..."
+                            summary_lines.append(sig)
+                            
+                            # Include docstring based on weight
+                            docstring = ast.get_docstring(node)
+                            if docstring and docstring_weight > 0.3:
+                                doc_first = docstring.split("\n")[0]
+                                if doc_first:
+                                    summary_lines.append(f'    """{doc_first}"""')
+                                    
+                        elif isinstance(node, ast.ClassDef):
+                            # Extract class with base classes
+                            bases = []
+                            for base in node.bases:
+                                try:
+                                    bases.append(ast.unparse(base))
+                                except:
+                                    if hasattr(base, "id"):
+                                        bases.append(base.id)
+                            
+                            if bases:
+                                summary_lines.append(f"class {node.name}({', '.join(bases)}):")
+                            else:
+                                summary_lines.append(f"class {node.name}:")
+                            
+                            # Include class docstring if weight is high
+                            docstring = ast.get_docstring(node)  
+                            if docstring and docstring_weight >= 0.5:
+                                doc_first = docstring.split("\n")[0]
+                                if doc_first:
+                                    summary_lines.append(f'    """{doc_first}"""')
+                            
+                            # Extract method signatures from class
+                            method_count = 0
+                            for item in node.body:
+                                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and method_count < 5:
+                                    args = [a.arg for a in item.args.args]
+                                    method_sig = f"    def {item.name}({', '.join(args)})"
+                                    if item.returns:
+                                        try:
+                                            method_sig += f" -> {ast.unparse(item.returns)}"
+                                        except:
+                                            pass
+                                    method_sig += ": ..."
+                                    summary_lines.append(method_sig)
+                                    method_count += 1
+                            
+                            if method_count > 0:
+                                summary_lines.append("    # ... additional methods ...")
+                            summary_lines.append("")
+                            
+                    if summary_lines:
+                        summary_lines.append("")
+                else:
+                    # Enhanced regex patterns for other languages
+                    import re
+
+                    lines = file.content.splitlines()
+                    
+                    # Language-specific patterns
+                    if file.language in ["javascript", "typescript"]:
+                        # Match class, function, arrow functions, methods
+                        patterns = [
+                            re.compile(r"^\s*(export\s+)?(class|interface)\s+(\w+).*$"),
+                            re.compile(r"^\s*(export\s+)?(async\s+)?function\s+(\w+)\s*\([^)]*\).*$"),
+                            re.compile(r"^\s*(export\s+)?const\s+(\w+)\s*=\s*(async\s+)?\([^)]*\)\s*=>.*$"),
+                            re.compile(r"^\s*(\w+)\s*\([^)]*\)\s*\{.*$"),  # Method in class
+                        ]
+                    elif file.language == "java":
+                        patterns = [
+                            re.compile(r"^\s*(public|private|protected)\s+(class|interface)\s+(\w+).*$"),
+                            re.compile(r"^\s*(public|private|protected)\s+.*\s+(\w+)\s*\([^)]*\).*$"),
+                        ]
+                    elif file.language in ["c", "cpp"]:
+                        patterns = [
+                            re.compile(r"^\s*(class|struct)\s+(\w+).*$"),
+                            re.compile(r"^\s*\w+\s+\w+\s*\([^)]*\).*$"),
+                        ]
+                    else:
+                        # Generic patterns
+                        patterns = [
+                            re.compile(r"\b(class|interface|struct)\s+(\w+)"),
+                            re.compile(r"\b(def|function|func)\s+(\w+)\s*\([^)]*\)"),
+                        ]
+                    
+                    for i, line in enumerate(lines[:300]):  # Check more lines
+                        for pattern in patterns:
+                            if pattern.search(line):
+                                # Include the signature line
+                                summary_lines.append(line.strip())
+                                # Look for return type on next line (for multi-line signatures)
+                                if i + 1 < len(lines) and "->" in lines[i + 1]:
+                                    summary_lines.append(lines[i + 1].strip())
+                                break
+                                
+                    if summary_lines:
+                        summary_lines.append("")
+            except Exception:
+                # Ignore parse errors and continue
+                pass
+
+        # If still too long, apply text summarization to comments/docstrings
+        current_summary = "\n".join(summary_lines)
+
+        if len(current_summary) > len(file.content) * target_ratio:
+            # Need more compression
+            # Extract and summarize comments/docstrings
+            comments = self._extract_comments(file.content, file.language)
+            if comments:
+                comment_summary = self.summarize(
+                    comments, mode=SummarizationMode.EXTRACTIVE, target_ratio=0.3
+                ).summary
+
+                summary_lines.append("# Summary of comments/documentation:")
+                summary_lines.append(f"# {comment_summary}")
+
+        return "\n".join(summary_lines)
+
+    def _is_import_line(self, line: str, language: str) -> bool:
+        """Check if line is an import statement.
 
         Args:
-            sentences: List of sentences
+            line: Code line
+            language: Programming language
 
         Returns:
-            Similarity matrix
+            True if import line
         """
-        n = len(sentences)
-        matrix = np.zeros((n, n))
+        line = line.strip()
 
-        # Add sentences to TF-IDF calculator
-        for i, sentence in enumerate(sentences):
-            self.tfidf_calc.add_document(str(i), sentence)
+        if language == "python":
+            return line.startswith(("import ", "from "))
+        elif language in ["javascript", "typescript"]:
+            return line.startswith(("import ", "const ", "require("))
+        elif language == "java":
+            return line.startswith("import ")
+        elif language in ["c", "cpp"]:
+            return line.startswith("#include")
+        elif language == "go":
+            return line.startswith("import")
+        elif language == "rust":
+            return line.startswith("use ")
+        else:
+            # Generic patterns
+            return any(line.startswith(p) for p in ["import", "include", "require", "use"])
+    
+    def _summarize_imports(self, import_lines: List[str], language: str) -> str:
+        """Summarize import statements into a concise description.
+        
+        Args:
+            import_lines: List of import statement lines
+            language: Programming language
+            
+        Returns:
+            Human-readable summary of imports
+        """
+        import re
+        
+        if not import_lines:
+            return ""
+        
+        # Parse imports to extract library names
+        libraries = set()
+        local_imports = 0
+        
+        for line in import_lines:
+            line = line.strip()
+            
+            if language == "python":
+                if line.startswith("from "):
+                    # Extract module name from "from X import Y"
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        module = parts[1].split('.')[0]
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            libraries.add(module)
+                elif line.startswith("import "):
+                    # Extract module name from "import X"
+                    parts = line.replace("import ", "").split(',')
+                    for part in parts:
+                        module = part.strip().split('.')[0].split(' as ')[0]
+                        libraries.add(module)
+                        
+            elif language in ["javascript", "typescript"]:
+                if "from " in line:
+                    # Extract module from import statements
+                    match = re.search(r'from\s+["\']([^"\']+)["\']', line)
+                    if match:
+                        module = match.group(1)
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            # Extract package name (first part before /)
+                            package = module.split('/')[0].replace('@', '')
+                            libraries.add(package)
+                elif "require(" in line:
+                    match = re.search(r'require\(["\']([^"\']+)["\']\)', line)
+                    if match:
+                        module = match.group(1)
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            libraries.add(module.split('/')[0])
+                            
+            elif language == "java":
+                # Extract package from import statement
+                parts = line.replace("import ", "").replace(";", "").split('.')
+                if len(parts) >= 2:
+                    # First two parts usually form the main package
+                    libraries.add('.'.join(parts[:2]))
+                    
+            elif language in ["c", "cpp"]:
+                # Extract header file
+                match = re.search(r'#include\s*[<"]([^>"]+)[>"]', line)
+                if match:
+                    header = match.group(1)
+                    if '/' in header:
+                        libraries.add(header.split('/')[0])
+                    else:
+                        libraries.add(header.replace('.h', '').replace('.hpp', ''))
+                        
+            elif language == "rust":
+                # Extract crate name
+                parts = line.replace("use ", "").replace(";", "").split("::")
+                if parts[0] not in ["self", "super", "crate"]:
+                    libraries.add(parts[0])
+                elif parts[0] == "crate" and len(parts) > 1:
+                    local_imports += 1
+                    
+            elif language == "go":
+                # Extract package name
+                if '"' in line:
+                    match = re.search(r'"([^"]+)"', line)
+                    if match:
+                        pkg = match.group(1)
+                        if not pkg.startswith('.'):
+                            # Extract main package name
+                            libraries.add(pkg.split('/')[0])
+        
+        # Build summary
+        total_imports = len(import_lines)
+        unique_libs = sorted(libraries)
+        
+        summary_parts = [f"# Imports: {total_imports} total"]
+        
+        if unique_libs:
+            if len(unique_libs) <= 8:
+                summary_parts.append(f"# Dependencies: {', '.join(unique_libs)}")
+            else:
+                # Show first 6 libraries and count of others
+                shown_libs = unique_libs[:6]
+                remaining = len(unique_libs) - 6
+                summary_parts.append(f"# Dependencies: {', '.join(shown_libs)}, and {remaining} others")
+        
+        if local_imports > 0:
+            summary_parts.append(f"# Local imports: {local_imports}")
+            
+        return '\n'.join(summary_parts)
 
-        # Calculate similarities
-        for i in range(n):
-            for j in range(i + 1, n):
-                similarity = self.tfidf_calc.compute_similarity(sentences[i], str(j))
-                matrix[i][j] = similarity
-                matrix[j][i] = similarity
-
-        return matrix
-
-    def _build_similarity_matrix_sklearn(self, sentences: List[str]) -> np.ndarray:
-        """Build similarity matrix using sklearn.
+    def _extract_comments(self, code: str, language: str) -> str:
+        """Extract comments and docstrings from code.
 
         Args:
-            sentences: List of sentences
+            code: Source code
+            language: Programming language
 
         Returns:
-            Similarity matrix
+            Extracted comments as text
         """
-        vectorizer = TfidfVectorizer()
-        tfidf_matrix = vectorizer.fit_transform(sentences)
-        return cosine_similarity(tfidf_matrix)
+        comments = []
+        lines = code.split("\n")
 
-    def _calculate_scores(self, similarity_matrix: np.ndarray) -> List[float]:
-        """Calculate TextRank scores.
+        in_block_comment = False
+        block_delimiter = None
 
-        Args:
-            similarity_matrix: Sentence similarity matrix
+        for line in lines:
+            stripped = line.strip()
 
-        Returns:
-            List of scores
-        """
-        n = len(similarity_matrix)
-        scores = np.ones(n) / n
-        damping = 0.85
+            # Handle block comments
+            if not in_block_comment:
+                if language == "python" and stripped.startswith(('"""', "'''")):
+                    in_block_comment = True
+                    block_delimiter = stripped[:3]
+                    comments.append(stripped[3:])
+                elif language in ["c", "cpp", "java", "javascript"] and stripped.startswith("/*"):
+                    in_block_comment = True
+                    block_delimiter = "*/"
+                    comments.append(stripped[2:])
+                elif language == "html" and stripped.startswith("<!--"):
+                    in_block_comment = True
+                    block_delimiter = "-->"
+                    comments.append(stripped[4:])
+            elif block_delimiter in stripped:
+                in_block_comment = False
+                comments.append(stripped.replace(block_delimiter, ""))
+            else:
+                comments.append(stripped)
 
-        # Power iteration
-        for _ in range(100):
-            new_scores = np.zeros(n)
-            for i in range(n):
-                for j in range(n):
-                    if i != j and similarity_matrix[j][i] > 0:
-                        new_scores[i] += similarity_matrix[j][i] * scores[j]
+            # Handle single-line comments
+            if not in_block_comment:
+                if language == "python" and stripped.startswith("#"):
+                    comments.append(stripped[1:].strip())
+                elif language in ["c", "cpp", "java", "javascript"] and stripped.startswith("//"):
+                    comments.append(stripped[2:].strip())
 
-            new_scores = damping * new_scores + (1 - damping) / n
+        return " ".join(comments)
 
-            # Check convergence
-            if np.allclose(scores, new_scores, atol=1e-4):
-                break
-
-            scores = new_scores
-
-        return scores.tolist()
-
-
-class TransformerStrategy(SummarizationStrategy):
-    """Transformer-based neural summarization.
-
-    Uses pre-trained transformer models for high-quality
-    abstractive summarization.
-    """
-
-    name = "transformer"
-    description = "Neural summarization using transformers"
-    requires_ml = True
-
-    def __init__(self, model_name: str = "facebook/bart-large-cnn"):
-        """Initialize transformer strategy.
-
-        Args:
-            model_name: HuggingFace model name
-        """
-        self.logger = get_logger(__name__)
-
-        if not TRANSFORMERS_AVAILABLE:
-            raise ImportError("Transformers not available. Install with: pip install transformers")
-
-        self.model_name = model_name
-        self.summarizer = None
-        self._initialize_model()
-
-    def _initialize_model(self):
-        """Initialize the transformer model."""
-        try:
-            self.summarizer = pipeline("summarization", model=self.model_name)
-            self.logger.info(f"Loaded transformer model: {self.model_name}")
-        except Exception as e:
-            self.logger.error(f"Failed to load transformer model: {e}")
-            raise
-
-    def summarize(
+    def batch_summarize(
         self,
-        text: str,
+        texts: List[Union[str, FileAnalysis]],
+        mode: Optional[Union[str, SummarizationMode]] = None,
         target_ratio: float = 0.3,
-        max_length: Optional[int] = None,
-        min_length: Optional[int] = None,
-    ) -> str:
-        """Summarize using transformer model.
+        parallel: bool = True,
+        prompt_keywords: Optional[List[str]] = None,
+    ) -> BatchSummarizationResult:
+        """Summarize multiple texts in batch.
 
         Args:
-            text: Input text
+            texts: List of texts or FileAnalysis objects
+            mode: Summarization mode
             target_ratio: Target compression ratio
-            max_length: Maximum summary length
-            min_length: Minimum summary length
+            parallel: Whether to process in parallel
+            prompt_keywords: Keywords from user prompt for context-aware documentation summarization
 
         Returns:
-            Neural summary
+            BatchSummarizationResult
         """
-        if not self.summarizer:
-            raise RuntimeError("Transformer model not initialized")
+        start_time = time.time()
+        results = []
 
-        # Calculate target lengths
-        target_max = int(len(text) * target_ratio)
-        if max_length:
-            target_max = min(target_max, max_length)
+        total_original = 0
+        total_summary = 0
+        files_failed = 0
 
-        target_min = min_length or int(target_max * 0.5)
+        for item in texts:
+            try:
+                if isinstance(item, FileAnalysis):
+                    result = self.summarize_file(
+                        item, mode, target_ratio, prompt_keywords=prompt_keywords
+                    )
+                else:
+                    result = self.summarize(item, mode, target_ratio)
 
-        # Adjust for model tokens (roughly 1 token = 4 chars)
-        max_tokens = min(target_max // 4, 512)
-        min_tokens = target_min // 4
+                results.append(result)
+                total_original += result.original_length
+                total_summary += result.summary_length
 
-        try:
-            result = self.summarizer(
-                text, max_length=max_tokens, min_length=min_tokens, do_sample=False
-            )
+            except Exception as e:
+                self.logger.error(f"Failed to summarize item: {e}")
+                files_failed += 1
 
-            return result[0]["summary_text"]
+        overall_ratio = total_summary / total_original if total_original > 0 else 1.0
 
-        except Exception as e:
-            self.logger.error(f"Transformer summarization failed: {e}")
-            # Fallback to extractive
-            extractive = ExtractiveStrategy()
-            return extractive.summarize(text, target_ratio, max_length, min_length)
-
-
-class NLPEnhancedStrategy(SummarizationStrategy):
-    """Advanced summarization using all NLP features.
-
-    Combines multiple NLP components for state-of-the-art
-    extractive summarization with semantic understanding.
-    """
-
-    name = "nlp_enhanced"
-    description = "Advanced summarization with full NLP integration"
-    requires_ml = True  # Requires embeddings
-
-    def __init__(self):
-        """Initialize NLP-enhanced strategy."""
-        self.logger = get_logger(__name__)
-
-        if not NLP_AVAILABLE:
-            raise ImportError("NLP components not available")
-
-        # Initialize all NLP components
-        self.keyword_extractor = KeywordExtractor(
-            use_yake=True, use_stopwords=True, stopword_set="prompt"
+        return BatchSummarizationResult(
+            results=results,
+            total_original_length=total_original,
+            total_summary_length=total_summary,
+            overall_compression_ratio=overall_ratio,
+            total_time_elapsed=time.time() - start_time,
+            files_processed=len(results),
+            files_failed=files_failed,
         )
-        self.tokenizer = TextTokenizer(use_stopwords=True)
-        self.tfidf_calc = TFIDFCalculator(use_stopwords=True)
 
-        # Try to initialize embeddings for semantic similarity
-        try:
-            self.embedding_model = create_embedding_model()
-            self.semantic_sim = SemanticSimilarity(self.embedding_model)
-            self.use_embeddings = True
-            self.logger.info("NLPEnhancedStrategy using embeddings")
-        except Exception as e:
-            self.logger.warning(f"Embeddings not available: {e}")
-            self.use_embeddings = False
-
-    def summarize(
-        self,
-        text: str,
-        target_ratio: float = 0.3,
-        max_length: Optional[int] = None,
-        min_length: Optional[int] = None,
-    ) -> str:
-        """Summarize using comprehensive NLP analysis.
+    def _select_strategy(
+        self, text: str, mode: Optional[Union[str, SummarizationMode]], target_ratio: float
+    ) -> Tuple[Optional[SummarizationStrategy], str]:
+        """Select best summarization strategy.
 
         Args:
-            text: Input text
+            text: Text to summarize
+            mode: Requested mode or None for auto
             target_ratio: Target compression ratio
-            max_length: Maximum summary length
-            min_length: Minimum summary length
 
         Returns:
-            NLP-enhanced summary
+            Tuple of (strategy, strategy_name)
         """
-        # Split into sentences
-        sentences = re.split(r"[.!?]+", text)
-        sentences = [s.strip() for s in sentences if s.strip()]
+        # Convert string to enum
+        if isinstance(mode, str):
+            try:
+                mode = SummarizationMode(mode)
+            except ValueError:
+                mode = self.default_mode
+        elif mode is None:
+            mode = self.default_mode
 
-        if not sentences:
+        # Handle explicit mode
+        if mode != SummarizationMode.AUTO:
+            # Special handling for LLM mode
+            if mode == SummarizationMode.LLM:
+                if mode not in self.strategies:
+                    # Initialize LLM strategy on demand
+                    try:
+                        self.strategies[mode] = create_llm_summarizer()
+                    except Exception as e:
+                        self.logger.warning(f"Failed to initialize LLM strategy: {e}")
+                        mode = SummarizationMode.EXTRACTIVE
+
+            strategy = self.strategies.get(mode)
+            return strategy, mode.value if strategy else None
+
+        # Auto mode - select based on content characteristics
+        text_length = len(text)
+
+        # For very short text, use extractive
+        if text_length < 500:
+            return self.strategies[SummarizationMode.EXTRACTIVE], "extractive"
+
+        # For code-like content, use extractive
+        if self._looks_like_code(text):
+            return self.strategies[SummarizationMode.EXTRACTIVE], "extractive"
+
+        # For medium text, use TextRank if available
+        if text_length < 5000:
+            if SummarizationMode.TEXTRANK in self.strategies:
+                return self.strategies[SummarizationMode.TEXTRANK], "textrank"
+            else:
+                return self.strategies[SummarizationMode.COMPRESSIVE], "compressive"
+
+        # For long text, prefer transformer if available and ratio is aggressive
+        if target_ratio < 0.2 and SummarizationMode.TRANSFORMER in self.strategies:
+            return self.strategies[SummarizationMode.TRANSFORMER], "transformer"
+
+        # Default to extractive
+        return self.strategies[SummarizationMode.EXTRACTIVE], "extractive"
+
+    def _looks_like_code(self, text: str) -> bool:
+        """Check if text looks like code.
+
+        Args:
+            text: Text to check
+
+        Returns:
+            True if text appears to be code
+        """
+        code_indicators = [
+            "def ",
+            "class ",
+            "function ",
+            "const ",
+            "var ",
+            "let ",
+            "import ",
+            "from ",
+            "#include",
+            "return ",
+            "if (",
+            "for (",
+            "```",
+            "{",
+            "}",
+            ";",
+            "->",
+            "=>",
+            "::",
+        ]
+
+        indicator_count = sum(1 for ind in code_indicators if ind in text)
+        return indicator_count >= 3
+
+    def _simple_truncate(self, text: str, target_ratio: float, max_length: Optional[int]) -> str:
+        """Simple truncation fallback.
+
+        Args:
+            text: Text to truncate
+            target_ratio: Target ratio
+            max_length: Maximum length
+
+        Returns:
+            Truncated text
+        """
+        target_len = int(len(text) * target_ratio)
+        if max_length:
+            target_len = min(target_len, max_length)
+
+        if len(text) <= target_len:
             return text
 
-        # Extract key concepts
-        keywords = self.keyword_extractor.extract(text, max_keywords=20, include_scores=True)
-        keyword_dict = dict(keywords) if keywords else {}
+        # Try to truncate at sentence boundary
+        truncated = text[:target_len]
+        last_period = truncated.rfind(".")
+        if last_period > target_len * 0.8:
+            return truncated[: last_period + 1]
 
-        # Score sentences with multiple factors
-        scores = []
-        for i, sentence in enumerate(sentences):
-            score = 0.0
+        # Truncate at word boundary
+        return truncated.rsplit(" ", 1)[0] + "..."
 
-            # 1. Keyword relevance (30%)
-            tokens = self.tokenizer.tokenize(sentence)
-            if tokens:
-                keyword_score = sum(keyword_dict.get(t, 0) for t in tokens) / len(tokens)
-                score += keyword_score * 0.3
-
-            # 2. Position importance (20%)
-            if i == 0:  # First sentence
-                score += 0.2
-            elif i == len(sentences) - 1:  # Last sentence
-                score += 0.1
-            else:
-                score += (1.0 - i / len(sentences)) * 0.1
-
-            # 3. TF-IDF relevance (25%)
-            self.tfidf_calc.add_document(f"sent_{i}", sentence)
-
-            # 4. Semantic similarity to document (25% if available)
-            if self.use_embeddings:
-                try:
-                    doc_sim = self.semantic_sim.compute(sentence, text)
-                    score += doc_sim * 0.25
-                except Exception:
-                    pass
-
-            scores.append(score)
-
-        # Add TF-IDF scores
-        for i, sentence in enumerate(sentences):
-            tfidf_score = self.tfidf_calc.compute_similarity(text, f"sent_{i}")
-            scores[i] += tfidf_score * 0.25
-
-        # Select diverse sentences (avoid redundancy)
-        target_length = int(len(text) * target_ratio)
-        if max_length:
-            target_length = min(target_length, max_length)
-
-        selected = self._select_diverse_sentences(sentences, scores, target_length, min_length)
-
-        return " ".join(selected)
-
-    def _select_diverse_sentences(
-        self,
-        sentences: List[str],
-        scores: List[float],
-        target_length: int,
-        min_length: Optional[int],
-    ) -> List[str]:
-        """Select diverse high-scoring sentences.
+    def _get_cache_key(
+        self, text: str, target_ratio: float, max_length: Optional[int], min_length: Optional[int]
+    ) -> str:
+        """Generate cache key for summary.
 
         Args:
-            sentences: List of sentences
-            scores: Sentence scores
-            target_length: Target total length
-            min_length: Minimum length
+            text: Input text
+            target_ratio: Target ratio
+            max_length: Max length
+            min_length: Min length
 
         Returns:
-            Selected sentences in original order
+            Cache key string
         """
-        # Sort by score
-        sentence_data = list(zip(sentences, scores, range(len(sentences))))
-        sentence_data.sort(key=lambda x: x[1], reverse=True)
+        # Use hash of text + parameters
+        key_parts = [
+            hashlib.md5(text.encode()).hexdigest(),
+            str(target_ratio),
+            str(max_length),
+            str(min_length),
+        ]
+        return "_".join(key_parts)
 
-        selected = []
-        selected_indices = []
-        selected_tokens = set()
-        current_length = 0
+    def clear_cache(self):
+        """Clear the summary cache."""
+        self.cache.clear()
+        self.logger.info("Summary cache cleared")
 
-        for sentence, score, idx in sentence_data:
-            # Check diversity (avoid redundancy)
-            tokens = set(self.tokenizer.tokenize(sentence))
+    def get_stats(self) -> Dict[str, Any]:
+        """Get summarization statistics.
 
-            # Calculate overlap with already selected
-            if selected_tokens:
-                overlap = len(tokens & selected_tokens) / len(tokens)
-                if overlap > 0.7:  # Skip if too similar
-                    continue
+        Returns:
+            Dictionary of statistics
+        """
+        stats = self.stats.copy()
 
-            if current_length + len(sentence) <= target_length or (
-                min_length and current_length < min_length
-            ):
-                selected.append(sentence)
-                selected_indices.append(idx)
-                selected_tokens.update(tokens)
-                current_length += len(sentence)
-            else:
+        # Add cache stats
+        stats["cache_size"] = len(self.cache)
+        if self.stats["cache_hits"] + self.stats["cache_misses"] > 0:
+            stats["cache_hit_rate"] = self.stats["cache_hits"] / (
+                self.stats["cache_hits"] + self.stats["cache_misses"]
+            )
+        else:
+            stats["cache_hit_rate"] = 0.0
+
+        # Add average time
+        if self.stats["total_summarized"] > 0:
+            stats["avg_time"] = self.stats["total_time"] / self.stats["total_summarized"]
+        else:
+            stats["avg_time"] = 0.0
+
+        return stats
+
+    def _is_documentation_file(self, file_path: Path) -> bool:
+        """Determine if a file is a documentation file.
+
+        Args:
+            file_path: Path to the file
+
+        Returns:
+            True if file is considered documentation
+        """
+        # Common documentation file extensions
+        doc_extensions = {
+            ".md",
+            ".markdown",
+            ".rst",
+            ".txt",
+            ".text",
+            ".adoc",
+            ".asciidoc",
+            ".tex",
+            ".org",
+        }
+
+        # Configuration files that often contain documentation
+        config_extensions = {
+            ".yaml",
+            ".yml",
+            ".json",
+            ".toml",
+            ".ini",
+            ".conf",
+            ".cfg",
+            ".properties",
+            ".env",
+        }
+
+        # Common documentation file names
+        doc_names = {
+            "readme",
+            "changelog",
+            "changes",
+            "history",
+            "news",
+            "authors",
+            "contributors",
+            "license",
+            "copying",
+            "install",
+            "installation",
+            "usage",
+            "tutorial",
+            "guide",
+            "manual",
+            "help",
+            "faq",
+            "todo",
+            "notes",
+            "docs",
+            "documentation",
+        }
+
+        extension = file_path.suffix.lower()
+        name_lower = file_path.stem.lower()
+
+        # Check extension
+        if extension in doc_extensions:
+            return True
+
+        # Check configuration files (often contain documentation)
+        if extension in config_extensions:
+            return True
+
+        # Check common documentation file names
+        if name_lower in doc_names:
+            return True
+
+        # Check if file is in docs-related directories
+        parts = [part.lower() for part in file_path.parts]
+        doc_dirs = {"docs", "doc", "documentation", "guide", "guides", "manual", "help"}
+        if any(part in doc_dirs for part in parts):
+            return True
+
+        return False
+
+    def _summarize_documentation_with_context(
+        self, file: FileAnalysis, target_ratio: float, prompt_keywords: List[str]
+    ) -> str:
+        """Summarize documentation file with context-aware approach.
+
+        This method preserves sections that are relevant to the prompt keywords
+        and shows them in-place within the summary, maintaining the document
+        structure while highlighting relevant context.
+
+        Args:
+            file: FileAnalysis object for the documentation file
+            target_ratio: Target compression ratio
+            prompt_keywords: Keywords from user prompt for relevance matching
+
+        Returns:
+            Context-aware summary with relevant sections preserved
+        """
+        from tenets.core.analysis.implementations.generic_analyzer import GenericAnalyzer
+
+        # Get configuration parameters
+        search_depth = getattr(self.config.summarizer, "docs_context_search_depth", 2)
+        min_confidence = getattr(self.config.summarizer, "docs_context_min_confidence", 0.6)
+        max_sections = getattr(self.config.summarizer, "docs_context_max_sections", 10)
+        preserve_examples = getattr(self.config.summarizer, "docs_context_preserve_examples", True)
+
+        # Use generic analyzer to extract context-relevant sections
+        analyzer = GenericAnalyzer()
+        file_path = Path(file.path)
+
+        context_result = analyzer.extract_context_relevant_sections(
+            content=file.content,
+            file_path=file_path,
+            prompt_keywords=prompt_keywords,
+            search_depth=search_depth,
+            min_confidence=min_confidence,
+            max_sections=max_sections,
+        )
+
+        relevant_sections = context_result["relevant_sections"]
+        metadata = context_result["metadata"]
+
+        summary_parts = []
+
+        # Add file header with context information
+        summary_parts.append(f"# {file_path.name}")
+        summary_parts.append(
+            f"*Documentation file with {len(relevant_sections)} relevant sections (search depth: {search_depth})*"
+        )
+        summary_parts.append("")
+
+        # If no relevant sections found, fall back to generic summarization
+        if not relevant_sections:
+            self.logger.debug(
+                f"No relevant sections found in {file.path}, using generic summarization"
+            )
+            generic_summary = self.summarize(
+                file.content, mode=SummarizationMode.EXTRACTIVE, target_ratio=target_ratio
+            ).summary
+            summary_parts.append("## Summary")
+            summary_parts.append(generic_summary)
+            return "\n".join(summary_parts)
+
+        # Add table of contents for relevant sections
+        if len(relevant_sections) > 1:
+            summary_parts.append("## Relevant Sections")
+            for i, section in enumerate(relevant_sections, 1):
+                context_type = section.get("context_type", "general")
+                score = section.get("relevance_score", 0.0)
+                summary_parts.append(
+                    f"{i}. **{section['title']}** ({context_type}, relevance: {score:.2f})"
+                )
+            summary_parts.append("")
+
+        # Process and include relevant sections with full context
+        total_length = 0
+        target_length = int(len(file.content) * target_ratio)
+
+        for section in relevant_sections:
+            if total_length >= target_length:
                 break
 
-        # Sort back to original order
-        selected_indices.sort()
-        return [sentences[i] for i in selected_indices]
+            section_summary = self._format_relevant_section(section, preserve_examples)
+            section_length = len(section_summary)
+
+            # Include section if it fits within our target
+            if total_length + section_length <= target_length * 1.2:  # Allow 20% overage
+                summary_parts.append(section_summary)
+                summary_parts.append("")
+                total_length += section_length
+            else:
+                # For configuration sections, truncate rather than compress
+                section_type = section.get("section_type", "")
+                if section_type in ["yaml_key", "json_key", "ini_section", "toml_section"]:
+                    # Truncate content to fit
+                    truncated_section = section.copy()
+                    content_lines = section["content"].split("\n")
+                    # Keep first N lines that fit
+                    max_lines = min(10, len(content_lines))
+                    truncated_section["content"] = "\n".join(content_lines[:max_lines])
+                    if len(content_lines) > max_lines:
+                        truncated_section["content"] += "\n# ... (truncated)"
+                    section_summary = self._format_relevant_section(
+                        truncated_section, preserve_examples
+                    )
+                else:
+                    # Compress the section content to fit while preserving code examples
+                    compressed_section = section.copy()
+                    
+                    # Extract code examples before compression
+                    code_examples = section.get("code_examples", [])
+                    
+                    if code_examples and preserve_examples:
+                        # If we have code examples to preserve, compress the text around them
+                        content_lines = section["content"].split("\n")
+                        preserved_lines = []
+                        in_code_block = False
+                        code_block_lines = []
+                        
+                        for line in content_lines:
+                            # Check if we're entering or exiting a code block
+                            if line.strip().startswith("```"):
+                                if not in_code_block:
+                                    in_code_block = True
+                                    code_block_lines = [line]
+                                else:
+                                    code_block_lines.append(line)
+                                    preserved_lines.extend(code_block_lines)
+                                    in_code_block = False
+                                    code_block_lines = []
+                            elif in_code_block:
+                                code_block_lines.append(line)
+                            else:
+                                # For non-code lines, only keep the most important ones
+                                if any(kw.lower() in line.lower() for kw in prompt_keywords):
+                                    preserved_lines.append(line)
+                                elif line.strip() and len(preserved_lines) < 5:  # Keep first few lines
+                                    preserved_lines.append(line)
+                        
+                        # If still in a code block at the end, preserve it
+                        if in_code_block and code_block_lines:
+                            preserved_lines.extend(code_block_lines)
+                            preserved_lines.append("```")  # Close the code block
+                        
+                        compressed_section["content"] = "\n".join(preserved_lines)
+                    else:
+                        # No code examples to preserve, use regular compression
+                        compressed_content = self.summarize(
+                            section["content"], mode=SummarizationMode.EXTRACTIVE, target_ratio=0.5
+                        ).summary
+                        compressed_section["content"] = compressed_content
+                    
+                    section_summary = self._format_relevant_section(
+                        compressed_section, preserve_examples
+                    )
+                summary_parts.append(section_summary)
+                summary_parts.append("")
+                total_length += len(section_summary)
+
+        # Add metadata footer
+        summary_parts.append("---")
+        summary_parts.append(
+            f"*Context analysis: {metadata['matched_sections']}/{metadata['total_sections']} sections matched, "
+            f"avg relevance: {metadata['avg_relevance_score']:.2f}*"
+        )
+
+        return "\n".join(summary_parts)
+
+    def _format_relevant_section(
+        self, section: Dict[str, Any], preserve_examples: bool = True
+    ) -> str:
+        """Format a relevant section for inclusion in the summary.
+
+        Args:
+            section: Section dictionary with content and metadata
+            preserve_examples: Whether to preserve code examples
+
+        Returns:
+            Formatted section content
+        """
+        parts = []
+
+        # Section header with relevance info
+        title = section.get("title", "Section")
+        context_type = section.get("context_type", "general")
+        relevance_score = section.get("relevance_score", 0.0)
+
+        # Determine header level (ensure it's at least ##)
+        level = max(section.get("level", 2), 2)
+        header_prefix = "#" * level
+
+        parts.append(f"{header_prefix} {title}")
+        parts.append(f"*{context_type.title()} content (relevance: {relevance_score:.2f})*")
+        parts.append("")
+
+        # Add keyword matches summary
+        keyword_matches = section.get("keyword_matches", [])
+        if keyword_matches:
+            match_summary = []
+            for match in keyword_matches[:3]:  # Show top 3 matches
+                keyword = match.get("keyword", "")
+                match_type = match.get("match_type", "")
+                count = match.get("count", 0)
+                if count > 0:
+                    match_summary.append(f"{keyword} ({match_type}: {count})")
+
+            if match_summary:
+                parts.append(f"**Keywords found:** {', '.join(match_summary)}")
+                parts.append("")
+
+        # Process section content
+        content = section.get("content", "")
+        
+        # For configuration sections, preserve the actual configuration syntax
+        section_type = section.get("section_type", "")
+        if section_type in ["yaml_key", "json_key", "ini_section", "toml_section"]:
+            # Show a snippet of the actual configuration
+            content_lines = content.split("\n")
+            if len(content_lines) > 10:
+                # Show first 8 lines and indicate truncation
+                snippet = "\n".join(content_lines[:8])
+                parts.append(f"```yaml\n{snippet}\n# ... (truncated)\n```")
+            else:
+                parts.append(f"```yaml\n{content.strip()}\n```")
+        else:
+            # Extract and highlight code examples if preserve_examples is True
+            if preserve_examples:
+                code_examples = section.get("code_examples", [])
+                if code_examples:
+                    # Replace code blocks with highlighted versions
+                    for example in code_examples:
+                        if example["type"] == "code_block":
+                            lang = example.get("language", "")
+                            code = example.get("code", "")
+                            raw_match = example.get("raw_match", "")
+                            # Only replace if we have a valid raw_match
+                            if raw_match:
+                                # Ensure code blocks are properly highlighted
+                                highlighted = f"```{lang}\n{code}\n```"
+                                # Find and replace in content (this is a simplified approach)
+                                content = content.replace(raw_match, highlighted)
+            
+            # Add the content
+            parts.append(content.strip())
+
+        # Add extracted references if significant
+        api_refs = section.get("api_references", [])
+        config_refs = section.get("config_references", [])
+
+        if api_refs or config_refs:
+            parts.append("")
+            if api_refs:
+                api_names = [ref.get("name", "") for ref in api_refs[:5]]
+                parts.append(f"**API References:** {', '.join(filter(None, api_names))}")
+
+            if config_refs:
+                config_keys = [ref.get("key", "") for ref in config_refs[:5]]
+                parts.append(f"**Configuration:** {', '.join(filter(None, config_keys))}")
+
+        return "\n".join(parts)
+
+
+class FileSummarizer:
+    """Backward-compatible file summarizer used by tests.
+
+    This lightweight class focuses on extracting a concise summary from a single
+    file using deterministic heuristics (docstrings, leading comments, or head
+    lines). It integrates with Tenets token utilities and returns the
+    `FileSummary` model expected by the tests.
+    """
+
+    def __init__(self, model: Optional[str] = None):
+        self.model = model
+        self.logger = get_logger(__name__)
+
+    # --- Public API used by tests ---
+    def summarize_file(self, path: Union[str, Path], max_lines: int = 50):
+        """Summarize a file from disk into a FileSummary.
+
+        Args:
+            path: Path to the file
+            max_lines: Maximum number of lines in the summary
+
+        Returns:
+            FileSummary: summary object with metadata
+        """
+        from tenets.models.summary import FileSummary  # local import to avoid cycles
+
+        p = Path(path)
+        text = self._read_text(p)
+        summary_text = self._extract_summary(text, max_lines=max_lines, file_path=p)
+
+        tokens = count_tokens(summary_text, model=self.model)
+        metadata = {"strategy": "heuristic", "max_lines": max_lines}
+
+        return FileSummary(
+            path=str(p),
+            summary=summary_text,
+            token_count=tokens,
+            metadata=metadata,
+        )
+
+    # --- Helpers expected by tests ---
+    def _read_text(self, path: Union[str, Path]) -> str:
+        """Read text from file, tolerating different encodings and binary data.
+
+        Returns empty string if the file does not exist.
+        """
+        p = Path(path)
+        if not p.exists() or not p.is_file():
+            return ""
+
+        # Try common encodings, then fall back to permissive decode
+        for enc in ("utf-8", "utf-16", "latin-1"):
+            try:
+                return p.read_text(encoding=enc)
+            except Exception:
+                continue
+
+        # Final fallback: binary-safe read and decode with errors ignored
+        try:
+            data = p.read_bytes()
+            return data.decode("utf-8", errors="ignore")
+        except Exception:
+            return ""
+
+    def _extract_summary(
+        self, text: str, max_lines: int = 50, file_path: Optional[Path] = None
+    ) -> str:
+        """Extract a human-friendly summary from the file content.
+
+        Preference order:
+        1) Python module docstring (if parseable)
+        2) Leading comment block (Python // JS /**/ styles)
+        3) First N lines of the file
+        """
+        if not text:
+            return ""
+
+        # 1) Try Python module docstring via AST when it looks like Python
+        looks_py = False
+        if file_path is not None and file_path.suffix.lower() in {".py", ".pyw"}:
+            looks_py = True
+        else:
+            # Heuristic look for Python indicators
+            indicators = ("def ", "class ", "import ", "from ", '"""', "'''")
+            looks_py = sum(1 for ind in indicators if ind in text) >= 2
+
+        if looks_py:
+            try:
+                module = ast.parse(text)
+                doc = ast.get_docstring(module, clean=True)
+                if doc:
+                    return self._limit_lines(doc, max_lines)
+            except Exception:
+                # Fall through to other strategies on parse errors
+                pass
+
+        # 2) Leading comment block extraction (supports Python/JS/TS)
+        comment_block = self._extract_leading_comments(text)
+        if comment_block:
+            return self._limit_lines(comment_block, max_lines)
+
+        # 3) Fallback to head extraction
+        return self._limit_lines(text, max_lines)
+
+    # --- Internal helpers ---
+    def _limit_lines(self, text: str, max_lines: int) -> str:
+        if max_lines <= 0:
+            return ""
+        lines = text.splitlines()
+        if len(lines) <= max_lines:
+            return "\n".join(lines)
+        return "\n".join(lines[:max_lines])
+
+    def _extract_leading_comments(self, text: str) -> str:
+        lines = text.splitlines()
+        buf: List[str] = []
+        i = 0
+
+        # Skip shebang or coding lines
+        while i < len(lines) and (lines[i].startswith("#!/") or "coding:" in lines[i]):
+            i += 1
+
+        # Triple-quoted doc/comment block at top
+        if i < len(lines) and (
+            lines[i].strip().startswith('"""') or lines[i].strip().startswith("'''")
+        ):
+            quote = '"""' if '"""' in lines[i] else "'''"
+            first = lines[i].split(quote, 1)[-1]
+            if first:
+                buf.append(first)
+            i += 1
+            while i < len(lines):
+                line = lines[i]
+                if quote in line:
+                    before, _sep, _after = line.partition(quote)
+                    buf.append(before)
+                    break
+                buf.append(line)
+                i += 1
+            if buf:
+                return "\n".join(l.strip("\n") for l in buf).strip()
+
+        # Line-comment blocks (Python # or JS //) at file head
+        j = i
+        while j < len(lines) and (
+            lines[j].lstrip().startswith("#") or lines[j].lstrip().startswith("//")
+        ):
+            # Strip leading comment markers while keeping content
+            line = lines[j].lstrip()
+            if line.startswith("#"):
+                content = line[1:].strip()
+            else:
+                content = line[2:].strip()
+            buf.append(content)
+            j += 1
+        if buf:
+            return "\n".join(buf).strip()
+
+        # JS/TS block comments /* ... */ at head
+        if i < len(lines) and lines[i].lstrip().startswith("/*"):
+            inner = lines[i].lstrip()[2:]
+            if inner:
+                buf.append(inner.rstrip("*/ "))
+            i += 1
+            while i < len(lines):
+                line = lines[i]
+                if "*/" in line:
+                    before, _sep, _after = line.partition("*/")
+                    buf.append(before)
+                    break
+                buf.append(line)
+                i += 1
+            if buf:
+                return "\n".join(buf).strip()
+
+        return ""
