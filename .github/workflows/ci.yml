@@ -183,22 +183,34 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,test]"
 
-      - name: Run pytest with coverage
+      - name: Run pytest with coverage and JUnit XML
         run: |
-          pytest -v --cov=tenets --cov-report=xml --cov-report=term
+          pytest -v --cov=tenets --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
         continue-on-error: true # Don't fail on test failures during development
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           flags: unittests
+          name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
           fail_ci_if_error: false
           verbose: true
         continue-on-error: true # Don't fail if token missing
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && (matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11') }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./junit.xml
+          flags: unittests
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          fail_ci_if_error: false
+          verbose: true
+        continue-on-error: true
 
   # Test with optional ML/viz dependencies
   test-optional:
@@ -231,8 +243,32 @@ jobs:
           pip install -e ".[${{ matrix.extras }},test]"
         continue-on-error: true
 
-      - name: Run tests (skip slow)
-        run: pytest -v -m "not slow"
+      - name: Run tests with coverage and JUnit XML (skip slow)
+        run: pytest -v -m "not slow" --cov=tenets --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        if: matrix.extras == 'all'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: optional-${{ matrix.extras }}
+          name: codecov-optional-${{ matrix.extras }}
+          fail_ci_if_error: false
+          verbose: true
+        continue-on-error: true
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && matrix.extras == 'all' }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./junit.xml
+          flags: optional-${{ matrix.extras }}
+          name: test-results-optional-${{ matrix.extras }}
+          fail_ci_if_error: false
+          verbose: true
         continue-on-error: true
 
   # Build and validate distribution packages

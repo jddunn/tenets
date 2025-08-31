@@ -12,6 +12,7 @@ Tests cover all momentum tracking functionality including:
 """
 
 import json
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -380,6 +381,10 @@ class TestMomentumOutputFormats:
                     assert f"Momentum data saved to: {output_file}" in result.stdout
                     assert output_file.exists()
 
+    @pytest.mark.skipif(
+        sys.version_info[:2] >= (3, 13),
+        reason="Threading tests hang with coverage on Python 3.13+"
+    )
     def test_momentum_html_output(self, runner, mock_momentum_tracker, mock_git_analyzer):
         """Test HTML report generation."""
         mock_report_gen = MagicMock()
@@ -393,11 +398,39 @@ class TestMomentumOutputFormats:
                     "tenets.cli.commands.momentum.ReportGenerator", return_value=mock_report_gen
                 ):
                     with patch("tenets.cli.commands.momentum.get_logger"):
-                        result = runner.invoke(momentum, [".", "--format", "html"])
+                        with patch("tenets.cli.commands.momentum.click.confirm", return_value=False):
+                            result = runner.invoke(momentum, [".", "--format", "html"])
 
-                        assert result.exit_code == 0
-                        assert "Momentum report generated: momentum_report.html" in result.stdout
-                        mock_report_gen.generate.assert_called_once()
+                            assert result.exit_code == 0
+                            assert "Momentum report generated: momentum" in result.stdout
+                            assert "Would you like to open it in your browser now?" in result.stdout
+                            mock_report_gen.generate.assert_called_once()
+
+    @pytest.mark.skipif(
+        sys.version_info[:2] >= (3, 13),
+        reason="Threading tests hang with coverage on Python 3.13+"
+    )
+    def test_momentum_html_opens_browser(self, runner, mock_momentum_tracker, mock_git_analyzer):
+        """Test HTML report opens browser when confirmed."""
+        mock_report_gen = MagicMock()
+        mock_report_gen.generate.return_value = Path("momentum_report.html")
+
+        with patch(
+            "tenets.cli.commands.momentum.MomentumTracker", return_value=mock_momentum_tracker
+        ):
+            with patch("tenets.cli.commands.momentum.GitAnalyzer", return_value=mock_git_analyzer):
+                with patch(
+                    "tenets.cli.commands.momentum.ReportGenerator", return_value=mock_report_gen
+                ):
+                    with patch("tenets.cli.commands.momentum.get_logger"):
+                        with patch("tenets.cli.commands.momentum.click.confirm", return_value=True):
+                            with patch("tenets.cli.commands.momentum.webbrowser.open") as mock_browser:
+                                result = runner.invoke(momentum, [".", "--format", "html"])
+
+                                assert result.exit_code == 0
+                                assert "Momentum report generated: momentum" in result.stdout
+                                assert "✓ Opened in browser" in result.stdout
+                                mock_browser.assert_called_once()
 
     def test_momentum_markdown_output(
         self, runner, mock_momentum_tracker, mock_git_analyzer, tmp_path

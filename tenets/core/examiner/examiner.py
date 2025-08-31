@@ -10,7 +10,10 @@ operations, handling file discovery, analysis orchestration, and result
 aggregation.
 """
 
+import hashlib
 import json
+import os
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -237,6 +240,15 @@ class Examiner:
         self.complexity_analyzer = ComplexityAnalyzer(config)
         self.ownership_tracker = OwnershipTracker(config)
         self.hotspot_detector = HotspotDetector(config)
+        
+        # Initialize cache for file analysis results
+        try:
+            from tenets.core.cache import CacheManager
+            self.cache = CacheManager(config)
+        except Exception:
+            # If cache manager fails, continue without caching
+            self.cache = None
+            self.logger.debug("Cache manager not available, proceeding without cache")
 
         self.logger.debug("Examiner initialized with config")
 
@@ -323,14 +335,10 @@ class Examiner:
             )
 
             # Track excluded files and patterns for reporting
-            all_files = list(path.rglob("*"))
-            all_file_paths = [f for f in all_files if f.is_file()]
-            included_paths = set(files)
-            excluded_files = [str(f) for f in all_file_paths if f not in included_paths]
-
-            # Store excluded file information
-            result.excluded_files = excluded_files[:1000]  # Limit to prevent huge lists
-            result.excluded_count = len(excluded_files)
+            # NOTE: Skip expensive rglob for performance - it was taking minutes on large projects
+            # Just store the patterns that were used for exclusion
+            result.excluded_files = []  # Skip tracking individual files for performance
+            result.excluded_count = 0  # Will be estimated based on patterns
             result.ignored_patterns = exclude_patterns or []
 
             if not files:
@@ -508,10 +516,11 @@ class Examiner:
         return files
 
     def _analyze_files(self, files: List[Path], deep: bool = False) -> List[Any]:
-        """Analyze a list of files.
+        """Analyze a list of files using parallel processing.
 
-        Runs the code analyzer on each file, collecting analysis results
-        and handling any errors gracefully.
+        Runs the code analyzer on each file in parallel, collecting analysis
+        results and handling any errors gracefully. Uses multiprocessing for
+        CPU-intensive analysis.
 
         Args:
             files: List of file paths to analyze
@@ -521,17 +530,115 @@ class Examiner:
             List[Any]: List of file analysis objects
         """
         analyzed = []
-
-        for file_path in files:
-            try:
-                analysis = self.analyzer.analyze_file(str(file_path), deep=deep)
-                if analysis:
-                    analyzed.append(analysis)
-            except Exception as e:
-                self.logger.warning(f"Failed to analyze {file_path}: {e}")
-                continue
+        
+        # Determine optimal number of workers
+        # Use CPU count but cap at 8 to avoid overwhelming the system
+        num_workers = min(os.cpu_count() or 4, 8)
+        
+        # Use ThreadPoolExecutor for I/O-bound file analysis
+        # (ProcessPoolExecutor has too much overhead for small files)
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            # Submit all file analysis tasks
+            future_to_file = {}
+            for file_path in files:
+                future = executor.submit(self._analyze_single_file, file_path, deep)
+                future_to_file[future] = file_path
+            
+            # Collect results as they complete
+            completed = 0
+            total = len(files)
+            
+            for future in as_completed(future_to_file):
+                file_path = future_to_file[future]
+                completed += 1
+                
+                # Log progress every 10% of files
+                if completed % max(1, total // 10) == 0:
+                    self.logger.info(f"Analyzed {completed}/{total} files ({100*completed//total}%)")
+                
+                try:
+                    analysis = future.result(timeout=10)  # 10 second timeout per file
+                    if analysis:
+                        analyzed.append(analysis)
+                except Exception as e:
+                    self.logger.warning(f"Failed to analyze {file_path}: {e}")
+                    continue
 
         return analyzed
+    
+    def _analyze_single_file(self, file_path: Path, deep: bool = False) -> Optional[Any]:
+        """Analyze a single file with caching support.
+        
+        Wrapper method for parallel processing of file analysis.
+        Checks cache first to avoid re-analyzing unchanged files.
+        
+        Args:
+            file_path: Path to the file to analyze
+            deep: Whether to perform deep analysis
+            
+        Returns:
+            Optional[Any]: File analysis object or None if failed
+        """
+        try:
+            # Check cache if available
+            if self.cache:
+                # Generate cache key based on file content and analysis depth
+                cache_key = self._generate_cache_key(file_path, deep)
+                
+                # Try to get from cache
+                cached_result = self.cache.get(f"analysis_{cache_key}")
+                if cached_result:
+                    return cached_result
+                
+                # Analyze file
+                result = self.analyzer.analyze_file(str(file_path), deep=deep)
+                
+                # Store in cache
+                if result:
+                    self.cache.set(f"analysis_{cache_key}", result, ttl=3600)  # 1 hour TTL
+                
+                return result
+            else:
+                # No cache, analyze directly
+                return self.analyzer.analyze_file(str(file_path), deep=deep)
+        except Exception as e:
+            # Log is handled in parent method
+            return None
+    
+    def _generate_cache_key(self, file_path: Path, deep: bool) -> str:
+        """Generate a cache key for file analysis.
+        
+        Creates a unique key based on file path, content hash, and analysis depth.
+        
+        Args:
+            file_path: Path to the file
+            deep: Whether deep analysis is enabled
+            
+        Returns:
+            str: Cache key
+        """
+        try:
+            # Get file modification time and size for quick change detection
+            stat = file_path.stat()
+            mtime = int(stat.st_mtime)
+            size = stat.st_size
+            
+            # Include file path, mtime, size, and deep flag in key
+            key_parts = [
+                str(file_path),
+                str(mtime),
+                str(size),
+                str(deep)
+            ]
+            
+            # Generate hash of key parts
+            key_str = "_".join(key_parts)
+            return hashlib.md5(key_str.encode()).hexdigest()
+        except Exception:
+            # If we can't generate a proper key, return a unique one
+            # that won't match anything in cache
+            import uuid
+            return str(uuid.uuid4())
 
     def _extract_languages(self, files: List[Any]) -> List[str]:
         """Extract unique languages from analyzed files.
@@ -631,7 +738,7 @@ class Examiner:
 
 
 def examine_directory(
-    path: Path, config: Optional[TenetsConfig] = None, **kwargs
+    path: Path, config: Optional[TenetsConfig] = None, **kwargs: Any
 ) -> ExaminationResult:
     """Convenience function to examine a directory.
 

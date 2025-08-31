@@ -1,13 +1,12 @@
 """Tests for TenetInjector with system instruction support."""
 
-from datetime import datetime
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
-from tenets.core.instiller.injector import InjectionPoint, InjectionPosition, TenetInjector
+from tenets.core.instiller.injector import InjectionPosition, TenetInjector
 from tenets.models.context import ContextResult
-from tenets.models.tenet import Priority, Tenet, TenetStatus
+from tenets.models.tenet import Priority, Tenet
 
 
 @pytest.fixture

@@ -1,9 +1,5 @@
 """Tests for stopword management."""
 
-from pathlib import Path
-
-import pytest
-
 from tenets.core.nlp.stopwords import StopwordManager, StopwordSet
 
 

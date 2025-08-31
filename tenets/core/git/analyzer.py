@@ -10,24 +10,34 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-try:
-    from git import InvalidGitRepositoryError, NoSuchPathError, Repo  # type: ignore
+# Lazy import check for GitPython
+def _check_git_available():
+    """Check if GitPython is available without importing."""
+    try:
+        import importlib.util
+        spec = importlib.util.find_spec("git")
+        return spec is not None
+    except (ImportError, AttributeError):
+        return False
 
-    GIT_AVAILABLE = True
-except ImportError as e:
-    GIT_AVAILABLE = False
+GIT_AVAILABLE = _check_git_available()
 
-    # Create dummy classes for type checking
-    class InvalidGitRepositoryError(Exception):  # type: ignore
-        pass
+# These will be imported lazily when needed
+Repo = None
+InvalidGitRepositoryError = None
+NoSuchPathError = None
 
-    class NoSuchPathError(Exception):  # type: ignore
-        pass
-
-    class Repo:  # type: ignore
-        pass
-
-    git_import_error = str(e)
+def _ensure_git_imported():
+    """Import git modules when actually needed."""
+    global Repo, InvalidGitRepositoryError, NoSuchPathError
+    if Repo is None:
+        try:
+            from git import InvalidGitRepositoryError as _InvalidGit, NoSuchPathError as _NoPath, Repo as _Repo
+            Repo = _Repo
+            InvalidGitRepositoryError = _InvalidGit
+            NoSuchPathError = _NoPath
+        except ImportError as e:
+            raise ImportError(f"GitPython is required but not installed: {e}")
 
 from tenets.utils.logger import get_logger
 
@@ -56,9 +66,14 @@ class GitAnalyzer:
             base = Path(root) if root is not None else Path.cwd()
         self.root = Path(base)
         self.repo: Optional[Repo] = None
-        self._ensure_repo()
+        self._repo_initialized = False
+        # Don't call _ensure_repo() here - lazy load on first use
 
     def _ensure_repo(self) -> None:
+        if self._repo_initialized:
+            return
+        self._repo_initialized = True
+        
         if not GIT_AVAILABLE:
             self.repo = None
             logger.warning(
@@ -68,6 +83,7 @@ class GitAnalyzer:
             )
             return
 
+        _ensure_git_imported()  # Import GitPython modules when needed
         try:
             self.repo = Repo(self.root, search_parent_directories=True)
             # Normalize root to the repo working tree directory
@@ -83,6 +99,7 @@ class GitAnalyzer:
             logger.debug("Failed to initialize git repository: %s", str(e))
 
     def is_repo(self) -> bool:
+        self._ensure_repo()  # Lazy load git repo
         return self.repo is not None
 
     # New: method expected by Distiller
@@ -98,6 +115,7 @@ class GitAnalyzer:
 
     # Compatibility helper used by CLI chronicle already
     def changed_files(self, ref: str = "HEAD", diff_with: Optional[str] = None) -> List[Path]:
+        self._ensure_repo()  # Ensure repo is initialized
         if not self.repo:
             return []
         repo = self.repo
@@ -333,27 +351,121 @@ class GitAnalyzer:
         Returns:
             List of GitPython commit objects
         """
+        self._ensure_repo()  # Lazy load git repo
         if not self.repo:
             return []
+            
+        # Try using subprocess as a fallback for Windows performance issues
         try:
-            rev = branch or None
-            kwargs: Dict[str, Any] = {
-                "since": int(since.timestamp()),
-                "max_count": max_count,
-            }
+            import subprocess
+            import time
+            from tenets.utils.logger import get_logger
+            logger = get_logger(__name__)
+            
+            start = time.time()
+            
+            # Limit max_count for performance
+            max_count = min(max_count, 200)  # Hard limit for performance
+            
+            # Build git log command
+            cmd = ["git", "log", f"--since={since.isoformat()}", f"--max-count={max_count}", "--format=%H"]
             if author:
-                kwargs["author"] = author
-            commits = list(self.repo.iter_commits(rev, **kwargs))
+                cmd.append(f"--author={author}")
             if not include_merges:
-                commits = [c for c in commits if len(getattr(c, "parents", [])) <= 1]
-            return commits
-        except Exception:
+                cmd.append("--no-merges")
+            if branch:
+                cmd.append(branch)
+                
+            logger.debug(f"Running git command: {' '.join(cmd)}")
+            
+            # Run git command with timeout
+            try:
+                result = subprocess.run(
+                    cmd,
+                    cwd=str(self.root),
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    check=False
+                )
+                
+                if result.returncode != 0:
+                    logger.debug(f"Git command failed: {result.stderr}")
+                    return []
+                    
+                # Parse commit hashes
+                commit_hashes = [h.strip() for h in result.stdout.strip().split('\n') if h.strip()]
+                
+                # Convert to GitPython commit objects if possible
+                commits = []
+                for hash in commit_hashes[:max_count]:  # Extra safety limit
+                    try:
+                        commit = self.repo.commit(hash)
+                        commits.append(commit)
+                    except:
+                        pass  # Skip commits that can't be loaded
+                        
+                elapsed = time.time() - start
+                logger.debug(f"Fetched {len(commits)} commits in {elapsed:.2f}s")
+                
+                return commits
+                
+            except subprocess.TimeoutExpired:
+                logger.warning("Git command timed out after 5 seconds")
+                return []
+                
+        except Exception as e:
+            from tenets.utils.logger import get_logger
+            logger = get_logger(__name__)
+            logger.debug(f"Error fetching commits: {e}")
+            
+            # Fall back to empty list if subprocess fails
             return []
+
+    def get_commits(
+        self,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+        max_count: int = 1000,
+        author: Optional[str] = None,
+        branch: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Return commits between two dates.
+        
+        This method was missing and called by momentum.py.
+        
+        Args:
+            since: Start datetime (inclusive)
+            until: End datetime (exclusive) 
+            max_count: Maximum number of commits
+            author: Optional author filter
+            branch: Optional branch name
+            
+        Returns:
+            List of commit dictionaries with standard fields
+        """
+        if not since:
+            since = datetime(1970, 1, 1)
+        
+        # Use existing get_commits_since
+        commits = self.get_commits_since(since, max_count, author, branch)
+        
+        # Filter by until date if provided
+        if until:
+            filtered = []
+            for commit in commits:
+                commit_date = datetime.fromtimestamp(commit.committed_date)
+                if commit_date <= until:
+                    filtered.append(commit)
+            return filtered
+        
+        return commits
 
     # Existing APIs retained
     def recent_commits(
         self, limit: int = 50, paths: Optional[List[Path]] = None
     ) -> List[CommitInfo]:
+        self._ensure_repo()  # Ensure repo is initialized
         if not self.repo:
             return []
         commits = []
@@ -377,6 +489,7 @@ class GitAnalyzer:
 
     def blame(self, file_path: Path) -> List[Tuple[str, str]]:
         """Return list of (author, line) for a file using git blame."""
+        self._ensure_repo()  # Ensure repo is initialized
         if not self.repo:
             return []
         try:

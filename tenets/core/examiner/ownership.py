@@ -425,7 +425,7 @@ class OwnershipTracker:
 
         return report
 
-    def analyze_ownership(self, repo_path: Path, **kwargs) -> OwnershipReport:
+    def analyze_ownership(self, repo_path: Path, **kwargs: Any) -> OwnershipReport:
         """Analyze ownership for a repository path.
 
         This is an alias for the track() method to maintain backward compatibility.

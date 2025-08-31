@@ -54,12 +54,25 @@ class TerminalDisplay:
             subtitle: Optional subtitle
             style: Border style (single, double, heavy)
         """
-        # Border characters
-        borders = {
-            "single": {"h": "─", "v": "│", "tl": "┌", "tr": "┐", "bl": "└", "br": "┘"},
-            "double": {"h": "═", "v": "║", "tl": "╔", "tr": "╗", "bl": "╚", "br": "╝"},
-            "heavy": {"h": "━", "v": "┃", "tl": "┏", "tr": "┓", "bl": "┗", "br": "┛"},
-        }
+        # Border characters - check if terminal supports Unicode
+        import sys
+        import locale
+        encoding = sys.stdout.encoding or locale.getpreferredencoding()
+        supports_unicode = encoding and 'utf' in encoding.lower()
+        
+        if supports_unicode:
+            borders = {
+                "single": {"h": "─", "v": "│", "tl": "┌", "tr": "┐", "bl": "└", "br": "┘"},
+                "double": {"h": "═", "v": "║", "tl": "╔", "tr": "╗", "bl": "╚", "br": "╝"},
+                "heavy": {"h": "━", "v": "┃", "tl": "┏", "tr": "┓", "bl": "┗", "br": "┛"},
+            }
+        else:
+            # Fallback ASCII characters for cp1252 and similar
+            borders = {
+                "single": {"h": "-", "v": "|", "tl": "+", "tr": "+", "bl": "+", "br": "+"},
+                "double": {"h": "=", "v": "|", "tl": "+", "tr": "+", "bl": "+", "br": "+"},
+                "heavy": {"h": "=", "v": "|", "tl": "+", "tr": "+", "bl": "+", "br": "+"},
+            }
 
         border = borders.get(style, borders["single"])
         width = min(self.config.max_width, self.terminal_width)

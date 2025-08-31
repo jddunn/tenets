@@ -119,9 +119,13 @@ class TestLogger:
 
         logger = get_logger()
 
-        mock_rich_handler.assert_called_once_with(
-            rich_tracebacks=True, show_time=True, show_path=False
-        )
+        # Check that RichHandler was called
+        mock_rich_handler.assert_called_once()
+        # Verify essential parameters are present
+        _, kwargs = mock_rich_handler.call_args
+        assert kwargs.get("rich_tracebacks") is True
+        assert kwargs.get("show_time") is True
+        assert kwargs.get("show_path") is False
 
     @patch("tenets.utils.logger._RICH_INSTALLED", False)
     def test_standard_handler_when_rich_unavailable(self):

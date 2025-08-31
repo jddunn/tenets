@@ -1,7 +1,8 @@
 """Keyword extraction using multiple methods.
 
 This module provides comprehensive keyword extraction using:
-- YAKE (if available)
+- RAKE (Rapid Automatic Keyword Extraction) - primary method
+- YAKE (if available and Python < 3.13)
 - TF-IDF with code-aware tokenization
 - BM25 ranking
 - Simple frequency-based extraction
@@ -11,52 +12,273 @@ Consolidates all keyword extraction logic to avoid duplication.
 
 import math
 import re
+import sys
 from collections import Counter, defaultdict
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple, Union
 
 from tenets.utils.logger import get_logger
 
-# Try to import YAKE
+# Try to import RAKE - primary keyword extraction method
 try:
-    import yake
+    from rake_nltk import Rake
 
-    YAKE_AVAILABLE = True
+    RAKE_AVAILABLE = True
+except ImportError:
+    RAKE_AVAILABLE = False
+    Rake = None
+
+# Try to import YAKE - disable on Python 3.13+ due to compatibility issues
+try:
+    # YAKE 0.6.0 has a known issue with Python 3.13 causing infinite loops
+    # See: https://github.com/LIAAD/yake/issues
+    if sys.version_info[:2] >= (3, 13):
+        YAKE_AVAILABLE = False
+        yake = None
+    else:
+        import yake
+
+        YAKE_AVAILABLE = True
 except ImportError:
     YAKE_AVAILABLE = False
+    yake = None
+
+
+class SimpleRAKE:
+    """Simple RAKE-like keyword extraction without NLTK dependencies.
+    
+    Implements the core RAKE algorithm without requiring NLTK's punkt tokenizer.
+    Uses simple regex-based sentence splitting and word tokenization.
+    """
+    
+    def __init__(self, stopwords: Set[str] = None, max_length: int = 3):
+        """Initialize SimpleRAKE.
+        
+        Args:
+            stopwords: Set of stopwords to use
+            max_length: Maximum n-gram length
+        """
+        self.stopwords = stopwords or set()
+        self.max_length = max_length
+        self.keywords = []
+    
+    def extract_keywords_from_text(self, text: str):
+        """Extract keywords from text.
+        
+        Args:
+            text: Input text
+        """
+        # Simple sentence splitting (period, exclamation, question mark, newline)
+        sentences = re.split(r'[.!?\n]+', text.lower())
+        
+        # Extract candidate keywords from each sentence
+        candidates = []
+        for sentence in sentences:
+            # Remove non-word characters except spaces
+            sentence = re.sub(r'[^\w\s]', ' ', sentence)
+            
+            # Split by stopwords to get candidate phrases
+            words = sentence.split()
+            current_phrase = []
+            
+            for word in words:
+                if word and word not in self.stopwords:
+                    current_phrase.append(word)
+                elif current_phrase:
+                    # End of phrase, add if within max length
+                    if len(current_phrase) <= self.max_length:
+                        candidates.append(' '.join(current_phrase))
+                    current_phrase = []
+            
+            # Don't forget the last phrase
+            if current_phrase and len(current_phrase) <= self.max_length:
+                candidates.append(' '.join(current_phrase))
+        
+        # Calculate word scores (degree/frequency)
+        word_freq = Counter()
+        word_degree = Counter()
+        
+        for phrase in candidates:
+            words_in_phrase = phrase.split()
+            degree = len(words_in_phrase)
+            
+            for word in words_in_phrase:
+                word_freq[word] += 1
+                word_degree[word] += degree
+        
+        # Calculate word scores
+        word_scores = {}
+        for word in word_freq:
+            word_scores[word] = word_degree[word] / word_freq[word]
+        
+        # Calculate phrase scores
+        phrase_scores = {}
+        for phrase in candidates:
+            phrase_words = phrase.split()
+            phrase_scores[phrase] = sum(word_scores.get(w, 0) for w in phrase_words)
+        
+        # Sort phrases by score
+        self.keywords = sorted(phrase_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    def get_ranked_phrases_with_scores(self):
+        """Get ranked phrases with scores.
+        
+        Returns:
+            List of (score, phrase) tuples
+        """
+        # Return in RAKE format: (score, phrase)
+        return [(score, phrase) for phrase, score in self.keywords]
 
 
 class KeywordExtractor:
-    """Multi-method keyword extraction.
+    """Multi-method keyword extraction with automatic fallback.
 
-    Attempts to use the best available method:
-    1. YAKE (if installed)
-    2. TF-IDF
-    3. Frequency-based fallback
+    Provides robust keyword extraction using multiple algorithms with automatic
+    fallback based on availability and Python version compatibility. Prioritizes
+    fast, accurate methods while ensuring compatibility across Python versions.
+
+    Methods are attempted in order:
+        1. RAKE (Rapid Automatic Keyword Extraction) - Primary method, fast and
+           Python 3.13+ compatible
+        2. YAKE (Yet Another Keyword Extractor) - Secondary method, only for
+           Python < 3.13 due to compatibility issues
+        3. TF-IDF - Custom implementation, always available
+        4. Frequency-based - Final fallback, simple but effective
+
+    Attributes:
+        use_rake (bool): Whether RAKE extraction is enabled and available.
+        use_yake (bool): Whether YAKE extraction is enabled and available.
+        language (str): Language code for extraction (e.g., 'en' for English).
+        use_stopwords (bool): Whether to filter stopwords during extraction.
+        stopword_set (str): Which stopword set to use ('code' or 'prompt').
+        rake_extractor (Rake | None): RAKE extractor instance if available.
+        yake_extractor (yake.KeywordExtractor | None): YAKE instance if available.
+        tokenizer (TextTokenizer): Tokenizer for fallback extraction.
+        stopwords (Set[str] | None): Set of stopwords if filtering is enabled.
+
+    Example:
+        >>> extractor = KeywordExtractor()
+        >>> keywords = extractor.extract("implement OAuth2 authentication")
+        >>> print(keywords)
+        ['oauth2 authentication', 'implement', 'authentication']
+
+        >>> # Get keywords with scores
+        >>> keywords_with_scores = extractor.extract(
+        ...     "implement OAuth2 authentication",
+        ...     include_scores=True
+        ... )
+        >>> print(keywords_with_scores)
+        [('oauth2 authentication', 0.9), ('implement', 0.7), ...]
+
+    Note:
+        On Python 3.13+, YAKE is automatically disabled due to a known
+        infinite loop bug. RAKE is used as the primary extractor instead,
+        providing similar quality with better performance.
     """
 
     def __init__(
         self,
+        use_rake: bool = True,
         use_yake: bool = True,
         language: str = "en",
         use_stopwords: bool = True,
         stopword_set: str = "prompt",
     ):
-        """Initialize keyword extractor.
+        """Initialize keyword extractor with configurable extraction methods.
 
         Args:
-            use_yake: Try to use YAKE if available
-            language: Language for YAKE
-            use_stopwords: Filter stopwords
-            stopword_set: Which stopword set to use ('code', 'prompt')
+            use_rake (bool, optional): Enable RAKE extraction if available.
+                RAKE is fast and works well with technical text. Defaults to True.
+            use_yake (bool, optional): Enable YAKE extraction if available.
+                Automatically disabled on Python 3.13+ due to compatibility issues.
+                Defaults to True.
+            language (str, optional): Language code for extraction algorithms.
+                Currently supports 'en' (English). Other languages may work but
+                are not officially tested. Defaults to 'en'.
+            use_stopwords (bool, optional): Whether to filter common stopwords
+                during extraction. This can improve keyword quality but may miss
+                some contextual phrases. Defaults to True.
+            stopword_set (str, optional): Which stopword set to use.
+                Options are:
+                - 'prompt': Aggressive filtering for user prompts (200+ words)
+                - 'code': Minimal filtering for code analysis (30 words)
+                Defaults to 'prompt'.
+
+        Raises:
+            None: Gracefully handles missing dependencies and logs warnings.
+
+        Note:
+            The extractor automatically detects available libraries and Python
+            version to choose the best extraction method. If RAKE and YAKE are
+            unavailable, it falls back to TF-IDF and frequency-based extraction.
         """
         self.logger = get_logger(__name__)
+        self.use_rake = use_rake and RAKE_AVAILABLE
         self.use_yake = use_yake and YAKE_AVAILABLE
         self.language = language
         self.use_stopwords = use_stopwords
         self.stopword_set = stopword_set
 
-        # Initialize YAKE if available
-        if self.use_yake:
+        # Log info about extraction methods
+        if sys.version_info[:2] >= (3, 13):
+            if not self.use_rake and RAKE_AVAILABLE:
+                self.logger.info("RAKE keyword extraction available but disabled")
+            if use_yake and not YAKE_AVAILABLE:
+                self.logger.warning(
+                    "YAKE keyword extraction disabled on Python 3.13+ due to compatibility issues. "
+                    "Using RAKE as primary extraction method."
+                )
+
+        # Initialize RAKE if available (primary method)
+        if self.use_rake and Rake is not None:
+            # Always use our bundled stopwords to avoid NLTK data dependency issues
+            from pathlib import Path
+            
+            # Try to load bundled stopwords first
+            stopwords_path = Path(__file__).parent.parent.parent / "data" / "stopwords" / "minimal.txt"
+            
+            if stopwords_path.exists():
+                try:
+                    with open(stopwords_path, 'r', encoding='utf-8') as f:
+                        stopwords = set(line.strip().lower() for line in f 
+                                      if line.strip() and not line.startswith('#'))
+                    self.logger.debug(f"Loaded {len(stopwords)} stopwords from {stopwords_path}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to load stopwords file: {e}, using fallback")
+                    stopwords = None
+            else:
+                stopwords = None
+            
+            # Fallback to basic English stopwords if file not found
+            if not stopwords:
+                stopwords = {
+                    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+                    'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during',
+                    'before', 'after', 'above', 'below', 'between', 'under', 'again',
+                    'further', 'then', 'once', 'is', 'am', 'are', 'was', 'were', 'be',
+                    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+                    'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these',
+                    'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'what', 'which',
+                    'who', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more',
+                    'some', 'such', 'only', 'own', 'same', 'so', 'than', 'too', 'very'
+                }
+                self.logger.debug("Using built-in fallback stopwords")
+            
+            try:
+                # Initialize RAKE with our custom stopwords (avoiding NLTK data dependency)
+                # We'll create a simple RAKE-like extractor to avoid NLTK punkt dependency
+                self.rake_extractor = SimpleRAKE(
+                    stopwords=stopwords,
+                    max_length=3,  # Max n-gram size
+                )
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize RAKE: {e}")
+                self.rake_extractor = None
+                self.use_rake = False
+        else:
+            self.rake_extractor = None
+
+        # Initialize YAKE if available (secondary method for Python < 3.13)
+        if self.use_yake and yake is not None:
             self.yake_extractor = yake.KeywordExtractor(
                 lan=language,
                 n=3,  # Max n-gram size
@@ -84,20 +306,82 @@ class KeywordExtractor:
     def extract(
         self, text: str, max_keywords: int = 20, include_scores: bool = False
     ) -> Union[List[str], List[Tuple[str, float]]]:
-        """Extract keywords from text.
+        """Extract keywords from text using the best available method.
+
+        Attempts extraction methods in priority order (RAKE → YAKE → TF-IDF →
+        Frequency) until one succeeds. Each method returns normalized scores
+        between 0 and 1, with higher scores indicating more relevant keywords.
 
         Args:
-            text: Input text
-            max_keywords: Maximum keywords to extract
-            include_scores: Return (keyword, score) tuples
+            text (str): Input text to extract keywords from. Can be any length,
+                but very long texts may be truncated by some algorithms.
+            max_keywords (int, optional): Maximum number of keywords to return.
+                Keywords are sorted by relevance score. Defaults to 20.
+            include_scores (bool, optional): If True, return (keyword, score)
+                tuples. If False, return only keyword strings. Defaults to False.
 
         Returns:
-            List of keywords or (keyword, score) tuples
+            Union[List[str], List[Tuple[str, float]]]:
+                - If include_scores=False: List of keyword strings sorted by
+                  relevance (e.g., ['oauth2', 'authentication', 'implement'])
+                - If include_scores=True: List of (keyword, score) tuples where
+                  scores are normalized between 0 and 1 (e.g.,
+                  [('oauth2', 0.95), ('authentication', 0.87), ...])
+
+        Examples:
+            >>> extractor = KeywordExtractor()
+            >>> # Simple keyword extraction
+            >>> keywords = extractor.extract("Python web framework Django")
+            >>> print(keywords)
+            ['django', 'python web framework', 'web framework']
+
+            >>> # With scores for ranking
+            >>> scored = extractor.extract("Python web framework Django",
+            ...                           max_keywords=5, include_scores=True)
+            >>> for keyword, score in scored:
+            ...     print(f"{keyword}: {score:.2f}")
+            django: 0.95
+            python web framework: 0.87
+            web framework: 0.82
+
+        Note:
+            Empty input returns an empty list. All extraction methods handle
+            various text formats including code, documentation, and natural
+            language. Scores are normalized for consistency across methods.
         """
         if not text:
             return []
 
-        # Try YAKE first
+        # Try RAKE first (primary method, Python 3.13 compatible)
+        if self.use_rake and self.rake_extractor:
+            try:
+                # SimpleRAKE handles its own tokenization
+                self.rake_extractor.extract_keywords_from_text(text)
+                keywords_with_scores = self.rake_extractor.get_ranked_phrases_with_scores()
+
+                # RAKE returns (score, phrase) tuples, normalize scores
+                if keywords_with_scores:
+                    max_score = max(score for score, _ in keywords_with_scores)
+                    if max_score > 0:
+                        keywords = [
+                            (phrase, score / max_score)
+                            for score, phrase in keywords_with_scores[:max_keywords]
+                        ]
+                    else:
+                        keywords = [
+                            (phrase, 1.0) for _, phrase in keywords_with_scores[:max_keywords]
+                        ]
+                else:
+                    keywords = []
+
+                if include_scores:
+                    return keywords
+                return [kw for kw, _ in keywords]
+
+            except Exception as e:
+                self.logger.warning(f"RAKE extraction failed: {e}")
+
+        # Try YAKE second (if available and Python < 3.13)
         if self.use_yake and self.yake_extractor:
             try:
                 keywords = self.yake_extractor.extract_keywords(text)
@@ -117,15 +401,24 @@ class KeywordExtractor:
     def _extract_fallback(
         self, text: str, max_keywords: int, include_scores: bool
     ) -> Union[List[str], List[Tuple[str, float]]]:
-        """Fallback keyword extraction using frequency and patterns.
+        """Fallback keyword extraction using TF-IDF and frequency analysis.
+
+        Used when RAKE and YAKE are unavailable. Combines unigram frequency
+        with n-gram extraction to identify important terms and phrases.
 
         Args:
-            text: Input text
-            max_keywords: Maximum keywords
-            include_scores: Include scores
+            text (str): Input text to extract keywords from.
+            max_keywords (int): Maximum number of keywords to return.
+            include_scores (bool): Whether to include normalized scores.
 
         Returns:
-            Keywords with optional scores
+            Union[List[str], List[Tuple[str, float]]]: Keywords with optional
+                scores. Scores are normalized between 0 and 1.
+
+        Note:
+            This method tokenizes text, extracts unigrams, bigrams, and trigrams,
+            then scores them based on component frequency. Higher frequency
+            components result in higher scores for n-grams containing them.
         """
         # Tokenize
         tokens = self.tokenizer.tokenize(text)
@@ -371,13 +664,9 @@ class TFIDFCalculator:
         else:
             return 0.0
 
-        # Compute dot product (cosine similarity)
-        similarity = 0.0
-        for term, query_score in query_vector.items():
-            if term in doc_vector:
-                similarity += query_score * doc_vector[term]
-
-        return max(0.0, min(1.0, similarity))
+        # Use sparse cosine similarity from similarity module
+        from .similarity import sparse_cosine_similarity
+        return sparse_cosine_similarity(query_vector, doc_vector)
 
     def build_corpus(self, documents: List[Tuple[str, str]]) -> None:
         """Build TF-IDF corpus from multiple documents.
@@ -391,8 +680,7 @@ class TFIDFCalculator:
             self.add_document(doc_id, text)
 
         self.logger.info(
-            f"Corpus built: {self.document_count} documents, "
-            f"{len(self.vocabulary)} unique terms"
+            f"Corpus built: {self.document_count} documents, {len(self.vocabulary)} unique terms"
         )
 
     def get_top_terms(self, doc_id: str, n: int = 10) -> List[Tuple[str, float]]:

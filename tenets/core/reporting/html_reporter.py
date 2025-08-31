@@ -366,7 +366,7 @@ class HTMLTemplate:
             transform: translateY(-5px);
             box-shadow: 0 5px 20px var(--shadow);
         }
-        
+
         /* Tooltip styles */
         .metric-card[data-tooltip]:hover::after {
             content: attr(data-tooltip);
@@ -386,7 +386,7 @@ class HTMLTemplate:
             text-align: left;
             line-height: 1.4;
         }
-        
+
         .metric-card[data-tooltip]:hover::before {
             content: "";
             position: absolute;
@@ -800,10 +800,19 @@ class HTMLReporter:
             logo_data = self._encode_image(report_config.custom_logo)
             logo_html = f'<img src="data:image/png;base64,{logo_data}" alt="Logo" style="height: 50px; margin-bottom: 20px;">'
 
+        # Add examined path if available
+        path_html = ""
+        if metadata.get("examined_path"):
+            path_html = f"""
+        <div class="examined-path" style="margin: 10px 0; font-size: 1.1em; color: var(--primary-color);">
+            <strong>Examined Path:</strong> {metadata.get("examined_path")}
+        </div>"""
+        
         return f"""
     <header class="header">
         {logo_html}
         <h1>{report_config.title}</h1>
+        {path_html}
         <div class="meta">
             Generated: {metadata.get("generated_at", "Unknown")} |
             Files: {summary.get("total_files", 0)} |

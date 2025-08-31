@@ -395,8 +395,8 @@ class Summarizer:
                     "context_aware": True,
                 },
             )
-        elif preserve_structure and file.language:
-            # Intelligent code summarization
+        elif preserve_structure and file.language and not is_documentation:
+            # Intelligent code summarization (skip for documentation files)
             summary = self._summarize_code(file, target_ratio)
 
             return SummarizationResult(
@@ -416,7 +416,8 @@ class Summarizer:
     def _summarize_code(self, file: FileAnalysis, target_ratio: float) -> str:
         """Intelligently summarize code files.
 
-        Preserves structure (imports, signatures) while compressing
+        Preserves structure (imports, class definitions, method signatures,
+        function signatures with arguments and return types) while compressing
         implementations and removing verbose comments.
 
         Args:
@@ -424,65 +425,284 @@ class Summarizer:
             target_ratio: Target compression ratio
 
         Returns:
-            Summarized code
+            Summarized code with enhanced structure information
         """
         lines = file.content.split("\n")
         summary_lines = []
 
-        # Always preserve imports
+        # Handle imports based on configuration
+        import_lines = []
         for line in lines[:50]:  # Check first 50 lines for imports
             if self._is_import_line(line, file.language):
-                summary_lines.append(line)
+                import_lines.append(line)
+        
+        # Check if we should summarize imports
+        summarize_imports = getattr(self.config.summarizer, "summarize_imports", True)
+        if summarize_imports and len(import_lines) > 5:  # Only summarize if more than 5 imports
+            import_summary = self._summarize_imports(import_lines, file.language)
+            summary_lines.append(import_summary)
+        else:
+            # Preserve imports as-is
+            summary_lines.extend(import_lines)
 
         # Add separator if we have imports
         if summary_lines:
             summary_lines.append("")
 
-        # Preserve class and function signatures
+        # Get docstring weight configuration
+        docstring_weight = getattr(self.config.summarizer, "docstring_weight", 0.5)
+        include_all_signatures = getattr(self.config.summarizer, "include_all_signatures", True)
+        
+        # Determine limits based on configuration
+        max_classes = None if include_all_signatures else 10  # Show more classes by default
+        max_functions = None if include_all_signatures else 20  # Show more functions by default
+        
+        # Preserve class and function signatures with enhanced details
         if file.structure:
-            # Add class signatures
-            for cls in file.structure.classes[:5]:  # Limit to top 5 classes
+            # Add class signatures with methods
+            # Handle both list and Mock objects for classes
+            if hasattr(file.structure.classes, '__iter__') and not isinstance(file.structure.classes, str):
+                all_classes = list(file.structure.classes)
+                classes_to_include = all_classes[:max_classes] if max_classes else all_classes
+            else:
+                classes_to_include = []
+            for cls in classes_to_include:
+                # Include class definition
                 if hasattr(cls, "definition"):
                     summary_lines.append(cls.definition)
-                    summary_lines.append("    # ... implementation ...")
-                    summary_lines.append("")
+                elif hasattr(cls, "name"):
+                    # Fallback: construct class definition
+                    base_classes = getattr(cls, "base_classes", [])
+                    if base_classes:
+                        summary_lines.append(f"class {cls.name}({', '.join(base_classes)}):")  
+                    else:
+                        summary_lines.append(f"class {cls.name}:")
+                
+                # Include class docstring based on weight
+                doc = getattr(cls, "docstring", None)
+                if isinstance(doc, str) and doc and docstring_weight > 0:
+                    # Include docstring based on weight (1.0 = always, 0.5 = sometimes, 0 = never)
+                    if docstring_weight >= 1.0 or (docstring_weight > 0 and len(doc) < 200):
+                        doc_lines = doc.split("\n")
+                        if len(doc_lines) <= 3 or docstring_weight >= 0.8:
+                            # Include full docstring for short ones or high weight
+                            summary_lines.append(f'    """{doc}"""')
+                        else:
+                            # Include first line only for longer docstrings with lower weight
+                            summary_lines.append(f'    """{doc_lines[0]}..."""')
+                
+                # Include class methods with signatures
+                methods = getattr(cls, "methods", [])
+                if methods:
+                    # Handle both list and Mock objects
+                    if hasattr(methods, '__iter__') and not isinstance(methods, str):
+                        methods_to_process = list(methods)[:10]  # Limit methods per class
+                    else:
+                        methods_to_process = []
+                    
+                    for method in methods_to_process:
+                        method_name = getattr(method, "name", "")
+                        method_args = getattr(method, "arguments", [])
+                        method_return = getattr(method, "return_type", None)
+                        
+                        # Build method signature
+                        if method_name:
+                            args_str = ", ".join(method_args) if method_args else ""
+                            sig = f"    def {method_name}({args_str})"
+                            if method_return:
+                                sig += f" -> {method_return}"
+                            sig += ": ..."
+                            summary_lines.append(sig)
+                        elif hasattr(method, "signature"):
+                            summary_lines.append(f"    {method.signature}: ...")
+                    
+                summary_lines.append("    # ... additional methods ...")
+                summary_lines.append("")
 
-            # Add function signatures
-            for func in file.structure.functions[:10]:  # Limit to top 10 functions
-                if hasattr(func, "signature"):
+            # Add function signatures with enhanced details
+            # Handle both list and Mock objects for functions
+            if hasattr(file.structure.functions, '__iter__') and not isinstance(file.structure.functions, str):
+                all_functions = list(file.structure.functions)
+                functions_to_include = all_functions[:max_functions] if max_functions else all_functions
+            else:
+                functions_to_include = []
+            for func in functions_to_include:
+                # Build enhanced function signature
+                func_name = getattr(func, "name", "")
+                func_args = getattr(func, "arguments", [])
+                func_return = getattr(func, "return_type", None)
+                
+                if func_name:
+                    # Build detailed signature
+                    # Handle different types of func_args
+                    if func_args:
+                        if isinstance(func_args, (list, tuple)):
+                            args_str = ", ".join(func_args)
+                        elif isinstance(func_args, str):
+                            args_str = func_args
+                        else:
+                            args_str = ""
+                    else:
+                        args_str = ""
+                    sig = f"def {func_name}({args_str})"
+                    if func_return:
+                        sig += f" -> {func_return}"
+                    sig += ":"
+                    summary_lines.append(sig)
+                elif hasattr(func, "signature"):
                     summary_lines.append(func.signature)
-                    doc = getattr(func, "docstring", None)
-                    if isinstance(doc, str) and doc:
-                        # Include first line of docstring
+                else:
+                    continue
+                    
+                # Include docstring based on weight
+                doc = getattr(func, "docstring", None)
+                if isinstance(doc, str) and doc and docstring_weight > 0:
+                    if docstring_weight >= 1.0:
+                        # Always include full docstring
+                        summary_lines.append(f'    """{doc}"""')
+                    elif docstring_weight >= 0.7:
+                        # Include first paragraph or up to 3 lines
+                        doc_lines = doc.split("\n")
+                        if len(doc_lines) <= 3:
+                            summary_lines.append(f'    """{doc}"""')
+                        else:
+                            first_para = doc.split("\n\n")[0]
+                            summary_lines.append(f'    """{first_para}..."""')
+                    elif docstring_weight > 0:
+                        # Include only first line
                         doc_first = doc.split("\n")[0]
-                        summary_lines.append(f'    """{doc_first}"""')
-                    summary_lines.append("    # ... implementation ...")
-                    summary_lines.append("")
+                        if doc_first:
+                            summary_lines.append(f'    """{doc_first}"""')
+                            
+                summary_lines.append("    # ... implementation ...")
+                summary_lines.append("")
 
-        # If structure is missing, fall back to AST/regex extraction to include signatures
-        if not file.structure:
+        # If structure is missing, fall back to AST/regex extraction with enhanced parsing
+        if not file.structure or len(summary_lines) < 10:  # Also use if we got too little from structure
             try:
-                # Python-specific AST parse for function/class signatures
+                # Python-specific AST parse for enhanced function/class signatures
                 if file.language == "python":
                     module = ast.parse(file.content)
+                    
+                    # Get docstring weight for fallback extraction
+                    docstring_weight = getattr(self.config.summarizer, "docstring_weight", 0.5)
+                    
                     for node in module.body:
                         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                            args = [a.arg for a in node.args.args]
-                            summary_lines.append(f"def {node.name}({', '.join(args)}): ...")
+                            # Extract detailed function signature
+                            args = []
+                            for arg in node.args.args:
+                                arg_str = arg.arg
+                                # Add type annotation if available
+                                if arg.annotation:
+                                    try:
+                                        arg_str += f": {ast.unparse(arg.annotation)}"
+                                    except:
+                                        pass
+                                args.append(arg_str)
+                            
+                            # Add return type if available
+                            sig = f"def {node.name}({', '.join(args)})"
+                            if node.returns:
+                                try:
+                                    sig += f" -> {ast.unparse(node.returns)}"
+                                except:
+                                    pass
+                            sig += ": ..."
+                            summary_lines.append(sig)
+                            
+                            # Include docstring based on weight
+                            docstring = ast.get_docstring(node)
+                            if docstring and docstring_weight > 0.3:
+                                doc_first = docstring.split("\n")[0]
+                                if doc_first:
+                                    summary_lines.append(f'    """{doc_first}"""')
+                                    
                         elif isinstance(node, ast.ClassDef):
-                            summary_lines.append(f"class {node.name}:")
-                            summary_lines.append("    ...")
+                            # Extract class with base classes
+                            bases = []
+                            for base in node.bases:
+                                try:
+                                    bases.append(ast.unparse(base))
+                                except:
+                                    if hasattr(base, "id"):
+                                        bases.append(base.id)
+                            
+                            if bases:
+                                summary_lines.append(f"class {node.name}({', '.join(bases)}):")
+                            else:
+                                summary_lines.append(f"class {node.name}:")
+                            
+                            # Include class docstring if weight is high
+                            docstring = ast.get_docstring(node)  
+                            if docstring and docstring_weight >= 0.5:
+                                doc_first = docstring.split("\n")[0]
+                                if doc_first:
+                                    summary_lines.append(f'    """{doc_first}"""')
+                            
+                            # Extract method signatures from class
+                            method_count = 0
+                            for item in node.body:
+                                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and method_count < 5:
+                                    args = [a.arg for a in item.args.args]
+                                    method_sig = f"    def {item.name}({', '.join(args)})"
+                                    if item.returns:
+                                        try:
+                                            method_sig += f" -> {ast.unparse(item.returns)}"
+                                        except:
+                                            pass
+                                    method_sig += ": ..."
+                                    summary_lines.append(method_sig)
+                                    method_count += 1
+                            
+                            if method_count > 0:
+                                summary_lines.append("    # ... additional methods ...")
+                            summary_lines.append("")
+                            
                     if summary_lines:
                         summary_lines.append("")
                 else:
-                    # Generic regex fallback for other languages
+                    # Enhanced regex patterns for other languages
                     import re
 
                     lines = file.content.splitlines()
-                    pattern_defs = re.compile(r"\b(class|def|function)\b")
-                    for line in lines[:200]:
-                        if pattern_defs.search(line):
-                            summary_lines.append(line.strip())
+                    
+                    # Language-specific patterns
+                    if file.language in ["javascript", "typescript"]:
+                        # Match class, function, arrow functions, methods
+                        patterns = [
+                            re.compile(r"^\s*(export\s+)?(class|interface)\s+(\w+).*$"),
+                            re.compile(r"^\s*(export\s+)?(async\s+)?function\s+(\w+)\s*\([^)]*\).*$"),
+                            re.compile(r"^\s*(export\s+)?const\s+(\w+)\s*=\s*(async\s+)?\([^)]*\)\s*=>.*$"),
+                            re.compile(r"^\s*(\w+)\s*\([^)]*\)\s*\{.*$"),  # Method in class
+                        ]
+                    elif file.language == "java":
+                        patterns = [
+                            re.compile(r"^\s*(public|private|protected)\s+(class|interface)\s+(\w+).*$"),
+                            re.compile(r"^\s*(public|private|protected)\s+.*\s+(\w+)\s*\([^)]*\).*$"),
+                        ]
+                    elif file.language in ["c", "cpp"]:
+                        patterns = [
+                            re.compile(r"^\s*(class|struct)\s+(\w+).*$"),
+                            re.compile(r"^\s*\w+\s+\w+\s*\([^)]*\).*$"),
+                        ]
+                    else:
+                        # Generic patterns
+                        patterns = [
+                            re.compile(r"\b(class|interface|struct)\s+(\w+)"),
+                            re.compile(r"\b(def|function|func)\s+(\w+)\s*\([^)]*\)"),
+                        ]
+                    
+                    for i, line in enumerate(lines[:300]):  # Check more lines
+                        for pattern in patterns:
+                            if pattern.search(line):
+                                # Include the signature line
+                                summary_lines.append(line.strip())
+                                # Look for return type on next line (for multi-line signatures)
+                                if i + 1 < len(lines) and "->" in lines[i + 1]:
+                                    summary_lines.append(lines[i + 1].strip())
+                                break
+                                
                     if summary_lines:
                         summary_lines.append("")
             except Exception:
@@ -533,6 +753,121 @@ class Summarizer:
         else:
             # Generic patterns
             return any(line.startswith(p) for p in ["import", "include", "require", "use"])
+    
+    def _summarize_imports(self, import_lines: List[str], language: str) -> str:
+        """Summarize import statements into a concise description.
+        
+        Args:
+            import_lines: List of import statement lines
+            language: Programming language
+            
+        Returns:
+            Human-readable summary of imports
+        """
+        import re
+        
+        if not import_lines:
+            return ""
+        
+        # Parse imports to extract library names
+        libraries = set()
+        local_imports = 0
+        
+        for line in import_lines:
+            line = line.strip()
+            
+            if language == "python":
+                if line.startswith("from "):
+                    # Extract module name from "from X import Y"
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        module = parts[1].split('.')[0]
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            libraries.add(module)
+                elif line.startswith("import "):
+                    # Extract module name from "import X"
+                    parts = line.replace("import ", "").split(',')
+                    for part in parts:
+                        module = part.strip().split('.')[0].split(' as ')[0]
+                        libraries.add(module)
+                        
+            elif language in ["javascript", "typescript"]:
+                if "from " in line:
+                    # Extract module from import statements
+                    match = re.search(r'from\s+["\']([^"\']+)["\']', line)
+                    if match:
+                        module = match.group(1)
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            # Extract package name (first part before /)
+                            package = module.split('/')[0].replace('@', '')
+                            libraries.add(package)
+                elif "require(" in line:
+                    match = re.search(r'require\(["\']([^"\']+)["\']\)', line)
+                    if match:
+                        module = match.group(1)
+                        if module.startswith('.'):
+                            local_imports += 1
+                        else:
+                            libraries.add(module.split('/')[0])
+                            
+            elif language == "java":
+                # Extract package from import statement
+                parts = line.replace("import ", "").replace(";", "").split('.')
+                if len(parts) >= 2:
+                    # First two parts usually form the main package
+                    libraries.add('.'.join(parts[:2]))
+                    
+            elif language in ["c", "cpp"]:
+                # Extract header file
+                match = re.search(r'#include\s*[<"]([^>"]+)[>"]', line)
+                if match:
+                    header = match.group(1)
+                    if '/' in header:
+                        libraries.add(header.split('/')[0])
+                    else:
+                        libraries.add(header.replace('.h', '').replace('.hpp', ''))
+                        
+            elif language == "rust":
+                # Extract crate name
+                parts = line.replace("use ", "").replace(";", "").split("::")
+                if parts[0] not in ["self", "super", "crate"]:
+                    libraries.add(parts[0])
+                elif parts[0] == "crate" and len(parts) > 1:
+                    local_imports += 1
+                    
+            elif language == "go":
+                # Extract package name
+                if '"' in line:
+                    match = re.search(r'"([^"]+)"', line)
+                    if match:
+                        pkg = match.group(1)
+                        if not pkg.startswith('.'):
+                            # Extract main package name
+                            libraries.add(pkg.split('/')[0])
+        
+        # Build summary
+        total_imports = len(import_lines)
+        unique_libs = sorted(libraries)
+        
+        summary_parts = [f"# Imports: {total_imports} total"]
+        
+        if unique_libs:
+            if len(unique_libs) <= 8:
+                summary_parts.append(f"# Dependencies: {', '.join(unique_libs)}")
+            else:
+                # Show first 6 libraries and count of others
+                shown_libs = unique_libs[:6]
+                remaining = len(unique_libs) - 6
+                summary_parts.append(f"# Dependencies: {', '.join(shown_libs)}, and {remaining} others")
+        
+        if local_imports > 0:
+            summary_parts.append(f"# Local imports: {local_imports}")
+            
+        return '\n'.join(summary_parts)
 
     def _extract_comments(self, code: str, language: str) -> str:
         """Extract comments and docstrings from code.
@@ -987,16 +1322,70 @@ class Summarizer:
                 summary_parts.append("")
                 total_length += section_length
             else:
-                # Compress the section content to fit
-                compressed_content = self.summarize(
-                    section["content"], mode=SummarizationMode.EXTRACTIVE, target_ratio=0.5
-                ).summary
-
-                compressed_section = section.copy()
-                compressed_section["content"] = compressed_content
-                section_summary = self._format_relevant_section(
-                    compressed_section, preserve_examples
-                )
+                # For configuration sections, truncate rather than compress
+                section_type = section.get("section_type", "")
+                if section_type in ["yaml_key", "json_key", "ini_section", "toml_section"]:
+                    # Truncate content to fit
+                    truncated_section = section.copy()
+                    content_lines = section["content"].split("\n")
+                    # Keep first N lines that fit
+                    max_lines = min(10, len(content_lines))
+                    truncated_section["content"] = "\n".join(content_lines[:max_lines])
+                    if len(content_lines) > max_lines:
+                        truncated_section["content"] += "\n# ... (truncated)"
+                    section_summary = self._format_relevant_section(
+                        truncated_section, preserve_examples
+                    )
+                else:
+                    # Compress the section content to fit while preserving code examples
+                    compressed_section = section.copy()
+                    
+                    # Extract code examples before compression
+                    code_examples = section.get("code_examples", [])
+                    
+                    if code_examples and preserve_examples:
+                        # If we have code examples to preserve, compress the text around them
+                        content_lines = section["content"].split("\n")
+                        preserved_lines = []
+                        in_code_block = False
+                        code_block_lines = []
+                        
+                        for line in content_lines:
+                            # Check if we're entering or exiting a code block
+                            if line.strip().startswith("```"):
+                                if not in_code_block:
+                                    in_code_block = True
+                                    code_block_lines = [line]
+                                else:
+                                    code_block_lines.append(line)
+                                    preserved_lines.extend(code_block_lines)
+                                    in_code_block = False
+                                    code_block_lines = []
+                            elif in_code_block:
+                                code_block_lines.append(line)
+                            else:
+                                # For non-code lines, only keep the most important ones
+                                if any(kw.lower() in line.lower() for kw in prompt_keywords):
+                                    preserved_lines.append(line)
+                                elif line.strip() and len(preserved_lines) < 5:  # Keep first few lines
+                                    preserved_lines.append(line)
+                        
+                        # If still in a code block at the end, preserve it
+                        if in_code_block and code_block_lines:
+                            preserved_lines.extend(code_block_lines)
+                            preserved_lines.append("```")  # Close the code block
+                        
+                        compressed_section["content"] = "\n".join(preserved_lines)
+                    else:
+                        # No code examples to preserve, use regular compression
+                        compressed_content = self.summarize(
+                            section["content"], mode=SummarizationMode.EXTRACTIVE, target_ratio=0.5
+                        ).summary
+                        compressed_section["content"] = compressed_content
+                    
+                    section_summary = self._format_relevant_section(
+                        compressed_section, preserve_examples
+                    )
                 summary_parts.append(section_summary)
                 summary_parts.append("")
                 total_length += len(section_summary)
@@ -1054,23 +1443,38 @@ class Summarizer:
 
         # Process section content
         content = section.get("content", "")
-
-        # Extract and highlight code examples if preserve_examples is True
-        if preserve_examples:
-            code_examples = section.get("code_examples", [])
-            if code_examples:
-                # Replace code blocks with highlighted versions
-                for example in code_examples:
-                    if example["type"] == "code_block":
-                        lang = example.get("language", "")
-                        code = example.get("code", "")
-                        # Ensure code blocks are properly highlighted
-                        highlighted = f"```{lang}\n{code}\n```"
-                        # Find and replace in content (this is a simplified approach)
-                        content = content.replace(example.get("raw_match", ""), highlighted)
-
-        # Add the content
-        parts.append(content.strip())
+        
+        # For configuration sections, preserve the actual configuration syntax
+        section_type = section.get("section_type", "")
+        if section_type in ["yaml_key", "json_key", "ini_section", "toml_section"]:
+            # Show a snippet of the actual configuration
+            content_lines = content.split("\n")
+            if len(content_lines) > 10:
+                # Show first 8 lines and indicate truncation
+                snippet = "\n".join(content_lines[:8])
+                parts.append(f"```yaml\n{snippet}\n# ... (truncated)\n```")
+            else:
+                parts.append(f"```yaml\n{content.strip()}\n```")
+        else:
+            # Extract and highlight code examples if preserve_examples is True
+            if preserve_examples:
+                code_examples = section.get("code_examples", [])
+                if code_examples:
+                    # Replace code blocks with highlighted versions
+                    for example in code_examples:
+                        if example["type"] == "code_block":
+                            lang = example.get("language", "")
+                            code = example.get("code", "")
+                            raw_match = example.get("raw_match", "")
+                            # Only replace if we have a valid raw_match
+                            if raw_match:
+                                # Ensure code blocks are properly highlighted
+                                highlighted = f"```{lang}\n{code}\n```"
+                                # Find and replace in content (this is a simplified approach)
+                                content = content.replace(raw_match, highlighted)
+            
+            # Add the content
+            parts.append(content.strip())
 
         # Add extracted references if significant
         api_refs = section.get("api_references", [])

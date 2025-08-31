@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from tenets.config import TenetsConfig
-from tenets.core.git import GitAnalyzer
+from tenets.core.git.analyzer import GitAnalyzer  # Fix circular import
 from tenets.utils.logger import get_logger
 
 
@@ -1108,7 +1108,7 @@ class GitStatsAnalyzer:
 
 
 def analyze_git_stats(
-    repo_path: Path, config: Optional[TenetsConfig] = None, **kwargs
+    repo_path: Path, config: Optional[TenetsConfig] = None, **kwargs: Any
 ) -> RepositoryStats:
     """Convenience function to analyze git statistics.
 

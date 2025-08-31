@@ -5,7 +5,7 @@ cosine similarity and semantic similarity using embeddings.
 """
 
 import math
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 try:  # Prefer numpy when available
     import numpy as np  # type: ignore
@@ -15,7 +15,7 @@ except Exception:  # Fallback minimal numpy-like utility
         @staticmethod
         def norm(v):
             # Accept list/tuple
-            return math.sqrt(sum((float(x) ** 2 for x in v)))
+            return math.sqrt(sum(float(x) ** 2 for x in v))
 
     class _NP:
         ndarray = list  # best-effort marker
@@ -67,13 +67,17 @@ def cosine_similarity(vec1, vec2) -> float:
     """Compute cosine similarity between two vectors.
 
     Args:
-        vec1: First vector
-        vec2: Second vector
+        vec1: First vector (can be list, array, or dict for sparse vectors)
+        vec2: Second vector (can be list, array, or dict for sparse vectors)
 
     Returns:
         Cosine similarity (-1 to 1)
     """
-    # Handle different input types
+    # Check if inputs are sparse vectors (dicts)
+    if isinstance(vec1, dict) and isinstance(vec2, dict):
+        return sparse_cosine_similarity(vec1, vec2)
+    
+    # Handle different input types for dense vectors
     vec1 = np.asarray(vec1).flatten()
     vec2 = np.asarray(vec2).flatten()
 
@@ -93,6 +97,35 @@ def cosine_similarity(vec1, vec2) -> float:
 
     # Clamp to [-1, 1] to handle floating point errors
     return float(np.clip(similarity, -1.0, 1.0))
+
+
+def sparse_cosine_similarity(vec1: dict, vec2: dict) -> float:
+    """Compute cosine similarity between two sparse vectors.
+    
+    Sparse vectors are represented as dictionaries mapping indices/keys to values.
+    This is efficient for high-dimensional vectors with many zero values.
+    
+    Args:
+        vec1: First sparse vector as {key: value} dict
+        vec2: Second sparse vector as {key: value} dict
+    
+    Returns:
+        Cosine similarity (-1 to 1)
+    """
+    # Compute dot product (only for common keys)
+    dot_product = sum(vec1.get(key, 0) * vec2.get(key, 0) for key in set(vec1) | set(vec2))
+    
+    # Compute norms
+    norm1 = math.sqrt(sum(v**2 for v in vec1.values()))
+    norm2 = math.sqrt(sum(v**2 for v in vec2.values()))
+    
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+    
+    similarity = dot_product / (norm1 * norm2)
+    
+    # Clamp to [-1, 1] to handle floating point errors
+    return max(-1.0, min(1.0, similarity))
 
 
 def euclidean_distance(vec1, vec2) -> float:
@@ -136,7 +169,7 @@ def manhattan_distance(vec1, vec2) -> float:
 class SemanticSimilarity:
     """Compute semantic similarity using embeddings."""
 
-    def __init__(self, model: Optional["EmbeddingModel"] = None, cache_embeddings: bool = True):
+    def __init__(self, model: Optional[object] = None, cache_embeddings: bool = True):
         """Initialize semantic similarity.
 
         Args:
@@ -147,9 +180,6 @@ class SemanticSimilarity:
 
         if model is None:
             # Use module-level factory (patchable in tests)
-
-            from .embeddings import create_embedding_model
-
             self.model = create_embedding_model()
         else:
             self.model = model
@@ -205,6 +235,7 @@ class SemanticSimilarity:
 
         # Get query embedding
         query_emb = self._get_embedding(query)
+        query_emb = np.asarray(query_emb)
         if query_emb.ndim > 1:
             query_emb = query_emb[0]
 
@@ -219,15 +250,11 @@ class SemanticSimilarity:
         elif not isinstance(doc_embeddings, (list, tuple)):
             doc_embeddings = [np.asarray(doc_embeddings)]
 
-        # Get document embeddings (batch encode for efficiency)
-        doc_embeddings = self.model.encode(documents)
-
         # Compute similarities
         similarities = []
         for i, doc_emb in enumerate(doc_embeddings):
             # Ensure ndarray-like
             doc_emb = np.asarray(doc_emb)
-
             if metric == "cosine":
                 sim = cosine_similarity(query_emb, doc_emb)
             elif metric == "euclidean":
@@ -266,7 +293,7 @@ class SemanticSimilarity:
         similarities = self.compute_batch(query, documents, metric)
         return [(i, sim) for i, sim in similarities if sim >= threshold]
 
-    def _get_embedding(self, text: str) -> np.ndarray:
+    def _get_embedding(self, text: str):
         """Get embedding for text with caching.
 
         Args:

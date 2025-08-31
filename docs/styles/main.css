@@ -362,10 +362,8 @@
 
 /* Navigation tabs */
 .md-tabs {
-  position: fixed;
-  top: 3.5rem;
-  right: 0;
-  left: 0;
+  /* Let header.css handle the positioning */
+  position: relative;
   z-index: 3;
   background-color: var(--md-primary-fg-color);
   box-shadow: var(--md-shadow-z1);

@@ -1,10 +1,8 @@
 """Tests for embedding cache."""
 
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import numpy as np
-import pytest
 
 from tenets.core.nlp.cache import EmbeddingCache
 

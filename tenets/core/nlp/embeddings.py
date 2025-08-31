@@ -4,22 +4,26 @@ This module provides local embedding generation using sentence transformers.
 No external API calls are made - everything runs locally.
 """
 
-import hashlib
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 
 from tenets.utils.logger import get_logger
 
-# Try to import sentence transformers
-try:
-    from sentence_transformers import SentenceTransformer
+# Lazy load check for sentence transformers
+def _check_sentence_transformers():
+    """Check if sentence transformers is available without importing."""
+    try:
+        import importlib.util
+        spec = importlib.util.find_spec("sentence_transformers")
+        return spec is not None
+    except (ImportError, AttributeError):
+        return False
 
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
-    SentenceTransformer = None
+# Check availability but don't import yet
+SENTENCE_TRANSFORMERS_AVAILABLE = _check_sentence_transformers()
+SentenceTransformer = None  # Will be imported lazily when needed
 
 
 class EmbeddingModel:
@@ -85,6 +89,11 @@ class LocalEmbeddings(EmbeddingModel):
             )
 
         try:
+            # Lazy import SentenceTransformer when actually needed
+            global SentenceTransformer
+            if SentenceTransformer is None:
+                from sentence_transformers import SentenceTransformer
+            
             # Determine device
             if device:
                 self.device = device
@@ -102,7 +111,7 @@ class LocalEmbeddings(EmbeddingModel):
             self.embedding_dim = self.model.get_sentence_embedding_dimension()
 
             self.logger.info(
-                f"Loaded {model_name} on {self.device}, " f"embedding dim: {self.embedding_dim}"
+                f"Loaded {model_name} on {self.device}, embedding dim: {self.embedding_dim}"
             )
 
         except Exception as e:
@@ -163,7 +172,7 @@ class LocalEmbeddings(EmbeddingModel):
             Mean pooled embedding for the file
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
         except Exception as e:
             self.logger.warning(f"Failed to read {file_path}: {e}")

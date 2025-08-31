@@ -677,26 +677,25 @@ class HybridIntentDetector:
                     )
                     if (chosen.confidence - cand.confidence) <= threshold:
                         chosen = cand
-        else:
-            # If nothing met the threshold but we have signals, pick the best non-'understand'
-            if combined_intents:
-                non_understand = [i for i in combined_intents if i.type != "understand"]
-                pool = non_understand or combined_intents
-                pool.sort(key=lambda x: x.confidence, reverse=True)
-                # If integrate and implement are close, bias implement
-                top = pool[0]
-                if len(pool) > 1:
-                    second = pool[1]
-                    if (
-                        top.type == "integrate"
-                        and second.type == "implement"
-                        and (top.confidence - second.confidence <= 0.05)
-                    ):
-                        chosen = second
-                    else:
-                        chosen = top
+        # If nothing met the threshold but we have signals, pick the best non-'understand'
+        elif combined_intents:
+            non_understand = [i for i in combined_intents if i.type != "understand"]
+            pool = non_understand or combined_intents
+            pool.sort(key=lambda x: x.confidence, reverse=True)
+            # If integrate and implement are close, bias implement
+            top = pool[0]
+            if len(pool) > 1:
+                second = pool[1]
+                if (
+                    top.type == "integrate"
+                    and second.type == "implement"
+                    and (top.confidence - second.confidence <= 0.05)
+                ):
+                    chosen = second
                 else:
                     chosen = top
+            else:
+                chosen = top
 
         if chosen:
             if not chosen.keywords:

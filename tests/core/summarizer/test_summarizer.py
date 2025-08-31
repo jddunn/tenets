@@ -1,8 +1,6 @@
 """Tests for the summarizer module with NLP integration."""
 
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -66,10 +64,10 @@ def process_data(data):
 
 class DataProcessor:
     """A class for processing data."""
-    
+
     def __init__(self):
         self.data = []
-    
+
     def add(self, item):
         """Add an item to the processor."""
         self.data.append(item)
@@ -445,10 +443,10 @@ import sys
 
 class MyClass:
     """A test class."""
-    
+
     def __init__(self):
         self.value = 0
-        
+
     def process(self, data):
         """Process the data."""
         # Complex implementation here

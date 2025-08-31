@@ -199,14 +199,15 @@ class Tenets:
         else:
             raise ValueError(f"Invalid config type: {type(config)}")
 
-        # Initialize logger
+        # Initialize logger (import locally to avoid circular import)
+        from tenets.utils.logger import get_logger
         self.logger = get_logger(__name__)
         self.logger.info(f"Initializing Tenets v{__version__}")
 
-        # Initialize core components using module-level factories (patchable in tests)
-        self.distiller = Distiller(self.config)
-        self.instiller = Instiller(self.config)
-        self.tenet_manager = self.instiller.manager
+        # Lazy-load core components to improve import performance
+        self._distiller = None
+        self._instiller = None
+        self._tenet_manager = None
 
         # Session management
         self._session = None
@@ -216,6 +217,29 @@ class Tenets:
         self._cache = {}
 
         self.logger.info("Tenets initialization complete")
+
+    @property
+    def distiller(self):
+        """Lazy load distiller when needed."""
+        if self._distiller is None:
+            self._distiller = Distiller(self.config)
+        return self._distiller
+
+    @property
+    def instiller(self):
+        """Lazy load instiller when needed."""
+        if self._instiller is None:
+            self._instiller = Instiller(self.config)
+        return self._instiller
+
+    @property
+    def tenet_manager(self):
+        """Lazy load tenet manager when needed."""
+        if self._tenet_manager is None:
+            if self._instiller is None:
+                self._instiller = Instiller(self.config)
+            self._tenet_manager = self._instiller.manager
+        return self._tenet_manager
 
     # ============= Core Distillation Methods =============
 
@@ -237,6 +261,8 @@ class Tenets:
         condense: bool = False,
         remove_comments: bool = False,
         include_tests: Optional[bool] = None,
+        docstring_weight: Optional[float] = None,
+        summarize_imports: bool = True,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -260,7 +286,14 @@ class Tenets:
             apply_tenets: Whether to apply tenets (None = use config default)
 
         Returns:
-            ContextResult containing the generated context, metadata, and statistics
+            ContextResult containing the generated context, metadata, and statistics.
+            The metadata field includes timing information when available:
+                metadata['timing'] = {
+                    'duration': 2.34,  # seconds
+                    'formatted_duration': '2.34s',  # Human-readable duration string
+                    'start_datetime': '2024-01-15T10:30:45',
+                    'end_datetime': '2024-01-15T10:30:47'
+                }
 
         Raises:
             ValueError: If prompt is empty or invalid
@@ -296,6 +329,12 @@ class Tenets:
             >>>
             >>> # From GitHub issue
             >>> result = tenets.distill("https://github.com/org/repo/issues/123")
+            >>>
+            >>> # Access timing information
+            >>> result = tenets.distill("analyze performance")
+            >>> if 'timing' in result.metadata:
+            ...     print(f"Analysis took {result.metadata['timing']['formatted_duration']}")
+            ...     # Output: "Analysis took 2.34s"
         """
         if not prompt:
             raise ValueError("Prompt cannot be empty")
@@ -344,6 +383,8 @@ class Tenets:
             remove_comments=remove_comments,
             pinned_files=pinned_files or None,
             include_tests=include_tests,
+            docstring_weight=docstring_weight,
+            summarize_imports=summarize_imports,
         )
 
         # Inject system instruction if configured
@@ -833,4 +874,5 @@ __all__ = [
     "Tenets",
     "TenetsConfig",
     "__version__",
+    "get_logger",
 ]

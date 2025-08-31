@@ -86,8 +86,8 @@ class TestGitAnalyzer:
         analyzer = GitAnalyzer(temp_git_repo)
 
         assert analyzer.root == temp_git_repo
-        assert analyzer.repo is not None
-        assert analyzer.is_repo() == True
+        assert analyzer.is_repo() == True  # This triggers lazy initialization
+        assert analyzer.repo is not None  # Now repo should be initialized
 
     def test_initialization_with_non_git_dir(self, non_git_dir):
         """Test initialization with non-git directory."""
@@ -218,7 +218,10 @@ class TestGitAnalyzer:
     def test_recent_commits_error_handling(self, temp_git_repo):
         """Test error handling in recent_commits."""
         analyzer = GitAnalyzer(temp_git_repo)
-
+        
+        # Trigger initialization first
+        analyzer.is_repo()
+        
         with patch.object(analyzer.repo, "iter_commits", side_effect=Exception("Git error")):
             commits = analyzer.recent_commits()
             assert commits == []
@@ -292,6 +295,9 @@ class TestGitAnalyzer:
     def test_blame_error_handling(self, temp_git_repo):
         """Test error handling in blame."""
         analyzer = GitAnalyzer(temp_git_repo)
+        
+        # Trigger initialization first
+        analyzer.is_repo()
 
         with patch.object(analyzer.repo, "blame", side_effect=Exception("Blame error")):
             blame_info = analyzer.blame(temp_git_repo / "file1.py")

@@ -12,6 +12,7 @@ from rich.table import Table
 
 from tenets.config import TenetsConfig
 from tenets.storage.session_db import SessionDB
+from tenets.utils.timing import CommandTimer, format_duration
 
 session_app = typer.Typer(help="Manage development sessions")
 console = Console()
@@ -24,16 +25,21 @@ def _get_db() -> SessionDB:
 @session_app.command()
 def create(name: str = typer.Argument(..., help="Session name")):
     """Create a new session or activate it if it already exists."""
+    timer = CommandTimer(console, quiet=True)  # Quiet timer for quick operations
+    timer.start()
+    
     db = _get_db()
     existing = db.get_session(name)
     if existing:
         # If it exists, just mark it active and exit successfully
         db.set_active(name, True)
-        console.print(f"[green]✓ Activated session:[/green] {name}")
+        timing_result = timer.stop()
+        console.print(f"[green]✓ Activated session:[/green] {name} [dim]({timing_result.formatted_duration})[/dim]")
         return
     db.create_session(name)
     db.set_active(name, True)
-    console.print(f"[green]✓ Created session:[/green] {name}")
+    timing_result = timer.stop()
+    console.print(f"[green]✓ Created session:[/green] {name} [dim]({timing_result.formatted_duration})[/dim]")
 
 
 @session_app.command("start")
@@ -45,6 +51,9 @@ def start(name: str = typer.Argument(..., help="Session name")):
 @session_app.command("list")
 def list_cmd():
     """List sessions."""
+    timer = CommandTimer(console, quiet=True)
+    timer.start()
+    
     db = _get_db()
     sessions = db.list_sessions()
     if not sessions:
@@ -69,7 +78,9 @@ def list_cmd():
             ),
             json.dumps(meta),
         )
+    timing_result = timer.stop()
     console.print(table)
+    console.print(f"[dim]⏱  Found {len(sessions)} sessions in {timing_result.formatted_duration}[/dim]")
 
 
 @session_app.command()
@@ -96,10 +107,15 @@ def delete(
     ),
 ):
     """Delete a session (and its stored context unless --keep-context)."""
+    timer = CommandTimer(console, quiet=True)  # Quiet timer for quick operations
+    timer.start()
+    
     db = _get_db()
     deleted = db.delete_session(name, purge_context=not keep_context)
+    timing_result = timer.stop()
+    
     if deleted:
-        console.print(f"[red]Deleted session:[/red] {name}")
+        console.print(f"[red]Deleted session:[/red] {name} [dim]({timing_result.formatted_duration})[/dim]")
     else:
         console.print(f"[yellow]No such session:[/yellow] {name}")
 
@@ -107,10 +123,15 @@ def delete(
 @session_app.command("clear")
 def clear_all(keep_context: bool = typer.Option(False, "--keep-context", help="Keep artifacts")):
     """Delete ALL sessions (optionally keep artifacts)."""
+    timer = CommandTimer(console, quiet=True)
+    timer.start()
+    
     db = _get_db()
     count = db.delete_all_sessions(purge_context=not keep_context)
+    timing_result = timer.stop()
+    
     if count:
-        console.print(f"[red]Deleted {count} session(s).[/red]")
+        console.print(f"[red]Deleted {count} session(s)[/red] [dim]({timing_result.formatted_duration})[/dim]")
     else:
         console.print("[dim]No sessions to delete.[/dim]")
 

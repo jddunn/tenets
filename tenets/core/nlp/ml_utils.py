@@ -355,11 +355,11 @@ def estimate_embedding_memory(num_files: int, embedding_dim: int = 384) -> Dict[
 __all__ = [
     "EmbeddingModel",
     "NeuralReranker",
-    "load_embedding_model",
-    "compute_similarity",
-    "cosine_similarity",
     "batch_similarity",
     "check_ml_dependencies",
-    "get_available_models",
+    "compute_similarity",
+    "cosine_similarity",
     "estimate_embedding_memory",
+    "get_available_models",
+    "load_embedding_model",
 ]

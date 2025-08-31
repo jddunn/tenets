@@ -2,9 +2,7 @@
 
 import json
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
-
-import pytest
+from unittest.mock import mock_open, patch
 
 from tenets.core.nlp.programming_patterns import (
     ProgrammingPatterns,
@@ -77,7 +75,7 @@ class TestProgrammingPatterns:
             """Authenticate user with OAuth2."""
             token = generate_jwt_token(username)
             return token
-            
+
         @app.route('/api/login')
         def login():
             return authenticate_user()

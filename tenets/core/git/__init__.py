@@ -35,13 +35,9 @@ Example usage:
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+# Import the core modules - we fixed the circular imports in chronicle.py and stats.py
 from .analyzer import CommitInfo, GitAnalyzer
-from .blame import (
-    BlameAnalyzer,
-    BlameLine,
-    BlameReport,
-    FileBlame,
-)
+from .blame import BlameAnalyzer, BlameLine, BlameReport, FileBlame
 from .chronicle import (
     Chronicle,
     ChronicleBuilder,
