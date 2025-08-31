@@ -100,6 +100,10 @@ def instill(
     show_config: bool = typer.Option(
         False, "--show-config", help="Show current injection configuration"
     ),
+
+    # Context
+    ctx: typer.Context = typer.Context,
+
 ):
     """
     Smart injection of guiding principles (tenets) into your context.
@@ -220,6 +224,7 @@ def instill(
 
         if add_file or add_folder or remove_file:
             _manage_pinned_files(tenets_instance, session, add_file, add_folder, remove_file, quiet)
+
             if not (force or dry_run):  # Only manage files, don't instill
                 return
 
@@ -708,15 +713,28 @@ def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None
         line = f"{i}. {priority_label} {tenet.content}"
         console.print(line, markup=False)
 
+        priority_color = {
+            "critical": "red",
+            "high": "yellow",
+            "medium": "blue",
+            "low": "dim",
+        }.get(tenet.priority.value, "white")
+
+        console.print(
+            f"{i}. [[{priority_color}]{tenet.priority.value.upper()}[/{priority_color}]] "
+            f"{tenet.content}"
+        )
+
         if tenet.category:
             console.print(f"   Category: {tenet.category.value}")
         console.print(f"   Added: {tenet.created_at.strftime('%Y-%m-%d %H:%M')}")
         console.print(f"   Previous injections: {tenet.metrics.injection_count}")
         console.print()
 
-    console.print(f"Frequency: {frequency}")
-    console.print(f"Total: {len(pending[: tenets_instance.config.tenet.max_per_context])} tenet(s)")
-
+    console.print(f"\n[dim]Frequency: {frequency}")
+    console.print(
+        f"Total: {len(pending[:tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]"
+    )
 
 def _export_history(instiller, output_path: Path, format: str, session: Optional[str]) -> None:
     """Export injection history."""

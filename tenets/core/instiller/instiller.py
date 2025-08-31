@@ -125,6 +125,14 @@ class InjectionHistory:
                     return True, "first_adaptive_injection"
             # Complexity-based injection (only inject when threshold is met)
             if self.total_distills >= min_session_length and complexity >= complexity_threshold:
+
+            # First injection after minimum session length
+            if self.total_injections == 0 and self.total_distills >= min_session_length:
+                return True, "first_adaptive_injection"
+
+            # Complexity-based injection
+            if complexity >= complexity_threshold:
+
                 # Check if we've injected recently
                 if self.last_injection:
                     time_since_last = datetime.now() - self.last_injection
@@ -525,6 +533,7 @@ class Instiller:
 
         # Session tracking
         self.session_histories: Dict[str, InjectionHistory] = {}
+
         # Load histories only when cache is enabled to avoid test cross-contamination
         try:
             if getattr(self.config.cache, "enabled", False):
@@ -537,6 +546,8 @@ class Instiller:
         # only within the lifetime of this Instiller instance. Persisted
         # histories are still maintained for analytics but must not block
         # first injection in fresh instances (tests rely on this behavior).
+
+        self._load_session_histories()
 
         # Cache for results
         self._cache: Dict[str, InstillationResult] = {}
@@ -638,8 +649,16 @@ class Instiller:
                 i += 1
             prefix = "\n".join(lines[:i])
             suffix = "\n".join(lines[i:])
+
             between = "\n" if suffix else ""
-            modified = prefix + ("\n" if prefix else "") + formatted_block + between + suffix
+
+            modified = (
+                prefix
+                + ("\n" if prefix else "")
+                + formatted_instr
+                + ("\n" if suffix else "")
+                + suffix
+            )
             position = "before_content"
         else:
             modified = formatted_block + separator + content
@@ -647,6 +666,9 @@ class Instiller:
 
         # Compute token increase (original first, then modified) so patched mocks match
         orig_tokens = estimate_tokens(content)
+        
+        from tenets.utils.tokens import count_tokens
+
         meta.update(
             {
                 "system_instruction_position": position,
@@ -705,6 +727,9 @@ class Instiller:
             return f"// {instruction.strip()}"
         # plain includes default label per tests
         return f"🎯 System Context\n\n{instruction.strip()}"
+            # Use a neutral comment style; markdown HTML comment works across formats
+            return f"<!-- {instruction.strip()} -->\n"
+        return instruction.strip() + "\n"
 
     def _load_session_histories(self) -> None:
         """Load session histories from storage."""
@@ -722,7 +747,7 @@ class Instiller:
 
         if history_file.exists():
             try:
-                with open(history_file) as f:
+                with open(history_file, "r") as f:
                     data = json.load(f)
                 for session_id, history_data in data.items():
                     history = InjectionHistory(
@@ -873,6 +898,9 @@ class Instiller:
                 sys_meta = meta
                 if session:
                     self.system_instruction_injected[session] = True
+        # Analyze complexity
+        complexity = self.complexity_analyzer.analyze(context)
+        self.logger.debug(f"Context complexity: {complexity:.2f}")
 
         # Check if we should inject
         should_inject = force
@@ -897,6 +925,15 @@ class Instiller:
                 else:
                     # For periodic/adaptive without a session, default to skip
                     should_inject, reason = False, f"no_session_for_{freq}"
+
+        if not force and check_frequency and history:
+            should_inject, reason = history.should_inject(
+                frequency=self.config.tenet.injection_frequency,
+                interval=self.config.tenet.injection_interval,
+                complexity=complexity,
+                complexity_threshold=self.config.tenet.session_complexity_threshold,
+                min_session_length=self.config.tenet.min_session_length,
+            )
 
             if not should_inject:
                 skip_reason = reason
@@ -1118,6 +1155,7 @@ class Instiller:
                     filtered = [t for t in pending if t.id not in history.injected_tenets]
                     if filtered:
                         pending = filtered
+                        
 
             # Sort by priority and metrics
             def tenet_score(t: Tenet) -> float:
