@@ -8,8 +8,8 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/tenets.svg)](https://pypi.org/project/tenets/)
 [![CI](https://github.com/jddunn/tenets/actions/workflows/ci.yml/badge.svg)](https://github.com/jddunn/tenets/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/jddunn/tenets/branch/main/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
-[![Coverage Status](https://coveralls.io/repos/github/jddunn/tenets/badge.svg?branch=main)](https://coveralls.io/github/jddunn/tenets?branch=main)
+[![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/jddunn/tenets)
+[![Test Results](https://img.shields.io/badge/tests-view%20results-blue)](https://app.codecov.io/gh/jddunn/tenets/tests)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
 See docs locally: [docs/](./docs/) • Live site: https://tenets.dev/docs

@@ -207,7 +207,6 @@ def distill(
                     condense=condense,
                     remove_comments=remove_comments,
                     include_tests=test_inclusion,
-                    include_minified=include_minified,
                     docstring_weight=docstring_weight,
                     summarize_imports=not no_summarize_imports,
                 )
@@ -228,7 +227,6 @@ def distill(
                 condense=condense,
                 remove_comments=remove_comments,
                 include_tests=test_inclusion,
-                include_minified=include_minified,
                 docstring_weight=docstring_weight,
                 summarize_imports=not no_summarize_imports,
             )
