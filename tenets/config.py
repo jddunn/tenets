@@ -28,12 +28,15 @@ from typing import Any, Dict, List, Optional, Union
 # Lazy load yaml - only import when needed
 yaml = None
 
+
 def _ensure_yaml_imported():
     """Import yaml when actually needed."""
     global yaml
     if yaml is None:
         import yaml as _yaml
+
         yaml = _yaml
+
 
 # Logger imported locally to avoid circular imports
 
@@ -664,9 +667,11 @@ class SummarizerConfig:
     docs_context_min_confidence: float = 0.6  # Minimum confidence for context relevance (0.0-1.0)
     docs_context_max_sections: int = 10  # Maximum contextual sections to preserve per document
     docs_context_preserve_examples: bool = True  # Always preserve code examples and snippets
-    
+
     # Code structure extraction settings
-    docstring_weight: float = 0.5  # Weight for including docstrings (0=never, 0.5=balanced, 1.0=always)
+    docstring_weight: float = (
+        0.5  # Weight for including docstrings (0=never, 0.5=balanced, 1.0=always)
+    )
     include_all_signatures: bool = True  # Include all class/function signatures (not just top N)
 
 
@@ -1012,10 +1017,12 @@ class TenetsConfig:
         # Defer logger import to avoid circular dependencies during testing
         try:
             from tenets.utils.logger import get_logger
+
             self._logger = get_logger(__name__)
         except (ImportError, ModuleNotFoundError):
             # Fallback to a simple logger for testing
             import logging
+
             self._logger = logging.getLogger(__name__)
 
         # Resolve project root
@@ -1420,32 +1427,32 @@ class TenetsConfig:
     def exclude_minified(self) -> bool:
         """Get exclude_minified setting from scanner config."""
         return self.scanner.exclude_minified
-    
+
     @exclude_minified.setter
     def exclude_minified(self, value: bool) -> None:
         """Set exclude_minified setting in scanner config."""
         self.scanner.exclude_minified = value
-    
+
     @property
     def minified_patterns(self) -> List[str]:
         """Get minified patterns from scanner config."""
         return self.scanner.minified_patterns
-    
+
     @minified_patterns.setter
     def minified_patterns(self, value: List[str]) -> None:
         """Set minified patterns in scanner config."""
         self.scanner.minified_patterns = value
-    
+
     @property
     def build_directory_patterns(self) -> List[str]:
         """Get build directory patterns from scanner config."""
         return self.scanner.build_directory_patterns
-    
+
     @build_directory_patterns.setter
     def build_directory_patterns(self, value: List[str]) -> None:
         """Set build directory patterns in scanner config."""
         self.scanner.build_directory_patterns = value
-    
+
     @property
     def cache_dir(self) -> Path:
         """Get the cache directory path."""

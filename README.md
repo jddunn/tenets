@@ -20,12 +20,12 @@ See docs locally: [docs/](./docs/) • Live site: https://tenets.dev/docs
 
 Think of it as intelligent context aggregation. You give it a prompt or query, and it:
 
-- 🔍 **Finds** all relevant files automatically
-- 🎯 **Ranks** them by importance using multiple factors
-- 📦 **Aggregates** them within your token budget
-- 📋 **Formats** perfectly for any use case
-- 📌 **Pins** critical files per session for guaranteed inclusion priority
-- 🧹 **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
+- **Finds** all relevant files automatically
+- **Ranks** them by importance using multiple factors
+- **Aggregates** them within your token budget
+- **Formats** perfectly for any use case
+- **Pins** critical files per session for guaranteed inclusion priority
+- **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
 
 Plus powerful development intelligence:
 
@@ -335,7 +335,7 @@ tenets distill "add OAuth2 refresh tokens" --session payment-integration --remov
 tenets instill --session payment-integration --add-file src/auth/service.py --add-folder src/auth/routes
 tenets instill --session payment-integration --list-pinned
 
-# 7) Iterate with narrower prompts leveraging the same session
+# 7) Iterate with narrower prompts leveraging the same 3
 tenets distill "extract token rotation into helper" --session payment-integration
 ```
 
@@ -762,7 +762,7 @@ When files exceed token budgets, tenets intelligently preserves:
 
 #### Import Summarization
 
-NEW: Tenets can automatically condense verbose import statements into concise summaries:
+Tenets can automatically condense verbose import statements into concise summaries:
 
 ```python
 # Instead of showing 20+ import lines:
@@ -837,15 +837,20 @@ Core docs in `docs/`:
 
 See `docs/CONFIG.md` for configuration details.
 
-Full documentation is available at https://docs.tenets.dev.
+Full documentation is available at https://tenets.dev/docs.
 
 ### Building Documentation Locally
 
 ```bash
-# Serve locally with live reload
+# Serve locally with live reload (includes API docs generation)
 make docs
 # Or directly:
 mkdocs serve
+
+# Quick dev mode (no API generation - faster for styling/content updates)
+make docs-dev
+# Or directly (skips API generation, uses dirty reload):
+mkdocs serve --livereload --dirtyreload
 
 # Build static site
 make docs-build
@@ -857,6 +862,8 @@ make docs-deploy
 # Or directly:
 mkdocs gh-deploy
 ```
+
+**Note:** Use `make docs-dev` when working on documentation content, styling, or layout. It skips the API documentation generation step, making the server start much faster and reload more quickly. The `--dirtyreload` flag only rebuilds changed pages instead of the entire site.
 
 ## Configuration (quick start)
 

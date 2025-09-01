@@ -281,11 +281,11 @@ class ReportGenerator:
         # Add path information - this is the directory/file that was examined
         if "path" in data:
             metadata["examined_path"] = data["path"]
-        
+
         # Add data source information
         if "source" in data:
             metadata["source"] = data["source"]
-        
+
         # Add timing information if available
         if "timing" in data:
             metadata["timing"] = data["timing"]
@@ -388,14 +388,12 @@ class ReportGenerator:
         content.append(
             f"- 📊 Analyzed **{summary.get('total_files', 0)} files** with **{summary.get('total_lines', 0):,} lines** of code"
         )
-        
+
         # Add timing information if available
         if "timing" in data:
             timing = data["timing"]
             if "formatted_duration" in timing:
-                content.append(
-                    f"- ⏱️ Analysis completed in **{timing['formatted_duration']}**"
-                )
+                content.append(f"- ⏱️ Analysis completed in **{timing['formatted_duration']}**")
 
         # Add language distribution info
         if metrics.get("languages"):

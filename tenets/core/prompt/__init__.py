@@ -74,19 +74,16 @@ from .intent_detector import (
     SemanticIntentDetector,
 )
 
-# Import main parser
+# Import main parser classes
+from .parser import (
+    PromptParser,
+)
+
+# Import temporal parser classes
 from .temporal_parser import (
     TemporalExpression,
     TemporalParser,
     TemporalPatternMatcher,
-
-# Import main classes
-from .parser import (
-    ExternalReference,
-    IntentType,
-    ParsedEntity,
-    PromptParser,
-    TemporalContext,
 )
 
 # Import from models
@@ -106,10 +103,6 @@ __all__ = [
     "PromptParser",
     "create_parser",
     # Data classes
-    "IntentType",
-    "ParsedEntity",
-    "TemporalContext",
-    "ExternalReference",
     # Context (from models)
     "PromptContext",
     "TaskType",
@@ -164,7 +157,7 @@ def create_parser(
         use_ml: Whether to use ML features (None = auto-detect from config)
         cache_manager: Optional cache manager for persistence
 
-Uses centralized NLP components for all text processing.
+    Uses centralized NLP components for all text processing.
 
     Returns:
         Configured PromptParser instance
@@ -235,15 +228,14 @@ def extract_keywords(text: str, max_keywords: int = 20) -> List[str]:
 
 
 def detect_intent(prompt: str, use_ml: bool = False) -> str:
-    """
-    Analyzes prompt text to determine user intent.
+    """Analyzes prompt text to determine user intent.
 
     Args:
         prompt: The prompt text to analyze
         use_ml: Whether to use ML-based detection (requires ML dependencies)
 
     Returns:
-        Intent type string (implement, debug, understand, etc.
+        Intent type string (implement, debug, understand, etc.)
 
     Example:
         >>> intent = detect_intent("fix the authentication bug")
@@ -253,7 +245,7 @@ def detect_intent(prompt: str, use_ml: bool = False) -> str:
 
     parser = PromptParser(TenetsConfig(), use_ml=use_ml, use_cache=False)
     context = parser.parse(prompt, use_cache=False)
-  
+
     return context.intent
 
 
@@ -296,7 +288,6 @@ def parse_external_reference(url: str) -> Optional[Dict[str, Any]]:
 
     Extracts information from GitHub issues, JIRA tickets, GitLab MRs,
     Linear issues, Asana tasks, Notion pages, and other external references.
-    and other external references.
 
     Args:
         url: URL to parse
@@ -359,17 +350,3 @@ def extract_temporal(text: str) -> List[Dict[str, Any]]:
         }
         for e in expressions
     ]
-    from tenets.config import TenetsConfig
-
-    parser = PromptParser(TenetsConfig())
-    ref = parser._detect_external_reference(url)
-
-    if ref:
-        return {
-            "type": ref.type,
-            "url": ref.url,
-            "identifier": ref.identifier,
-            "metadata": ref.metadata,
-        }
-
-    return None

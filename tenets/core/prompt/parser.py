@@ -17,8 +17,8 @@ from tenets.core.nlp.stopwords import StopwordManager
 from tenets.core.nlp.tokenizer import CodeTokenizer, TextTokenizer
 from tenets.core.prompt.cache import PromptCache
 from tenets.core.prompt.entity_recognizer import Entity, HybridEntityRecognizer
-from tenets.core.prompt.normalizer import normalize_list, EntityNormalizer
 from tenets.core.prompt.intent_detector import HybridIntentDetector
+from tenets.core.prompt.normalizer import EntityNormalizer, normalize_list
 from tenets.core.prompt.temporal_parser import TemporalParser
 from tenets.models.context import PromptContext
 
@@ -476,13 +476,17 @@ class PromptParser:
         file_pattern = r"\b([a-zA-Z0-9_\-/]+\.(?:py|js|ts|tsx|jsx|java|cpp|c|h|hpp|go|rs|rb|php))\b"
         files = re.findall(file_pattern, text)
         scope["specific_files"] = list(set(files))
-        exclude_pattern = r"(?:except|exclude|not|ignore)\s+(?:anything\s+in\s+)?([a-zA-Z0-9_\-/*]+/?)"
+        exclude_pattern = (
+            r"(?:except|exclude|not|ignore)\s+(?:anything\s+in\s+)?([a-zA-Z0-9_\-/*]+/?)"
+        )
         exclusions = set(re.findall(exclude_pattern, text, re.IGNORECASE))
         for common in ["node_modules", "vendor"]:
             if re.search(rf"\b{common}\b", text, re.IGNORECASE):
                 exclusions.add(common)
         scope["exclusions"] = list(exclusions)
-        if any(word in text.lower() for word in ["entire", "whole", "all", "everything", "project"]):
+        if any(
+            word in text.lower() for word in ["entire", "whole", "all", "everything", "project"]
+        ):
             scope["is_global"] = True
         elif scope["modules"] or scope["directories"] or scope["specific_files"]:
             scope["is_specific"] = True
@@ -546,7 +550,13 @@ class PromptParser:
             r"\b(backup|restore|migration|sync)\b",
             r"\b(performance|optimization|cache|memory)\b",
         ]
-        all_patterns = api_patterns + config_patterns + structure_patterns + programming_patterns + usage_patterns
+        all_patterns = (
+            api_patterns
+            + config_patterns
+            + structure_patterns
+            + programming_patterns
+            + usage_patterns
+        )
         for pattern in all_patterns:
             matches = re.findall(pattern, text_lower)
             for match in matches:
@@ -1389,7 +1399,7 @@ class PromptParser:
         # Add file extension and format keywords
         format_keywords = self._extract_format_keywords(text)
         doc_keywords.extend(format_keywords)
-        
+
         # Process and normalize keywords
         normalized_keywords = []
         for keyword in doc_keywords:
@@ -1400,7 +1410,7 @@ class PromptParser:
             elif kw_lower in ["requirements", "requirement"]:
                 normalized_keywords.extend(["requirement", "requirements"])
             elif kw_lower in ["examples", "example"]:
-                normalized_keywords.extend(["example", "examples"]) 
+                normalized_keywords.extend(["example", "examples"])
             elif kw_lower in ["dependencies", "dependency"]:
                 normalized_keywords.extend(["dependency", "dependencies"])
             elif kw_lower in ["functions", "function"]:

@@ -123,12 +123,6 @@ class InjectionHistory:
                 minimal_first_signal = 0.4  # allow first injection if at least modest complexity
                 if complexity >= minimal_first_signal:
                     return True, "first_adaptive_injection"
-            # Complexity-based injection (only inject when threshold is met)
-            if self.total_distills >= min_session_length and complexity >= complexity_threshold:
-
-            # First injection after minimum session length
-            if self.total_injections == 0 and self.total_distills >= min_session_length:
-                return True, "first_adaptive_injection"
 
             # Complexity-based injection
             if complexity >= complexity_threshold:
@@ -309,7 +303,7 @@ class ComplexityAnalyzer:
         if not self._nlp_initialized:
             self._init_nlp_components()
             self._nlp_initialized = True
-            
+
         if isinstance(context, ContextResult):
             text = context.context
             metadata = context.metadata
@@ -666,7 +660,7 @@ class Instiller:
 
         # Compute token increase (original first, then modified) so patched mocks match
         orig_tokens = estimate_tokens(content)
-        
+
         from tenets.utils.tokens import count_tokens
 
         meta.update(
@@ -727,9 +721,6 @@ class Instiller:
             return f"// {instruction.strip()}"
         # plain includes default label per tests
         return f"🎯 System Context\n\n{instruction.strip()}"
-            # Use a neutral comment style; markdown HTML comment works across formats
-            return f"<!-- {instruction.strip()} -->\n"
-        return instruction.strip() + "\n"
 
     def _load_session_histories(self) -> None:
         """Load session histories from storage."""
@@ -1003,10 +994,7 @@ class Instiller:
 
         # Inject tenets - TenetInjector doesn't have a strategy parameter
         modified_text, injection_metadata = self.injector.inject_tenets(
-            content=text,
-            tenets=tenets,
-            format=format_type,
-            context_metadata={"strategy": strategy}
+            content=text, tenets=tenets, format=format_type, context_metadata={"strategy": strategy}
         )
 
         # Update tenet metrics
@@ -1155,7 +1143,6 @@ class Instiller:
                     filtered = [t for t in pending if t.id not in history.injected_tenets]
                     if filtered:
                         pending = filtered
-                        
 
             # Sort by priority and metrics
             def tenet_score(t: Tenet) -> float:

@@ -184,8 +184,7 @@ class TestEnvironmentVariables:
         assert config.ranking.threshold == 0.5
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Hangs on Python 3.13+ due to pytest issue"
+        sys.version_info[:2] >= (3, 13), reason="Hangs on Python 3.13+ due to pytest issue"
     )
     def test_env_var_list_parsing(self, monkeypatch):
         """Test environment variables with list values."""

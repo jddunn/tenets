@@ -748,7 +748,10 @@ class TestConvenienceFunctions:
         if len(keywords) > 0:
             # Check if any keyword contains the expected terms
             assert any(
-                any(term in kw.lower() for term in ["oauth2", "authentication", "system", "implement"])
+                any(
+                    term in kw.lower()
+                    for term in ["oauth2", "authentication", "system", "implement"]
+                )
                 for kw in keywords
             )
 

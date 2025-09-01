@@ -7,7 +7,7 @@ respecting ignore patterns and filtering rules.
 import fnmatch
 import os
 from pathlib import Path
-from typing import Generator, List, Optional, Set, Union
+from typing import Generator, List, Optional, Set
 
 from tenets.config import TenetsConfig
 from tenets.utils.logger import get_logger
@@ -114,33 +114,45 @@ class FileScanner:
 
         # Build ignore patterns
         self.ignore_patterns = set(self.DEFAULT_IGNORE_PATTERNS)
-        if config and hasattr(config, 'additional_ignore_patterns') and config.additional_ignore_patterns:
+        if (
+            config
+            and hasattr(config, "additional_ignore_patterns")
+            and config.additional_ignore_patterns
+        ):
             self.ignore_patterns.update(config.additional_ignore_patterns)
-        
+
         # Add minified file patterns if exclude_minified is True (default)
-        self.exclude_minified = getattr(config, 'exclude_minified', True) if config else True
+        self.exclude_minified = getattr(config, "exclude_minified", True) if config else True
         if self.exclude_minified:
             # Add minified patterns
-            minified_patterns = getattr(config, 'minified_patterns', []) if config else []
+            minified_patterns = getattr(config, "minified_patterns", []) if config else []
             if minified_patterns:
                 self.ignore_patterns.update(minified_patterns)
             else:
                 # Default minified patterns
-                self.ignore_patterns.update([
-                    '*.min.js', '*.min.css', 'bundle.js', '*.bundle.js', '*.bundle.css',
-                    '*.production.js', '*.prod.js', 'vendor.prod.js', '*.dist.js', '*.compiled.js'
-                ])
-            
+                self.ignore_patterns.update(
+                    [
+                        "*.min.js",
+                        "*.min.css",
+                        "bundle.js",
+                        "*.bundle.js",
+                        "*.bundle.css",
+                        "*.production.js",
+                        "*.prod.js",
+                        "vendor.prod.js",
+                        "*.dist.js",
+                        "*.compiled.js",
+                    ]
+                )
+
             # Add build directory patterns
-            build_dirs = getattr(config, 'build_directory_patterns', []) if config else []
+            build_dirs = getattr(config, "build_directory_patterns", []) if config else []
             if build_dirs:
                 # Remove trailing slashes for directory name matching
-                self.ignore_patterns.update(d.rstrip('/') for d in build_dirs)
+                self.ignore_patterns.update(d.rstrip("/") for d in build_dirs)
             else:
                 # Default build directories (without trailing slashes)
-                self.ignore_patterns.update([
-                    'dist', 'build', 'out', 'output', 'node_modules'
-                ])
+                self.ignore_patterns.update(["dist", "build", "out", "output", "node_modules"])
 
     def scan(
         self,
@@ -297,7 +309,7 @@ class FileScanner:
         # Check default ignore patterns (exact match and glob patterns)
         if dir_name in self.ignore_patterns:
             return True
-        
+
         # Check if directory name matches any glob patterns
         if any(fnmatch.fnmatch(dir_name, pattern) for pattern in self.ignore_patterns):
             return True
@@ -320,7 +332,7 @@ class FileScanner:
         patterns = set()
 
         try:
-            with open(gitignore_path, "r", encoding="utf-8") as f:
+            with open(gitignore_path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     # Skip comments and empty lines
@@ -397,7 +409,7 @@ class FileScanner:
 
         for file_path in self.scan([root], include_patterns=file_patterns):
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
                     if not case_sensitive:
                         content = content.lower()

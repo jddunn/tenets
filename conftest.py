@@ -4,6 +4,7 @@ and avoid importing tests from the active virtual environment on Windows.
 
 This helps when pytest is launched from within the venv directory by mistake.
 """
+
 from __future__ import annotations
 
 import os

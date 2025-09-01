@@ -7,14 +7,14 @@ and project structure based on file patterns and heuristics.
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List
 
 from tenets.utils.logger import get_logger
 
 
 class ProjectDetector:
     """Detects project type and structure from file patterns."""
-    
+
     # Entry point patterns by language/framework
     ENTRY_POINTS = {
         "python": [
@@ -42,7 +42,7 @@ class ProjectDetector:
         ],
         "html": [
             "index.html",
-            "main.html", 
+            "main.html",
             "home.html",
             "app.html",
         ],
@@ -91,7 +91,7 @@ class ProjectDetector:
             "composer.json",
         ],
     }
-    
+
     # Project type indicators
     PROJECT_INDICATORS = {
         "python_package": ["setup.py", "pyproject.toml", "__init__.py"],
@@ -115,7 +115,7 @@ class ProjectDetector:
         "cmake": ["CMakeLists.txt"],
         "make": ["Makefile"],
     }
-    
+
     # Language extensions
     LANGUAGE_EXTENSIONS = {
         "python": [".py", ".pyw", ".pyi"],
@@ -140,17 +140,17 @@ class ProjectDetector:
         "xml": [".xml"],
         "markdown": [".md", ".markdown"],
     }
-    
+
     def __init__(self):
         """Initialize the project detector."""
         self.logger = get_logger(__name__)
-    
+
     def detect_project(self, root_path: Path) -> Dict:
         """Detect project type and structure.
-        
+
         Args:
             root_path: Root directory to analyze
-            
+
         Returns:
             Dictionary containing:
                 - type: Primary project type
@@ -160,25 +160,25 @@ class ProjectDetector:
                 - structure: Project structure information
         """
         root_path = Path(root_path)
-        
+
         # Collect file statistics
         file_stats = self._collect_file_stats(root_path)
-        
+
         # Detect languages
         languages = self._detect_languages(file_stats)
-        
+
         # Detect frameworks and project types
         frameworks = self._detect_frameworks(root_path)
-        
+
         # Find entry points
         entry_points = self._find_entry_points(root_path, languages, frameworks)
-        
+
         # Determine primary project type
         project_type = self._determine_project_type(languages, frameworks, entry_points)
-        
+
         # Analyze project structure
         structure = self._analyze_structure(root_path, project_type)
-        
+
         return {
             "type": project_type,
             "languages": languages,
@@ -187,7 +187,7 @@ class ProjectDetector:
             "structure": structure,
             "root": str(root_path),
         }
-    
+
     def _collect_file_stats(self, root_path: Path) -> Dict:
         """Collect statistics about files in the project."""
         stats = {
@@ -196,38 +196,46 @@ class ProjectDetector:
             "by_directory": Counter(),
             "files": [],
         }
-        
+
         # Common directories to skip
         skip_dirs = {
-            ".git", "node_modules", "venv", ".venv", "env", 
-            "target", "build", "dist", "__pycache__", ".pytest_cache"
+            ".git",
+            "node_modules",
+            "venv",
+            ".venv",
+            "env",
+            "target",
+            "build",
+            "dist",
+            "__pycache__",
+            ".pytest_cache",
         }
-        
+
         for path in root_path.rglob("*"):
             # Skip hidden and ignored directories
             if any(part in skip_dirs for part in path.parts):
                 continue
-                
+
             if path.is_file():
                 stats["total_files"] += 1
                 stats["by_extension"][path.suffix.lower()] += 1
                 stats["by_directory"][path.parent.name] += 1
                 stats["files"].append(path)
-        
+
         return stats
-    
+
     def _detect_languages(self, file_stats: Dict) -> Dict[str, float]:
         """Detect programming languages used in the project."""
         language_counts = Counter()
         total_code_files = 0
-        
+
         for ext, count in file_stats["by_extension"].items():
             for lang, extensions in self.LANGUAGE_EXTENSIONS.items():
                 if ext in extensions:
                     language_counts[lang] += count
                     total_code_files += count
                     break
-        
+
         # Calculate percentages
         languages = {}
         if total_code_files > 0:
@@ -235,13 +243,13 @@ class ProjectDetector:
                 percentage = (count / total_code_files) * 100
                 if percentage >= 1.0:  # Only include if at least 1%
                     languages[lang] = round(percentage, 1)
-        
+
         return languages
-    
+
     def _detect_frameworks(self, root_path: Path) -> List[str]:
         """Detect frameworks and project types."""
         detected = []
-        
+
         for framework, indicators in self.PROJECT_INDICATORS.items():
             for indicator in indicators:
                 # Check if indicator exists
@@ -256,13 +264,15 @@ class ProjectDetector:
                     if check_path.exists():
                         detected.append(framework)
                         break
-        
+
         return detected
-    
-    def _find_entry_points(self, root_path: Path, languages: Dict, frameworks: List[str]) -> List[str]:
+
+    def _find_entry_points(
+        self, root_path: Path, languages: Dict, frameworks: List[str]
+    ) -> List[str]:
         """Find main entry points for the project."""
         entry_points = []
-        
+
         # Check language-specific entry points
         for lang in languages:
             if lang in self.ENTRY_POINTS:
@@ -276,7 +286,7 @@ class ProjectDetector:
                         check_path = root_path / pattern
                         if check_path.exists():
                             entry_points.append(pattern)
-        
+
         # Special handling for package.json
         package_json = root_path / "package.json"
         if package_json.exists():
@@ -298,7 +308,7 @@ class ProjectDetector:
                                     entry_points.append(part)
             except Exception as e:
                 self.logger.debug(f"Failed to parse package.json: {e}")
-        
+
         # Remove duplicates while preserving order
         seen = set()
         unique_entry_points = []
@@ -306,10 +316,12 @@ class ProjectDetector:
             if ep not in seen:
                 seen.add(ep)
                 unique_entry_points.append(ep)
-        
+
         return unique_entry_points
-    
-    def _determine_project_type(self, languages: Dict, frameworks: List[str], entry_points: List[str]) -> str:
+
+    def _determine_project_type(
+        self, languages: Dict, frameworks: List[str], entry_points: List[str]
+    ) -> str:
         """Determine the primary project type."""
         # Framework-based detection (highest priority)
         if "django" in frameworks:
@@ -317,8 +329,9 @@ class ProjectDetector:
         elif "flask" in frameworks or "fastapi" in frameworks:
             # Double-check if it's actually a web app or just a package with requirements.txt
             # Don't classify as web app if it has setup.py but no app.py/main.py
-            if ("setup.py" in entry_points or "pyproject.toml" in entry_points) and \
-               not any(ep in entry_points for ep in ["app.py", "application.py", "main.py"]):
+            if ("setup.py" in entry_points or "pyproject.toml" in entry_points) and not any(
+                ep in entry_points for ep in ["app.py", "application.py", "main.py"]
+            ):
                 # It's a package, not a web app
                 pass  # Fall through to language-based detection
             else:
@@ -341,11 +354,11 @@ class ProjectDetector:
             return "go_project"
         elif "dotnet" in frameworks:
             return "dotnet_project"
-        
+
         # Language-based detection
         if languages:
             primary_lang = max(languages, key=languages.get)
-            
+
             if primary_lang == "python":
                 if "setup.py" in entry_points or "pyproject.toml" in entry_points:
                     return "python_package"
@@ -372,9 +385,9 @@ class ProjectDetector:
                 return "php_project"
             elif primary_lang == "html":
                 return "static_website"
-        
+
         return "unknown"
-    
+
     def _analyze_structure(self, root_path: Path, project_type: str) -> Dict:
         """Analyze project structure based on type."""
         structure = {
@@ -383,7 +396,7 @@ class ProjectDetector:
             "test_directories": [],
             "doc_directories": [],
         }
-        
+
         # Common directory patterns
         common_dirs = {
             "src": "Source code",
@@ -409,21 +422,21 @@ class ProjectDetector:
             "docs": "Documentation",
             "doc": "Documentation",
         }
-        
+
         # Check for common directories
         for dir_name, description in common_dirs.items():
             dir_path = root_path / dir_name
             if dir_path.exists() and dir_path.is_dir():
                 structure["directories"][dir_name] = description
-                
+
                 # Identify test directories
                 if dir_name in ["tests", "test", "spec"]:
                     structure["test_directories"].append(dir_name)
-                
+
                 # Identify documentation directories
                 if dir_name in ["docs", "doc", "documentation"]:
                     structure["doc_directories"].append(dir_name)
-        
+
         # Identify key files based on project type
         key_patterns = {
             "python_package": ["setup.py", "pyproject.toml", "requirements.txt", "README.md"],
@@ -432,60 +445,62 @@ class ProjectDetector:
             "go_project": ["go.mod", "go.sum", "README.md"],
             "rust_project": ["Cargo.toml", "Cargo.lock", "README.md"],
         }
-        
+
         if project_type in key_patterns:
             for pattern in key_patterns[project_type]:
                 file_path = root_path / pattern
                 if file_path.exists():
                     structure["key_files"].append(pattern)
-        
+
         return structure
-    
+
     def find_dependencies_for_viz(self, root_path: Path, files: List[Path]) -> Dict[str, List[str]]:
         """Find dependencies optimized for visualization.
-        
+
         Groups dependencies by module/package level rather than individual files.
-        
+
         Args:
             root_path: Project root
             files: List of files to analyze
-            
+
         Returns:
             Dictionary of module -> list of dependent modules
         """
         # Detect project info
         project_info = self.detect_project(root_path)
-        
+
         # Group files by module/package
         modules = self._group_files_by_module(root_path, files, project_info)
-        
+
         # Build module-level dependency graph
         module_deps = {}
-        
+
         for module, module_files in modules.items():
             deps = set()
-            
+
             for file_path in module_files:
                 # Get file dependencies (this would come from the analyzer)
                 # For now, we'll return the structure for the viz command to use
                 pass
-            
+
             if deps:
                 module_deps[module] = sorted(deps)
-        
+
         return module_deps
-    
-    def _group_files_by_module(self, root_path: Path, files: List[Path], project_info: Dict) -> Dict[str, List[Path]]:
+
+    def _group_files_by_module(
+        self, root_path: Path, files: List[Path], project_info: Dict
+    ) -> Dict[str, List[Path]]:
         """Group files by module or package."""
         modules = {}
-        
+
         for file_path in files:
             # Get relative path
             try:
                 rel_path = file_path.relative_to(root_path)
             except ValueError:
                 continue
-            
+
             # Determine module name based on project type
             if project_info["type"].startswith("python"):
                 # Python uses directory structure as modules
@@ -500,15 +515,14 @@ class ProjectDetector:
                     module = rel_path.parts[0]
                 else:
                     module = "root"
+            # Default to top-level directory
+            elif len(rel_path.parts) > 1:
+                module = rel_path.parts[0]
             else:
-                # Default to top-level directory
-                if len(rel_path.parts) > 1:
-                    module = rel_path.parts[0]
-                else:
-                    module = "root"
-            
+                module = "root"
+
             if module not in modules:
                 modules[module] = []
             modules[module].append(file_path)
-        
+
         return modules

@@ -1,10 +1,7 @@
 """Tests for Git analyzer."""
 
-import os
-import tempfile
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -218,10 +215,10 @@ class TestGitAnalyzer:
     def test_recent_commits_error_handling(self, temp_git_repo):
         """Test error handling in recent_commits."""
         analyzer = GitAnalyzer(temp_git_repo)
-        
+
         # Trigger initialization first
         analyzer.is_repo()
-        
+
         with patch.object(analyzer.repo, "iter_commits", side_effect=Exception("Git error")):
             commits = analyzer.recent_commits()
             assert commits == []
@@ -295,7 +292,7 @@ class TestGitAnalyzer:
     def test_blame_error_handling(self, temp_git_repo):
         """Test error handling in blame."""
         analyzer = GitAnalyzer(temp_git_repo)
-        
+
         # Trigger initialization first
         analyzer.is_repo()
 

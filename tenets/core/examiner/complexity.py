@@ -644,7 +644,9 @@ class ComplexityAnalyzer:
                 if hasattr(file.complexity, "halstead_volume"):
                     file_complexity.metrics.halstead_volume = file.complexity.halstead_volume
                 if hasattr(file.complexity, "maintainability_index"):
-                    file_complexity.metrics.maintainability_index = file.complexity.maintainability_index
+                    file_complexity.metrics.maintainability_index = (
+                        file.complexity.maintainability_index
+                    )
                 if hasattr(file.complexity, "max_depth"):
                     file_complexity.metrics.nesting_depth = file.complexity.max_depth
 

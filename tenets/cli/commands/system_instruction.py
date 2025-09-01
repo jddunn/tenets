@@ -252,11 +252,7 @@ def test_instruction(
             sample_content,
             format="markdown",
             session=session,
-
-        # Test injection
-        tenets = Tenets(config)
-        instiller = tenets.instiller
-
+        )
 
         if metadata.get("system_instruction_injected"):
             console.print(
@@ -300,7 +296,6 @@ def export_instruction(
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(config.tenet.system_instruction)
 
-
         # Use click.echo for a plain, single-line path output the tests expect
         import click as _click
 
@@ -310,7 +305,7 @@ def export_instruction(
         actual_len = len(config.tenet.system_instruction)
 
         console.print(f"[green]✓[/green] Exported to {output}")
-        console.print(f"Size: {len(config.tenet.system_instruction)} characters")
+        console.print(f"Size: {actual_len} characters")
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {e!s}")
@@ -383,7 +378,7 @@ def validate_instruction(
 
             raise typer.Exit(1)
         else:
-            # Success, but still show warnings if any
+            # Success - show validation passed message
             # Emit both a legacy fixed length line and the actual computed length/lines
             legacy_len_line = "Length: 31 characters"
             actual_length = len(instruction)
@@ -400,19 +395,10 @@ def validate_instruction(
                 )
             )
 
-        else:
-            if issues:
-                console.print("\n[red]Issues found:[/red]")
-                for issue in issues:
-                    console.print(f"  • {issue}")
-
             if warnings:
                 console.print("\n[yellow]Warnings:[/yellow]")
                 for warning in warnings:
                     console.print(f"  • {warning}")
-
-            if issues:
-                raise typer.Exit(1)
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {e!s}")

@@ -44,6 +44,9 @@ def config():
         config.tenet.track_injection_history = True
         config.tenet.decay_rate = 0.1
         config.tenet.reinforcement_interval = 10
+        # Explicitly disable system instruction to avoid interference
+        config.tenet.system_instruction = None
+        config.tenet.system_instruction_enabled = False
         yield config
 
 
@@ -333,7 +336,9 @@ class TestComplexityAnalyzer:
         mock_extractor.return_value = mock_extractor_instance
 
         analyzer = ComplexityAnalyzer(config)
+        # Set the keyword_extractor AFTER marking as initialized to prevent re-init
         analyzer.keyword_extractor = mock_extractor_instance
+        analyzer._nlp_initialized = True  # Mark as initialized to prevent re-init
 
         complexity = analyzer.analyze("Test content with keywords")
 

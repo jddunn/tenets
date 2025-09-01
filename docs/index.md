@@ -53,7 +53,7 @@ hide:
       </div>
       <div class="terminal-body">
         <pre><code class="language-bash"><span class="prompt">$</span> pip install tenets
-<span class="prompt">$</span> tenets make-context "implement OAuth2 authentication"
+<span class="prompt">$</span> tenets distill "implement OAuth2 authentication"
 <span class="output">✨ Finding relevant files...
 📊 Ranking by importance...
 📦 Aggregating context (45,231 tokens)
@@ -310,7 +310,7 @@ hide:
       <div class="see-body">
 
 ```bash
-$ tenets make-context "implement OAuth2 authentication"
+$ tenets distill "implement OAuth2 authentication"
 ✨ Finding relevant files...
 📊 Ranking by importance...
 📦 Aggregating context (45,231 tokens)
@@ -329,9 +329,10 @@ $ tenets make-context "implement OAuth2 authentication"
         <div class="see-title">Output</div>
       </div>
       <div class="see-body">
-        <div class="shot-frame">
-          <img src="assets/images/screenshots/context-building.png" alt="Context building screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/context-building.png" data-gif="assets/images/screenshots/context-building.gif" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
-          <span class="see-hint">Click to reveal</span>
+        <div class="screenshots-container">
+          <div class="screenshot-item">
+            <img src="assets/images/screenshots/context-building-1.png" alt="Context building - Analyzing files" loading="lazy" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
+          </div>
         </div>
       </div>
     </div>
@@ -353,11 +354,10 @@ $ tenets make-context "implement OAuth2 authentication"
 ```python
 from tenets import Tenets
 t = Tenets()
-result = t.make_context(
-    prompt="map request lifecycle",
-    path="./",
+result = t.distill(
+    prompt="map request lifecycle"
 )
-print(result.summary)
+print(result.context[:500])  # First 500 chars
 ```
 
       </div>
@@ -373,8 +373,7 @@ print(result.summary)
       </div>
       <div class="see-body">
         <div class="shot-frame">
-          <img src="assets/images/screenshots/python-summary.png" alt="Python API result screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/python-summary.png" data-gif="assets/images/screenshots/python-summary.gif" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
-          <span class="see-hint">Click to reveal</span>
+          <img src="assets/images/screenshots/code-analysis.png" alt="Code analysis" loading="lazy" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
         </div>
       </div>
     </div>
@@ -394,10 +393,12 @@ print(result.summary)
       <div class="see-body">
 
 ```python
-session = t.create_session("checkout-flow")
-ctx = session.make_context("design payment flow")
-session.show_files(["payment.py", "stripe.py"])  # the model asked for these
-ctx = session.make_context("add refund support")
+# Sessions are managed through distill parameters
+ctx = t.distill("design payment flow", session_name="checkout-flow")
+# Pin files through pin_file method
+t.pin_file("payment.py")
+t.pin_file("stripe.py")
+ctx = t.distill("add refund support", session_name="checkout-flow")
 ```
 
       </div>
@@ -413,8 +414,7 @@ ctx = session.make_context("add refund support")
       </div>
       <div class="see-body">
         <div class="shot-frame">
-          <img src="assets/images/screenshots/sessions-flow.png" alt="Sessions flow screenshot placeholder" loading="lazy" data-poster="assets/images/screenshots/sessions-flow.png" data-gif="assets/images/screenshots/sessions-flow.gif" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
-          <span class="see-hint">Click to reveal</span>
+          <img src="assets/images/screenshots/sessions-1.png" alt="Sessions flow" loading="lazy" onerror="this.onerror=null; this.src='logos/tenets_dark_icon_transparent.png'" />
         </div>
       </div>
     </div>

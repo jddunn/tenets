@@ -22,6 +22,9 @@ def test_config():
             "prefer_natural_breaks": True,
             "reinforce_at_end": True,
         }
+        # Explicitly disable system instruction to avoid interference
+        config.tenet.system_instruction = None
+        config.tenet.system_instruction_enabled = False
         yield config
 
 
