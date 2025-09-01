@@ -357,7 +357,7 @@ def add_tenet(
         if session:
             tenet.session_bindings = [session]
 
-        # Try to call add_tenet - tests expect the Tenet object to be passed
+        # Try to call add_tenet - tests expect the Tenet object to be passed as positional arg
         manager.add_tenet(tenet)
 
         add_time = time.time() - add_start

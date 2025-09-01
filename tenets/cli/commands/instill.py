@@ -18,6 +18,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
+from rich.text import Text
 from rich.tree import Tree
 
 from tenets import Tenets
@@ -707,10 +708,6 @@ def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None
 
     for i, tenet in enumerate(pending[: tenets_instance.config.tenet.max_per_context], 1):
         # Keep markup minimal and safe; print raw text to avoid Rich parsing [] in content
-        priority_label = str(tenet.priority.value).upper()
-        line = f"{i}. {priority_label} {tenet.content}"
-        console.print(line, markup=False)
-
         priority_color = {
             "critical": "red",
             "high": "yellow",
@@ -718,10 +715,11 @@ def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None
             "low": "dim",
         }.get(tenet.priority.value, "white")
 
-        console.print(
-            f"{i}. [[{priority_color}]{tenet.priority.value.upper()}[/{priority_color}]] "
-            f"{tenet.content}"
-        )
+        # Print priority with markup and content without markup to avoid errors
+        priority_text = Text(f"{i}. ")
+        priority_text.append(f"{tenet.priority.value.upper()}", style=priority_color)
+        priority_text.append(f" {tenet.content}")
+        console.print(priority_text)
 
         if tenet.category:
             console.print(f"   Category: {tenet.category.value}")
@@ -729,9 +727,9 @@ def _dry_run_instillation(tenets_instance, session: str, frequency: str) -> None
         console.print(f"   Previous injections: {tenet.metrics.injection_count}")
         console.print()
 
-    console.print(f"\n[dim]Frequency: {frequency}")
+    console.print(f"\n[dim]Frequency: {frequency}[/dim]")
     console.print(
-        f"Total: {len(pending[: tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]"
+        f"[dim]Total: {len(pending[: tenets_instance.config.tenet.max_per_context])} tenet(s)[/dim]"
     )
 
 

@@ -83,11 +83,7 @@ from .temporal_parser import (
 
 # Import main parser classes
 from .parser import (
-    ExternalReference,
-    IntentType,
-    ParsedEntity,
     PromptParser,
-    TemporalContext,
 )
 
 # Import from models
@@ -107,10 +103,6 @@ __all__ = [
     "PromptParser",
     "create_parser",
     # Data classes
-    "IntentType",
-    "ParsedEntity",
-    "TemporalContext",
-    "ExternalReference",
     # Context (from models)
     "PromptContext",
     "TaskType",

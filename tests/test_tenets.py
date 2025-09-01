@@ -93,18 +93,23 @@ class TestDistillMethod:
     """Test suite for the distill() method."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self, test_config):
         """Set up mocks for each test."""
         self.mock_distiller = Mock()
         self.mock_instiller = Mock()
         self.mock_logger = Mock()
+        
+        # Mock inject_system_instruction to not modify content (return original)
+        def mock_inject_system_instruction(content, format=None, session=None):
+            return content, {"system_instruction_injected": False}
+        self.mock_instiller.inject_system_instruction.side_effect = mock_inject_system_instruction
 
         with (
             patch("tenets.Distiller", return_value=self.mock_distiller),
             patch("tenets.Instiller", return_value=self.mock_instiller),
             patch("tenets.get_logger", return_value=self.mock_logger),
         ):
-            self.tenets = Tenets()
+            self.tenets = Tenets(config=test_config)
 
     def test_distill_basic(self):
         """Test basic distillation with minimal parameters."""
