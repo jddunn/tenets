@@ -425,10 +425,10 @@ class Tenets:
         if should_apply_tenets and _has_real_pending(pending):
             self.logger.info("Applying tenets to context")
             result = self.instiller.instill(
-                context=result, 
-                session=session, 
+                context=result,
+                session=session,
                 max_tenets=self.config.max_tenets_per_context,
-                inject_system_instruction=False  # Already injected above
+                inject_system_instruction=False,  # Already injected above
             )
 
         # Cache result

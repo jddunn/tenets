@@ -98,10 +98,11 @@ class TestDistillMethod:
         self.mock_distiller = Mock()
         self.mock_instiller = Mock()
         self.mock_logger = Mock()
-        
+
         # Mock inject_system_instruction to not modify content (return original)
         def mock_inject_system_instruction(content, format=None, session=None):
             return content, {"system_instruction_injected": False}
+
         self.mock_instiller.inject_system_instruction.side_effect = mock_inject_system_instruction
 
         with (

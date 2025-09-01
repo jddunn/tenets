@@ -303,7 +303,7 @@ class ComplexityAnalyzer:
         if not self._nlp_initialized:
             self._init_nlp_components()
             self._nlp_initialized = True
-            
+
         if isinstance(context, ContextResult):
             text = context.context
             metadata = context.metadata
@@ -660,7 +660,7 @@ class Instiller:
 
         # Compute token increase (original first, then modified) so patched mocks match
         orig_tokens = estimate_tokens(content)
-        
+
         from tenets.utils.tokens import count_tokens
 
         meta.update(
@@ -994,10 +994,7 @@ class Instiller:
 
         # Inject tenets - TenetInjector doesn't have a strategy parameter
         modified_text, injection_metadata = self.injector.inject_tenets(
-            content=text,
-            tenets=tenets,
-            format=format_type,
-            context_metadata={"strategy": strategy}
+            content=text, tenets=tenets, format=format_type, context_metadata={"strategy": strategy}
         )
 
         # Update tenet metrics
@@ -1146,7 +1143,6 @@ class Instiller:
                     filtered = [t for t in pending if t.id not in history.injected_tenets]
                     if filtered:
                         pending = filtered
-                        
 
             # Sort by priority and metrics
             def tenet_score(t: Tenet) -> float:
