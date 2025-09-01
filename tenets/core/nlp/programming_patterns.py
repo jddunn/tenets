@@ -9,7 +9,7 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from tenets.utils.logger import get_logger
 

@@ -44,6 +44,9 @@ def config():
         config.tenet.track_injection_history = True
         config.tenet.decay_rate = 0.1
         config.tenet.reinforcement_interval = 10
+        # Explicitly disable system instruction to avoid interference
+        config.tenet.system_instruction = None
+        config.tenet.system_instruction_enabled = False
         yield config
 
 
