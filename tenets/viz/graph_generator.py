@@ -9,7 +9,6 @@ Pure-Python backends (pip-installable) are preferred:
 
 from __future__ import annotations
 
-import io
 import json
 import math
 from collections import defaultdict
@@ -57,7 +56,9 @@ class GraphGenerator:
             self.graphviz = graphviz
             self._graphviz_available = True
         except Exception:
-            self.logger.debug("Graphviz not available - pip install graphviz (and install system Graphviz)")
+            self.logger.debug(
+                "Graphviz not available - pip install graphviz (and install system Graphviz)"
+            )
 
         try:
             import plotly.graph_objects as go  # type: ignore
@@ -181,7 +182,9 @@ class GraphGenerator:
         nodes: Set[str] = set(clusters.keys())
         return {"nodes": nodes, "edges": edges, "clusters": clusters}
 
-    def _get_cluster(self, node: str, cluster_by: str, project_info: Optional[Dict[str, Any]]) -> str:
+    def _get_cluster(
+        self, node: str, cluster_by: str, project_info: Optional[Dict[str, Any]]
+    ) -> str:
         parts = node.replace("\\", "/").split("/")
         if cluster_by == "directory":
             return parts[-2] if len(parts) > 1 else "root"
@@ -266,30 +269,34 @@ class GraphGenerator:
             return str(path)
         return dot
 
-    def _generate_html(self, processed_graph: Dict[str, Any], output_path: Optional[Path], layout: str) -> str:
+    def _generate_html(
+        self, processed_graph: Dict[str, Any], output_path: Optional[Path], layout: str
+    ) -> str:
         if self._plotly_available:
             return self._generate_plotly_html(processed_graph, output_path, layout)
         return self._generate_basic_html(processed_graph, output_path)
 
-    def _generate_plotly_html(self, processed_graph: Dict[str, Any], output_path: Optional[Path], layout: str) -> str:
+    def _generate_plotly_html(
+        self, processed_graph: Dict[str, Any], output_path: Optional[Path], layout: str
+    ) -> str:
         go = self.go
-        
+
         # Calculate graph metrics for dynamic spacing
         num_nodes = len(processed_graph["nodes"])
         num_edges = len(processed_graph["edges"])
         graph_density = num_edges / max(1, num_nodes * (num_nodes - 1))  # Directed graph density
-        
+
         # Calculate maximum text length for spacing considerations
         max_label_length = max((len(n["label"]) for n in processed_graph["nodes"]), default=10)
-        
+
         # Dynamic spacing parameters based on graph size and density
         # More nodes = tighter spacing, but never too tight
         base_k = max(1.0, 10.0 / math.sqrt(max(1, num_nodes)))  # Inverse sqrt for smooth scaling
         k_factor = base_k * (1 + graph_density * 2)  # Increase spacing for denser graphs
-        
+
         # Scale factor increases for smaller graphs, decreases for larger ones
         scale_factor = max(0.5, min(3.0, 50.0 / max(10, num_nodes)))
-        
+
         # Iterations based on graph size (more iterations for larger graphs to converge)
         iterations = min(200, max(50, num_nodes * 2))
 
@@ -299,7 +306,9 @@ class GraphGenerator:
                 G.add_edge(e["source"], e["target"])
             # Dynamic layout parameters based on graph metrics
             if layout == "hierarchical":
-                pos = self.nx.spring_layout(G, k=k_factor, iterations=iterations, scale=scale_factor)
+                pos = self.nx.spring_layout(
+                    G, k=k_factor, iterations=iterations, scale=scale_factor
+                )
             elif layout == "circular":
                 # Circular layout with dynamic radius
                 radius_scale = scale_factor * math.sqrt(num_nodes / 10)
@@ -309,7 +318,9 @@ class GraphGenerator:
                 pos = self.nx.shell_layout(G, scale=scale_factor * 1.5)
             else:
                 # Default with dynamic parameters
-                pos = self.nx.spring_layout(G, k=k_factor * 0.7, iterations=iterations, scale=scale_factor)
+                pos = self.nx.spring_layout(
+                    G, k=k_factor * 0.7, iterations=iterations, scale=scale_factor
+                )
         else:
             pos: Dict[str, Any] = {}
             nodes = processed_graph["nodes"]
@@ -317,23 +328,25 @@ class GraphGenerator:
             # Dynamic grid spacing based on node count and label sizes
             cols = max(1, int(math.ceil(math.sqrt(max(1, n)))))
             rows = math.ceil(n / cols)
-            
+
             # Calculate spacing to fit in viewport with text
             spacing_x = max(1.5, 10.0 / cols)  # Horizontal spacing
-            spacing_y = max(1.5, 8.0 / rows)   # Vertical spacing
-            
+            spacing_y = max(1.5, 8.0 / rows)  # Vertical spacing
+
             # Adjust for label length
-            spacing_x *= (1 + max_label_length / 20)
-            
+            spacing_x *= 1 + max_label_length / 20
+
             for i, node in enumerate(nodes):
                 row = i // cols
                 col = i % cols
                 # Center the grid
-                x = (col - cols/2) * spacing_x
-                y = (row - rows/2) * spacing_y
+                x = (col - cols / 2) * spacing_x
+                y = (row - rows / 2) * spacing_y
                 pos[node["id"]] = (x, y)
 
-        edge_trace = go.Scatter(x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines")
+        edge_trace = go.Scatter(
+            x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines"
+        )
         for e in processed_graph["edges"]:
             if e["source"] in pos and e["target"] in pos:
                 x0, y0 = pos[e["source"]]
@@ -346,11 +359,11 @@ class GraphGenerator:
         for e in processed_graph["edges"]:
             node_degrees[e["source"]] = node_degrees.get(e["source"], 0) + 1
             node_degrees[e["target"]] = node_degrees.get(e["target"], 0) + 1
-        
+
         # Dynamic node sizing based on graph size and degree
         min_node_size = max(8, 30 / math.sqrt(max(1, num_nodes)))  # Smaller min for large graphs
         max_node_size = min(60, 200 / math.sqrt(max(1, num_nodes)))  # Smaller max for large graphs
-        
+
         # Calculate node sizes with dynamic range
         max_degree = max(node_degrees.values()) if node_degrees else 1
         node_sizes = []
@@ -360,14 +373,16 @@ class GraphGenerator:
             size_factor = math.log(degree + 1) / math.log(max_degree + 1) if max_degree > 0 else 0
             size = min_node_size + (max_node_size - min_node_size) * size_factor
             node_sizes.append(size)
-        
+
         # Dynamic text size based on number of nodes and viewport
         base_font_size = max(6, min(14, 200 / max(10, num_nodes)))
         # Adjust font size based on label length
-        avg_label_length = sum(len(n["label"]) for n in processed_graph["nodes"]) / max(1, num_nodes)
+        avg_label_length = sum(len(n["label"]) for n in processed_graph["nodes"]) / max(
+            1, num_nodes
+        )
         if avg_label_length > 15:
             base_font_size *= 0.8  # Smaller font for longer labels
-        
+
         # Calculate hover text with more info
         hover_texts = []
         for n in processed_graph["nodes"]:
@@ -375,10 +390,10 @@ class GraphGenerator:
             hover_text = f"<b>{n['label']}</b><br>"
             hover_text += f"Type: {n.get('type', 'unknown')}<br>"
             hover_text += f"Connections: {degree}<br>"
-            if 'cluster' in n:
+            if "cluster" in n:
                 hover_text += f"Cluster: {n['cluster']}"
             hover_texts.append(hover_text)
-        
+
         node_trace = self.go.Scatter(
             x=[pos.get(n["id"], (0, 0))[0] for n in processed_graph["nodes"]],
             y=[pos.get(n["id"], (0, 0))[1] for n in processed_graph["nodes"]],
@@ -391,16 +406,18 @@ class GraphGenerator:
                 size=node_sizes,  # Dynamic sizing
                 color=[node_degrees.get(n["id"], 0) for n in processed_graph["nodes"]],
                 colorbar=dict(title=dict(text="Connections", side="right"), thickness=15),
-                line=dict(width=max(0.5, 2 / math.sqrt(max(1, num_nodes))), color='white')  # Dynamic border
+                line=dict(
+                    width=max(0.5, 2 / math.sqrt(max(1, num_nodes))), color="white"
+                ),  # Dynamic border
             ),
             text=[n["label"] for n in processed_graph["nodes"]],
             textposition="top center",
-            textfont=dict(size=base_font_size)  # Dynamic font size
+            textfont=dict(size=base_font_size),  # Dynamic font size
         )
-        
+
         # Dynamic title size based on graph size
         title_size = max(12, min(20, 24 - num_nodes / 50))
-        
+
         # Dynamic margins based on label sizes
         margin_padding = max(10, min(40, max_label_length * 2))
 
@@ -409,23 +426,21 @@ class GraphGenerator:
             layout=self.go.Layout(
                 title=dict(
                     text=f"Dependency Graph ({num_nodes} nodes, {num_edges} edges)",
-                    font=dict(size=title_size)
+                    font=dict(size=title_size),
                 ),
                 showlegend=False,
                 hovermode="closest",
-                margin=dict(b=margin_padding, l=margin_padding, r=margin_padding, t=margin_padding + 20),
+                margin=dict(
+                    b=margin_padding, l=margin_padding, r=margin_padding, t=margin_padding + 20
+                ),
                 xaxis=dict(
-                    showgrid=False, 
-                    zeroline=False, 
+                    showgrid=False,
+                    zeroline=False,
                     showticklabels=False,
                     scaleanchor="y",  # Keep aspect ratio
-                    scaleratio=1
+                    scaleratio=1,
                 ),
-                yaxis=dict(
-                    showgrid=False, 
-                    zeroline=False, 
-                    showticklabels=False
-                ),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 paper_bgcolor="white",
                 plot_bgcolor="white",
                 autosize=True,  # Auto-resize to container
@@ -441,24 +456,26 @@ class GraphGenerator:
             return str(path)
         return html
 
-    def _generate_basic_html(self, processed_graph: Dict[str, Any], output_path: Optional[Path]) -> str:
+    def _generate_basic_html(
+        self, processed_graph: Dict[str, Any], output_path: Optional[Path]
+    ) -> str:
         # Calculate graph metrics for dynamic sizing
         num_nodes = len(processed_graph["nodes"])
         num_edges = len(processed_graph["edges"])
         max_label_length = max((len(n["label"]) for n in processed_graph["nodes"]), default=10)
-        
+
         # Dynamic dimensions based on graph size
         svg_width = max(800, min(1600, 100 + num_nodes * 15))
         svg_height = max(600, min(1200, 100 + num_nodes * 10))
-        
+
         # Dynamic force parameters
         link_distance = max(50, min(200, 500 / math.sqrt(max(1, num_nodes))))
         charge_strength = max(-1500, min(-200, -5000 / math.sqrt(max(1, num_nodes))))
         collision_radius = max(20, min(80, 200 / math.sqrt(max(1, num_nodes))))
-        
+
         # Dynamic font size
         font_size = max(8, min(14, 150 / max(10, num_nodes)))
-        
+
         html_template = """<!DOCTYPE html>
 <html>
 <head>
@@ -496,19 +513,19 @@ class GraphGenerator:
     const width = {svg_width}, height = {svg_height};
     const svg = d3.select('#graph');
     let showLabels = true;
-    
+
     // Calculate node degrees for sizing
     const nodeDegrees = {{}};
     data.edges.forEach(e => {{
         nodeDegrees[e.source] = (nodeDegrees[e.source] || 0) + 1;
         nodeDegrees[e.target] = (nodeDegrees[e.target] || 0) + 1;
     }});
-    
+
     // Add degree info to nodes
     data.nodes.forEach(n => {{
         n.degree = nodeDegrees[n.id] || 0;
     }});
-    
+
     const simulation = d3.forceSimulation(data.nodes)
       .force('link', d3.forceLink(data.edges).id(d => d.id).distance({link_distance}))
       .force('charge', d3.forceManyBody().strength({charge_strength}))
@@ -534,7 +551,7 @@ class GraphGenerator:
     const maxDegree = Math.max(...Object.values(nodeDegrees), 1);
     const minNodeSize = Math.max(4, 20 / Math.sqrt(Math.max(1, data.nodes.length)));
     const maxNodeSize = Math.min(20, 100 / Math.sqrt(Math.max(1, data.nodes.length)));
-    
+
     const nodeScale = d => {{
         const degree = nodeDegrees[d.id] || 0;
         const scale = Math.sqrt(degree + 1) / Math.sqrt(maxDegree + 1);
@@ -573,27 +590,27 @@ class GraphGenerator:
       label.attr('x', d => d.x).attr('y', d => d.y);
     }});
 
-    function dragstarted(event, d) {{ 
-        if(!event.active) simulation.alphaTarget(0.3).restart(); 
-        d.fx = d.x; 
-        d.fy = d.y; 
+    function dragstarted(event, d) {{
+        if(!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
     }}
-    
-    function dragged(event, d) {{ 
-        d.fx = event.x; 
-        d.fy = event.y; 
+
+    function dragged(event, d) {{
+        d.fx = event.x;
+        d.fy = event.y;
     }}
-    
-    function dragended(event, d) {{ 
-        if(!event.active) simulation.alphaTarget(0); 
-        d.fx = null; 
-        d.fy = null; 
+
+    function dragended(event, d) {{
+        if(!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
     }}
-    
+
     function resetView() {{
         simulation.alpha(1).restart();
     }}
-    
+
     function toggleLabels() {{
         showLabels = !showLabels;
         label.style('display', showLabels ? 'block' : 'none');
@@ -603,7 +620,7 @@ class GraphGenerator:
  </html>"""
         # Calculate density for display
         graph_density = num_edges / max(1, num_nodes * (num_nodes - 1)) if num_nodes > 1 else 0
-        
+
         html = html_template.format(
             node_count=num_nodes,
             edge_count=num_edges,
@@ -623,7 +640,9 @@ class GraphGenerator:
             return str(path)
         return html
 
-    def _generate_image(self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str, layout: str) -> str:
+    def _generate_image(
+        self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str, layout: str
+    ) -> str:
         """Generate static image (SVG, PNG, PDF) with pip-first strategy.
 
         Order: Plotly+Kaleido -> NetworkX+Matplotlib -> Graphviz -> DOT fallback.
@@ -652,7 +671,9 @@ class GraphGenerator:
         )
         return self._generate_dot(processed_graph, output_path)
 
-    def _generate_plotly_image(self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str) -> str:
+    def _generate_plotly_image(
+        self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str
+    ) -> str:
         go = self.go
 
         # Try to use NetworkX for better layouts if available
@@ -677,8 +698,10 @@ class GraphGenerator:
         num_nodes = len(nodes)
         num_edges = len(processed_graph["edges"])
         max_label_length = max((len(n["label"]) for n in nodes), default=10)
-        
-        edge_trace = go.Scatter(x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines")
+
+        edge_trace = go.Scatter(
+            x=[], y=[], line=dict(width=0.5, color="#888"), hoverinfo="none", mode="lines"
+        )
         for e in processed_graph["edges"]:
             if e["source"] in pos and e["target"] in pos:
                 x0, y0 = pos[e["source"]]
@@ -691,19 +714,19 @@ class GraphGenerator:
         for e in processed_graph["edges"]:
             node_degrees[e["source"]] = node_degrees.get(e["source"], 0) + 1
             node_degrees[e["target"]] = node_degrees.get(e["target"], 0) + 1
-        
+
         # Dynamic node sizing
         min_size = max(5, 20 / math.sqrt(max(1, num_nodes)))
         max_size = min(30, 100 / math.sqrt(max(1, num_nodes)))
         max_degree = max(node_degrees.values()) if node_degrees else 1
-        
+
         node_sizes = []
         for n in nodes:
             degree = node_degrees.get(n["id"], 0)
             size_factor = math.log(degree + 1) / math.log(max_degree + 1) if max_degree > 0 else 0
             size = min_size + (max_size - min_size) * size_factor
             node_sizes.append(size)
-        
+
         # Dynamic font size
         font_size = max(8, min(12, 150 / max(10, num_nodes)))
 
@@ -718,13 +741,13 @@ class GraphGenerator:
                 colorscale="YlGnBu",
                 showscale=True,
                 colorbar=dict(title="Connections", thickness=15),
-                line=dict(width=1, color='white')
+                line=dict(width=1, color="white"),
             ),
             text=[n["label"] for n in nodes],
             textposition="top center",
             textfont=dict(size=font_size),
         )
-        
+
         # Dynamic dimensions
         width = max(800, min(1600, 50 * math.sqrt(num_nodes)))
         height = max(600, min(1200, 40 * math.sqrt(num_nodes)))
@@ -750,7 +773,9 @@ class GraphGenerator:
         fig.write_image(str(path))
         return str(path)
 
-    def _generate_graphviz_image(self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str, layout: str) -> str:
+    def _generate_graphviz_image(
+        self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str, layout: str
+    ) -> str:
         graphviz = self.graphviz
 
         if layout == "hierarchical":
@@ -798,25 +823,27 @@ class GraphGenerator:
         dot.render(path.with_suffix(""), format=format, cleanup=True)
         return str(path)
 
-    def _generate_networkx_image(self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str, layout: str) -> str:
+    def _generate_networkx_image(
+        self, processed_graph: Dict[str, Any], output_path: Optional[Path], format: str, layout: str
+    ) -> str:
         plt = self.plt
         nx = self.nx
 
         G = nx.DiGraph()
         for node in processed_graph["nodes"]:
-            G.add_node(node["id"], label=node["label"], type=node["type"]) 
+            G.add_node(node["id"], label=node["label"], type=node["type"])
         for e in processed_graph["edges"]:
             G.add_edge(e["source"], e["target"])
 
         # Calculate dynamic parameters
         num_nodes = len(G.nodes())
         num_edges = len(G.edges())
-        
+
         # Dynamic spacing based on graph size
         base_k = max(1.0, 10.0 / math.sqrt(max(1, num_nodes)))
         scale_factor = max(0.5, min(3.0, 50.0 / max(10, num_nodes)))
         iterations = min(200, max(50, num_nodes * 2))
-        
+
         # Improved layout parameters with dynamic spacing
         if layout == "hierarchical":
             pos = nx.spring_layout(G, k=base_k, iterations=iterations, scale=scale_factor)
@@ -834,7 +861,7 @@ class GraphGenerator:
         fig_width = max(10, min(20, 8 + math.sqrt(num_nodes)))
         fig_height = max(8, min(16, 6 + math.sqrt(num_nodes)))
         plt.figure(figsize=(fig_width, fig_height))
-        
+
         color_map = {
             "python": "#3776ab",
             "javascript": "#f7df1e",
@@ -844,13 +871,15 @@ class GraphGenerator:
             "cpp": "#00599c",
             "unknown": "#888888",
         }
-        node_colors = [color_map.get(G.nodes[n].get("type", "unknown"), "#888888") for n in G.nodes()]
-        
+        node_colors = [
+            color_map.get(G.nodes[n].get("type", "unknown"), "#888888") for n in G.nodes()
+        ]
+
         # Dynamic node sizes based on degree and graph size
         min_node_size = max(100, 500 / math.sqrt(max(1, num_nodes)))
         max_node_size = min(2000, 5000 / math.sqrt(max(1, num_nodes)))
         max_degree = max((G.degree(n) for n in G.nodes()), default=1)
-        
+
         node_sizes = []
         for n in G.nodes():
             degree = G.degree(n)
@@ -860,13 +889,21 @@ class GraphGenerator:
 
         # Dynamic font size
         font_size = max(6, min(12, 150 / max(10, num_nodes)))
-        
-        nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=node_sizes, alpha=0.9, linewidths=2, edgecolors='white')
-        
+
+        nx.draw_networkx_nodes(
+            G,
+            pos,
+            node_color=node_colors,
+            node_size=node_sizes,
+            alpha=0.9,
+            linewidths=2,
+            edgecolors="white",
+        )
+
         # Dynamic edge width
         edge_width = max(0.5, min(2, 30 / max(10, num_nodes)))
         arrow_size = max(8, min(20, 200 / max(10, num_nodes)))
-        
+
         nx.draw_networkx_edges(
             G,
             pos,
@@ -878,7 +915,9 @@ class GraphGenerator:
             width=edge_width,
         )
         labels = {n: G.nodes[n].get("label", n) for n in G.nodes()}
-        nx.draw_networkx_labels(G, pos, labels, font_size=font_size, font_family="sans-serif", font_weight='bold')
+        nx.draw_networkx_labels(
+            G, pos, labels, font_size=font_size, font_family="sans-serif", font_weight="bold"
+        )
 
         plt.title("Dependency Graph", fontsize=16)
         plt.axis("off")

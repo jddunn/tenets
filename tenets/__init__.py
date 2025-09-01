@@ -201,6 +201,7 @@ class Tenets:
 
         # Initialize logger (import locally to avoid circular import)
         from tenets.utils.logger import get_logger
+
         self.logger = get_logger(__name__)
         self.logger.info(f"Initializing Tenets v{__version__}")
 
@@ -424,7 +425,10 @@ class Tenets:
         if should_apply_tenets and _has_real_pending(pending):
             self.logger.info("Applying tenets to context")
             result = self.instiller.instill(
-                context=result, session=session, max_tenets=self.config.max_tenets_per_context
+                context=result,
+                session=session,
+                max_tenets=self.config.max_tenets_per_context,
+                inject_system_instruction=False,  # Already injected above
             )
 
         # Cache result

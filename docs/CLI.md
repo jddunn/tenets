@@ -618,17 +618,70 @@ tenets session list
 
 The output includes an Active column ("yes" indicates the current session).
 
+### session delete
+
+Delete a specific session.
+
+```bash
+tenets session delete <name> [--keep-context]
+```
+
+Options:
+- `--keep-context`: Keep stored context artifacts (default: false)
+
+### session reset
+
+Reset (delete and recreate) a session, purging its context.
+
+```bash
+tenets session reset <name>
+```
+
 ### session clear
 
-Delete ALL sessions. Optionally keep stored artifacts.
+Delete ALL sessions at once. Useful for clearing cache and starting fresh.
 
 ```bash
 tenets session clear [--keep-context]
 ```
 
+Options:
+- `--keep-context`: Keep stored artifacts (default: false, deletes everything)
+
+**Example:**
+```bash
+# Clear all sessions and their data
+tenets session clear
+
+# Clear sessions but preserve context files
+tenets session clear --keep-context
+```
+
+### session show
+
+Show details for a specific session.
+
+```bash
+tenets session show <name>
+```
+
+### session add
+
+Attach arbitrary content to a session.
+
+```bash
+tenets session add <name> <kind> <file>
+```
+
+Arguments:
+- `name`: Session name
+- `kind`: Content type tag (e.g., note, context_result)
+- `file`: File to attach
+
 Notes:
 - Creating or resetting a session marks it active.
 - Only one session is active at a time (resuming one deactivates others).
+- Session data is stored in SQLite under `~/.tenets/cache/sessions.db`
 
 ## Tenet Commands
 

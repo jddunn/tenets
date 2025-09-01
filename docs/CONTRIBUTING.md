@@ -123,7 +123,7 @@ pytest -m "not slow"
 User docs live in `docs/` (MkDocs Material). For changes affecting users:
 - Update `README.md`
 - Update or create relevant page under `docs/`
-- Add examples (`quickstart.md`, `features.md`) if CLI/API behavior changes
+- Add examples (`quickstart.md`) if CLI/API behavior changes
 - Link new pages in `mkdocs.yml`
 
 Serve docs locally:

@@ -374,13 +374,13 @@ graph TD
 
 #### Algorithm Overview & Trade-offs
 
-| Algorithm | Speed | Accuracy | Memory | Python 3.13 | Best For | Limitations |
+| Algorithm | Speed | Quality | Memory | Python 3.13 | Best For | Limitations |
 |-----------|-------|----------|---------|-------------|----------|-------------|
-| **RAKE** | ⚡⚡⚡ Excellent<br/>(2000 docs/2s) | Good<br/>(85-90%) | Low<br/>(~10MB) | ✅ Yes | • Technical docs<br/>• Multi-word phrases<br/>• Fast processing | • No semantic understanding<br/>• Language-dependent stopwords<br/>• May miss single important words |
-| **SimpleRAKE** | ⚡⚡⚡ Excellent<br/>(3000 docs/2s) | Good<br/>(85-90%) | Minimal<br/>(~5MB) | ✅ Yes | • No NLTK dependencies<br/>• Built-in implementation<br/>• Fast processing | • No advanced NLP features<br/>• Basic tokenization only |
-| **YAKE** | ⚡⚡ Good<br/>(~100 docs/s) | Very Good<br/>(90-95%) | Low<br/>(~15MB) | ❌ No | • Statistical analysis<br/>• Language independent<br/>• Capital letter aware | • Python 3.13 bug<br/>• Can produce duplicates<br/>• No deep semantics |
-| **TF-IDF** | ⚡⚡ Good<br/>(~150 docs/s) | Good<br/>(80-85%) | Medium<br/>(corpus-dependent) | ✅ Yes | • Corpus comparison<br/>• Document uniqueness<br/>• Always available | • Needs document corpus<br/>• No phrase extraction<br/>• Statistical only |
-| **Frequency** | ⚡⚡⚡ Excellent<br/>(instant) | Basic<br/>(60-70%) | Minimal<br/>(<5MB) | ✅ Yes | • Fallback option<br/>• Simple analysis<br/>• Guaranteed to work | • Very basic<br/>• No context awareness<br/>• Misses importance |
+| **RAKE** | Fast | Good | Low | ✅ Yes | • Technical docs<br/>• Multi-word phrases<br/>• Fast processing | • No semantic understanding<br/>• Language-dependent stopwords<br/>• May miss single important words |
+| **SimpleRAKE** | Fast | Good | Minimal | ✅ Yes | • No NLTK dependencies<br/>• Built-in implementation<br/>• Fast processing | • No advanced NLP features<br/>• Basic tokenization only |
+| **YAKE** | Moderate | Very Good | Low | ❌ No | • Statistical analysis<br/>• Language independent<br/>• Capital letter aware | • Python 3.13 bug<br/>• Can produce duplicates<br/>• No deep semantics |
+| **TF-IDF** | Moderate | Good | Medium<br/>(corpus-dependent) | ✅ Yes | • Corpus comparison<br/>• Document uniqueness<br/>• Always available | • Needs document corpus<br/>• No phrase extraction<br/>• Statistical only |
+| **Frequency** | Very Fast | Basic | Minimal | ✅ Yes | • Fallback option<br/>• Simple analysis<br/>• Guaranteed to work | • Very basic<br/>• No context awareness<br/>• Misses importance |
 
 #### Detailed Algorithm Analysis
 
@@ -1475,23 +1475,19 @@ graph TD
 
 #### File Analysis Performance
 
-| Operation | Small (<10KB) | Medium (100KB) | Large (1MB) | Huge (10MB) |
-|-----------|---------------|----------------|-------------|-------------|
-| Read      | 0.5ms         | 2ms            | 10ms        | 100ms       |
-| Tokenize  | 1ms           | 10ms           | 100ms       | 1s          |
-| Parse AST | 5ms           | 50ms           | 500ms       | 5s          |
-| Analyze   | 10ms          | 100ms          | 1s          | 10s         |
-| Embed     | 50ms          | 100ms          | 200ms       | 500ms       |
+**Performance benchmarks coming soon**
+
+We're currently collecting comprehensive performance data across different file sizes and languages. Check back for detailed metrics.
 
 #### System Performance
 
-| Codebase | Files | Size | Full Analysis | Incremental | Memory |
-|----------|-------|------|---------------|-------------|--------|
-| Small    | 100   | 5MB  | 2s            | 100ms       | 50MB   |
-| Medium   | 1K    | 50MB | 15s           | 500ms       | 200MB  |
-| Large    | 10K   | 500MB| 2m            | 2s          | 800MB  |
-| Huge     | 100K  | 5GB  | 20m           | 10s         | 3GB    |
-| Monorepo | 1M    | 50GB | 3h            | 30s         | 8GB    |
+| Codebase | Files | Size | Analysis Speed | Memory Usage |
+|----------|-------|------|----------------|--------------|
+| Small    | <100  | <10MB | Fast | Low |
+| Medium   | ~1K   | ~50MB | Fast | Low |
+| Large    | ~10K  | ~500MB| Moderate | Moderate |
+| Huge     | ~100K | ~5GB  | Slower | High |
+| Monorepo | 1M+   | 50GB+ | Variable | High |
 
 ## Configuration System
 
@@ -1662,55 +1658,49 @@ momentum:
 
 ### Command Structure
 
-```mermaid
-graph TB
-    subgraph "Main Commands"
-        DISTILL[tenets distill<br/>Build optimal context]
-        EXAMINE[tenets examine<br/>Code quality analysis]
-        CHRONICLE[tenets chronicle<br/>Git history analysis]
-        MOMENTUM[tenets momentum<br/>Velocity tracking]
-        SESSION[tenets session<br/>Session management]
-    end
-
-    subgraph "Distill Options"
-        PROMPT[--prompt TEXT<br/>Analysis prompt]
-        ALGORITHM[--algorithm CHOICE<br/>fast|balanced|thorough|ml]
-        MAX_TOKENS[--max-tokens INTEGER<br/>Token limit]
-        FILTERS[--include/--exclude<br/>File patterns]
-        SESSION_OPT[--session NAME<br/>Session context]
-        COPY[--copy<br/>Copy to clipboard]
-    end
-
-    subgraph "Global Options"
-        CONFIG[--config PATH<br/>Configuration file]
-        VERBOSE[--verbose/-v<br/>Logging level]
-        NO_CACHE[--no-cache<br/>Disable caching]
-        WORKERS[--workers N<br/>Parallel processing]
-    end
-
-    subgraph "Output Formats"
-        MARKDOWN[Markdown (default)<br/>Human-readable]
-        JSON[JSON format<br/>Machine-readable]
-        XML[XML format<br/>Structured data]
-        RAW[Raw text<br/>Plain output]
-    end
-
-    DISTILL --> PROMPT
-    DISTILL --> ALGORITHM
-    DISTILL --> MAX_TOKENS
-    DISTILL --> FILTERS
-    DISTILL --> SESSION_OPT
-    DISTILL --> COPY
-
-    EXAMINE --> CONFIG
-    CHRONICLE --> VERBOSE
-    MOMENTUM --> NO_CACHE
-    SESSION --> WORKERS
-
-    COPY --> MARKDOWN
-    SESSION_OPT --> JSON
-    FILTERS --> XML
-    WORKERS --> RAW
+```yaml
+# Main Commands
+tenets:
+  distill:           # Build optimal context for prompts
+    --copy           # Copy to clipboard
+    --format         # Output format (markdown, xml, json)
+    --max-tokens     # Token limit
+    --exclude        # Exclude patterns
+    --session        # Session name
+    
+  examine:           # Code quality analysis
+    --show-details   # Detailed metrics
+    --hotspots       # Show maintenance hotspots
+    --ownership      # Show code ownership
+    --format         # Output format
+    
+  chronicle:         # Git history analysis
+    --since          # Time range
+    --author         # Filter by author
+    --format         # Output format
+    
+  momentum:          # Velocity tracking (WIP)
+    --team           # Team metrics
+    --detailed       # Detailed breakdown
+    
+  session:           # Session management
+    create           # Create new session
+    list             # List sessions
+    delete           # Delete session
+    
+  tenet:            # Manage guiding principles
+    add             # Add new tenet
+    list            # List tenets
+    remove          # Remove tenet
+    
+  instill:          # Apply tenets and system instructions
+    --dry-run       # Preview what would be applied
+    --force         # Force application
+    
+  system-instruction: # Manage system instructions
+    set             # Set instruction
+    get             # Get current
+    enable/disable  # Toggle
 ```
 
 ### Python API Design
@@ -1772,12 +1762,12 @@ graph TB
         ENV_VARS[Environment Variables<br/>Sensitive values]
     end
 
-    subgraph "Output Sanitization"
-        REDACT[Redact Secrets<br/>Replace with placeholders]
-        MASK_PII[Mask PII<br/>Personal information]
+    subgraph "Output Sanitization (Roadmap)"
+        REDACT[Redact Secrets<br/>**WIP** - Coming soon]
+        MASK_PII[Mask PII<br/>**WIP** - Planned feature]
         CLEAN_PATHS[Clean File Paths<br/>Remove sensitive paths]
-        REMOVE_URLS[Remove Internal URLs<br/>Private endpoints]
-        ANONYMIZE[Anonymization Option<br/>Remove identifying info]
+        REMOVE_URLS[Remove Internal URLs<br/>**WIP** - Under development]
+        ANONYMIZE[Anonymization<br/>**WIP** - Future release]
     end
 
     subgraph "Data Protection"
@@ -1806,7 +1796,11 @@ graph TB
     ANONYMIZE --> AUDIT_LOG
 ```
 
-### Secret Detection Patterns
+### Secret Detection Patterns (Roadmap)
+
+**Note: Secret detection and redaction is a planned feature for future releases.**
+
+The following architecture represents the planned implementation:
 
 ```mermaid
 graph LR
@@ -1853,7 +1847,7 @@ graph LR
 ```mermaid
 graph TB
     subgraph "Test Categories"
-        UNIT[Unit Tests<br/>>90% coverage<br/>Fast, isolated]
+        UNIT[Unit Tests<br/>Target: High coverage<br/>Fast, isolated]
         INTEGRATION[Integration Tests<br/>Component interaction<br/>Real workflows]
         E2E[End-to-End Tests<br/>Complete user journeys<br/>CLI to output]
         PERFORMANCE[Performance Tests<br/>Benchmark regression<br/>Memory usage]

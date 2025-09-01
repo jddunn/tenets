@@ -521,7 +521,7 @@ class TestHybridEntityRecognizer:
         # Should extract keywords as entities
         keyword_entities = [e for e in entities if e.type == "keyword"]
         # Keyword extraction might fail without RAKE/YAKE, but we should get some entities
-        
+
         # Important keywords should be found either as keywords or in other entity types
         all_names = [e.name.lower() for e in entities]
         # Check if any entity contains the expected terms

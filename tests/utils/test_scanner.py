@@ -1,8 +1,6 @@
 """Tests for the FileScanner utility."""
 
 import os
-import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -49,13 +47,13 @@ def test_project(tmp_path):
     build_dir = tmp_path / "build"
     build_dir.mkdir()
     (build_dir / "output.js").write_text("compiled")
-    
+
     # Minified files (should be ignored by default)
     (src_dir / "app.min.js").write_text("minified")
     (src_dir / "styles.min.css").write_text("minified")
     (src_dir / "bundle.js").write_text("bundled")
     (src_dir / "vendor.prod.js").write_text("production")
-    
+
     # Distribution directory
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir()
@@ -116,7 +114,7 @@ class TestFileScanner:
         assert "main.cpython-39.pyc" not in file_names  # __pycache__
         assert "image.png" not in file_names  # binary
         assert "data.db" not in file_names  # binary
-        
+
         # Should exclude minified files by default
         assert "app.min.js" not in file_names
         assert "styles.min.css" not in file_names
@@ -385,13 +383,13 @@ class TestFileScanner:
         """Test that minified files are excluded by default."""
         files = scanner.scan([test_project])
         file_names = [f.name for f in files]
-        
+
         # Minified files should be excluded
         assert "app.min.js" not in file_names
         assert "styles.min.css" not in file_names
         assert "bundle.js" not in file_names
         assert "vendor.prod.js" not in file_names
-        
+
         # Regular source files should be included
         assert "main.py" in file_names
         assert "utils.py" in file_names
@@ -402,10 +400,10 @@ class TestFileScanner:
         config = TenetsConfig()
         config.exclude_minified = False
         scanner = FileScanner(config)
-        
+
         files = scanner.scan([test_project])
         file_names = [f.name for f in files]
-        
+
         # Now minified files should be included
         assert "app.min.js" in file_names
         assert "styles.min.css" in file_names
@@ -416,31 +414,31 @@ class TestFileScanner:
         """Test that build directories are excluded."""
         files = scanner.scan([test_project])
         file_paths = [str(f) for f in files]
-        
+
         # Files in build directories should be excluded
         # Use os.sep to ensure we're checking directory names, not just substring
-        import os
+
         sep = os.sep
         assert not any(f"{sep}dist{sep}" in path for path in file_paths)
         assert not any(f"{sep}build{sep}" in path for path in file_paths)
         assert not any(f"{sep}node_modules{sep}" in path for path in file_paths)
-        
+
     def test_minified_patterns_customization(self, test_project):
         """Test custom minified patterns."""
         config = TenetsConfig()
         config.minified_patterns = ["*.custom.min.js", "vendor.*.js"]
         scanner = FileScanner(config)
-        
+
         # Create test files
         (test_project / "src" / "app.custom.min.js").write_text("custom minified")
         (test_project / "src" / "vendor.lib.js").write_text("vendor lib")
-        
+
         files = scanner.scan([test_project])
         file_names = [f.name for f in files]
-        
+
         # Custom patterns should be excluded
         assert "app.custom.min.js" not in file_names
         assert "vendor.lib.js" not in file_names
-        
+
         # Regular files should still be included
         assert "main.py" in file_names

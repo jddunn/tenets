@@ -112,7 +112,7 @@ class TenetManager:
 
     def add_tenet(
         self,
-        content: str,
+        content: Union[str, Tenet],
         priority: Union[str, Priority] = "medium",
         category: Optional[Union[str, TenetCategory]] = None,
         session: Optional[str] = None,
@@ -121,7 +121,7 @@ class TenetManager:
         """Add a new tenet.
 
         Args:
-            content: The guiding principle text
+            content: The guiding principle text or a Tenet object
             priority: Priority level (low, medium, high, critical)
             category: Category for organization
             session: Bind to specific session
@@ -130,17 +130,27 @@ class TenetManager:
         Returns:
             The created Tenet
         """
-        # Create tenet
-        tenet = Tenet(
-            content=content.strip(),
-            priority=priority if isinstance(priority, Priority) else Priority(priority),
-            category=(
-                category
-                if isinstance(category, TenetCategory)
-                else (TenetCategory(category) if category else None)
-            ),
-            author=author,
-        )
+        # Check if content is already a Tenet object
+        if isinstance(content, Tenet):
+            tenet = content
+            # Update session bindings if a session was specified
+            if session and session not in (tenet.session_bindings or []):
+                if tenet.session_bindings:
+                    tenet.session_bindings.append(session)
+                else:
+                    tenet.session_bindings = [session]
+        else:
+            # Create tenet from string content
+            tenet = Tenet(
+                content=content.strip(),
+                priority=priority if isinstance(priority, Priority) else Priority(priority),
+                category=(
+                    category
+                    if isinstance(category, TenetCategory)
+                    else (TenetCategory(category) if category else None)
+                ),
+                author=author,
+            )
 
         # Bind to session if specified
         if session:

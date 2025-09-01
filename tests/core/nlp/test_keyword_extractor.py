@@ -86,7 +86,9 @@ class TestKeywordExtractor:
         mock_rake_class.return_value = mock_rake
 
         with patch("tenets.core.nlp.keyword_extractor.RAKE_AVAILABLE", True):
-            with patch("tenets.core.nlp.keyword_extractor.Rake", object):  # Mock Rake to be not None
+            with patch(
+                "tenets.core.nlp.keyword_extractor.Rake", object
+            ):  # Mock Rake to be not None
                 extractor = KeywordExtractor(use_rake=True, use_yake=False)
                 keywords = extractor.extract(
                     "Machine learning with Python programming and data", max_keywords=3

@@ -382,8 +382,7 @@ class TestMomentumOutputFormats:
                     assert output_file.exists()
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_momentum_html_output(self, runner, mock_momentum_tracker, mock_git_analyzer):
         """Test HTML report generation."""
@@ -398,7 +397,9 @@ class TestMomentumOutputFormats:
                     "tenets.cli.commands.momentum.ReportGenerator", return_value=mock_report_gen
                 ):
                     with patch("tenets.cli.commands.momentum.get_logger"):
-                        with patch("tenets.cli.commands.momentum.click.confirm", return_value=False):
+                        with patch(
+                            "tenets.cli.commands.momentum.click.confirm", return_value=False
+                        ):
                             result = runner.invoke(momentum, [".", "--format", "html"])
 
                             assert result.exit_code == 0
@@ -407,8 +408,7 @@ class TestMomentumOutputFormats:
                             mock_report_gen.generate.assert_called_once()
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_momentum_html_opens_browser(self, runner, mock_momentum_tracker, mock_git_analyzer):
         """Test HTML report opens browser when confirmed."""
@@ -424,7 +424,9 @@ class TestMomentumOutputFormats:
                 ):
                     with patch("tenets.cli.commands.momentum.get_logger"):
                         with patch("tenets.cli.commands.momentum.click.confirm", return_value=True):
-                            with patch("tenets.cli.commands.momentum.webbrowser.open") as mock_browser:
+                            with patch(
+                                "tenets.cli.commands.momentum.webbrowser.open"
+                            ) as mock_browser:
                                 result = runner.invoke(momentum, [".", "--format", "html"])
 
                                 assert result.exit_code == 0

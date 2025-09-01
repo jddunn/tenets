@@ -164,6 +164,14 @@ docs-serve:
 	@echo "Press Ctrl+C to stop"
 	mkdocs serve --dev-addr localhost:8000 --livereload
 
+# Serve documentation in dev mode (no API generation, faster for styling/content updates)
+docs-dev:
+	@echo "Starting documentation server in DEV MODE (no API generation)..."
+	@echo "Documentation will be available at http://localhost:8000"
+	@echo "Press Ctrl+C to stop"
+	@echo "NOTE: API docs will not be generated/updated in this mode"
+	mkdocs serve --dev-addr localhost:8000 --livereload --dirtyreload
+
 # Deploy documentation to GitHub Pages
 docs-deploy:
 	@echo "Deploying documentation to GitHub Pages..."

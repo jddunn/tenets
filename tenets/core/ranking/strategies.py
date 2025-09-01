@@ -19,9 +19,10 @@ from typing import Any, Dict, List, Set
 from tenets.core.nlp.programming_patterns import get_programming_patterns
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
-# Note: get_logger imported locally in each class to avoid circular imports
 
 from .factors import RankingFactors
+
+# Note: get_logger imported locally in each class to avoid circular imports
 
 
 class RankingStrategy(ABC):
@@ -61,6 +62,7 @@ class FastRankingStrategy(RankingStrategy):
     def __init__(self):
         """Initialize fast ranking strategy."""
         from tenets.utils.logger import get_logger
+
         self.logger = get_logger(__name__)
 
     def rank_file(
@@ -209,6 +211,7 @@ class BalancedRankingStrategy(RankingStrategy):
     def __init__(self):
         """Initialize balanced ranking strategy."""
         from tenets.utils.logger import get_logger
+
         self.logger = get_logger(__name__)
 
     def rank_file(
@@ -522,6 +525,7 @@ class ThoroughRankingStrategy(RankingStrategy):
     def __init__(self):
         """Initialize thorough ranking strategy with NLP components."""
         from tenets.utils.logger import get_logger
+
         self.logger = get_logger(__name__)
         # Get centralized programming patterns
         self.programming_patterns = get_programming_patterns()
@@ -600,10 +604,10 @@ class ThoroughRankingStrategy(RankingStrategy):
         pattern_scores = self.programming_patterns.analyze_code_patterns(
             file.content or "", prompt_context.keywords
         )
-        
+
         # Store overall score
         factors.code_patterns = pattern_scores.get("overall", 0.0)
-        
+
         # Store individual category scores with clean naming
         for category, score in pattern_scores.items():
             if category != "overall":
@@ -852,6 +856,7 @@ class MLRankingStrategy(RankingStrategy):
     def __init__(self):
         """Initialize ML ranking strategy."""
         from tenets.utils.logger import get_logger
+
         self.logger = get_logger(__name__)
         self._model = None
         self._embeddings_cache = {}
@@ -876,7 +881,7 @@ class MLRankingStrategy(RankingStrategy):
         if not self._model_loaded:
             self._load_model()
             self._model_loaded = True
-            
+
         # Start with thorough ranking
         thorough = ThoroughRankingStrategy()
         factors = thorough.rank_file(file, prompt_context, corpus_stats)

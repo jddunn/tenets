@@ -285,7 +285,7 @@ class TestSystemInstructionExport:
 
             assert result.exit_code == 0
             assert f"Exported to {output_file}" in result.stdout
-            assert "Size: 31 characters" in result.stdout
+            assert "Size: 34 characters" in result.stdout
             assert output_file.exists()
             assert output_file.read_text() == "You are a helpful coding assistant"
 

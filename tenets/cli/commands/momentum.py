@@ -15,7 +15,7 @@ from tenets.core.git import GitAnalyzer
 from tenets.core.momentum import MomentumTracker
 from tenets.core.reporting import ReportGenerator
 from tenets.utils.logger import get_logger
-from tenets.utils.timing import CommandTimer, format_duration
+from tenets.utils.timing import CommandTimer
 from tenets.viz import MomentumVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
@@ -104,7 +104,7 @@ def run(
     try:
         # Track momentum
         logger.info(f"Calculating {period}ly momentum...")
-        
+
         # Convert date range to period string if since was provided
         if since:
             # Calculate the number of days between dates
@@ -113,7 +113,7 @@ def run(
         else:
             # Use the original period parameter
             period_str = period
-        
+
         # Build kwargs for track_momentum
         track_kwargs = {
             "period": period_str,
@@ -123,23 +123,22 @@ def run(
             "daily_breakdown": True,
             "interval": "daily" if period == "day" else "weekly",
         }
-        
+
         # Add date range parameters if we have them
         if date_range:
-            track_kwargs["since"] = date_range["since"] 
+            track_kwargs["since"] = date_range["since"]
             track_kwargs["until"] = date_range["until"]
-        
+
         # Add metrics if specified
         if metrics:
             track_kwargs["metrics"] = list(metrics)
-            
-        momentum_report = tracker.track_momentum(
-            normalize_path(target_path),
-            **track_kwargs
-        )
-        
+
+        momentum_report = tracker.track_momentum(normalize_path(target_path), **track_kwargs)
+
         # Convert report to dictionary
-        momentum_data = momentum_report.to_dict() if hasattr(momentum_report, 'to_dict') else momentum_report
+        momentum_data = (
+            momentum_report.to_dict() if hasattr(momentum_report, "to_dict") else momentum_report
+        )
 
         # Add team metrics if requested
         if team and "team_metrics" not in momentum_data:
@@ -174,27 +173,31 @@ def run(
             _print_momentum_summary(momentum_data)
             # Show timing
             if not is_quiet:
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                timer_symbol = "⏱" if (encoding and 'utf' in encoding.lower()) else "[TIME]"
+                timer_symbol = "⏱" if (encoding and "utf" in encoding.lower()) else "[TIME]"
                 click.echo(f"\n{timer_symbol}  Completed in {timing_result.formatted_duration}")
         elif output_format.lower() == "json":
             _output_json_momentum(momentum_data, output)
         else:
-            _generate_momentum_report(momentum_data, output_format.lower(), output, config, target_path, period)
+            _generate_momentum_report(
+                momentum_data, output_format.lower(), output, config, target_path, period
+            )
 
     except Exception as e:
         # Stop timer on error
         if timer.start_time and not timer.end_time:
             timing_result = timer.stop("Momentum tracking failed")
             if not is_quiet:
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                warn_symbol = "⚠" if (encoding and 'utf' in encoding.lower()) else "[WARNING]"
+                warn_symbol = "⚠" if (encoding and "utf" in encoding.lower()) else "[WARNING]"
                 click.echo(f"{warn_symbol}  Failed after {timing_result.formatted_duration}")
-        
+
         logger.error(f"Momentum tracking failed: {e}")
         click.echo(str(e))
         raise typer.Exit(1)
@@ -329,7 +332,7 @@ def _calculate_team_metrics(
     """
     # Import is_bot_commit from tracker module
     from tenets.core.momentum.tracker import is_bot_commit
-    
+
     # Get commits in range
     commits = git_analyzer.get_commits(since=date_range["since"], until=date_range["until"])
 
@@ -340,11 +343,11 @@ def _calculate_team_metrics(
     for commit in commits:
         author_name = commit.get("author", "Unknown")
         author_email = commit.get("author_email", "")
-        
+
         # Skip bot commits
         if is_bot_commit(author_name, author_email):
             continue
-            
+
         contributors.add(author_name)
         date = commit.get("date", datetime.now()).date()
         daily_commits[date] = daily_commits.get(date, 0) + 1
@@ -531,7 +534,9 @@ def _display_terminal_momentum(
         display.display_header("Team Metrics", style="single")
         # Ensure bus_factor shows a sensible minimum for solo teams
         tm = dict(momentum_data["team_metrics"])
-        if (tm.get("total_members", 0) == 1 or tm.get("team_size", 0) == 1) and tm.get("bus_factor", 0) == 0:
+        if (tm.get("total_members", 0) == 1 or tm.get("team_size", 0) == 1) and tm.get(
+            "bus_factor", 0
+        ) == 0:
             tm["bus_factor"] = 1
         display.display_metrics(tm, columns=2)
 
@@ -555,10 +560,11 @@ def _display_terminal_momentum(
 
             trend = forecast.get("trend_percentage", 0)
             # Use ASCII-safe symbols for non-UTF terminals
-            import sys
             import locale
+            import sys
+
             encoding = sys.stdout.encoding or locale.getpreferredencoding()
-            if encoding and 'utf' in encoding.lower():
+            if encoding and "utf" in encoding.lower():
                 trend_symbol = "↑" if trend > 0 else "↓" if trend < 0 else "→"
             else:
                 trend_symbol = "^" if trend > 0 else "v" if trend < 0 else "-"
@@ -574,8 +580,12 @@ def _display_terminal_momentum(
 
 
 def _generate_momentum_report(
-    momentum_data: Dict[str, Any], format: str, output: Optional[str], config: Any,
-    target_path: Path, period: str
+    momentum_data: Dict[str, Any],
+    format: str,
+    output: Optional[str],
+    config: Any,
+    target_path: Path,
+    period: str,
 ) -> None:
     """Generate momentum report.
 
@@ -597,35 +607,36 @@ def _generate_momentum_report(
         output_path = Path(output)
     else:
         # Auto-generate filename with timestamp and path info
-        from datetime import datetime
         import re
-        
+        from datetime import datetime
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         # Get safe path component from target_path
         path_str = str(target_path).replace("\\", "/")
         if path_str in (".", "./", ""):
             safe_path = "current_dir"
         else:
-            path_str = re.sub(r'^\.+/+', '', path_str)
+            path_str = re.sub(r"^\.+/+", "", path_str)
             safe_path = path_str.replace("/", "_").replace("\\", "_")
-            safe_path = re.sub(r'[^\w\-_]', '', safe_path)[:30]
-        
+            safe_path = re.sub(r"[^\w\-_]", "", safe_path)[:30]
+
         # Include period info in filename
         period_str = period.replace(" ", "_").replace("-", "_")
-        
+
         filename = f"momentum_{safe_path}_{period_str}_{timestamp}.{format}"
-        filename = re.sub(r'_+', '_', filename)
+        filename = re.sub(r"_+", "_", filename)
         output_path = Path(filename)
 
     generator.generate(data=momentum_data, output_path=output_path, config=report_config)
 
     click.echo(f"Momentum report generated: {output_path}")
-    
+
     # If HTML format, offer to open in browser
     if format == "html":
         if click.confirm("\nWould you like to open it in your browser now?", default=False):
             import webbrowser
+
             # Ensure absolute path for file URI
             file_path = output_path.resolve()
             webbrowser.open(file_path.as_uri())
@@ -669,42 +680,48 @@ def _print_momentum_summary(momentum_data: Dict[str, Any]) -> None:
         # Support both numeric percent and dict-shaped trend data
         if isinstance(trend, (int, float)):
             if trend > 0:
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                arrow = "↑" if (encoding and 'utf' in encoding.lower()) else "^"
+                arrow = "↑" if (encoding and "utf" in encoding.lower()) else "^"
                 click.secho(f"Trend: {arrow} +{trend:.1f}%", fg="green")
             elif trend < 0:
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                arrow = "↓" if (encoding and 'utf' in encoding.lower()) else "v"
+                arrow = "↓" if (encoding and "utf" in encoding.lower()) else "v"
                 click.secho(f"Trend: {arrow} {trend:.1f}%", fg="red")
             else:
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                arrow = "→" if (encoding and 'utf' in encoding.lower()) else "-"
+                arrow = "→" if (encoding and "utf" in encoding.lower()) else "-"
                 click.echo(f"Trend: {arrow} Stable")
         elif isinstance(trend, dict):
             direction = str(trend.get("trend_direction", "stable")).lower()
             if direction == "increasing":
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                arrow = "↑" if (encoding and 'utf' in encoding.lower()) else "^"
+                arrow = "↑" if (encoding and "utf" in encoding.lower()) else "^"
                 click.secho(f"Trend: {arrow} Improving", fg="green")
             elif direction == "decreasing":
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                arrow = "↓" if (encoding and 'utf' in encoding.lower()) else "v"
+                arrow = "↓" if (encoding and "utf" in encoding.lower()) else "v"
                 click.secho(f"Trend: {arrow} Declining", fg="red")
             else:
-                import sys
                 import locale
+                import sys
+
                 encoding = sys.stdout.encoding or locale.getpreferredencoding()
-                arrow = "→" if (encoding and 'utf' in encoding.lower()) else "-"
+                arrow = "→" if (encoding and "utf" in encoding.lower()) else "-"
                 click.echo(f"Trend: {arrow} Stable")
 
     # Team metrics

@@ -349,8 +349,7 @@ class TestChronicleOutputFormats:
                     assert output_file.exists()
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_chronicle_html_output(self, runner, mock_chronicle_builder, mock_git_analyzer):
         """Test HTML report generation."""
@@ -365,7 +364,9 @@ class TestChronicleOutputFormats:
                     "tenets.cli.commands.chronicle.ReportGenerator", return_value=mock_report_gen
                 ):
                     with patch("tenets.cli.commands.chronicle.get_logger"):
-                        with patch("tenets.cli.commands.chronicle.click.confirm", return_value=False):
+                        with patch(
+                            "tenets.cli.commands.chronicle.click.confirm", return_value=False
+                        ):
                             result = runner.invoke(chronicle, [".", "--format", "html"])
 
                             assert result.exit_code == 0
@@ -374,8 +375,7 @@ class TestChronicleOutputFormats:
                             mock_report_gen.generate.assert_called_once()
 
     @pytest.mark.skipif(
-        sys.version_info[:2] >= (3, 13),
-        reason="Threading tests hang with coverage on Python 3.13+"
+        sys.version_info[:2] >= (3, 13), reason="Threading tests hang with coverage on Python 3.13+"
     )
     def test_chronicle_html_opens_browser(self, runner, mock_chronicle_builder, mock_git_analyzer):
         """Test HTML report opens browser when confirmed."""
@@ -390,8 +390,12 @@ class TestChronicleOutputFormats:
                     "tenets.cli.commands.chronicle.ReportGenerator", return_value=mock_report_gen
                 ):
                     with patch("tenets.cli.commands.chronicle.get_logger"):
-                        with patch("tenets.cli.commands.chronicle.click.confirm", return_value=True):
-                            with patch("tenets.cli.commands.chronicle.webbrowser.open") as mock_browser:
+                        with patch(
+                            "tenets.cli.commands.chronicle.click.confirm", return_value=True
+                        ):
+                            with patch(
+                                "tenets.cli.commands.chronicle.webbrowser.open"
+                            ) as mock_browser:
                                 result = runner.invoke(chronicle, [".", "--format", "html"])
 
                                 assert result.exit_code == 0

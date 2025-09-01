@@ -5,7 +5,7 @@ maximizes relevance while staying within token constraints.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
@@ -14,8 +14,6 @@ from tenets.utils.logger import get_logger
 from tenets.utils.tokens import count_tokens
 
 # Lazy import Summarizer to avoid loading ML dependencies at import time
-if TYPE_CHECKING:
-    from tenets.core.summarizer import Summarizer
 
 
 @dataclass
@@ -61,6 +59,7 @@ class ContextAggregator:
         """Lazy load summarizer when needed."""
         if self._summarizer is None:
             from tenets.core.summarizer import Summarizer
+
             self._summarizer = Summarizer(self.config)
         return self._summarizer
 
@@ -198,20 +197,22 @@ class ContextAggregator:
                     if docstring_weight is not None or not summarize_imports:
                         # Temporarily override the config
                         original_weight = getattr(self.config.summarizer, "docstring_weight", 0.5)
-                        original_summarize = getattr(self.config.summarizer, "summarize_imports", True)
-                        
+                        original_summarize = getattr(
+                            self.config.summarizer, "summarize_imports", True
+                        )
+
                         if docstring_weight is not None:
                             self.config.summarizer.docstring_weight = docstring_weight
                         if not summarize_imports:
                             self.config.summarizer.summarize_imports = False
-                            
+
                         summary = self.summarizer.summarize_file(
                             file=file,
                             target_ratio=target_ratio,
                             preserve_structure=True,
                             prompt_keywords=prompt_context.keywords if prompt_context else None,
                         )
-                        
+
                         # Restore original values
                         self.config.summarizer.docstring_weight = original_weight
                         self.config.summarizer.summarize_imports = original_summarize

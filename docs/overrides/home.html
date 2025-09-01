@@ -24,6 +24,219 @@
     margin-top: 0 !important;
     padding-top: 3rem;
   }
+
+  /* Sequential screenshots styling */
+  .screenshots-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .screenshot-item {
+    width: 100%;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease forwards;
+    background: #1e1e1e;
+    position: relative;
+  }
+  
+  /* Terminal screenshots - add padding and constrain size */
+  .screenshot-item.terminal-shot {
+    padding: 40px;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+  
+  .screenshot-item.terminal-shot img {
+    width: auto;
+    max-width: 85%;
+    height: auto;
+    max-height: 350px;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Context screenshots - centered with gradient like sessions */
+  #pane-context .screenshot-item {
+    padding: 40px;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+  
+  #pane-context .screenshot-item img {
+    width: auto;
+    max-width: 85%;
+    height: auto;
+    max-height: 350px;
+    margin: 0 auto;
+    display: block;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Session screenshots - terminal style with padding */
+  #pane-sessions .screenshot-item {
+    padding: 40px;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  #pane-sessions .screenshot-item img {
+    width: auto;
+    max-width: 85%;
+    height: auto;
+    max-height: 350px;
+    margin: 0 auto;
+    display: block;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Stagger animation for multiple screenshots */
+  .screenshot-item:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+  
+  .screenshot-item:nth-child(2) {
+    animation-delay: 0.3s;
+  }
+  
+  .screenshot-item:nth-child(3) {
+    animation-delay: 0.5s;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .screenshot-item:hover {
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  /* Analysis and Quality screenshots - centered with gradient */
+  #pane-analysis .screenshot-item,
+  #pane-quality .screenshot-item,
+  #pane-velocity .screenshot-item {
+    padding: 40px;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+  
+  #pane-analysis .screenshot-item img,
+  #pane-quality .screenshot-item img,
+  #pane-velocity .screenshot-item img {
+    width: auto;
+    max-width: 85%;
+    height: auto;
+    max-height: 350px;
+    margin: 0 auto;
+    display: block;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .screenshot-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  /* Light theme adjustments */
+  [data-md-color-scheme="default"] .screenshot-item.terminal-shot,
+  [data-md-color-scheme="default"] #pane-sessions .screenshot-item,
+  [data-md-color-scheme="default"] #pane-context .screenshot-item,
+  [data-md-color-scheme="default"] #pane-analysis .screenshot-item,
+  [data-md-color-scheme="default"] #pane-quality .screenshot-item,
+  [data-md-color-scheme="default"] #pane-velocity .screenshot-item {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  }
+  
+  [data-md-color-scheme="default"] .screenshot-item.terminal-shot img,
+  [data-md-color-scheme="default"] #pane-sessions .screenshot-item img {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Trigger animation when pane becomes active */
+  .see-pane {
+    display: none;
+  }
+  
+  input[type="radio"]:checked ~ .see-panes .see-pane {
+    display: none;
+  }
+  
+  #tab-context:checked ~ .see-panes #pane-context,
+  #tab-analysis:checked ~ .see-panes #pane-analysis,
+  #tab-quality:checked ~ .see-panes #pane-quality,
+  #tab-sessions:checked ~ .see-panes #pane-sessions,
+  #tab-velocity:checked ~ .see-panes #pane-velocity,
+  #tab-viz:checked ~ .see-panes #pane-viz {
+    display: block;
+  }
+  
+  /* Re-trigger animation when tab is selected */
+  #tab-context:checked ~ .see-panes #pane-context .screenshot-item,
+  #tab-analysis:checked ~ .see-panes #pane-analysis .screenshot-item,
+  #tab-quality:checked ~ .see-panes #pane-quality .screenshot-item,
+  #tab-sessions:checked ~ .see-panes #pane-sessions .screenshot-item,
+  #tab-velocity:checked ~ .see-panes #pane-velocity .screenshot-item,
+  #tab-viz:checked ~ .see-panes #pane-viz .screenshot-item {
+    animation: fadeInUp 0.6s ease forwards;
+  }
+  
+  /* Screenshot caption */
+  .screenshot-caption {
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--md-default-fg-color--light);
+    font-size: 0.9em;
+    text-align: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Caption inside terminal shots */
+  .terminal-shot .screenshot-caption {
+    background: transparent;
+    border-top: none;
+    margin-top: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85em;
+  }
+  
+  [data-md-color-scheme="slate"] .screenshot-caption {
+    background: rgba(255, 255, 255, 0.03);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  [data-md-color-scheme="default"] .terminal-shot .screenshot-caption {
+    color: rgba(0, 0, 0, 0.6);
+  }
 </style>
 
 <!-- Main Hero Section -->
@@ -57,10 +270,10 @@
      alt="tenets"
      class="torch-logo-static light-logo">
     </div><!-- /torch-container -->
-    <p class="hero-tagline">A powerful CLI for context that feeds your prompts</p>
+    <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
 
     <p class="hero-description">
-      Command-line tool for intelligent code aggregation and analysis.<br>
+      Command-line tool and Python API for intelligent code aggregation and analysis.<br>
       Surface relevant files. Build optimal context. Track velocity.<br>
       Examine code quality metrics. Evaluate and improve your codebase.<br>
       All processing stays local - your code never leaves your machine.
@@ -142,9 +355,15 @@
               <div class="see-title">Output</div>
             </div>
             <div class="see-body">
-              <div class="shot-frame">
-                <img src="{{ 'assets/images/screenshots/context-building.png' | url }}" alt="Context building" loading="lazy" data-poster="{{ 'assets/images/screenshots/context-building.png' | url }}" data-gif="{{ 'assets/images/screenshots/context-building.gif' | url }}" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                <span class="see-hint">Click to reveal</span>
+              <div class="screenshots-container">
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/context-building-1.png' | url }}" alt="Context building - Analyzing files" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Analyzing and ranking relevant files</div>
+                </div>
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/context-building-2.png' | url }}" alt="Context building - Building context" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Building optimized context with summaries</div>
+                </div>
               </div>
             </div>
           </div>
@@ -166,9 +385,11 @@
               <div class="see-title">Output</div>
             </div>
             <div class="see-body">
-              <div class="shot-frame">
-                <img src="{{ 'assets/images/screenshots/code-analysis.png' | url }}" alt="Code analysis" loading="lazy" data-poster="{{ 'assets/images/screenshots/code-analysis.png' | url }}" data-gif="{{ 'assets/images/screenshots/code-analysis.gif' | url }}" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                <span class="see-hint">Click to reveal</span>
+              <div class="screenshots-container">
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/code-analysis.png' | url }}" alt="Code analysis" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Comprehensive code analysis with metrics</div>
+                </div>
               </div>
             </div>
           </div>
@@ -182,7 +403,7 @@
               <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
               <div class="see-title">Quality Metrics</div>
             </div>
-            <div class="see-body"><pre><code class="language-bash">$ tenets examine . --quality --metrics --suggestions</code></pre></div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets examine . --show-details --hotspots</code></pre></div>
           </div>
           <div class="see-output" data-caption="Quality dashboards and suggestions">
             <div class="see-header">
@@ -190,9 +411,11 @@
               <div class="see-title">Output</div>
             </div>
             <div class="see-body">
-              <div class="shot-frame">
-                <img src="{{ 'assets/images/screenshots/quality-metrics.png' | url }}" alt="Quality metrics" loading="lazy" data-poster="{{ 'assets/images/screenshots/quality-metrics.png' | url }}" data-gif="{{ 'assets/images/screenshots/quality-metrics.gif' | url }}" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                <span class="see-hint">Click to reveal</span>
+              <div class="screenshots-container">
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/quality.png' | url }}" alt="Quality metrics" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Code quality metrics and improvement suggestions</div>
+                </div>
               </div>
             </div>
           </div>
@@ -219,9 +442,19 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
               <div class="see-title">Output</div>
             </div>
             <div class="see-body">
-              <div class="shot-frame">
-                <img src="{{ 'assets/images/screenshots/sessions.png' | url }}" alt="Sessions flow" loading="lazy" data-poster="{{ 'assets/images/screenshots/sessions.png' | url }}" data-gif="{{ 'assets/images/screenshots/sessions.gif' | url }}" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                <span class="see-hint">Click to reveal</span>
+              <div class="screenshots-container">
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/sessions-1.png' | url }}" alt="Sessions - Creating session" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Creating a session and adding tenets</div>
+                </div>
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/sessions-2.png' | url }}" alt="Sessions - Managing tenets" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Managing and instilling guiding principles</div>
+                </div>
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/sessions-3.png' | url }}" alt="Sessions - Building context" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Building context with session-aware tenets</div>
+                </div>
               </div>
             </div>
           </div>
@@ -243,9 +476,11 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
               <div class="see-title">Output</div>
             </div>
             <div class="see-body">
-              <div class="shot-frame">
-                <img src="{{ 'assets/images/screenshots/velocity.png' | url }}" alt="Velocity" loading="lazy" data-poster="{{ 'assets/images/screenshots/velocity.png' | url }}" data-gif="{{ 'assets/images/screenshots/velocity.gif' | url }}" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                <span class="see-hint">Click to reveal</span>
+              <div class="screenshots-container">
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/velocity.png' | url }}" alt="Velocity" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Team velocity metrics and trends</div>
+                </div>
               </div>
             </div>
           </div>
@@ -259,7 +494,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
               <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
               <div class="see-title">Visualization</div>
             </div>
-            <div class="see-body"><pre><code class="language-bash">$ tenets viz deps --format ascii --show-imports</code></pre></div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets viz deps --format html --output interactive.html</code></pre></div>
           </div>
           <div class="see-output" data-caption="Dependency graph visualization">
             <div class="see-header">
@@ -267,9 +502,11 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
               <div class="see-title">Output</div>
             </div>
             <div class="see-body">
-              <div class="shot-frame">
-                <img src="{{ 'assets/images/screenshots/visualization.png' | url }}" alt="Visualization" loading="lazy" data-poster="{{ 'assets/images/screenshots/visualization.png' | url }}" data-gif="{{ 'assets/images/screenshots/visualization.gif' | url }}" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                <span class="see-hint">Click to reveal</span>
+              <div class="screenshots-container">
+                <div class="screenshot-item terminal-shot">
+                  <img src="{{ 'assets/images/screenshots/visualization.png' | url }}" alt="Visualization" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">D3.js interactive dependency graph visualization</div>
+                </div>
               </div>
             </div>
           </div>

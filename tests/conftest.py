@@ -96,6 +96,10 @@ def test_config() -> TenetsConfig:
     config.scanner.workers = 1
     config.ranking.workers = 1
 
+    # Disable system instruction to avoid interference in tests
+    config.tenet.system_instruction = None
+    config.tenet.system_instruction_enabled = False
+
     return config
 
 
@@ -255,14 +259,8 @@ def mock_external_dependencies(monkeypatch, request):
     if sys.version_info[:2] >= (3, 13):
         # Only stub the main problematic modules, not all their submodules
         # This prevents the hanging issue while still protecting against unwanted imports
-        main_modules = [
-            'sentence_transformers',
-            'transformers',
-            'huggingface_hub',
-            'torch',
-            'nltk'
-        ]
-        
+        main_modules = ["sentence_transformers", "transformers", "huggingface_hub", "torch", "nltk"]
+
         for module_name in main_modules:
             if module_name not in sys.modules:
                 try:
@@ -271,12 +269,13 @@ def mock_external_dependencies(monkeypatch, request):
                 except (ImportError, ModuleNotFoundError):
                     # Only create stub if module doesn't exist
                     stub = types.ModuleType(module_name)
-                    stub.__file__ = 'stub'
+                    stub.__file__ = "stub"
                     stub.__loader__ = None
                     stub.__package__ = None
-                    
+
                     # Add SentenceTransformer for sentence_transformers
-                    if module_name == 'sentence_transformers':
+                    if module_name == "sentence_transformers":
+
                         class SentenceTransformer:
                             def __init__(self, *_, **__):
                                 pass
@@ -285,9 +284,9 @@ def mock_external_dependencies(monkeypatch, request):
                                 if isinstance(texts, str):
                                     texts = [texts]
                                 return [[float(len(t) % 7)] * 16 for t in texts]
-                        
+
                         stub.SentenceTransformer = SentenceTransformer
-                    
+
                     sys.modules[module_name] = stub
     else:
         # For Python < 3.13, use the original safer approach

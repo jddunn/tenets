@@ -9,12 +9,12 @@ import click
 import typer
 from rich import print
 from rich.console import Console
-from rich.panel import Panel
 from rich.markup import escape
+from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from tenets import Tenets
-from tenets.utils.timing import CommandTimer, format_duration
+from tenets.utils.timing import CommandTimer
 
 console = Console()
 
@@ -164,7 +164,7 @@ def distill(
     try:
         # Start timing
         timer.start("Initializing tenets...")
-        
+
         # Initialize tenets
         tenets = Tenets()
 
@@ -261,7 +261,9 @@ def distill(
                 norm_map = kw.get("normalized", {})
                 shown = 0
                 for k, info in norm_map.items():
-                    console.print(f"    - {k}: steps={info.get('steps', [])}, variants={info.get('variants', [])}")
+                    console.print(
+                        f"    - {k}: steps={info.get('steps', [])}, variants={info.get('variants', [])}"
+                    )
                     shown += 1
                     if shown >= 5:
                         break
@@ -333,7 +335,7 @@ def distill(
 
         # Stop timing
         timing_result = timer.stop("Context distillation complete")
-        
+
         # Build summary details
         include_display_raw = ",".join(include_patterns) if include_patterns else "(none)"
         exclude_display_raw = ",".join(exclude_patterns) if exclude_patterns else "(none)"
@@ -370,13 +372,19 @@ def distill(
         if output:
             output.write_text(output_text, encoding="utf-8")
             if not quiet:
-                console.print(f"[green]✓[/green] Context saved to {escape(str(output))} [dim]({timing_result.formatted_duration})[/dim]")
-                
+                console.print(
+                    f"[green]✓[/green] Context saved to {escape(str(output))} [dim]({timing_result.formatted_duration})[/dim]"
+                )
+
                 # If HTML format and interactive, offer to open in browser
                 if format == "html" and interactive:
                     import click
-                    if click.confirm("\nWould you like to open it in your browser now?", default=False):
+
+                    if click.confirm(
+                        "\nWould you like to open it in your browser now?", default=False
+                    ):
                         import webbrowser
+
                         # Ensure absolute path for file URI
                         file_path = output.resolve()
                         webbrowser.open(file_path.as_uri())
@@ -388,31 +396,37 @@ def distill(
             # For HTML, save to a default file if no output specified
             if interactive:
                 # Auto-generate filename with timestamp and prompt info
-                from datetime import datetime
                 import re
-                
+                from datetime import datetime
+
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                
+
                 # Create safe prompt snippet for filename
                 prompt_str = prompt[:50] if prompt else "context"
-                safe_prompt = re.sub(r'[^\w\-_\s]', '', prompt_str)
+                safe_prompt = re.sub(r"[^\w\-_\s]", "", prompt_str)
                 safe_prompt = safe_prompt.replace(" ", "_")[:30]
-                safe_prompt = re.sub(r'_+', '_', safe_prompt)
-                
+                safe_prompt = re.sub(r"_+", "_", safe_prompt)
+
                 default_html = Path(f"distill_{safe_prompt}_{timestamp}.html")
                 default_html.write_text(output_text, encoding="utf-8")
-                console.print(f"[green]✓[/green] HTML context saved to {escape(str(default_html))} [dim]({timing_result.formatted_duration})[/dim]")
-                
+                console.print(
+                    f"[green]✓[/green] HTML context saved to {escape(str(default_html))} [dim]({timing_result.formatted_duration})[/dim]"
+                )
+
                 # Offer to open in browser
                 import click
+
                 if click.confirm("\nWould you like to open it in your browser now?", default=False):
                     import webbrowser
+
                     # Ensure absolute path for file URI
                     file_path = default_html.resolve()
                     webbrowser.open(file_path.as_uri())
                     console.print("[green]✓[/green] Opened in browser")
                 else:
-                    console.print(f"[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path")
+                    console.print(
+                        "[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path"
+                    )
             else:
                 # Non-interactive mode: print raw HTML for piping
                 print(output_text)
@@ -475,7 +489,9 @@ def distill(
                 except Exception:
                     copied = False
             if copied and not quiet:
-                console.print(f"[cyan]📋 Context copied to clipboard[/cyan] [dim]({timing_result.formatted_duration} total)[/dim]")
+                console.print(
+                    f"[cyan]📋 Context copied to clipboard[/cyan] [dim]({timing_result.formatted_duration} total)[/dim]"
+                )
             elif not copied and do_copy and not quiet:
                 console.print(
                     "[yellow]Warning:[/yellow] Unable to copy to clipboard (missing pyperclip/xclip/pbcopy)."
@@ -549,7 +565,7 @@ def distill(
             timing_result = timer.stop("Operation failed")
             if not quiet:
                 console.print(f"[dim]Failed after {timing_result.formatted_duration}[/dim]")
-        
+
         # Escape dynamic error text to avoid Rich markup parsing issues (e.g., stray [ or ]).
         console.print(f"[red]Error:[/red] {escape(str(e))}")
         if verbose:

@@ -23,7 +23,7 @@ from tenets.core.examiner import (
 )
 from tenets.core.reporting import ReportGenerator
 from tenets.utils.logger import get_logger
-from tenets.utils.timing import CommandTimer, format_duration
+from tenets.utils.timing import CommandTimer
 from tenets.viz import ComplexityVisualizer, HotspotVisualizer, TerminalDisplay
 
 from ._utils import normalize_path
@@ -34,46 +34,46 @@ logger = get_logger(__name__)
 
 def generate_auto_filename(path: str, format: str) -> str:
     """Generate automatic filename for output.
-    
+
     Args:
         path: Path that was examined
         format: Output format (html, json, etc.)
-        
+
     Returns:
         Generated filename with timestamp and normalized path
     """
-    from datetime import datetime
     import re
-    
+    from datetime import datetime
+
     # Get timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
     # Normalize path for filename
     # Convert path to a safe filename component
     path_str = str(path).replace("\\", "/")
-    
+
     # Handle special cases
     if path_str in (".", "./", ""):
         safe_path = "current_dir"
     elif path_str == "..":
         safe_path = "parent_dir"
     else:
-        # Remove leading ./ or ../ 
-        path_str = re.sub(r'^\.+/+', '', path_str)
+        # Remove leading ./ or ../
+        path_str = re.sub(r"^\.+/+", "", path_str)
         # Replace path separators with underscores
         safe_path = path_str.replace("/", "_").replace("\\", "_")
         # Remove any characters that aren't safe for filenames
-        safe_path = re.sub(r'[^\w\-_]', '', safe_path)
+        safe_path = re.sub(r"[^\w\-_]", "", safe_path)
         # Limit length
         if len(safe_path) > 50:
             safe_path = safe_path[:50]
-    
+
     # Generate filename
     filename = f"examine_{safe_path}_{timestamp}.{format}"
-    
+
     # Ensure we don't have double underscores
-    filename = re.sub(r'_+', '_', filename)
-    
+    filename = re.sub(r"_+", "_", filename)
+
     return filename
 
 
@@ -126,7 +126,7 @@ def _run_examination(
 
     logger = get_logger(__name__)
     config = TenetsConfig()
-    
+
     # Override minified exclusion if flag is set
     if include_minified:
         config.exclude_minified = False
@@ -161,7 +161,7 @@ def _run_examination(
 
     try:
         # Perform examination
-        logger.info("Starting code examination...")  
+        logger.info("Starting code examination...")
         # Support both mocked .examine() and real .examine_project()
         if hasattr(examiner, "examine"):
             # Pass path as string to make test call-arg assertions robust across platforms
@@ -282,19 +282,20 @@ def _run_examination(
                     click.echo(f"⚠  Failed after {timing_result.formatted_duration}")
                 except UnicodeEncodeError:
                     click.echo(f"[WARNING] Failed after {timing_result.formatted_duration}")
-        
+
         import traceback
-        error_msg = str(e) if str(e) else f"{type(e).__name__}: {repr(e)}"
+
+        error_msg = str(e) if str(e) else f"{type(e).__name__}: {e!r}"
         logger.error(f"Examination failed: {error_msg}")
         logger.debug(f"Full traceback:\n{traceback.format_exc()}")
-        
+
         # Show more helpful error message
         if not str(e):
             click.echo(f"ERROR: {type(e).__name__}")
             click.echo("Run with --verbose or check logs for more details")
         else:
             click.echo(f"ERROR: {error_msg}")
-        
+
         raise SystemExit(1)
 
 
@@ -369,12 +370,12 @@ def _display_terminal_results(results: Dict[str, Any], show_details: bool) -> No
     display = TerminalDisplay()
 
     # Display header with path information
-    path_info = f"Path: {results.get('path', 'Unknown')}" if results.get('path') else ""
+    path_info = f"Path: {results.get('path', 'Unknown')}" if results.get("path") else ""
     subtitle_parts = []
     if path_info:
         subtitle_parts.append(path_info)
     subtitle_parts.append(f"Files analyzed: {results.get('total_files', 0)}")
-    
+
     display.display_header(
         "Code Examination Results",
         subtitle=" | ".join(subtitle_parts),
@@ -560,11 +561,12 @@ def _generate_report(
     generator.generate(data=results, output_path=output_path, config=report_config)
 
     click.echo(f"Report generated: {output_path}")
-    
+
     # If HTML format, offer to open in browser
     if format == "html":
         if click.confirm("\nWould you like to open it in your browser now?", default=False):
             import webbrowser
+
             # Ensure absolute path for file URI
             file_path = output_path.resolve()
             webbrowser.open(file_path.as_uri())
