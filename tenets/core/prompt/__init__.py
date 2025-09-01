@@ -74,16 +74,16 @@ from .intent_detector import (
     SemanticIntentDetector,
 )
 
+# Import main parser classes
+from .parser import (
+    PromptParser,
+)
+
 # Import temporal parser classes
 from .temporal_parser import (
     TemporalExpression,
     TemporalParser,
     TemporalPatternMatcher,
-)
-
-# Import main parser classes
-from .parser import (
-    PromptParser,
 )
 
 # Import from models
