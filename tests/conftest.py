@@ -95,7 +95,7 @@ def test_config() -> TenetsConfig:
     # Reduce worker counts for predictable tests
     config.scanner.workers = 1
     config.ranking.workers = 1
-    
+
     # Disable system instruction to avoid interference in tests
     config.tenet.system_instruction = None
     config.tenet.system_instruction_enabled = False
