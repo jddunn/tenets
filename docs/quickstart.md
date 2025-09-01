@@ -38,13 +38,13 @@ pip install tenets
 ## 2. Generate Context (CLI)
 
 ```bash
-tenets make-context "add optimistic locking to order updates"
+tenets distill "add optimistic locking to order updates"
 ```
 
 Copy straight to your clipboard:
 
 ```bash
-tenets make-context "refactor payment flow" --copy
+tenets distill "refactor payment flow" --copy
 ```
 
 Or enable auto-copy in `tenets.toml`:
@@ -59,13 +59,17 @@ copy_on_distill = true
 Pin or force-include critical files:
 
 ```bash
-tenets make-context "investigate cache stampede" --pin cache/*.py --pin config/settings.py
+# Build context for investigation
+tenets distill "investigate cache stampede"
+
+# Pin files are managed through instill command for sessions
+tenets instill --add-file cache/*.py --add-file config/settings.py
 ```
 
 Exclude noise:
 
 ```bash
-tenets make-context "debug webhook" --exclude "**/migrations/**" --exclude "**/tests/**"
+tenets distill "debug webhook" --exclude "**/migrations/**,**/tests/**"
 ```
 
 ## 4. Python API
@@ -73,31 +77,32 @@ tenets make-context "debug webhook" --exclude "**/migrations/**" --exclude "**/t
 ```python
 from tenets import Tenets
 
-ctx = Tenets().make_context(
+tenets = Tenets()
+result = tenets.distill(
     prompt="implement bulk import",
-    path="./",
     max_tokens=80_000,
 )
-print(ctx.token_count, "tokens")
-ctx.copy()  # copies to clipboard (same behavior as --copy)
+print(result.token_count, "tokens")
+# Copy is done via CLI flag --copy or config setting
 ```
 
 ## 5. Sessions (Iterate)
 
 ```python
-session = Tenets().create_session("checkout-fixes")
-first = session.make_context("trace 500 errors in checkout")
-second = session.make_context("add instrumentation around payment retries")
+tenets = Tenets()
+# Sessions are managed through distill parameters
+first = tenets.distill("trace 500 errors in checkout", session_name="checkout-fixes")
+second = tenets.distill("add instrumentation around payment retries", session_name="checkout-fixes")
 ```
 
 ## 6. Visualization & Insight
 
 ```bash
 # Complexity & hotspots
-tenets analyze --complexity --hotspots
+tenets examine . --show-details --hotspots
 
-# Dependency graph (ASCII)
-tenets viz deps --format ascii
+# Dependency graph (Interactive HTML)
+tenets viz deps --format html --output deps.html
 ```
 
 ## 7. Next

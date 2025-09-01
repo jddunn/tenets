@@ -27,4 +27,4 @@ tenets --version
 
 ## Next Steps
 
-After installation, see [First Steps](first-steps.md) to get started with your first analysis.
+After installation, see [Quick Start](quickstart.md) to get started with your first analysis.

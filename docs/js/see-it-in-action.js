@@ -14,7 +14,7 @@
           frame.appendChild(cap);
         }
         // If a poster/static src and a data-gif is present, ensure we start with poster
-  if (img && img.dataset && img.dataset.gif) {
+      if (img && img.dataset && img.dataset.gif) {
           if (img.dataset.poster) {
             img.src = img.dataset.poster;
           }
