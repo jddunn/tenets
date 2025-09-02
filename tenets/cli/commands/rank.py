@@ -3,8 +3,9 @@
 import json
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional
 
+import click
 import typer
 from rich import print
 from rich.console import Console
@@ -201,8 +202,73 @@ def rank(
 
         # Output results
         if output:
-            output.write_text(output_content)
-            console.print(f"[green]✓[/green] Saved ranking to {output}")
+            output.write_text(output_content, encoding='utf-8')
+            console.print(f"[green]OK[/green] Saved ranking to {output}")
+            # Offer to open HTML in browser
+            if format == "html" and sys.stdin.isatty():
+                if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                    import webbrowser
+                    file_path = output.resolve()
+                    webbrowser.open(file_path.as_uri())
+                    console.print("[green]OK[/green] Opened in browser")
+        elif format in ["html", "xml", "json"]:
+            # For HTML/XML/JSON, auto-save to a default file like distill does
+            if sys.stdin.isatty():  # Interactive mode
+                import re
+                from datetime import datetime
+                
+                # Create filename from prompt
+                safe_prompt = re.sub(r'[^\w\s-]', '', prompt[:30]).strip()
+                safe_prompt = re.sub(r'[-\s]+', '-', safe_prompt)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                # Determine file extension
+                ext = format.lower()
+                if ext == "html":
+                    ext = "html"
+                elif ext == "xml":
+                    ext = "xml"
+                else:  # json
+                    ext = "json"
+                
+                default_file = Path(f"tenets_rank_{safe_prompt}_{timestamp}.{ext}")
+                default_file.write_text(output_content, encoding='utf-8')
+                
+                console.print(f"[green]OK[/green] {format.upper()} output saved to [cyan]{default_file}[/cyan]")
+                console.print(
+                    f"[dim]File size:[/dim] {len(output_content):,} bytes"
+                )
+                
+                # Offer to open in browser for HTML, or folder for XML/JSON
+                if format == "html":
+                    if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                        import webbrowser
+                        file_path = default_file.resolve()
+                        webbrowser.open(file_path.as_uri())
+                        console.print("[green]OK[/green] Opened in browser")
+                    else:
+                        console.print(
+                            "[cyan]Tip:[/cyan] Open the file in a browser or use --output to specify a different path"
+                        )
+                else:
+                    # For XML/JSON, offer to open the folder
+                    if click.confirm(f"\nWould you like to open the folder containing the {format.upper()} file?", default=False):
+                        import webbrowser
+                        import platform
+                        folder = default_file.parent.resolve()
+                        if platform.system() == "Windows":
+                            import os
+                            os.startfile(folder)
+                        elif platform.system() == "Darwin":  # macOS
+                            import subprocess
+                            subprocess.run(["open", folder])
+                        else:  # Linux
+                            import subprocess
+                            subprocess.run(["xdg-open", folder])
+                        console.print(f"[green]OK[/green] Opened folder: {folder}")
+            else:
+                # Non-interactive mode: print raw output
+                print(output_content)
         elif format == "markdown" or format == "tree":
             console.print(output_content)
         else:
@@ -228,7 +294,7 @@ def rank(
             else:
                 clip_content = "\n".join(str(f.path) for f in ranked_files)
             pyperclip.copy(clip_content)
-            console.print("[green]✓[/green] Copied file list to clipboard")
+            console.print("[green]OK[/green] Copied file list to clipboard")
 
         # Show stats if requested
         if show_stats:
@@ -434,7 +500,7 @@ def _format_html(
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Ranked Files</h1>
+        <h1>Ranked Files</h1>
         <div class="prompt">
             <strong>Query:</strong> {prompt}
         </div>
@@ -501,7 +567,7 @@ def _build_html_tree(files: List, show_scores: bool, show_factors: bool) -> str:
 
     lines = []
     for dir_path in sorted_dirs:
-        lines.append(f"📂 {dir_path}/")
+        lines.append(f"[D] {dir_path}/")
         # Sort files within directory by score
         sorted_files = sorted(
             dirs[dir_path], key=lambda f: getattr(f, "relevance_score", 0.0), reverse=True
@@ -512,7 +578,7 @@ def _build_html_tree(files: List, show_scores: bool, show_factors: bool) -> str:
             if show_scores:
                 score = getattr(file, "relevance_score", 0.0)
                 score_str = f" [{score:.3f}]"
-            lines.append(f"  📄 {name}{score_str}")
+            lines.append(f"  [F] {name}{score_str}")
 
             if show_factors and hasattr(file, "relevance_factors"):
                 for factor, value in file.relevance_factors.items():
