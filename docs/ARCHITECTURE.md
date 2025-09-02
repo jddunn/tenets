@@ -901,69 +901,141 @@ graph LR
 
 ## Relevance Ranking System
 
-### Multi-Factor Ranking Architecture
+### Unified Ranking Architecture
+
+**IMPORTANT**: The `rank` command now uses the EXACT SAME sophisticated ranking pipeline as the `distill` command. This ensures consistency and leverages the full power of the multi-factor ranking system.
 
 ```mermaid
 graph TD
     subgraph "Ranking Strategies"
-        FAST[Fast Strategy<br/>~10ms/file<br/>Keyword + Path]
-        BALANCED[Balanced Strategy<br/>~50ms/file<br/>TF-IDF + Structure]
-        THOROUGH[Thorough Strategy<br/>~200ms/file<br/>Deep Analysis]
-        ML_STRAT[ML Strategy<br/>~500ms/file<br/>Semantic Understanding]
+        FAST[Fast Strategy<br/>~10ms/file<br/>Keyword + Path Only]
+        BALANCED[Balanced Strategy<br/>~100ms/file<br/>TF-IDF + BM25 + Structure]
+        THOROUGH[Thorough Strategy<br/>~200ms/file<br/>Full Analysis + Git]
+        ML_STRAT[ML Strategy<br/>~500ms/file<br/>Semantic Embeddings]
     end
 
-    subgraph "Semantic Understanding - 25%"
-        SEM_SIM[Semantic Similarity<br/>ML-based understanding<br/>Local embeddings]
+    subgraph "Text Analysis (40% in Balanced)"
+        KEY_MATCH[Keyword Matching<br/>20%<br/>Direct term hits]
+        TFIDF_SIM[TF-IDF Similarity<br/>20%<br/>Statistical relevance]  
+        BM25_SCORE[BM25 Score<br/>15%<br/>Probabilistic ranking]
     end
 
-    subgraph "Text Matching - 30%"
-        KEY_MATCH[Keyword Matching<br/>15%<br/>Direct term hits]
-        TFIDF_SIM[TF-IDF Similarity<br/>15%<br/>Statistical relevance]
+    subgraph "Code Structure Analysis (25% in Balanced)"
+        PATH_REL[Path Relevance<br/>15%<br/>Directory structure]
+        IMP_CENT[Import Centrality<br/>10%<br/>Dependency importance]
     end
 
-    subgraph "Code Structure - 20%"
-        IMP_CENT[Import Centrality<br/>10%<br/>PageRank-style]
-        PATH_REL[Path Relevance<br/>10%<br/>Directory structure]
+    subgraph "File Characteristics (15% in Balanced)"
+        COMPLEXITY_REL[Complexity Relevance<br/>5%<br/>Code complexity signals]
+        FILE_TYPE[File Type Relevance<br/>5%<br/>Extension/type matching]
+        CODE_PAT[Code Patterns<br/>5%<br/>AST pattern matching]
     end
 
-    subgraph "Git Signals - 15% (Optional)"
+    subgraph "Git Signals (10% in Balanced)"
         GIT_REC[Git Recency<br/>5%<br/>Recent changes]
-        GIT_FREQ[Git Frequency<br/>5%<br/>Change frequency]
-        GIT_AUTH[Git Authors<br/>5%<br/>Author expertise]
+        GIT_FREQ[Git Frequency<br/>5%<br/>Change frequency] 
     end
 
-    subgraph "File Characteristics - 10%"
-        FILE_TYPE[File Type<br/>5%<br/>Type relevance]
-        CODE_PAT[Code Patterns<br/>5%<br/>Pattern matching]
+    subgraph "ML Enhancement (Only in ML Strategy)"
+        SEM_SIM[Semantic Similarity<br/>25%<br/>Embedding-based understanding]
+        LOCAL_EMB[Local Embeddings<br/>sentence-transformers]
+        EMBED_CACHE[Embedding Cache<br/>Performance optimization]
     end
 
-    subgraph "Scoring Engine"
-        WEIGHTED[Weighted Combination]
-        THRESHOLD[Threshold Filtering]
-        NORMALIZED[Score Normalization]
-        RANKED[Final Rankings]
+    subgraph "Unified Pipeline"
+        FILE_DISCOVERY[File Discovery<br/>Scanner + Filters]
+        ANALYSIS[Code Analysis<br/>AST + Structure]
+        RANKING[Multi-Factor Ranking<br/>Strategy-specific weights]
+        AGGREGATION[Context Aggregation<br/>Token optimization]
     end
 
     FAST --> KEY_MATCH
     BALANCED --> TFIDF_SIM
+    BALANCED --> BM25_SCORE
     THOROUGH --> IMP_CENT
     ML_STRAT --> SEM_SIM
 
-    SEM_SIM --> WEIGHTED
-    KEY_MATCH --> WEIGHTED
-    TFIDF_SIM --> WEIGHTED
-    IMP_CENT --> WEIGHTED
-    PATH_REL --> WEIGHTED
-    GIT_REC --> WEIGHTED
-    GIT_FREQ --> WEIGHTED
-    GIT_AUTH --> WEIGHTED
-    FILE_TYPE --> WEIGHTED
-    CODE_PAT --> WEIGHTED
+    FILE_DISCOVERY --> ANALYSIS
+    ANALYSIS --> RANKING
+    RANKING --> AGGREGATION
 
-    WEIGHTED --> THRESHOLD
-    THRESHOLD --> NORMALIZED
-    NORMALIZED --> RANKED
+    KEY_MATCH --> RANKING
+    TFIDF_SIM --> RANKING
+    BM25_SCORE --> RANKING
+    PATH_REL --> RANKING
+    IMP_CENT --> RANKING
+    COMPLEXITY_REL --> RANKING
+    FILE_TYPE --> RANKING
+    CODE_PAT --> RANKING
+    GIT_REC --> RANKING
+    GIT_FREQ --> RANKING
+
+    SEM_SIM --> LOCAL_EMB
+    LOCAL_EMB --> EMBED_CACHE
+    EMBED_CACHE --> RANKING
 ```
+
+### Strategy Comparison and Usage
+
+| Strategy | Speed | Accuracy | Use Cases | Factors Used |
+|----------|-------|----------|-----------|--------------|
+| **Fast** | Very Fast<br/>(~10ms/file) | Basic | • Quick file discovery<br/>• Keyword-based search<br/>• Interactive exploration | • Keyword matching (60%)<br/>• Path relevance (30%)<br/>• File type (10%) |
+| **Balanced** | Moderate<br/>(~100ms/file) | Good | • **DEFAULT for both rank and distill**<br/>• Production usage<br/>• Most common scenarios | • Keyword (20%), TF-IDF (20%), BM25 (15%)<br/>• Path (15%), Import centrality (10%)<br/>• Complexity (5%), File type (5%), Git (10%) |
+| **Thorough** | Slower<br/>(~200ms/file) | High | • Complex codebases<br/>• Deep analysis needed<br/>• Research and investigation | • All balanced factors<br/>• Enhanced git analysis<br/>• Deeper structural analysis |
+| **ML** | Slowest<br/>(~500ms/file) | Highest | • Semantic understanding needed<br/>• Natural language queries<br/>• Advanced AI workflows | • All factors + semantic similarity (25%)<br/>• Local embedding models<br/>• Context-aware ranking |
+
+### Ranking System Architecture Improvements
+
+**Key Architecture Fix**: The `rank` command now uses the same sophisticated ranking pipeline as `distill`, ensuring consistency and eliminating duplicate logic.
+
+#### Before (Problematic)
+- `rank` command had its own simplified ranking logic
+- Limited to first 10 files due to hard-coded limit
+- Used basic keyword splitting instead of proper NLP
+- Configuration files ranked higher than actual code
+- No proper keyword normalization (e.g., "summarizing" vs "summariz*")
+
+#### After (Fixed)
+- `rank` command uses `Tenets.rank_files()` which calls `distiller._rank_files()`
+- Analyzes all discovered files (no artificial limits)
+- Uses proper prompt parsing with `PromptParser`
+- Leverages sophisticated `BalancedRankingStrategy` by default
+- Proper keyword extraction with RAKE/YAKE fallbacks
+- Same file discovery and filtering as `distill`
+
+#### Pipeline Consistency
+
+```mermaid
+graph LR
+    subgraph "Unified Pipeline Components"
+        PROMPT_PARSER[Prompt Parser<br/>Intent detection<br/>Keyword extraction]
+        FILE_SCANNER[File Scanner<br/>Gitignore support<br/>Test exclusion]
+        CODE_ANALYZER[Code Analyzer<br/>AST parsing<br/>Structure analysis]
+        RELEVANCE_RANKER[Relevance Ranker<br/>Multi-factor scoring<br/>Strategy selection]
+    end
+
+    subgraph "Commands Using Same Pipeline"
+        DISTILL_CMD[tenets distill]
+        RANK_CMD[tenets rank]
+    end
+
+    DISTILL_CMD --> PROMPT_PARSER
+    RANK_CMD --> PROMPT_PARSER
+    
+    PROMPT_PARSER --> FILE_SCANNER
+    FILE_SCANNER --> CODE_ANALYZER  
+    CODE_ANALYZER --> RELEVANCE_RANKER
+    
+    RELEVANCE_RANKER --> CONTEXT_BUILDER[Context Builder<br/>Only for distill]
+```
+
+#### Why This Matters
+
+1. **Consistency**: Both commands use identical logic for finding and ranking relevant files
+2. **Performance**: Leverages sophisticated caching and optimization from the main pipeline  
+3. **Accuracy**: Uses proper NLP and multi-factor analysis instead of simple keyword matching
+4. **Maintainability**: Single source of truth for ranking logic - no code duplication
+5. **Feature Parity**: `rank` gets all improvements made to the `distill` ranking system
 
 ### Factor Calculation Details
 
