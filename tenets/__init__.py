@@ -437,6 +437,89 @@ class Tenets:
 
         return result
 
+    def rank_files(
+        self,
+        prompt: str,
+        paths: Optional[Union[str, Path, List[Path]]] = None,
+        *,  # Force keyword-only arguments
+        mode: str = "balanced",
+        include_patterns: Optional[List[str]] = None,
+        exclude_patterns: Optional[List[str]] = None,
+        include_tests: Optional[bool] = None,
+        exclude_tests: bool = False,
+        explain: bool = False,
+    ) -> "RankResult":
+        """Rank files by relevance without generating full context.
+
+        This method uses the same sophisticated ranking pipeline as distill()
+        but returns only the ranked files without aggregating content.
+        Perfect for understanding which files are relevant or for automation.
+
+        Args:
+            prompt: Your query or task description
+            paths: Paths to analyze (default: current directory)
+            mode: Analysis mode - 'fast', 'balanced', or 'thorough'
+            include_patterns: File patterns to include
+            exclude_patterns: File patterns to exclude
+            include_tests: Whether to include test files
+            exclude_tests: Whether to exclude test files
+            explain: Whether to include ranking factor explanations
+
+        Returns:
+            RankResult containing the ranked files and metadata
+
+        Example:
+            >>> result = ten.rank_files("fix summarizing truncation bug")
+            >>> for file in result.files:
+            ...     print(f"{file.path}: {file.relevance_score:.3f}")
+        """
+        # Use the same pipeline as distill but stop at ranking
+        
+        # 1. Parse and understand the prompt
+        prompt_context = self.distiller._parse_prompt(prompt)
+        
+        # Override test inclusion if explicitly specified
+        if include_tests is not None:
+            prompt_context.include_tests = include_tests
+        elif exclude_tests:
+            prompt_context.include_tests = False
+            
+        # 2. Determine paths to analyze
+        paths = self.distiller._normalize_paths(paths)
+        
+        # 3. Discover relevant files
+        files = self.distiller._discover_files(
+            paths=paths,
+            prompt_context=prompt_context,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+        )
+        
+        # 4. Analyze files for structure and content
+        analyzed_files = self.distiller._analyze_files(
+            files=files, 
+            mode=mode, 
+            prompt_context=prompt_context
+        )
+        
+        # 5. Rank files by relevance (this is what we want!)
+        ranked_files = self.distiller._rank_files(
+            files=analyzed_files, 
+            prompt_context=prompt_context, 
+            mode=mode
+        )
+        
+        # Create result object
+        from collections import namedtuple
+        RankResult = namedtuple('RankResult', ['files', 'prompt_context', 'mode', 'total_scanned'])
+        
+        return RankResult(
+            files=ranked_files,
+            prompt_context=prompt_context,
+            mode=mode,
+            total_scanned=len(files)
+        )
+
     # ============= Tenet Management Methods =============
 
     def add_tenet(
