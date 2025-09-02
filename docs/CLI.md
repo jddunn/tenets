@@ -235,7 +235,7 @@ tenets rank <prompt> [path] [options]
 - `--session`, `-s`: Use session for stateful ranking
 - `--stats`: Show ranking statistics
 - `--verbose`, `-v`: Show detailed debug information
-- `--copy`: Copy file list to clipboard
+- `--copy`: Copy file list to clipboard (also enabled automatically if config.output.copy_on_rank is true)
 
 **Examples:**
 
@@ -272,11 +272,11 @@ tenets rank "security audit" --format html -o security_files.html --tree
 
 **Output Formats:**
 
-- **Markdown**: Numbered list with scores and optional factors
-- **Tree**: Directory tree structure with scores  
-- **JSON**: Structured data with paths, scores, ranks, and factors
+- **Markdown**: Numbered list sorted by relevance with scores and optional factors
+- **Tree**: Directory tree structure sorted by relevance (directories ordered by their highest-scoring file)
+- **JSON**: Structured data with paths, scores, ranks, and factors (preserves relevance order)
 - **XML**: Structured XML for integration with other tools
-- **HTML**: Interactive web page with sorting and filtering
+- **HTML**: Interactive web page with relevance-sorted display
 
 The ranking uses the same intelligent multi-factor analysis as `distill`:
 - Semantic similarity (ML-based when available)
@@ -1166,12 +1166,12 @@ context:
 scanner:
   respect_gitignore: true
   max_file_size: 5000000
-  
+
 ignore:
   - "*.generated.*"
   - "vendor/"
   - "build/"
-  
+
 output:
   format: markdown
   summarize_long_files: true

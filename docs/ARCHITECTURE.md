@@ -708,7 +708,7 @@ scanner:
    ```bash
    # Include minified files for this run
    tenets distill "analyze bundle" --include-minified
-   
+
    # Exclude specific patterns
    tenets examine . --exclude "*.min.js,dist/"
    ```
@@ -916,7 +916,7 @@ graph TD
 
     subgraph "Text Analysis (40% in Balanced)"
         KEY_MATCH[Keyword Matching<br/>20%<br/>Direct term hits]
-        TFIDF_SIM[TF-IDF Similarity<br/>20%<br/>Statistical relevance]  
+        TFIDF_SIM[TF-IDF Similarity<br/>20%<br/>Statistical relevance]
         BM25_SCORE[BM25 Score<br/>15%<br/>Probabilistic ranking]
     end
 
@@ -933,7 +933,7 @@ graph TD
 
     subgraph "Git Signals (10% in Balanced)"
         GIT_REC[Git Recency<br/>5%<br/>Recent changes]
-        GIT_FREQ[Git Frequency<br/>5%<br/>Change frequency] 
+        GIT_FREQ[Git Frequency<br/>5%<br/>Change frequency]
     end
 
     subgraph "ML Enhancement (Only in ML Strategy)"
@@ -984,19 +984,44 @@ graph TD
 | **Thorough** | Slower<br/>(~200ms/file) | High | • Complex codebases<br/>• Deep analysis needed<br/>• Research and investigation | • All balanced factors<br/>• Enhanced git analysis<br/>• Deeper structural analysis |
 | **ML** | Slowest<br/>(~500ms/file) | Highest | • Semantic understanding needed<br/>• Natural language queries<br/>• Advanced AI workflows | • All factors + semantic similarity (25%)<br/>• Local embedding models<br/>• Context-aware ranking |
 
-### Ranking System Architecture Improvements
+### Modular Ranking Architecture
 
-**Key Architecture Fix**: The `rank` command now uses the same sophisticated ranking pipeline as `distill`, ensuring consistency and eliminating duplicate logic.
+The ranking system is designed as a **fully modular component** that can be used independently or as part of the larger distillation pipeline.
 
-#### Before (Problematic)
-- `rank` command had its own simplified ranking logic
-- Limited to first 10 files due to hard-coded limit
-- Used basic keyword splitting instead of proper NLP
-- Configuration files ranked higher than actual code
-- No proper keyword normalization (e.g., "summarizing" vs "summariz*")
+#### Component Architecture
 
-#### After (Fixed)
-- `rank` command uses `Tenets.rank_files()` which calls `distiller._rank_files()`
+```python
+# Core Components and Their Responsibilities
+tenets/core/ranking/
+├── __init__.py         # Public API exports
+├── ranker.py           # RelevanceRanker class - main ranking engine
+├── strategies.py       # Ranking strategies (Fast, Balanced, Thorough, ML)
+└── factors.py          # Individual ranking factor calculations
+
+# Integration Points
+tenets/core/distiller/distiller.py
+├── __init__: self.ranker = RelevanceRanker(config)  # Component instantiation
+└── _rank_files(): return self.ranker.rank_files()   # Delegation to ranker
+
+tenets/__init__.py (Tenets class)
+├── rank_files(): Uses distiller._rank_files()       # Reuses same pipeline
+└── distill(): Uses distiller._rank_files()          # Consistent ranking
+```
+
+#### Key Design Principles
+
+1. **Single Source of Truth**: The `RelevanceRanker` class is the sole authority for ranking logic
+2. **Strategy Pattern**: Different ranking strategies (fast/balanced/thorough) are encapsulated
+3. **Dependency Injection**: Ranker is injected into Distiller, not hardcoded
+4. **Interface Consistency**: Both `rank` and `distill` commands use identical ranking
+
+#### Benefits of Modular Design
+
+- **Consistency**: Same ranking behavior across all commands
+- **Testability**: Ranker can be tested in isolation
+- **Extensibility**: New ranking strategies can be added without changing core logic
+- **Reusability**: Other tools can import and use the ranker independently
+- **Maintainability**: Changes to ranking logic happen in one place
 - Analyzes all discovered files (no artificial limits)
 - Uses proper prompt parsing with `PromptParser`
 - Leverages sophisticated `BalancedRankingStrategy` by default
@@ -1021,18 +1046,18 @@ graph LR
 
     DISTILL_CMD --> PROMPT_PARSER
     RANK_CMD --> PROMPT_PARSER
-    
+
     PROMPT_PARSER --> FILE_SCANNER
-    FILE_SCANNER --> CODE_ANALYZER  
+    FILE_SCANNER --> CODE_ANALYZER
     CODE_ANALYZER --> RELEVANCE_RANKER
-    
+
     RELEVANCE_RANKER --> CONTEXT_BUILDER[Context Builder<br/>Only for distill]
 ```
 
 #### Why This Matters
 
 1. **Consistency**: Both commands use identical logic for finding and ranking relevant files
-2. **Performance**: Leverages sophisticated caching and optimization from the main pipeline  
+2. **Performance**: Leverages sophisticated caching and optimization from the main pipeline
 3. **Accuracy**: Uses proper NLP and multi-factor analysis instead of simple keyword matching
 4. **Maintainability**: Single source of truth for ranking logic - no code duplication
 5. **Feature Parity**: `rank` gets all improvements made to the `distill` ranking system
@@ -1739,36 +1764,36 @@ tenets:
     --max-tokens     # Token limit
     --exclude        # Exclude patterns
     --session        # Session name
-    
+
   examine:           # Code quality analysis
     --show-details   # Detailed metrics
     --hotspots       # Show maintenance hotspots
     --ownership      # Show code ownership
     --format         # Output format
-    
+
   chronicle:         # Git history analysis
     --since          # Time range
     --author         # Filter by author
     --format         # Output format
-    
+
   momentum:          # Velocity tracking (WIP)
     --team           # Team metrics
     --detailed       # Detailed breakdown
-    
+
   session:           # Session management
     create           # Create new session
     list             # List sessions
     delete           # Delete session
-    
+
   tenet:            # Manage guiding principles
     add             # Add new tenet
     list            # List tenets
     remove          # Remove tenet
-    
+
   instill:          # Apply tenets and system instructions
     --dry-run       # Preview what would be applied
     --force         # Force application
-    
+
   system-instruction: # Manage system instructions
     set             # Set instruction
     get             # Get current
