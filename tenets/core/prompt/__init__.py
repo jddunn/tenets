@@ -74,16 +74,16 @@ from .intent_detector import (
     SemanticIntentDetector,
 )
 
+# Import main parser classes
+from .parser import (
+    PromptParser,
+)
+
 # Import temporal parser classes
 from .temporal_parser import (
     TemporalExpression,
     TemporalParser,
     TemporalPatternMatcher,
-)
-
-# Import main parser classes
-from .parser import (
-    PromptParser,
 )
 
 # Import from models
@@ -172,12 +172,7 @@ def create_parser(
 
         config = TenetsConfig()
 
-    return PromptParser(
-        config, 
-        cache_manager=cache_manager, 
-        use_cache=use_cache, 
-        use_ml=use_ml
-    )
+    return PromptParser(config, cache_manager=cache_manager, use_cache=use_cache, use_ml=use_ml)
 
 
 def parse_prompt(
@@ -226,8 +221,8 @@ def extract_keywords(text: str, max_keywords: int = 20) -> List[str]:
     from tenets.core.nlp.keyword_extractor import KeywordExtractor
 
     extractor = KeywordExtractor(
-        use_stopwords=True, 
-        stopword_set="prompt"  # Use aggressive stopwords for prompts
+        use_stopwords=True,
+        stopword_set="prompt",  # Use aggressive stopwords for prompts
     )
 
     return extractor.extract(text, max_keywords=max_keywords, include_scores=False)
@@ -251,7 +246,7 @@ def detect_intent(prompt: str, use_ml: bool = False) -> str:
 
     parser = PromptParser(TenetsConfig(), use_ml=use_ml, use_cache=False)
     context = parser.parse(prompt, use_cache=False)
-  
+
     return context.intent
 
 
@@ -284,12 +279,7 @@ def extract_entities(
     entities = recognizer.recognize(text, min_confidence=min_confidence)
 
     return [
-        {
-            "name": e.name, 
-            "type": e.type, 
-            "confidence": e.confidence, 
-            "context": e.context
-        }
+        {"name": e.name, "type": e.type, "confidence": e.confidence, "context": e.context}
         for e in entities
     ]
 
