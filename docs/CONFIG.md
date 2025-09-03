@@ -86,7 +86,8 @@ scanner:
 ranking:
   algorithm: balanced             # fast | balanced | thorough | ml | custom
   threshold: 0.10                 # 0.0-1.0 (lower includes more files)
-  use_tfidf: true                # TF-IDF weighting
+  text_similarity_algorithm: bm25 # bm25 (default) | tfidf
+  use_tfidf: true                # Deprecated - use text_similarity_algorithm
   use_stopwords: false           # Filter common tokens
   use_embeddings: false          # Semantic similarity (requires ML)
   use_git: true                  # Include git signals
@@ -240,12 +241,14 @@ nlp:
   ngram_size: 3                  # N-gram size
   yake_dedup_threshold: 0.7      # YAKE deduplication
   
-  # TF-IDF settings
+  # BM25 settings  
+  bm25_k1: 1.2                   # Term frequency saturation parameter
+  bm25_b: 0.75                   # Length normalization parameter
+  
+  # TF-IDF settings (when used as fallback)
   tfidf_use_sublinear: true      # Sublinear TF scaling
   tfidf_use_idf: true           # Use IDF
   tfidf_norm: l2                # Normalization
-  bm25_k1: 1.2                  # BM25 k1 parameter
-  bm25_b: 0.75                  # BM25 b parameter
   
   # Embeddings
   embeddings_enabled: false       # Enable embeddings
@@ -332,7 +335,7 @@ custom: {}  # User-defined custom settings
 - `threshold`: Lower values (0.05-0.10) include more files, higher (0.20-0.30) for stricter matching
 - `algorithm`: 
   - `fast`: Quick keyword matching (~10ms/file)
-  - `balanced`: Structural analysis + TF-IDF (default)
+  - `balanced`: Structural analysis + BM25 + TF-IDF (default)
   - `thorough`: Full analysis with relationships
   - `ml`: Machine learning with embeddings (requires extras)
 - `custom_weights`: Fine-tune ranking factors (values 0.0-1.0)

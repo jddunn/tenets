@@ -38,6 +38,24 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
 
     language_name = "javascript"
     file_extensions = [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]
+    entry_points = [
+        "index.js",
+        "index.ts",
+        "main.js",
+        "main.ts",
+        "app.js",
+        "app.ts",
+        "server.js",
+        "server.ts",
+        "package.json",
+    ]
+    project_indicators = {
+        "react": ["package.json", "src/App.js", "src/App.tsx", "src/index.js"],
+        "nextjs": ["next.config.js", "pages/", "app/"],
+        "vue": ["vue.config.js", "src/main.js", "src/App.vue"],
+        "node": ["server.js", "index.js", "package.json"],
+        "express": ["app.js", "server.js", "routes/"],
+    }
 
     def __init__(self):
         """Initialize the JavaScript analyzer with logger."""

@@ -41,6 +41,24 @@ class PythonAnalyzer(LanguageAnalyzer):
 
     language_name = "python"
     file_extensions = [".py", ".pyw", ".pyi"]
+    entry_points = [
+        "__main__.py",
+        "main.py",
+        "app.py",
+        "application.py",
+        "run.py",
+        "wsgi.py",
+        "asgi.py",
+        "manage.py",
+        "setup.py",
+        "pyproject.toml",
+    ]
+    project_indicators = {
+        "django": ["manage.py", "settings.py", "urls.py", "wsgi.py"],
+        "flask": ["app.py", "application.py", "requirements.txt"],
+        "fastapi": ["main.py", "app.py", "requirements.txt"],
+        "package": ["setup.py", "pyproject.toml", "__init__.py"],
+    }
 
     def __init__(self):
         """Initialize the Python analyzer with logger."""

@@ -21,7 +21,8 @@ from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
 from tenets.utils.logger import get_logger
 
-from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
+from ..nlp.bm25 import BM25Calculator
+from ..nlp.tfidf import TFIDFCalculator
 from .factors import RankedFile, RankingExplainer, RankingFactors
 from .strategies import (
     BalancedRankingStrategy,
@@ -604,7 +605,7 @@ class RelevanceRanker:
             "dependency_tree": {},
         }
 
-        # Initialize TF-IDF calculator
+        # Initialize text similarity calculator based on config
         # Honor ad-hoc test flag `use_tfidf_stopwords` if present on config
         use_sw = self.use_stopwords
         try:
@@ -613,10 +614,19 @@ class RelevanceRanker:
         except Exception:
             pass
 
-        tfidf_calc = TFIDFCalculator(use_stopwords=use_sw)
+        # Choose text similarity algorithm from config
+        text_sim_algo = getattr(self.config.ranking, "text_similarity_algorithm", "bm25")
 
-        # Initialize BM25 calculator
-        bm25_calc = BM25Calculator(use_stopwords=use_sw)
+        # Initialize calculators based on config
+        if text_sim_algo == "tfidf":
+            # Use TF-IDF as primary (fallback mode)
+            tfidf_calc = TFIDFCalculator(use_stopwords=use_sw)
+            bm25_calc = None  # Don't initialize BM25 if not needed
+        else:
+            # Use BM25 as primary (default)
+            bm25_calc = BM25Calculator(use_stopwords=use_sw)
+            # Also initialize TF-IDF for backward compatibility with tests
+            tfidf_calc = TFIDFCalculator(use_stopwords=use_sw)
 
         # Build corpus and collect statistics
         documents = []
@@ -641,14 +651,15 @@ class RelevanceRanker:
                     if imported_file:
                         stats["import_graph"][imported_file].add(file.path)
 
-        # Build TF-IDF corpus
+        # Build text similarity corpus
         if documents:
-            tfidf_calc.build_corpus(documents)
-            stats["tfidf_calculator"] = tfidf_calc
+            if tfidf_calc:
+                tfidf_calc.build_corpus(documents)
+                stats["tfidf_calculator"] = tfidf_calc
 
-            # Build BM25 corpus
-            bm25_calc.build_corpus(documents)
-            stats["bm25_calculator"] = bm25_calc
+            if bm25_calc:
+                bm25_calc.build_corpus(documents)
+                stats["bm25_calculator"] = bm25_calc
 
         # Calculate additional statistics
         if stats["file_sizes"]:
