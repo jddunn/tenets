@@ -116,11 +116,11 @@ class InjectionHistory:
             if self.total_distills == 1 and self.total_injections == 0:
                 if complexity >= complexity_threshold:
                     return True, "first_distill_in_session"
-            
+
             # After first distill, respect minimum session length
             if self.total_distills < min_session_length:
                 return False, f"session_too_short_{self.total_distills}/{min_session_length}"
-            
+
             # Complexity-based injection
             if complexity >= complexity_threshold:
                 # Check if we've injected recently
