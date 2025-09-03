@@ -2011,6 +2011,110 @@ graph LR
     PERF_COV --> COMPATIBILITY
 ```
 
+## Guiding Principles (Tenets) System
+
+### Overview
+
+The Guiding Principles system (internally called "Tenets") provides a way to inject persistent, context-aware instructions into generated code context. These principles help maintain consistency across AI interactions and combat context drift by ensuring important architectural decisions, coding standards, and project-specific requirements are consistently reinforced.
+
+### Output Format Conventions
+
+Following OpenAI's recommendations for structured output, tenets are formatted as "guiding principles" in human-readable formats:
+
+#### Markdown Format
+```markdown
+**🎯 Key Guiding Principle:** Always validate user input before processing
+**📌 Important Guiding Principle:** Use async/await for all I/O operations
+**💡 Guiding Principle:** Prefer composition over inheritance
+```
+
+#### XML Format (Recommended by OpenAI)
+```xml
+<guiding_principle priority="high" category="security">
+  Always validate and sanitize user input
+</guiding_principle>
+
+<guiding_principles>
+  <guiding_principle priority="critical">Maintain backward compatibility</guiding_principle>
+  <guiding_principle priority="medium">Use descriptive variable names</guiding_principle>
+</guiding_principles>
+```
+
+#### JSON Format
+```json
+/* GUIDING PRINCIPLE: Follow REST API conventions for all endpoints */
+```
+
+### Injection Strategy
+
+The system uses intelligent injection strategies to place guiding principles where they'll be most effective:
+
+```mermaid
+graph TD
+    subgraph "Injection Decision Engine"
+        ANALYZER[Content Analyzer<br/>Structure & complexity]
+        STRATEGY[Strategy Selector<br/>Top, distributed, contextual]
+        INJECTOR[Smart Injector<br/>Natural break detection]
+    end
+    
+    subgraph "Priority System"
+        CRITICAL[Critical Principles<br/>Security, data integrity]
+        HIGH[High Priority<br/>Architecture, performance]
+        MEDIUM[Medium Priority<br/>Style, conventions]
+        LOW[Low Priority<br/>Preferences, suggestions]
+    end
+    
+    subgraph "Reinforcement"
+        TOP_INJECTION[Top of Context<br/>Most visible]
+        DISTRIBUTED[Throughout Content<br/>Natural sections]
+        END_SUMMARY[End Reinforcement<br/>Key reminders]
+    end
+    
+    ANALYZER --> STRATEGY
+    STRATEGY --> INJECTOR
+    
+    CRITICAL --> TOP_INJECTION
+    HIGH --> DISTRIBUTED
+    MEDIUM --> DISTRIBUTED
+    LOW --> END_SUMMARY
+```
+
+### Injection Behavior
+
+The system ensures guiding principles are present when needed:
+
+#### Session-Based Injection
+- **First Output Rule**: Guiding principles are ALWAYS injected on the first distill in any session
+- **Named Sessions**: After first injection, follows configured frequency (adaptive/periodic/always)
+- **Unnamed Sessions**: Treated as important contexts that always receive guiding principles
+- **No Delay**: Previously required 5 operations before first injection; now immediate
+
+#### Configuration
+
+```yaml
+tenet:
+  auto_instill: true
+  max_per_context: 5
+  injection_strategy: strategic
+  injection_frequency: adaptive  # 'always', 'periodic', 'adaptive', 'manual'
+  injection_interval: 3          # For periodic mode
+  min_session_length: 1          # Now 1 (was 5) - first injection always happens
+  system_instruction: "Prefer small, safe diffs and add tests"
+  system_instruction_enabled: true
+```
+
+#### Injection Frequencies
+- **always**: Inject on every distill operation
+- **periodic**: Inject every N operations (set by `injection_interval`)
+- **adaptive**: Smart injection based on context complexity and session state
+- **manual**: Only inject when explicitly requested
+
+### Integration with Distill Command
+
+When using the `distill` command, guiding principles are automatically injected based on configuration.
+
+**Note:** System instructions are excluded from HTML reports (which are meant for human consumption) but included in formats intended for AI consumption (markdown, XML, JSON).
+
 ## Future Roadmap & Vision
 
 ### Near Term (Q1 2025)

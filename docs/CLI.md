@@ -420,6 +420,63 @@ tenets momentum --team --since "3 months"
 tenets momentum --author "alice@example.com"
 ```
 
+### instill
+
+Apply tenets to your current context by injecting them into prompts and outputs.
+
+```bash
+tenets instill [context] [options]
+```
+
+**Options:**
+- `--session, -s`: Session name for tracking
+- `--frequency`: Injection frequency: `always`, `periodic`, `adaptive`
+- `--priority`: Minimum tenet priority: `low`, `medium`, `high`, `critical`
+- `--max-tokens`: Maximum tokens to add
+- `--format`: Output format
+
+**Examples:**
+
+```bash
+# Apply all pending tenets
+tenets instill "Current code context"
+
+# Apply tenets for specific session
+tenets instill --session feature-x
+
+# Adaptive injection based on complexity
+tenets instill --frequency adaptive
+```
+
+### tenet
+
+Manage project tenets - rules and guidelines for your codebase.
+
+```bash
+tenets tenet [subcommand] [options]
+```
+
+**Subcommands:**
+- `add`: Add a new tenet
+- `list`: List all tenets
+- `remove`: Remove a tenet
+- `show`: Show tenet details
+- `export`: Export tenets
+- `import`: Import tenets
+
+**Examples:**
+
+```bash
+# Add a new tenet
+tenets tenet add "Always use type hints"
+
+# List all tenets
+tenets tenet list
+
+# Remove a tenet
+tenets tenet remove <tenet-id>
+```
+
 ## Visualization Commands
 
 All visualization commands support ASCII output for terminal display, with optional graphical formats.
