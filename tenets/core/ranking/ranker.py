@@ -616,7 +616,7 @@ class RelevanceRanker:
 
         # Choose text similarity algorithm from config
         text_sim_algo = getattr(self.config.ranking, "text_similarity_algorithm", "bm25")
-        
+
         # Initialize calculators based on config
         if text_sim_algo == "tfidf":
             # Use TF-IDF as primary (fallback mode)

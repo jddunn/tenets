@@ -39,8 +39,15 @@ class JavaScriptAnalyzer(LanguageAnalyzer):
     language_name = "javascript"
     file_extensions = [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]
     entry_points = [
-        "index.js", "index.ts", "main.js", "main.ts", "app.js", "app.ts",
-        "server.js", "server.ts", "package.json"
+        "index.js",
+        "index.ts",
+        "main.js",
+        "main.ts",
+        "app.js",
+        "app.ts",
+        "server.js",
+        "server.ts",
+        "package.json",
     ]
     project_indicators = {
         "react": ["package.json", "src/App.js", "src/App.tsx", "src/index.js"],
