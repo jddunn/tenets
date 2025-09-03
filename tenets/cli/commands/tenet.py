@@ -62,6 +62,7 @@ def get_tenet_manager():
                         conn.execute(
                             "INSERT INTO tenets (id, content, priority, category, session, status) VALUES (?, ?, ?, ?, ?, ?)",
                             (
+<<<<<<< HEAD
                                 tenet.id,
                                 tenet.content,
                                 str(tenet.priority.value),
@@ -74,6 +75,11 @@ def get_tenet_manager():
                                 ),
                                 session_val,
                                 "pending",
+=======
+                                str(tenet.category.value)
+                                if hasattr(tenet.category, "value")
+                                else str(tenet.category) if tenet.category else None
+>>>>>>> 092b85e57738d42b42406413ac53c8c9210c6835
                             ),
                         )
                         conn.commit()
@@ -110,6 +116,7 @@ def get_tenet_manager():
                         conn.execute(
                             "INSERT INTO tenets (id, content, priority, category, session, status) VALUES (?, ?, ?, ?, ?, ?)",
                             (
+<<<<<<< HEAD
                                 new_tenet.id,
                                 new_tenet.content,
                                 str(new_tenet.priority.value),
@@ -122,6 +129,11 @@ def get_tenet_manager():
                                 ),
                                 session,
                                 "pending",
+=======
+                                str(new_tenet.category.value)
+                                if hasattr(new_tenet.category, "value")
+                                else str(new_tenet.category) if new_tenet.category else None
+>>>>>>> 092b85e57738d42b42406413ac53c8c9210c6835
                             ),
                         )
                         conn.commit()
@@ -173,9 +185,7 @@ def get_tenet_manager():
                             "category": (
                                 str(t.category.value)
                                 if hasattr(t.category, "value")
-                                else str(t.category)
-                                if t.category
-                                else None
+                                else str(t.category) if t.category else None
                             ),
                             "instilled": bool(t.instilled_at),
                             "created_at": (
@@ -240,9 +250,7 @@ def get_tenet_manager():
                             "category": (
                                 str(t.category.value)
                                 if hasattr(t.category, "value")
-                                else str(t.category)
-                                if t.category
-                                else None
+                                else str(t.category) if t.category else None
                             ),
                             "session": t.session,
                         }
@@ -443,9 +451,7 @@ def list_tenets(
                         "category": (
                             str(t.category.value)
                             if hasattr(t.category, "value")
-                            else str(t.category)
-                            if t.category
-                            else None
+                            else str(t.category) if t.category else None
                         ),
                         "instilled": bool(t.instilled_at),
                         "created_at": (
@@ -681,9 +687,7 @@ def export_tenets(
                             "category": (
                                 str(t.category.value)
                                 if hasattr(t.category, "value")
-                                else str(t.category)
-                                if t.category
-                                else None
+                                else str(t.category) if t.category else None
                             ),
                             "session": t.session if hasattr(t, "session") else None,
                         }
@@ -699,9 +703,7 @@ def export_tenets(
                     cat_val = (
                         str(t.category.value)
                         if hasattr(t.category, "value")
-                        else str(t.category)
-                        if t.category
-                        else None
+                        else str(t.category) if t.category else None
                     )
                     if cat_val:
                         lines.append(f"    category: {cat_val}")
