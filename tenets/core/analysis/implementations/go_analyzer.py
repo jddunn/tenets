@@ -39,6 +39,12 @@ class GoAnalyzer(LanguageAnalyzer):
 
     language_name = "go"
     file_extensions = [".go"]
+    entry_points = ["main.go", "go.mod", "go.sum", "cmd/*/main.go"]
+    project_indicators = {
+        "module": ["go.mod", "go.sum"],
+        "cli": ["cmd/", "main.go"],
+        "library": ["lib.go", "pkg/"],
+    }
 
     def __init__(self):
         """Initialize the Go analyzer with logger."""

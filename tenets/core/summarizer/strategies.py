@@ -675,8 +675,8 @@ class TransformerStrategy(SummarizationStrategy):
 class NLPEnhancedStrategy(SummarizationStrategy):
     """Advanced summarization using all NLP features.
 
-    Combines multiple NLP components for state-of-the-art
-    extractive summarization with semantic understanding.
+    Combines multiple NLP components for advanced extractive
+    summarization with semantic understanding.
     """
 
     name = "nlp_enhanced"

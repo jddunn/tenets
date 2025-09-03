@@ -40,6 +40,20 @@ class JavaAnalyzer(LanguageAnalyzer):
 
     language_name = "java"
     file_extensions = [".java"]
+    entry_points = [
+        "Main.java",
+        "Application.java",
+        "App.java",
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
+    ]
+    project_indicators = {
+        "spring": ["application.properties", "application.yml", "@SpringBootApplication"],
+        "maven": ["pom.xml", "src/main/java/"],
+        "gradle": ["build.gradle", "build.gradle.kts", "settings.gradle"],
+        "android": ["AndroidManifest.xml", "build.gradle", "res/"],
+    }
 
     def __init__(self):
         """Initialize the Java analyzer with logger."""

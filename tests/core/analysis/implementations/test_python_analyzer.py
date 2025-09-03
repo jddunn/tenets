@@ -45,6 +45,31 @@ class TestPythonAnalyzerInitialization:
         assert ".pyi" in analyzer.file_extensions
         assert analyzer.logger is not None
 
+    def test_entry_points(self):
+        """Test that entry points are defined."""
+        analyzer = PythonAnalyzer()
+
+        assert hasattr(analyzer, "entry_points")
+        assert isinstance(analyzer.entry_points, list)
+        assert len(analyzer.entry_points) > 0
+        assert "main.py" in analyzer.entry_points
+        assert "__main__.py" in analyzer.entry_points
+        assert "setup.py" in analyzer.entry_points
+
+    def test_project_indicators(self):
+        """Test that project indicators are defined."""
+        analyzer = PythonAnalyzer()
+
+        assert hasattr(analyzer, "project_indicators")
+        assert isinstance(analyzer.project_indicators, dict)
+        assert "django" in analyzer.project_indicators
+        assert "flask" in analyzer.project_indicators
+        assert "package" in analyzer.project_indicators
+
+        # Check Django indicators
+        assert "manage.py" in analyzer.project_indicators["django"]
+        assert "settings.py" in analyzer.project_indicators["django"]
+
 
 class TestImportExtraction:
     """Test suite for Python import extraction."""

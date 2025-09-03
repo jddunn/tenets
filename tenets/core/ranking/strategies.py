@@ -273,8 +273,8 @@ class BalancedRankingStrategy(RankingStrategy):
         """Get weights for balanced ranking."""
         return {
             "keyword_match": 0.20,
-            "tfidf_similarity": 0.20,
-            "bm25_score": 0.15,
+            "bm25_score": 0.25,  # BM25 prioritized for better ranking
+            "tfidf_similarity": 0.10,  # TF-IDF as supplementary signal
             "path_relevance": 0.15,
             "import_centrality": 0.10,
             "git_recency": 0.05,

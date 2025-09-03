@@ -1,10 +1,8 @@
-"""TF-IDF and BM25 calculators for relevance ranking.
+"""TF-IDF calculator for relevance ranking.
 
-This module exposes a ranking-focused API while reusing the centralized
-implementations from ``tenets.core.nlp.keyword_extractor``. Tests exercise
-the TF-IDF calculator surface directly, so we forward required properties
-and methods to the NLP implementation and add a couple of helpers that the
-ranking tests depend on (e.g., ``get_top_terms``).
+This module provides TF-IDF text similarity as an optional fallback
+to the primary BM25 ranking algorithm. The TF-IDF implementation
+reuses centralized logic from keyword_extractor.
 """
 
 from typing import Dict, List, Set, Tuple
@@ -170,93 +168,3 @@ class TFIDFCalculator:
     @idf_cache.setter
     def idf_cache(self, value: Dict[str, float]) -> None:
         self._calculator.idf_cache = value
-
-
-class BM25Calculator:
-    """BM25 calculator for ranking.
-
-    Simplified wrapper around NLP BM25Calculator to maintain
-    existing ranking API while using centralized logic.
-    """
-
-    def __init__(self, k1: float = 1.2, b: float = 0.75, use_stopwords: bool = False):
-        """Initialize BM25 calculator.
-
-        Args:
-            k1: Term frequency saturation parameter
-            b: Length normalization parameter
-            use_stopwords: Whether to filter stopwords (uses 'code' set)
-        """
-        self.logger = get_logger(__name__)
-
-        # Use NLP BM25 calculator
-        from tenets.core.nlp.keyword_extractor import BM25Calculator as NLPBM25Calculator
-
-        self._calculator = NLPBM25Calculator(
-            k1=k1,
-            b=b,
-            use_stopwords=use_stopwords,
-            stopword_set="code",  # Use minimal stopwords for code search
-        )
-
-    def tokenize(self, text: str) -> List[str]:
-        """Tokenize text using NLP tokenizer.
-
-        Args:
-            text: Input text
-
-        Returns:
-            List of tokens
-        """
-        return self._calculator.tokenize(text)
-
-    def add_document(self, doc_id: str, text: str) -> None:
-        """Add document to corpus.
-
-        Args:
-            doc_id: Document identifier
-            text: Document content
-        """
-        self._calculator.add_document(doc_id, text)
-
-    def score_document(self, query_tokens: List[str], doc_id: str) -> float:
-        """Score a document for query.
-
-        Args:
-            query_tokens: Tokenized query
-            doc_id: Document identifier
-
-        Returns:
-            BM25 score
-        """
-        return self._calculator.score_document(query_tokens, doc_id)
-
-    def search(self, query: str, top_k: int = 10) -> List[Tuple[str, float]]:
-        """Search using BM25.
-
-        Args:
-            query: Query text
-            top_k: Number of results
-
-        Returns:
-            List of (doc_id, score) tuples
-        """
-        return self._calculator.search(query, top_k)
-
-    def build_corpus(self, documents: List[Tuple[str, str]]) -> None:
-        """Build corpus from documents.
-
-        Args:
-            documents: List of (doc_id, text) tuples
-        """
-        self._calculator.build_corpus(documents)
-
-    @property
-    def document_tokens(self) -> Dict[str, List[str]]:
-        """Get document tokens."""
-        return self._calculator.document_tokens
-
-    @property
-    def vocabulary(self) -> set:
-        """Get vocabulary."""
-        return self._calculator.vocabulary

@@ -1,6 +1,7 @@
 """Tests for TF-IDF and BM25 calculators used in ranking / NLP."""
 
-from tenets.core.nlp.tfidf import BM25Calculator, TFIDFCalculator
+from tenets.core.nlp.bm25 import BM25Calculator
+from tenets.core.nlp.tfidf import TFIDFCalculator
 
 
 class TestTFIDFCalculator:
@@ -79,8 +80,8 @@ class TestBM25Calculator:
         """Test BM25 initialization."""
         calc = BM25Calculator(k1=1.5, b=0.8)
 
-        assert calc._calculator.k1 == 1.5
-        assert calc._calculator.b == 0.8
+        assert calc.k1 == 1.5
+        assert calc.b == 0.8
 
     def test_add_document(self):
         """Test adding document."""
@@ -91,14 +92,16 @@ class TestBM25Calculator:
         assert "doc1" in calc.document_tokens
 
     def test_search(self):
-        """Test BM25 search."""
+        """Test BM25 scoring."""
         calc = BM25Calculator()
 
         calc.add_document("doc1", "Python tutorial")
         calc.add_document("doc2", "Java guide")
 
-        results = calc.search("Python", top_k=1)
+        # Score documents for query
+        query_tokens = calc.tokenize("Python")
+        score1 = calc.score_document(query_tokens, "doc1")
+        score2 = calc.score_document(query_tokens, "doc2")
 
-        assert len(results) <= 1
-        if results:
-            assert results[0][0] == "doc1"
+        # doc1 should score higher for "Python"
+        assert score1 > score2

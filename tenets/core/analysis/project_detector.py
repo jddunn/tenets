@@ -1,528 +1,339 @@
 """Project type detection and entry point discovery.
 
 This module provides intelligent detection of project types, main entry points,
-and project structure based on file patterns and heuristics.
+and project structure based on language analyzers and file patterns.
 """
 
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from tenets.utils.logger import get_logger
 
+# Import all language analyzers to access their metadata
+from .implementations.cpp_analyzer import CppAnalyzer
+from .implementations.csharp_analyzer import CSharpAnalyzer
+from .implementations.css_analyzer import CSSAnalyzer
+from .implementations.dart_analyzer import DartAnalyzer
+from .implementations.gdscript_analyzer import GDScriptAnalyzer
+from .implementations.go_analyzer import GoAnalyzer
+from .implementations.html_analyzer import HTMLAnalyzer
+from .implementations.java_analyzer import JavaAnalyzer
+from .implementations.javascript_analyzer import JavaScriptAnalyzer
+from .implementations.kotlin_analyzer import KotlinAnalyzer
+from .implementations.php_analyzer import PhpAnalyzer
+from .implementations.python_analyzer import PythonAnalyzer
+from .implementations.ruby_analyzer import RubyAnalyzer
+from .implementations.rust_analyzer import RustAnalyzer
+from .implementations.scala_analyzer import ScalaAnalyzer
+from .implementations.swift_analyzer import SwiftAnalyzer
+
 
 class ProjectDetector:
-    """Detects project type and structure from file patterns."""
+    """Detects project type and structure using language analyzers.
 
-    # Entry point patterns by language/framework
-    ENTRY_POINTS = {
-        "python": [
-            "__main__.py",
-            "main.py",
-            "app.py",
-            "application.py",
-            "run.py",
-            "wsgi.py",
-            "asgi.py",
-            "manage.py",  # Django
-            "setup.py",
-            "pyproject.toml",
-        ],
-        "javascript": [
-            "index.js",
-            "index.ts",
-            "main.js",
-            "main.ts",
-            "app.js",
-            "app.ts",
-            "server.js",
-            "server.ts",
-            "package.json",
-        ],
-        "html": [
-            "index.html",
-            "main.html",
-            "home.html",
-            "app.html",
-        ],
-        "java": [
-            "Main.java",
-            "Application.java",
-            "App.java",
-            "pom.xml",
-            "build.gradle",
-            "build.gradle.kts",
-        ],
-        "go": [
-            "main.go",
-            "go.mod",
-            "go.sum",
-        ],
-        "rust": [
-            "main.rs",
-            "lib.rs",
-            "Cargo.toml",
-        ],
-        "csharp": [
-            "Program.cs",
-            "Startup.cs",
-            "*.csproj",
-            "*.sln",
-        ],
-        "cpp": [
-            "main.cpp",
-            "main.cc",
-            "main.cxx",
-            "CMakeLists.txt",
-            "Makefile",
-        ],
-        "ruby": [
-            "main.rb",
-            "app.rb",
-            "application.rb",
-            "config.ru",
-            "Gemfile",
-            "Rakefile",
-        ],
-        "php": [
-            "index.php",
-            "app.php",
-            "composer.json",
-        ],
-    }
-
-    # Project type indicators
-    PROJECT_INDICATORS = {
-        "python_package": ["setup.py", "pyproject.toml", "__init__.py"],
-        "django": ["manage.py", "settings.py", "urls.py", "wsgi.py"],
-        "flask": ["app.py", "application.py", "requirements.txt"],
-        "fastapi": ["main.py", "app.py", "requirements.txt"],
-        "node_package": ["package.json", "node_modules"],
-        "react": ["package.json", "src/App.js", "src/App.tsx", "public/index.html"],
-        "vue": ["package.json", "vue.config.js", "src/App.vue"],
-        "angular": ["package.json", "angular.json", "src/app/app.module.ts"],
-        "next": ["package.json", "next.config.js", "pages/"],
-        "express": ["package.json", "server.js", "app.js"],
-        "spring": ["pom.xml", "src/main/java/", "application.properties"],
-        "maven": ["pom.xml"],
-        "gradle": ["build.gradle", "build.gradle.kts"],
-        "cargo": ["Cargo.toml", "src/main.rs", "src/lib.rs"],
-        "go_module": ["go.mod", "go.sum"],
-        "dotnet": ["*.csproj", "*.sln", "Program.cs"],
-        "rails": ["Gemfile", "config.ru", "app/", "config/"],
-        "laravel": ["composer.json", "artisan", "app/", "routes/"],
-        "cmake": ["CMakeLists.txt"],
-        "make": ["Makefile"],
-    }
-
-    # Language extensions
-    LANGUAGE_EXTENSIONS = {
-        "python": [".py", ".pyw", ".pyi"],
-        "javascript": [".js", ".jsx", ".mjs", ".cjs"],
-        "typescript": [".ts", ".tsx"],
-        "java": [".java"],
-        "go": [".go"],
-        "rust": [".rs"],
-        "cpp": [".cpp", ".cc", ".cxx", ".c++", ".hpp", ".h", ".hxx"],
-        "c": [".c", ".h"],
-        "csharp": [".cs"],
-        "ruby": [".rb"],
-        "php": [".php"],
-        "swift": [".swift"],
-        "kotlin": [".kt", ".kts"],
-        "scala": [".scala"],
-        "html": [".html", ".htm"],
-        "css": [".css", ".scss", ".sass", ".less"],
-        "sql": [".sql"],
-        "yaml": [".yml", ".yaml"],
-        "json": [".json"],
-        "xml": [".xml"],
-        "markdown": [".md", ".markdown"],
-    }
+    This class leverages the language-specific analyzers to detect project
+    types and entry points, avoiding duplication of language-specific knowledge.
+    """
 
     def __init__(self):
-        """Initialize the project detector."""
+        """Initialize project detector with language analyzers."""
         self.logger = get_logger(__name__)
 
-    def detect_project(self, root_path: Path) -> Dict:
-        """Detect project type and structure.
+        # Initialize all language analyzers
+        self.analyzers = [
+            PythonAnalyzer(),
+            JavaScriptAnalyzer(),
+            JavaAnalyzer(),
+            GoAnalyzer(),
+            RustAnalyzer(),
+            CppAnalyzer(),
+            CSharpAnalyzer(),
+            RubyAnalyzer(),
+            PhpAnalyzer(),
+            SwiftAnalyzer(),
+            KotlinAnalyzer(),
+            ScalaAnalyzer(),
+            DartAnalyzer(),
+            GDScriptAnalyzer(),
+            HTMLAnalyzer(),
+            CSSAnalyzer(),
+        ]
+
+        # Build dynamic mappings from analyzers
+        self._build_mappings()
+
+        # Additional framework patterns not tied to specific languages
+        self.FRAMEWORK_PATTERNS = {
+            "docker": ["Dockerfile", "docker-compose.yml", "docker-compose.yaml"],
+            "kubernetes": ["k8s/", "kubernetes/", "deployment.yaml", "service.yaml"],
+            "terraform": ["*.tf", "terraform.tfvars"],
+            "ansible": ["ansible.cfg", "playbook.yml", "inventory"],
+            "ci_cd": [".github/workflows/", ".gitlab-ci.yml", "Jenkinsfile", ".travis.yml"],
+        }
+
+    def _build_mappings(self):
+        """Build entry points and indicators from language analyzers."""
+        self.ENTRY_POINTS = {}
+        self.PROJECT_INDICATORS = {}
+        self.EXTENSION_TO_LANGUAGE = {}
+
+        for analyzer in self.analyzers:
+            lang = analyzer.language_name
+
+            # Build entry points mapping
+            if hasattr(analyzer, "entry_points") and analyzer.entry_points:
+                self.ENTRY_POINTS[lang] = analyzer.entry_points
+
+            # Build project indicators mapping
+            if hasattr(analyzer, "project_indicators") and analyzer.project_indicators:
+                for project_type, indicators in analyzer.project_indicators.items():
+                    # Prefix with language for uniqueness
+                    key = f"{lang}_{project_type}" if project_type != lang else project_type
+                    self.PROJECT_INDICATORS[key] = indicators
+
+            # Build extension to language mapping
+            for ext in analyzer.file_extensions:
+                self.EXTENSION_TO_LANGUAGE[ext] = lang
+
+    def detect_project_type(self, path: Path) -> Dict[str, any]:
+        """Detect project type and main entry points.
 
         Args:
-            root_path: Root directory to analyze
+            path: Root directory to analyze
 
         Returns:
             Dictionary containing:
                 - type: Primary project type
-                - languages: Languages used with percentages
-                - frameworks: Detected frameworks
-                - entry_points: Main entry point files
-                - structure: Project structure information
+                - languages: List of detected languages
+                - frameworks: List of detected frameworks
+                - entry_points: List of likely entry point files
+                - confidence: Confidence score (0-1)
         """
-        root_path = Path(root_path)
+        path = Path(path)
+        if not path.exists():
+            return {
+                "type": "unknown",
+                "languages": [],
+                "frameworks": [],
+                "entry_points": [],
+                "confidence": 0.0,
+            }
 
-        # Collect file statistics
-        file_stats = self._collect_file_stats(root_path)
+        # Collect all files
+        all_files = []
+        for ext in ["*.*", "Dockerfile", "Makefile", "Jenkinsfile"]:
+            all_files.extend(path.rglob(ext))
 
-        # Detect languages
-        languages = self._detect_languages(file_stats)
+        # Analyze file extensions to detect languages
+        extensions = Counter()
+        for file in all_files:
+            if file.is_file():
+                ext = file.suffix.lower()
+                if ext:
+                    extensions[ext] += 1
 
-        # Detect frameworks and project types
-        frameworks = self._detect_frameworks(root_path)
+        # Determine primary languages based on extensions
+        languages = []
+        for ext, count in extensions.most_common(10):
+            if ext in self.EXTENSION_TO_LANGUAGE:
+                lang = self.EXTENSION_TO_LANGUAGE[ext]
+                if lang not in languages:
+                    languages.append(lang)
+
+        # Detect frameworks based on indicators
+        frameworks = []
+        file_names = {f.name for f in all_files if f.is_file()}
+        dir_names = {f.name for f in all_files if f.is_dir()}
+
+        # Check language-specific project indicators
+        for project_type, indicators in self.PROJECT_INDICATORS.items():
+            for indicator in indicators:
+                if indicator in file_names or indicator in dir_names:
+                    frameworks.append(project_type)
+                    break
+
+        # Check general framework patterns
+        for framework, patterns in self.FRAMEWORK_PATTERNS.items():
+            for pattern in patterns:
+                if pattern.endswith("/"):
+                    # Directory pattern
+                    if pattern[:-1] in dir_names:
+                        frameworks.append(framework)
+                        break
+                elif "*" in pattern:
+                    # Glob pattern
+                    if any(f.match(pattern) for f in all_files if f.is_file()):
+                        frameworks.append(framework)
+                        break
+                else:
+                    # File pattern
+                    if pattern in file_names:
+                        frameworks.append(framework)
+                        break
 
         # Find entry points
-        entry_points = self._find_entry_points(root_path, languages, frameworks)
+        entry_points = self._find_entry_points(path, languages, file_names)
 
         # Determine primary project type
-        project_type = self._determine_project_type(languages, frameworks, entry_points)
+        project_type = self._determine_project_type(languages, frameworks)
 
-        # Analyze project structure
-        structure = self._analyze_structure(root_path, project_type)
+        # Calculate confidence
+        confidence = self._calculate_confidence(languages, frameworks, entry_points)
 
         return {
             "type": project_type,
-            "languages": languages,
-            "frameworks": frameworks,
-            "entry_points": entry_points,
-            "structure": structure,
-            "root": str(root_path),
+            "languages": languages[:3],  # Top 3 languages
+            "frameworks": list(set(frameworks))[:3],  # Top 3 unique frameworks
+            "entry_points": entry_points[:5],  # Top 5 entry points
+            "confidence": confidence,
         }
 
-    def _collect_file_stats(self, root_path: Path) -> Dict:
-        """Collect statistics about files in the project."""
-        stats = {
-            "total_files": 0,
-            "by_extension": Counter(),
-            "by_directory": Counter(),
-            "files": [],
-        }
+    def _find_entry_points(self, path: Path, languages: List[str], file_names: set) -> List[str]:
+        """Find potential entry point files.
 
-        # Common directories to skip
-        skip_dirs = {
-            ".git",
-            "node_modules",
-            "venv",
-            ".venv",
-            "env",
-            "target",
-            "build",
-            "dist",
-            "__pycache__",
-            ".pytest_cache",
-        }
+        Args:
+            path: Project root directory
+            languages: Detected languages
+            file_names: Set of file names in project
 
-        for path in root_path.rglob("*"):
-            # Skip hidden and ignored directories
-            if any(part in skip_dirs for part in path.parts):
-                continue
-
-            if path.is_file():
-                stats["total_files"] += 1
-                stats["by_extension"][path.suffix.lower()] += 1
-                stats["by_directory"][path.parent.name] += 1
-                stats["files"].append(path)
-
-        return stats
-
-    def _detect_languages(self, file_stats: Dict) -> Dict[str, float]:
-        """Detect programming languages used in the project."""
-        language_counts = Counter()
-        total_code_files = 0
-
-        for ext, count in file_stats["by_extension"].items():
-            for lang, extensions in self.LANGUAGE_EXTENSIONS.items():
-                if ext in extensions:
-                    language_counts[lang] += count
-                    total_code_files += count
-                    break
-
-        # Calculate percentages
-        languages = {}
-        if total_code_files > 0:
-            for lang, count in language_counts.most_common():
-                percentage = (count / total_code_files) * 100
-                if percentage >= 1.0:  # Only include if at least 1%
-                    languages[lang] = round(percentage, 1)
-
-        return languages
-
-    def _detect_frameworks(self, root_path: Path) -> List[str]:
-        """Detect frameworks and project types."""
-        detected = []
-
-        for framework, indicators in self.PROJECT_INDICATORS.items():
-            for indicator in indicators:
-                # Check if indicator exists
-                if "*" in indicator:
-                    # Handle glob patterns
-                    if list(root_path.glob(indicator)):
-                        detected.append(framework)
-                        break
-                else:
-                    # Check exact path
-                    check_path = root_path / indicator
-                    if check_path.exists():
-                        detected.append(framework)
-                        break
-
-        return detected
-
-    def _find_entry_points(
-        self, root_path: Path, languages: Dict, frameworks: List[str]
-    ) -> List[str]:
-        """Find main entry points for the project."""
+        Returns:
+            List of entry point file paths relative to project root
+        """
         entry_points = []
 
         # Check language-specific entry points
         for lang in languages:
             if lang in self.ENTRY_POINTS:
-                for pattern in self.ENTRY_POINTS[lang]:
-                    if "*" in pattern:
-                        # Handle glob patterns
-                        for match in root_path.glob(pattern):
-                            entry_points.append(str(match.relative_to(root_path)))
-                    else:
-                        # Check exact path
-                        check_path = root_path / pattern
-                        if check_path.exists():
-                            entry_points.append(pattern)
+                for entry_point in self.ENTRY_POINTS[lang]:
+                    if entry_point in file_names:
+                        # Find the actual path
+                        for file_path in path.rglob(entry_point):
+                            if file_path.is_file():
+                                relative = file_path.relative_to(path)
+                                entry_points.append(str(relative))
+                                break
 
         # Special handling for package.json
-        package_json = root_path / "package.json"
+        package_json = path / "package.json"
         if package_json.exists():
             try:
-                with open(package_json) as f:
+                with open(package_json, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    # Check for main field
-                    if "main" in data:
+
+                # Check main field
+                if "main" in data:
+                    main_file = path / data["main"]
+                    if main_file.exists():
                         entry_points.append(data["main"])
-                    # Check scripts
-                    if "scripts" in data:
-                        if "start" in data["scripts"]:
-                            # Parse start script for entry point
-                            start_script = data["scripts"]["start"]
-                            # Simple heuristic to extract file name
-                            parts = start_script.split()
+
+                # Check scripts for common entry points
+                if "scripts" in data:
+                    for script_name in ["start", "dev", "serve"]:
+                        if script_name in data["scripts"]:
+                            # Try to extract file from script command
+                            script = data["scripts"][script_name]
+                            parts = script.split()
                             for part in parts:
                                 if part.endswith((".js", ".ts")):
-                                    entry_points.append(part)
-            except Exception as e:
-                self.logger.debug(f"Failed to parse package.json: {e}")
-
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_entry_points = []
-        for ep in entry_points:
-            if ep not in seen:
-                seen.add(ep)
-                unique_entry_points.append(ep)
-
-        return unique_entry_points
-
-    def _determine_project_type(
-        self, languages: Dict, frameworks: List[str], entry_points: List[str]
-    ) -> str:
-        """Determine the primary project type."""
-        # Framework-based detection (highest priority)
-        if "django" in frameworks:
-            return "django_project"
-        elif "flask" in frameworks or "fastapi" in frameworks:
-            # Double-check if it's actually a web app or just a package with requirements.txt
-            # Don't classify as web app if it has setup.py but no app.py/main.py
-            if ("setup.py" in entry_points or "pyproject.toml" in entry_points) and not any(
-                ep in entry_points for ep in ["app.py", "application.py", "main.py"]
-            ):
-                # It's a package, not a web app
-                pass  # Fall through to language-based detection
-            else:
-                return "python_web_app"
-        elif "react" in frameworks or "vue" in frameworks or "angular" in frameworks:
-            return "frontend_spa"
-        elif "next" in frameworks:
-            return "fullstack_next"
-        elif "express" in frameworks:
-            return "node_backend"
-        elif "spring" in frameworks:
-            return "java_spring"
-        elif "rails" in frameworks:
-            return "ruby_rails"
-        elif "laravel" in frameworks:
-            return "php_laravel"
-        elif "cargo" in frameworks:
-            return "rust_project"
-        elif "go_module" in frameworks:
-            return "go_project"
-        elif "dotnet" in frameworks:
-            return "dotnet_project"
-
-        # Language-based detection
-        if languages:
-            primary_lang = max(languages, key=languages.get)
-
-            if primary_lang == "python":
-                if "setup.py" in entry_points or "pyproject.toml" in entry_points:
-                    return "python_package"
-                else:
-                    return "python_project"
-            elif primary_lang == "javascript" or primary_lang == "typescript":
-                if "package.json" in entry_points:
-                    return "node_project"
-                else:
-                    return "javascript_project"
-            elif primary_lang == "java":
-                return "java_project"
-            elif primary_lang == "go":
-                return "go_project"
-            elif primary_lang == "rust":
-                return "rust_project"
-            elif primary_lang == "cpp" or primary_lang == "c":
-                return "cpp_project"
-            elif primary_lang == "csharp":
-                return "csharp_project"
-            elif primary_lang == "ruby":
-                return "ruby_project"
-            elif primary_lang == "php":
-                return "php_project"
-            elif primary_lang == "html":
-                return "static_website"
-
-        return "unknown"
-
-    def _analyze_structure(self, root_path: Path, project_type: str) -> Dict:
-        """Analyze project structure based on type."""
-        structure = {
-            "directories": {},
-            "key_files": [],
-            "test_directories": [],
-            "doc_directories": [],
-        }
-
-        # Common directory patterns
-        common_dirs = {
-            "src": "Source code",
-            "lib": "Libraries",
-            "app": "Application code",
-            "api": "API endpoints",
-            "components": "UI components",
-            "pages": "Page components",
-            "views": "View templates",
-            "models": "Data models",
-            "controllers": "Controllers",
-            "services": "Service layer",
-            "utils": "Utilities",
-            "helpers": "Helper functions",
-            "config": "Configuration",
-            "public": "Public assets",
-            "static": "Static files",
-            "assets": "Asset files",
-            "templates": "Templates",
-            "tests": "Tests",
-            "test": "Tests",
-            "spec": "Specifications",
-            "docs": "Documentation",
-            "doc": "Documentation",
-        }
-
-        # Check for common directories
-        for dir_name, description in common_dirs.items():
-            dir_path = root_path / dir_name
-            if dir_path.exists() and dir_path.is_dir():
-                structure["directories"][dir_name] = description
-
-                # Identify test directories
-                if dir_name in ["tests", "test", "spec"]:
-                    structure["test_directories"].append(dir_name)
-
-                # Identify documentation directories
-                if dir_name in ["docs", "doc", "documentation"]:
-                    structure["doc_directories"].append(dir_name)
-
-        # Identify key files based on project type
-        key_patterns = {
-            "python_package": ["setup.py", "pyproject.toml", "requirements.txt", "README.md"],
-            "node_project": ["package.json", "package-lock.json", "yarn.lock", "README.md"],
-            "java_project": ["pom.xml", "build.gradle", "README.md"],
-            "go_project": ["go.mod", "go.sum", "README.md"],
-            "rust_project": ["Cargo.toml", "Cargo.lock", "README.md"],
-        }
-
-        if project_type in key_patterns:
-            for pattern in key_patterns[project_type]:
-                file_path = root_path / pattern
-                if file_path.exists():
-                    structure["key_files"].append(pattern)
-
-        return structure
-
-    def find_dependencies_for_viz(self, root_path: Path, files: List[Path]) -> Dict[str, List[str]]:
-        """Find dependencies optimized for visualization.
-
-        Groups dependencies by module/package level rather than individual files.
-
-        Args:
-            root_path: Project root
-            files: List of files to analyze
-
-        Returns:
-            Dictionary of module -> list of dependent modules
-        """
-        # Detect project info
-        project_info = self.detect_project(root_path)
-
-        # Group files by module/package
-        modules = self._group_files_by_module(root_path, files, project_info)
-
-        # Build module-level dependency graph
-        module_deps = {}
-
-        for module, module_files in modules.items():
-            deps = set()
-
-            for file_path in module_files:
-                # Get file dependencies (this would come from the analyzer)
-                # For now, we'll return the structure for the viz command to use
+                                    file = path / part
+                                    if file.exists():
+                                        entry_points.append(part)
+                                    break
+            except (json.JSONDecodeError, KeyError, UnicodeDecodeError):
                 pass
 
-            if deps:
-                module_deps[module] = sorted(deps)
+        return list(dict.fromkeys(entry_points))  # Remove duplicates while preserving order
 
-        return module_deps
+    def _determine_project_type(self, languages: List[str], frameworks: List[str]) -> str:
+        """Determine the primary project type.
 
-    def _group_files_by_module(
-        self, root_path: Path, files: List[Path], project_info: Dict
-    ) -> Dict[str, List[Path]]:
-        """Group files by module or package."""
-        modules = {}
+        Args:
+            languages: List of detected languages
+            frameworks: List of detected frameworks
 
-        for file_path in files:
-            # Get relative path
-            try:
-                rel_path = file_path.relative_to(root_path)
-            except ValueError:
-                continue
+        Returns:
+            String describing the project type
+        """
+        if not languages:
+            return "unknown"
 
-            # Determine module name based on project type
-            if project_info["type"].startswith("python"):
-                # Python uses directory structure as modules
-                module_parts = rel_path.parts[:-1]  # Exclude filename
-                if module_parts:
-                    module = ".".join(module_parts)
-                else:
-                    module = "root"
-            elif project_info["type"].startswith("node") or "javascript" in project_info["type"]:
-                # Node/JS often uses directory structure
-                if len(rel_path.parts) > 1:
-                    module = rel_path.parts[0]
-                else:
-                    module = "root"
-            # Default to top-level directory
-            elif len(rel_path.parts) > 1:
-                module = rel_path.parts[0]
-            else:
-                module = "root"
+        # Framework takes precedence
+        if frameworks:
+            framework = frameworks[0]
+            # Clean up prefixed framework names
+            if "_" in framework:
+                parts = framework.split("_", 1)
+                return parts[1]  # Return the framework part
+            return framework
 
-            if module not in modules:
-                modules[module] = []
-            modules[module].append(file_path)
+        # Fall back to primary language
+        return languages[0]
 
-        return modules
+    def _calculate_confidence(
+        self, languages: List[str], frameworks: List[str], entry_points: List[str]
+    ) -> float:
+        """Calculate confidence score for detection.
+
+        Args:
+            languages: Detected languages
+            frameworks: Detected frameworks
+            entry_points: Detected entry points
+
+        Returns:
+            Confidence score between 0 and 1
+        """
+        score = 0.0
+
+        # Language detection confidence
+        if languages:
+            score += 0.3
+            if len(languages) == 1:
+                score += 0.1  # Single language project is more certain
+
+        # Framework detection confidence
+        if frameworks:
+            score += 0.3
+            if len(frameworks) == 1:
+                score += 0.1  # Single framework is more certain
+
+        # Entry point detection confidence
+        if entry_points:
+            score += 0.2
+            if len(entry_points) >= 2:
+                score += 0.1  # Multiple entry points found
+
+        return min(score, 1.0)
+
+    def find_main_file(self, path: Path) -> Optional[Path]:
+        """Find the most likely main/entry file in a project.
+
+        Args:
+            path: Directory to search in
+
+        Returns:
+            Path to the main file, or None if not found
+        """
+        path = Path(path)
+        if not path.is_dir():
+            return None
+
+        # Detect project info
+        project_info = self.detect_project_type(path)
+
+        # Use detected entry points
+        if project_info["entry_points"]:
+            main_file = path / project_info["entry_points"][0]
+            if main_file.exists():
+                return main_file
+
+        # Fall back to language-specific patterns
+        for lang in project_info["languages"]:
+            if lang in self.ENTRY_POINTS:
+                for entry_point in self.ENTRY_POINTS[lang]:
+                    for file_path in path.rglob(entry_point):
+                        if file_path.is_file():
+                            return file_path
+
+        return None

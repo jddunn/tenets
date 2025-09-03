@@ -23,10 +23,14 @@ class LanguageAnalyzer(ABC):
     Attributes:
         language_name: Name of the programming language
         file_extensions: List of file extensions this analyzer handles
+        entry_points: Common entry point filenames for this language
+        project_indicators: Framework/project type indicators
     """
 
     language_name: str = "unknown"
     file_extensions: List[str] = []
+    entry_points: List[str] = []  # Common entry point filenames
+    project_indicators: Dict[str, List[str]] = {}  # Framework/project type indicators
 
     @abstractmethod
     def extract_imports(self, content: str, file_path: Path) -> List[ImportInfo]:
