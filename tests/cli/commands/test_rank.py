@@ -16,16 +16,13 @@ from tenets.models.analysis import FileAnalysis
 def mock_tenets(mock_files):
     """Mock Tenets instance."""
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
-    
+
     with patch("tenets.cli.commands.rank.Tenets") as mock:
         instance = mock.return_value
         instance.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
         yield instance
 
@@ -128,18 +125,15 @@ def test_rank_basic(mock_files):
 def test_rank_top_n(mock_files):
     """Test rank with --top option."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -158,18 +152,15 @@ def test_rank_top_n(mock_files):
 def test_rank_min_score(mock_files):
     """Test rank with --min-score option."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -191,18 +182,15 @@ def test_rank_min_score(mock_files):
 def test_rank_no_scores(mock_files):
     """Test rank with --no-scores option."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -221,18 +209,15 @@ def test_rank_no_scores(mock_files):
 def test_rank_with_factors(mock_files):
     """Test rank with --factors option."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -249,18 +234,15 @@ def test_rank_with_factors(mock_files):
 def test_rank_json_format(mock_files):
     """Test rank with JSON output format."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -288,18 +270,15 @@ def test_rank_json_format(mock_files):
 def test_rank_xml_format(mock_files):
     """Test rank with XML output format."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -318,18 +297,15 @@ def test_rank_xml_format(mock_files):
 def test_rank_html_format(mock_files):
     """Test rank with HTML output format."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -347,18 +323,15 @@ def test_rank_html_format(mock_files):
 def test_rank_tree_view(mock_files):
     """Test rank with tree view."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -376,18 +349,15 @@ def test_rank_output_to_file(mock_files, tmp_path):
     """Test rank with output to file."""
     runner = CliRunner()
     output_file = tmp_path / "ranked.json"
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -410,18 +380,15 @@ def test_rank_output_to_file(mock_files, tmp_path):
 def test_rank_with_stats(mock_files):
     """Test rank with --stats option."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -438,18 +405,15 @@ def test_rank_with_stats(mock_files):
 def test_rank_with_session(mock_files):
     """Test rank with session option."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()
@@ -464,18 +428,15 @@ def test_rank_with_session(mock_files):
 def test_rank_with_include_exclude(mock_files):
     """Test rank with include/exclude patterns."""
     runner = CliRunner()
-    
+
     from collections import namedtuple
-    
+
     RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
 
     with patch("tenets.cli.commands.rank.Tenets") as mock_tenets_cls:
         mock_tenets = mock_tenets_cls.return_value
         mock_tenets.rank_files.return_value = RankResult(
-            files=mock_files,
-            prompt_context=MagicMock(),
-            mode="balanced",
-            total_scanned=100
+            files=mock_files, prompt_context=MagicMock(), mode="balanced", total_scanned=100
         )
 
         app = typer.Typer()

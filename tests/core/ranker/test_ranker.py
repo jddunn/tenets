@@ -283,6 +283,7 @@ class TestRelevanceRankerInitialization:
             assert ranker._executor_instance is None
             # But accessing the property should initialize it (unless on Windows Python 3.13+)
             import sys
+
             if not (sys.platform == "win32" and sys.version_info >= (3, 13)):
                 assert ranker.executor is not None
 
@@ -720,17 +721,18 @@ class TestMainRankingPipeline:
 
     def test_rank_files_parallel(self, ranker):
         import sys
+
         # Skip test on Windows Python 3.13+ where parallel is disabled
         if sys.platform == "win32" and sys.version_info >= (3, 13):
             pytest.skip("Parallel ranking disabled on Windows Python 3.13+")
-            
+
         files = [FileAnalysis(path=f"file{i}.py", content=f"content {i}") for i in range(20)]
         prompt_context = PromptContext(text="test", keywords=["test"], task_type="general")
         mock_strategy = Mock()
         mock_strategy.rank_file.return_value = RankingFactors(keyword_match=0.5)
         mock_strategy.get_weights.return_value = {"keyword_match": 1.0}
         ranker._get_strategy = Mock(return_value=mock_strategy)
-        
+
         # Access executor property to trigger lazy initialization
         executor = ranker.executor
         if executor is None:
@@ -972,10 +974,11 @@ class TestEdgeCases:
     def test_parallel_ranking_timeout(self, ranker):
         """Test handling of timeout in parallel ranking."""
         import sys
+
         # Skip test on Windows Python 3.13+ where parallel is disabled
         if sys.platform == "win32" and sys.version_info >= (3, 13):
             pytest.skip("Parallel ranking disabled on Windows Python 3.13+")
-            
+
         files = [FileAnalysis(path=f"file{i}.py", content="") for i in range(3)]
         prompt_context = PromptContext(text="test", keywords=[], task_type="general")
 
@@ -1036,10 +1039,10 @@ class TestEdgeCases:
 
     def test_shutdown(self, ranker):
         """Test ranker shutdown."""
-        import sys
+
         # Access executor to trigger lazy initialization (if applicable)
         executor = ranker.executor
-        
+
         if executor is not None:
             # Only test shutdown if executor exists
             ranker.shutdown()

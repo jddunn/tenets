@@ -122,7 +122,8 @@ class TenetInjector:
         # Add reinforcement section if needed
         if self.reinforce_at_end and len(sorted_tenets) > 3:
             reinforcement = self._create_reinforcement_section(
-                sorted_tenets[:3], format  # Top 3 most important
+                sorted_tenets[:3],
+                format,  # Top 3 most important
             )
             injected_content += f"\n\n{reinforcement}"
 
@@ -339,7 +340,7 @@ class TenetInjector:
 
                 points.append(
                     InjectionPoint(
-                        position=best_break, score=0.7, reason=f"distributed_position_{i+1}"
+                        position=best_break, score=0.7, reason=f"distributed_position_{i + 1}"
                     )
                 )
 
@@ -403,7 +404,9 @@ class TenetInjector:
         """
         if format == "markdown":
             section = "## 🎯 Key Guiding Principles to Remember\n\n"
-            section += "As you work with this code, keep these critical guiding principles in mind:\n\n"
+            section += (
+                "As you work with this code, keep these critical guiding principles in mind:\n\n"
+            )
 
             for i, tenet in enumerate(top_tenets, 1):
                 icon = "🔴" if tenet.priority == Priority.CRITICAL else "🟡"
@@ -417,9 +420,7 @@ class TenetInjector:
             section += "<guiding_principles>\n"
 
             for tenet in top_tenets:
-                section += (
-                    f'  <guiding_principle priority="{tenet.priority.value}">{tenet.content}</guiding_principle>\n'
-                )
+                section += f'  <guiding_principle priority="{tenet.priority.value}">{tenet.content}</guiding_principle>\n'
 
             section += "</guiding_principles>\n"
             section += "</guiding_principles_reinforcement>"
@@ -430,7 +431,9 @@ class TenetInjector:
             section += "=" * 60 + "\n\n"
 
             for i, tenet in enumerate(top_tenets, 1):
-                section += f"{i}. [GUIDING PRINCIPLE - {tenet.priority.value.upper()}] {tenet.content}\n"
+                section += (
+                    f"{i}. [GUIDING PRINCIPLE - {tenet.priority.value.upper()}] {tenet.content}\n"
+                )
 
         return section
 

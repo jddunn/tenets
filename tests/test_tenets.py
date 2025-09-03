@@ -37,7 +37,7 @@ class TestTenetsInitialization:
             mock_instiller_instance = MagicMock()
             mock_distiller.return_value = mock_distiller_instance
             mock_instiller.return_value = mock_instiller_instance
-            
+
             tenets = Tenets()
 
             assert tenets.config is not None

@@ -99,7 +99,7 @@ class TenetManager:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 """
-                SELECT * FROM tenets 
+                SELECT * FROM tenets
                 WHERE status IN ('pending', 'instilled')
                 ORDER BY created_at DESC
             """
@@ -143,7 +143,9 @@ class TenetManager:
             # Create tenet from string content
             # Ensure content is a string before calling strip()
             if not isinstance(content, str):
-                raise TypeError(f"Expected string or Tenet, got {type(content).__name__}: {content}")
+                raise TypeError(
+                    f"Expected string or Tenet, got {type(content).__name__}: {content}"
+                )
             tenet = Tenet(
                 content=content.strip(),
                 priority=priority if isinstance(priority, Priority) else Priority(priority),
@@ -175,7 +177,7 @@ class TenetManager:
             # Save main tenet data
             conn.execute(
                 """
-                INSERT OR REPLACE INTO tenets 
+                INSERT OR REPLACE INTO tenets
                 (id, content, priority, category, status, created_at, instilled_at, updated_at, author, data)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -208,7 +210,7 @@ class TenetManager:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO tenet_metrics
-                (tenet_id, injection_count, last_injected, contexts_appeared_in, 
+                (tenet_id, injection_count, last_injected, contexts_appeared_in,
                  compliance_score, reinforcement_needed)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -500,7 +502,7 @@ class TenetManager:
             raise FileNotFoundError(f"Import file not found: {file_path}")
 
         # Load data
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             if file_path.suffix in [".yaml", ".yml"]:
                 data = yaml.safe_load(f)
             else:

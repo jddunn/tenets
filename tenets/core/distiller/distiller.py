@@ -37,10 +37,12 @@ class Distiller:
         """
         self.config = config
         self.logger = get_logger(__name__)
-        
+
         # Log multiprocessing configuration
         import os
-        from tenets.utils.multiprocessing import get_scanner_workers, get_ranking_workers
+
+        from tenets.utils.multiprocessing import get_ranking_workers, get_scanner_workers
+
         cpu_count = os.cpu_count() or 1
         scanner_workers = get_scanner_workers(config)
         ranking_workers = get_ranking_workers(config)
@@ -113,6 +115,7 @@ class Distiller:
             >>> print(result.context)
         """
         import time
+
         start_time = time.time()
         self.logger.info(f"Distilling context for: {prompt[:100]}...")
 

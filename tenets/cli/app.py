@@ -186,14 +186,15 @@ def main_callback(
     # Handle --version flag
     if version:
         from tenets import __version__
+
         print(f"tenets v{__version__}")
         raise typer.Exit()
-    
+
     # If no command is specified and not version, show help
     if ctx.invoked_subcommand is None and not version:
         print(ctx.get_help())
         raise typer.Exit()
-    
+
     # Store options in context for commands to access
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
