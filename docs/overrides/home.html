@@ -324,6 +324,7 @@
 
     <!-- Radios must be siblings of .see-panes for CSS selectors to work -->
     <input type="radio" name="see-tabs" id="tab-context" checked>
+    <input type="radio" name="see-tabs" id="tab-rank">
     <input type="radio" name="see-tabs" id="tab-analysis">
     <input type="radio" name="see-tabs" id="tab-quality">
     <input type="radio" name="see-tabs" id="tab-sessions">
@@ -331,7 +332,8 @@
     <input type="radio" name="see-tabs" id="tab-viz">
 
     <div class="see-tabs">
-      <label class="see-tab-label" for="tab-context">Context</label>
+      <label class="see-tab-label" for="tab-context">Distill</label>
+      <label class="see-tab-label" for="tab-rank">Rank</label>
       <label class="see-tab-label" for="tab-analysis">Analysis</label>
       <label class="see-tab-label" for="tab-quality">Quality</label>
       <label class="see-tab-label" for="tab-sessions">Sessions</label>
@@ -370,26 +372,24 @@
         </div>
       </div>
 
-      <div class="see-panes">
-        <div class="see-pane" id="pane-context">
-          <div class="see-grid">
-            <div class="see-code">
-              <div class="see-header">
-                <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
-                <div class="see-title"></div>
-              </div>
-              <div class="see-body"><pre><code class="language-bash">$ tenets rank "fix summarizing truncation bug" --tree</code></pre></div>
+      <div class="see-pane" id="pane-rank">
+        <div class="see-grid">
+          <div class="see-code">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Ranking Files</div>
             </div>
-            <div class="see-output" data-caption="Context builder assembling the most relevant files">
-              <div class="see-header">
-                <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
-                <div class="see-title">Output</div>
-              </div>
-              <div class="see-body">
-                <div class="shot-frame">
-                  <img src="{{ 'assets/images/screenshots/rank.png' | url }}" alt="Ranking the most relevant files" loading="lazy" data-poster="{{ 'assets/images/screenshots/rank.png' | url }}" data-gif="{{ 'assets/images/screenshots/rank.gif' | url }}" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                  <span class="see-hint">Click to reveal</span>
-                </div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets rank "fix summarizing truncation bug" --tree</code></pre></div>
+          </div>
+          <div class="see-output" data-caption="Ranking the most relevant files">
+            <div class="see-header">
+              <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
+              <div class="see-title">Output</div>
+            </div>
+            <div class="see-body">
+              <div class="shot-frame">
+                <img src="{{ 'assets/images/screenshots/rank.png' | url }}" alt="Ranking the most relevant files" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                <span class="see-hint">Click to reveal</span>
               </div>
             </div>
           </div>
