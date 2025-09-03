@@ -8,11 +8,10 @@
 - [Quick Start](#quick-start)
 - [Core Commands](#core-commands)
   - [distill](#distill)
-  - [instill](#instill)
-  - [rank](#rank)
   - [examine](#examine)
   - [chronicle](#chronicle)
   - [momentum](#momentum)
+  - [instill](#instill)
   - [tenet](#tenet)
 - [Visualization Commands](#visualization-commands)
   - [viz deps](#viz-deps)
@@ -200,92 +199,6 @@ tenets config show --key ranking
 
 See also: docs/CONFIG.md for full configuration details.
 
-
-
-### rank
-
-Show ranked files by relevance without their content.
-
-```bash
-tenets rank <prompt> [path] [options]
-```
-
-**Arguments:**
-
-- **prompt**: Your query or task to rank files against
-- **path**: Directory or files to analyze (default: current directory)
-
-**Options:**
-
-- `--format`, `-f`: Output format: markdown (default), json, xml, html, tree
-- `--output`, `-o`: Save to file instead of stdout
-- `--mode`, `-m`: Ranking mode: fast, balanced (default), thorough
-- `--top`, `-t`: Show only top N files
-- `--min-score`: Minimum relevance score (0.0-1.0)
-- `--max-files`: Maximum number of files to show
-- `--tree`: Show results as directory tree
-- `--scores/--no-scores`: Show/hide relevance scores (default: show)
-- `--factors`: Show ranking factor breakdown
-- `--path-style`: Path display: relative (default), absolute, name
-- `--include`, `-i`: Include file patterns (e.g., "*.py,*.js")
-- `--exclude`, `-e`: Exclude file patterns (e.g., "test_*,*.backup")
-- `--include-tests`: Include test files
-- `--exclude-tests`: Explicitly exclude test files
-- `--no-git`: Disable git signals in ranking
-- `--session`, `-s`: Use session for stateful ranking
-- `--stats`: Show ranking statistics
-- `--verbose`, `-v`: Show detailed debug information
-- `--copy`: Copy file list to clipboard (also enabled automatically if config.output.copy_on_rank is true)
-
-**Examples:**
-
-```bash
-# Show top 10 most relevant files for OAuth implementation
-tenets rank "implement OAuth2" --top 10
-
-# Show files above a relevance threshold
-tenets rank "fix authentication bug" --min-score 0.3
-
-# Tree view with ranking factors breakdown
-tenets rank "add caching layer" --tree --factors
-
-# Export ranking as JSON for automation
-tenets rank "review API endpoints" --format json -o ranked_files.json
-
-# Quick file list to clipboard (no scores)
-tenets rank "database queries" --top 20 --copy --no-scores
-
-# Show only Python files with detailed factors
-tenets rank "refactor models" --include "*.py" --factors --stats
-
-# HTML report with interactive tree view
-tenets rank "security audit" --format html -o security_files.html --tree
-```
-
-**Use Cases:**
-
-1. **Understanding Context**: See which files would be included in a `distill` command without generating the full context
-2. **File Discovery**: Find relevant files for manual inspection
-3. **Automation**: Export ranked file lists for feeding into other tools or scripts
-4. **Code Review**: Identify files most relevant to a particular feature or bug
-5. **Impact Analysis**: See which files are most connected to a specific query
-
-**Output Formats:**
-
-- **Markdown**: Numbered list sorted by relevance with scores and optional factors
-- **Tree**: Directory tree structure sorted by relevance (directories ordered by their highest-scoring file)
-- **JSON**: Structured data with paths, scores, ranks, and factors (preserves relevance order)
-- **XML**: Structured XML for integration with other tools
-- **HTML**: Interactive web page with relevance-sorted display
-
-The ranking uses the same intelligent multi-factor analysis as `distill`:
-- Semantic similarity (ML-based when available)
-- Keyword matching
-- TF-IDF statistical relevance
-- Import/dependency centrality
-- Path relevance
-- Git signals (recent changes, frequency)
-
 ### examine
 
 Analyze codebase structure, complexity, and patterns.
@@ -422,60 +335,50 @@ tenets momentum --author "alice@example.com"
 
 ### instill
 
-Apply tenets to your current context by injecting them into prompts and outputs.
+Apply configured tenets to your context using smart strategies (periodic/adaptive/manual). Typically used after setting up tenets.
 
 ```bash
-tenets instill [context] [options]
+tenets instill [options]
 ```
 
-**Options:**
-- `--session, -s`: Session name for tracking
-- `--frequency`: Injection frequency: `always`, `periodic`, `adaptive`
-- `--priority`: Minimum tenet priority: `low`, `medium`, `high`, `critical`
-- `--max-tokens`: Maximum tokens to add
-- `--format`: Output format
+Options:
+- `--session, -s`: Use a named session to leverage history and pinned files
+- `--force`: Force instillation regardless of frequency settings
+- `--max-tenets`: Limit number of tenets applied in one pass
 
-**Examples:**
+Examples:
 
 ```bash
-# Apply all pending tenets
-tenets instill "Current code context"
+# Apply pending tenets for a session
+tenets instill --session refactor-auth
 
-# Apply tenets for specific session
-tenets instill --session feature-x
-
-# Adaptive injection based on complexity
-tenets instill --frequency adaptive
+# Force all tenets once
+tenets instill --force
 ```
+
+See also: [Tenet Commands](#tenet-commands) for managing tenets.
 
 ### tenet
 
-Manage project tenets - rules and guidelines for your codebase.
+Manage guiding principles (“tenets”) that can be injected into distilled context.
+
+Common subcommands:
 
 ```bash
-tenets tenet [subcommand] [options]
-```
+# Add tenets
+tenets tenet add "Always use type hints" --priority high --category style
+tenets tenet add "Validate all user inputs" --priority critical --category security
 
-**Subcommands:**
-- `add`: Add a new tenet
-- `list`: List all tenets
-- `remove`: Remove a tenet
-- `show`: Show tenet details
-- `export`: Export tenets
-- `import`: Import tenets
-
-**Examples:**
-
-```bash
-# Add a new tenet
-tenets tenet add "Always use type hints"
-
-# List all tenets
+# List & filter
 tenets tenet list
+tenets tenet list --pending --session oauth --category security --verbose
 
-# Remove a tenet
-tenets tenet remove <tenet-id>
+# Show / remove
+tenets tenet show abc123
+tenets tenet remove abc123 --force
 ```
+
+For full details, see: [Tenet Commands](#tenet-commands)
 
 ## Visualization Commands
 
@@ -1223,12 +1126,12 @@ context:
 scanner:
   respect_gitignore: true
   max_file_size: 5000000
-
+  
 ignore:
   - "*.generated.*"
   - "vendor/"
   - "build/"
-
+  
 output:
   format: markdown
   summarize_long_files: true

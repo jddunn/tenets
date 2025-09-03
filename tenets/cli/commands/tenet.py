@@ -33,22 +33,23 @@ def get_tenet_manager():
                 self._init_db()
 
             def _init_db(self):
-                with sqlite3.connect(self.db_path) as conn:
-                    conn.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS tenets (
-                            id TEXT PRIMARY KEY,
-                            content TEXT NOT NULL,
-                            priority TEXT DEFAULT 'medium',
-                            category TEXT,
-                            session TEXT,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            instilled_at TIMESTAMP,
-                            status TEXT DEFAULT 'pending'
-                        )
+                conn = sqlite3.connect(self.db_path)
+                conn.execute(
                     """
+                    CREATE TABLE IF NOT EXISTS tenets (
+                        id TEXT PRIMARY KEY,
+                        content TEXT NOT NULL,
+                        priority TEXT DEFAULT 'medium',
+                        category TEXT,
+                        session TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        instilled_at TIMESTAMP,
+                        status TEXT DEFAULT 'pending'
                     )
-                    conn.commit()
+                """
+                )
+                conn.commit()
+                conn.close()
 
             def add_tenet(
                 self, content=None, priority="medium", category=None, session=None, tenet=None
@@ -56,25 +57,26 @@ def get_tenet_manager():
                 # Support both old API and new Tenet object
                 if tenet is not None:
                     # New API - Tenet object passed
-                    with sqlite3.connect(self.db_path) as conn:
-                        # Get first session from session_bindings if any
-                        session_val = tenet.session_bindings[0] if tenet.session_bindings else None
-                        conn.execute(
-                            "INSERT INTO tenets (id, content, priority, category, session, status) VALUES (?, ?, ?, ?, ?, ?)",
+                    conn = sqlite3.connect(self.db_path)
+                    # Get first session from session_bindings if any
+                    session_val = tenet.session_bindings[0] if tenet.session_bindings else None
+                    conn.execute(
+                        "INSERT INTO tenets (id, content, priority, category, session, status) VALUES (?, ?, ?, ?, ?, ?)",
+                        (
+                            tenet.id,
+                            tenet.content,
+                            str(tenet.priority.value),
                             (
-                                tenet.id,
-                                tenet.content,
-                                str(tenet.priority.value),
-                                (
-                                    str(tenet.category.value)
-                                    if hasattr(tenet.category, "value")
-                                    else str(tenet.category) if tenet.category else None
-                                ),
-                                session_val,
-                                "pending",
+                                str(tenet.category.value)
+                                if hasattr(tenet.category, "value")
+                                else str(tenet.category) if tenet.category else None
                             ),
-                        )
-                        conn.commit()
+                            session_val,
+                            "pending",
+                        ),
+                    )
+                    conn.commit()
+                    conn.close()
                 else:
                     # Old API - keyword arguments
                     from tenets.models.tenet import Priority, Tenet, TenetCategory
@@ -104,47 +106,49 @@ def get_tenet_manager():
                         new_tenet.session_bindings = [session]
 
                     # Save to DB
-                    with sqlite3.connect(self.db_path) as conn:
-                        conn.execute(
-                            "INSERT INTO tenets (id, content, priority, category, session, status) VALUES (?, ?, ?, ?, ?, ?)",
+                    conn = sqlite3.connect(self.db_path)
+                    conn.execute(
+                        "INSERT INTO tenets (id, content, priority, category, session, status) VALUES (?, ?, ?, ?, ?, ?)",
+                        (
+                            new_tenet.id,
+                            new_tenet.content,
+                            str(new_tenet.priority.value),
                             (
-                                new_tenet.id,
-                                new_tenet.content,
-                                str(new_tenet.priority.value),
-                                (
-                                    str(new_tenet.category.value)
-                                    if hasattr(new_tenet.category, "value")
-                                    else str(new_tenet.category) if new_tenet.category else None
-                                ),
-                                session,
-                                "pending",
+                                str(new_tenet.category.value)
+                                if hasattr(new_tenet.category, "value")
+                                else str(new_tenet.category) if new_tenet.category else None
                             ),
-                        )
-                        conn.commit()
+                            session,
+                            "pending",
+                        ),
+                    )
+                    conn.commit()
+                    conn.close()
 
             def get_all_tenets(self):
                 from tenets.models.tenet import Priority, Tenet, TenetCategory
 
-                with sqlite3.connect(self.db_path) as conn:
-                    cursor = conn.execute("SELECT * FROM tenets")
-                    tenets = []
-                    for row in cursor:
-                        # Parse category
-                        category = None
-                        if row[3]:
-                            try:
-                                category = TenetCategory(row[3])
-                            except ValueError:
-                                category = row[3]  # Custom category string
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.execute("SELECT * FROM tenets")
+                tenets = []
+                for row in cursor:
+                    # Parse category
+                    category = None
+                    if row[3]:
+                        try:
+                            category = TenetCategory(row[3])
+                        except ValueError:
+                            category = row[3]  # Custom category string
 
-                        tenet = Tenet(content=row[1], priority=Priority(row[2]), category=category)
-                        tenet.id = row[0]
-                        if row[4]:  # session
-                            tenet.session_bindings = [row[4]]
-                        tenet.instilled_at = row[6]
-                        # For compatibility with filtering
-                        tenet.session = row[4]
-                        tenets.append(tenet)
+                    tenet = Tenet(content=row[1], priority=Priority(row[2]), category=category)
+                    tenet.id = row[0]
+                    if row[4]:  # session
+                        tenet.session_bindings = [row[4]]
+                    tenet.instilled_at = row[6]
+                    # For compatibility with filtering
+                    tenet.session = row[4]
+                    tenets.append(tenet)
+                conn.close()
                 return tenets
 
             def list_tenets(self, pending_only=False, instilled_only=False, session=None):
@@ -187,9 +191,10 @@ def get_tenet_manager():
             def get_tenet(self, id):
                 from tenets.models.tenet import Priority, Tenet, TenetCategory
 
-                with sqlite3.connect(self.db_path) as conn:
-                    cursor = conn.execute("SELECT * FROM tenets WHERE id = ?", (id,))
-                    row = cursor.fetchone()
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.execute("SELECT * FROM tenets WHERE id = ?", (id,))
+                row = cursor.fetchone()
+                conn.close()
                 if row:
                     # Parse category
                     category = None
@@ -210,10 +215,11 @@ def get_tenet_manager():
                 return None
 
             def remove_tenet(self, id):
-                with sqlite3.connect(self.db_path) as conn:
-                    cursor = conn.execute("DELETE FROM tenets WHERE id = ?", (id,))
-                    conn.commit()
-                    affected = cursor.rowcount > 0
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.execute("DELETE FROM tenets WHERE id = ?", (id,))
+                conn.commit()
+                affected = cursor.rowcount > 0
+                conn.close()
                 return affected
 
             def export_tenets(self, format="yaml", session=None):
@@ -329,22 +335,22 @@ def add_tenet(
         priority_enum = priority_map.get(priority.lower(), Priority.MEDIUM)
 
         # Parse category if provided
-        category_value = None
+        category_enum = None
         if category:
             try:
-                category_value = TenetCategory(category.lower())
+                category_enum = TenetCategory(category.lower())
             except ValueError:
-                # Custom category - pass as string (will be stored in metadata)
-                category_value = None  # Don't pass invalid enum values
+                # Custom category
+                pass
 
         # Create the tenet
-        tenet = Tenet(content=content, priority=priority_enum, category=category_value)
+        tenet = Tenet(content=content, priority=priority_enum, category=category_enum or category)
         # Add session binding if specified
         if session:
             tenet.session_bindings = [session]
 
-        # Add the tenet - MinimalTenetManager expects it as keyword arg 'tenet'
-        manager.add_tenet(tenet=tenet)
+        # Try to call add_tenet - tests expect the Tenet object to be passed as positional arg
+        manager.add_tenet(tenet)
 
         add_time = time.time() - add_start
         logger.info(f"Added tenet to database in {add_time:.3f}s")

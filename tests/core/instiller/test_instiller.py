@@ -185,9 +185,8 @@ class TestInjectionHistory:
         """Test injection decision in adaptive mode."""
         history = InjectionHistory(session_id="test")
 
-        # First distill always gets injection
-        history.total_distills = 1
-        history.total_injections = 0
+        # Session too short
+        history.total_distills = 2
         should, reason = history.should_inject(
             frequency="adaptive",
             interval=3,
@@ -195,13 +194,12 @@ class TestInjectionHistory:
             complexity_threshold=0.7,
             min_session_length=5,
         )
-        assert should is True
-        assert "first_distill_in_session" in reason
+        assert should is False
+        assert "session_too_short" in reason
 
-        # After first injection, check adaptive logic
+        # First injection after minimum length
         history.total_distills = 5
-        history.total_injections = 1
-        history.last_injection_index = 1
+        history.total_injections = 0
         should, reason = history.should_inject(
             frequency="adaptive",
             interval=3,
@@ -209,8 +207,8 @@ class TestInjectionHistory:
             complexity_threshold=0.7,
             min_session_length=5,
         )
-        assert should is False  # Below complexity threshold
-        assert "no_injection_criteria_met" in reason
+        assert should is True
+        assert "first_adaptive_injection" in reason
 
         # High complexity trigger
         history.total_injections = 1

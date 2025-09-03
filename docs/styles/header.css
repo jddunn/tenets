@@ -723,23 +723,17 @@ label.md-header__button[for^="__palette_"][data-tooltip]:hover::after {
 label.md-header__button[for^="__palette_"] { order: 2; }
 .md-source { order: 4; }
 
-/* Show the search button as compact icon */
+/* Visually hide the built-in header search label but keep it in the DOM for accessibility/JS */
 label.md-header__button[for="__search"] {
-  display: inline-flex !important;
-  position: relative !important;
-  width: 2.2rem !important;
-  height: 2.2rem !important;
-  margin: 0 0.2rem !important;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
   padding: 0 !important;
-  border: none !important;
-  clip: auto !important;
-  clip-path: none !important;
-  overflow: visible !important;
-  cursor: pointer !important;
-  align-items: center;
-  justify-content: center;
-  color: var(--md-accent-fg-color) !important;
-  background: transparent !important;
+  border: 0 !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
 }
 
 /* MOBILE - Responsive at 1100px */

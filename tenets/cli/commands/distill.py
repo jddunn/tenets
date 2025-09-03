@@ -389,8 +389,11 @@ def distill(
                         file_path = output.resolve()
                         webbrowser.open(file_path.as_uri())
                         console.print("[green]✓[/green] Opened in browser")
-        elif format in ["json", "xml", "html"]:
-            # For HTML/XML/JSON, save to a default file if no output specified
+        elif format == "json":
+            # Emit pure JSON without Rich formatting to keep stdout clean for parsers/tests
+            print(output_text)
+        elif format == "html":
+            # For HTML, save to a default file if no output specified
             if interactive:
                 # Auto-generate filename with timestamp and prompt info
                 import re
@@ -404,54 +407,28 @@ def distill(
                 safe_prompt = safe_prompt.replace(" ", "_")[:30]
                 safe_prompt = re.sub(r"_+", "_", safe_prompt)
 
-                # Determine file extension
-                ext = format.lower()
-                default_file = Path(f"distill_{safe_prompt}_{timestamp}.{ext}")
-                default_file.write_text(output_text, encoding="utf-8")
+                default_html = Path(f"distill_{safe_prompt}_{timestamp}.html")
+                default_html.write_text(output_text, encoding="utf-8")
                 console.print(
-                    f"[green]✓[/green] {format.upper()} context saved to {escape(str(default_file))} [dim]({timing_result.formatted_duration})[/dim]"
+                    f"[green]✓[/green] HTML context saved to {escape(str(default_html))} [dim]({timing_result.formatted_duration})[/dim]"
                 )
 
-                # Offer to open in browser for HTML, or folder for XML/JSON
+                # Offer to open in browser
                 import click
 
-                if format == "html":
-                    if click.confirm(
-                        "\nWould you like to open it in your browser now?", default=False
-                    ):
-                        import webbrowser
+                if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                    import webbrowser
 
-                        # Ensure absolute path for file URI
-                        file_path = default_file.resolve()
-                        webbrowser.open(file_path.as_uri())
-                        console.print("[green]✓[/green] Opened in browser")
-                    else:
-                        console.print(
-                            "[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path"
-                        )
-                # For XML/JSON, offer to open the folder
-                elif click.confirm(
-                    f"\nWould you like to open the folder containing the {format.upper()} file?",
-                    default=False,
-                ):
-                    import platform
-
-                    folder = default_file.parent.resolve()
-                    if platform.system() == "Windows":
-                        import os
-
-                        os.startfile(folder)
-                    elif platform.system() == "Darwin":  # macOS
-                        import subprocess
-
-                        subprocess.run(["open", folder], check=False)
-                    else:  # Linux
-                        import subprocess
-
-                        subprocess.run(["xdg-open", folder], check=False)
-                    console.print(f"[green]✓[/green] Opened folder: {folder}")
+                    # Ensure absolute path for file URI
+                    file_path = default_html.resolve()
+                    webbrowser.open(file_path.as_uri())
+                    console.print("[green]✓[/green] Opened in browser")
+                else:
+                    console.print(
+                        "[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path"
+                    )
             else:
-                # Non-interactive mode: print raw output for piping
+                # Non-interactive mode: print raw HTML for piping
                 print(output_text)
         else:
             # Draw clear context boundaries in interactive TTY only

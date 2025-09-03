@@ -42,36 +42,29 @@ from tenets.models.context import ContextResult  # re-export for public API/test
 from tenets.models.tenet import Priority, Tenet, TenetCategory  # re-export for public API/tests
 from tenets.utils.logger import get_logger
 
-# Lazy imports using standard Python 3.7+ __getattr__ (PEP 562)
-# This allows tests to patch at package level and improves import performance
-_LAZY_IMPORTS = {
-    "Distiller": "tenets.core.distiller.Distiller",
-    "Instiller": "tenets.core.instiller.Instiller",
-    "CodeAnalyzer": "tenets.core.analysis.analyzer.CodeAnalyzer",
-    "TenetManager": "tenets.core.instiller.manager.TenetManager",
-    "ContextResult": "tenets.models.context.ContextResult",
-    "Priority": "tenets.models.tenet.Priority",
-    "Tenet": "tenets.models.tenet.Tenet",
-    "TenetCategory": "tenets.models.tenet.TenetCategory",
-}
+
+# Lightweight, patchable factories for heavy components (allow tests to patch tenets.Distiller/Instiller)
+def Distiller(*args, **kwargs):  # type: ignore[override]
+    from tenets.core.distiller import Distiller as _Distiller
+
+    return _Distiller(*args, **kwargs)
 
 
-def __getattr__(name):
-    """Lazy import heavy components on first access.
+def Instiller(*args, **kwargs):  # type: ignore[override]
+    from tenets.core.instiller import Instiller as _Instiller
 
-    This is the standard Python 3.7+ way to implement lazy imports (PEP 562).
-    It preserves type hints, works with IDEs, and maintains proper class identity.
+    return _Instiller(*args, **kwargs)
+
+
+def CodeAnalyzer(*args, **kwargs):  # type: ignore[override]
+    """Lightweight, patchable factory for the code analyzer.
+
+    Tests patch this symbol at the package level (tenets.CodeAnalyzer),
+    so expose a simple wrapper that imports on demand.
     """
-    if name in _LAZY_IMPORTS:
-        import importlib
+    from tenets.core.analysis.analyzer import CodeAnalyzer as _CodeAnalyzer
 
-        module_path, attr_name = _LAZY_IMPORTS[name].rsplit(".", 1)
-        module = importlib.import_module(module_path)
-        attr = getattr(module, attr_name)
-        # Cache for future access
-        globals()[name] = attr
-        return attr
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    return _CodeAnalyzer(*args, **kwargs)
 
 
 # Type-checking only imports (no runtime side-effects)
@@ -230,9 +223,6 @@ class Tenets:
     def distiller(self):
         """Lazy load distiller when needed."""
         if self._distiller is None:
-            # Import locally to trigger lazy loading
-            from tenets.core.distiller import Distiller
-
             self._distiller = Distiller(self.config)
         return self._distiller
 
@@ -240,9 +230,6 @@ class Tenets:
     def instiller(self):
         """Lazy load instiller when needed."""
         if self._instiller is None:
-            # Import locally to trigger lazy loading
-            from tenets.core.instiller import Instiller
-
             self._instiller = Instiller(self.config)
         return self._instiller
 
@@ -251,9 +238,6 @@ class Tenets:
         """Lazy load tenet manager when needed."""
         if self._tenet_manager is None:
             if self._instiller is None:
-                # Import locally to trigger lazy loading
-                from tenets.core.instiller import Instiller
-
                 self._instiller = Instiller(self.config)
             self._tenet_manager = self._instiller.manager
         return self._tenet_manager
@@ -404,22 +388,21 @@ class Tenets:
             summarize_imports=summarize_imports,
         )
 
-        # Inject system instruction if configured (skip for HTML reports meant for humans)
-        if format.lower() != "html":
-            try:
-                modified, meta = self.instiller.inject_system_instruction(
-                    result.context, format=result.format, session=session
+        # Inject system instruction if configured
+        try:
+            modified, meta = self.instiller.inject_system_instruction(
+                result.context, format=result.format, session=session
+            )
+            if meta.get("system_instruction_injected"):
+                result = ContextResult(
+                    files=result.files,
+                    context=modified,
+                    format=result.format,
+                    metadata={**result.metadata, "system_instruction": meta},
                 )
-                if meta.get("system_instruction_injected"):
-                    result = ContextResult(
-                        files=result.files,
-                        context=modified,
-                        format=result.format,
-                        metadata={**result.metadata, "system_instruction": meta},
-                    )
-            except Exception:
-                # Best-effort; don't fail distill if injection fails
-                pass
+        except Exception:
+            # Best-effort; don't fail distill if injection fails
+            pass
 
         # Apply tenets if configured
         should_apply_tenets = (
@@ -453,83 +436,6 @@ class Tenets:
         self._cache[cache_key] = result
 
         return result
-
-    def rank_files(
-        self,
-        prompt: str,
-        paths: Optional[Union[str, Path, List[Path]]] = None,
-        *,  # Force keyword-only arguments
-        mode: str = "balanced",
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-        include_tests: Optional[bool] = None,
-        exclude_tests: bool = False,
-        explain: bool = False,
-    ) -> RankResult:
-        """Rank files by relevance without generating full context.
-
-        This method uses the same sophisticated ranking pipeline as distill()
-        but returns only the ranked files without aggregating content.
-        Perfect for understanding which files are relevant or for automation.
-
-        Args:
-            prompt: Your query or task description
-            paths: Paths to analyze (default: current directory)
-            mode: Analysis mode - 'fast', 'balanced', or 'thorough'
-            include_patterns: File patterns to include
-            exclude_patterns: File patterns to exclude
-            include_tests: Whether to include test files
-            exclude_tests: Whether to exclude test files
-            explain: Whether to include ranking factor explanations
-
-        Returns:
-            RankResult containing the ranked files and metadata
-
-        Example:
-            >>> result = ten.rank_files("fix summarizing truncation bug")
-            >>> for file in result.files:
-            ...     print(f"{file.path}: {file.relevance_score:.3f}")
-        """
-        # Use the same pipeline as distill but stop at ranking
-
-        # 1. Parse and understand the prompt
-        prompt_context = self.distiller._parse_prompt(prompt)
-
-        # Override test inclusion if explicitly specified
-        if include_tests is not None:
-            prompt_context.include_tests = include_tests
-        elif exclude_tests:
-            prompt_context.include_tests = False
-
-        # 2. Determine paths to analyze
-        paths = self.distiller._normalize_paths(paths)
-
-        # 3. Discover relevant files
-        files = self.distiller._discover_files(
-            paths=paths,
-            prompt_context=prompt_context,
-            include_patterns=include_patterns,
-            exclude_patterns=exclude_patterns,
-        )
-
-        # 4. Analyze files for structure and content
-        analyzed_files = self.distiller._analyze_files(
-            files=files, mode=mode, prompt_context=prompt_context
-        )
-
-        # 5. Rank files by relevance (this is what we want!)
-        ranked_files = self.distiller._rank_files(
-            files=analyzed_files, prompt_context=prompt_context, mode=mode
-        )
-
-        # Create result object
-        from collections import namedtuple
-
-        RankResult = namedtuple("RankResult", ["files", "prompt_context", "mode", "total_scanned"])
-
-        return RankResult(
-            files=ranked_files, prompt_context=prompt_context, mode=mode, total_scanned=len(files)
-        )
 
     # ============= Tenet Management Methods =============
 
@@ -966,12 +872,9 @@ class Tenets:
 __all__ = [
     "CodeAnalyzer",
     "ContextResult",
-    "Distiller",
-    "Instiller",
     "Priority",
     "Tenet",
     "TenetCategory",
-    "TenetManager",
     "Tenets",
     "TenetsConfig",
     "__version__",

@@ -375,18 +375,11 @@ markers = [
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
-    "ignore::ResourceWarning:coverage",
-    "ignore::ResourceWarning:_pytest",
-    "ignore::ResourceWarning:sqlite3",
-    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 [tool.coverage.run]
 source = ["tenets"]
 branch = true
-parallel = true
-concurrency = ["thread"]
-sigterm = true
 omit = [
     "*/tests/*",
     "*/test_*.py",

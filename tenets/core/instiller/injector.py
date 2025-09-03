@@ -122,8 +122,7 @@ class TenetInjector:
         # Add reinforcement section if needed
         if self.reinforce_at_end and len(sorted_tenets) > 3:
             reinforcement = self._create_reinforcement_section(
-                sorted_tenets[:3],
-                format,  # Top 3 most important
+                sorted_tenets[:3], format  # Top 3 most important
             )
             injected_content += f"\n\n{reinforcement}"
 
@@ -340,7 +339,7 @@ class TenetInjector:
 
                 points.append(
                     InjectionPoint(
-                        position=best_break, score=0.7, reason=f"distributed_position_{i + 1}"
+                        position=best_break, score=0.7, reason=f"distributed_position_{i+1}"
                     )
                 )
 
@@ -367,28 +366,28 @@ class TenetInjector:
             # Vary the formatting to avoid monotony
             if position == 0:
                 # First tenet gets emphasis
-                prefix = "**🎯 Key Guiding Principle:**"
+                prefix = "**🎯 Key Principle:**"
             elif tenet.priority == Priority.CRITICAL:
-                prefix = "**⚠️ Critical Guiding Principle:**"
+                prefix = "**⚠️ Critical:**"
             elif tenet.priority == Priority.HIGH:
-                prefix = "**📌 Important Guiding Principle:**"
+                prefix = "**📌 Important:**"
             else:
-                prefix = "**💡 Guiding Principle:**"
+                prefix = "**💡 Remember:**"
 
             formatted = f"\n{prefix} {tenet.content}\n"
 
         elif format == "xml":
             priority_attr = f'priority="{tenet.priority.value}"'
             category_attr = f'category="{tenet.category.value}"' if tenet.category else ""
-            formatted = f"\n<guiding_principle {priority_attr} {category_attr}>{tenet.content}</guiding_principle>\n"
+            formatted = f"\n<tenet {priority_attr} {category_attr}>{tenet.content}</tenet>\n"
 
         elif format == "json":
             # For JSON, we'll need to handle this differently in practice
-            formatted = f"\n/* GUIDING PRINCIPLE: {tenet.content} */\n"
+            formatted = f"\n/* TENET: {tenet.content} */\n"
 
         else:
             # Plain text fallback
-            formatted = f"\n[GUIDING PRINCIPLE - {tenet.priority.value.upper()}] {tenet.content}\n"
+            formatted = f"\n[{tenet.priority.value.upper()}] {tenet.content}\n"
 
         return formatted
 
@@ -403,37 +402,35 @@ class TenetInjector:
             Reinforcement section string
         """
         if format == "markdown":
-            section = "## 🎯 Key Guiding Principles to Remember\n\n"
-            section += (
-                "As you work with this code, keep these critical guiding principles in mind:\n\n"
-            )
+            section = "## 🎯 Key Principles to Remember\n\n"
+            section += "As you work with this code, keep these critical principles in mind:\n\n"
 
             for i, tenet in enumerate(top_tenets, 1):
                 icon = "🔴" if tenet.priority == Priority.CRITICAL else "🟡"
                 section += f"{i}. {icon} **{tenet.content}**\n"
 
-            section += "\nThese guiding principles should guide all decisions and implementations."
+            section += "\nThese principles should guide all decisions and implementations."
 
         elif format == "xml":
-            section = "<guiding_principles_reinforcement>\n"
-            section += "<title>Key Guiding Principles to Remember</title>\n"
-            section += "<guiding_principles>\n"
+            section = "<reinforcement>\n"
+            section += "<title>Key Principles to Remember</title>\n"
+            section += "<principles>\n"
 
             for tenet in top_tenets:
-                section += f'  <guiding_principle priority="{tenet.priority.value}">{tenet.content}</guiding_principle>\n'
+                section += (
+                    f'  <principle priority="{tenet.priority.value}">{tenet.content}</principle>\n'
+                )
 
-            section += "</guiding_principles>\n"
-            section += "</guiding_principles_reinforcement>"
+            section += "</principles>\n"
+            section += "</reinforcement>"
 
         else:
             section = "\n" + "=" * 60 + "\n"
-            section += "KEY GUIDING PRINCIPLES TO REMEMBER:\n"
+            section += "KEY PRINCIPLES TO REMEMBER:\n"
             section += "=" * 60 + "\n\n"
 
             for i, tenet in enumerate(top_tenets, 1):
-                section += (
-                    f"{i}. [GUIDING PRINCIPLE - {tenet.priority.value.upper()}] {tenet.content}\n"
-                )
+                section += f"{i}. [{tenet.priority.value.upper()}] {tenet.content}\n"
 
         return section
 

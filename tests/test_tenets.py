@@ -16,7 +16,7 @@ Test Coverage:
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -28,16 +28,7 @@ class TestTenetsInitialization:
 
     def test_init_with_default_config(self):
         """Test initialization with default configuration."""
-        with (
-            patch("tenets.core.distiller.Distiller") as mock_distiller,
-            patch("tenets.core.instiller.Instiller") as mock_instiller,
-            patch("tenets.utils.logger.get_logger"),
-        ):
-            mock_distiller_instance = MagicMock()
-            mock_instiller_instance = MagicMock()
-            mock_distiller.return_value = mock_distiller_instance
-            mock_instiller.return_value = mock_instiller_instance
-
+        with patch("tenets.Distiller"), patch("tenets.Instiller"), patch("tenets.get_logger"):
             tenets = Tenets()
 
             assert tenets.config is not None
@@ -49,9 +40,9 @@ class TestTenetsInitialization:
     def test_init_with_config_object(self, test_config):
         """Test initialization with a TenetsConfig object."""
         with (
-            patch("tenets.core.distiller.Distiller") as mock_distiller,
-            patch("tenets.core.instiller.Instiller") as mock_instiller,
-            patch("tenets.utils.logger.get_logger"),
+            patch("tenets.Distiller") as mock_distiller,
+            patch("tenets.Instiller") as mock_instiller,
+            patch("tenets.get_logger"),
         ):
             tenets = Tenets(config=test_config)
 
@@ -60,7 +51,7 @@ class TestTenetsInitialization:
             mock_distiller.assert_not_called()
             mock_instiller.assert_not_called()
 
-            # They should be called when accessed via property getters
+            # They should be called when accessed
             _ = tenets.distiller
             mock_distiller.assert_called_once_with(test_config)
 
@@ -71,11 +62,7 @@ class TestTenetsInitialization:
         """Test initialization with a configuration dictionary."""
         config_dict = {"max_tokens": 50000, "debug": True, "ranking_algorithm": "thorough"}
 
-        with (
-            patch("tenets.core.distiller.Distiller"),
-            patch("tenets.core.instiller.Instiller"),
-            patch("tenets.utils.logger.get_logger"),
-        ):
+        with patch("tenets.Distiller"), patch("tenets.Instiller"), patch("tenets.get_logger"):
             tenets = Tenets(config=config_dict)
 
             assert tenets.config.max_tokens == 50000
@@ -83,11 +70,7 @@ class TestTenetsInitialization:
 
     def test_init_with_config_file(self, config_file):
         """Test initialization with a configuration file path."""
-        with (
-            patch("tenets.core.distiller.Distiller"),
-            patch("tenets.core.instiller.Instiller"),
-            patch("tenets.utils.logger.get_logger"),
-        ):
+        with patch("tenets.Distiller"), patch("tenets.Instiller"), patch("tenets.get_logger"):
             tenets = Tenets(config=config_file)
 
             assert tenets.config.max_tokens == 5000  # From config file
@@ -95,13 +78,13 @@ class TestTenetsInitialization:
 
     def test_init_with_invalid_config_type(self):
         """Test initialization with invalid config type raises error."""
-        with patch("tenets.utils.logger.get_logger"):
+        with patch("tenets.get_logger"):
             with pytest.raises(ValueError, match="Invalid config type"):
                 Tenets(config=123)  # Invalid type
 
     def test_init_with_nonexistent_config_file(self):
         """Test initialization with non-existent config file raises error."""
-        with patch("tenets.utils.logger.get_logger"):
+        with patch("tenets.get_logger"):
             with pytest.raises(FileNotFoundError):
                 Tenets(config=Path("/nonexistent/config.yml"))
 
@@ -123,9 +106,9 @@ class TestDistillMethod:
         self.mock_instiller.inject_system_instruction.side_effect = mock_inject_system_instruction
 
         with (
-            patch("tenets.core.distiller.Distiller", return_value=self.mock_distiller),
-            patch("tenets.core.instiller.Instiller", return_value=self.mock_instiller),
-            patch("tenets.utils.logger.get_logger", return_value=self.mock_logger),
+            patch("tenets.Distiller", return_value=self.mock_distiller),
+            patch("tenets.Instiller", return_value=self.mock_instiller),
+            patch("tenets.get_logger", return_value=self.mock_logger),
         ):
             self.tenets = Tenets(config=test_config)
 

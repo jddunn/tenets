@@ -127,8 +127,8 @@
   @media screen and (min-width: 601px) and (max-width: 1099px) {
   .md-header .md-search { display: flex !important; margin-right: 1rem !important; }
     .md-header .md-source { margin-right: 0.75rem !important; }
-  /* Keep search button visible on tablet */
-  .md-header__inner label.md-header__button[for="__search"] { display: inline-flex !important; }
+  /* hide the icon button on tablet when inline search is present */
+  .md-header__inner label.md-header__button[for="__search"] { display: none !important; }
   }
 
   /* Force mobile drawer to be visible and styled */
@@ -433,9 +433,7 @@
       align-items: center;
       justify-content: center;
     }
-    /* Hide inline search form on very small screens, but keep button visible */
-    .md-header__inner .md-search__form { display: none !important; }
-    .md-header__inner .md-search { display: flex !important; }
+    .md-header__inner .md-search { display: none !important; }
 
     /* Compact GitHub/source: icon only */
     .md-header__source,

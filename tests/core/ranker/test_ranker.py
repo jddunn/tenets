@@ -279,13 +279,7 @@ class TestRelevanceRankerInitialization:
             assert ranker.config == test_config
             assert len(ranker.strategies) >= 3  # At least fast, balanced, thorough
             assert ranker._custom_rankers == []
-            # Executor is now lazily initialized, starts as None
-            assert ranker._executor_instance is None
-            # But accessing the property should initialize it (unless on Windows Python 3.13+)
-            import sys
-
-            if not (sys.platform == "win32" and sys.version_info >= (3, 13)):
-                assert ranker.executor is not None
+            assert ranker._executor is not None
 
     def test_init_strategies_available(self, test_config):
         """Test that all default strategies are initialized."""
@@ -720,35 +714,20 @@ class TestMainRankingPipeline:
         assert ranked[0].relevance_score >= ranked[-1].relevance_score
 
     def test_rank_files_parallel(self, ranker):
-        import sys
-
-        # Skip test on Windows Python 3.13+ where parallel is disabled
-        if sys.platform == "win32" and sys.version_info >= (3, 13):
-            pytest.skip("Parallel ranking disabled on Windows Python 3.13+")
-
         files = [FileAnalysis(path=f"file{i}.py", content=f"content {i}") for i in range(20)]
         prompt_context = PromptContext(text="test", keywords=["test"], task_type="general")
         mock_strategy = Mock()
         mock_strategy.rank_file.return_value = RankingFactors(keyword_match=0.5)
         mock_strategy.get_weights.return_value = {"keyword_match": 1.0}
         ranker._get_strategy = Mock(return_value=mock_strategy)
-
-        # Access executor property to trigger lazy initialization
-        executor = ranker.executor
-        if executor is None:
-            # Executor disabled on this platform
+        with patch.object(ranker._executor, "submit") as mock_submit:
+            mock_future = Mock()
+            mock_future.result.return_value = RankedFile(
+                analysis=files[0], score=0.5, factors=RankingFactors(), explanation=""
+            )
+            mock_submit.return_value = mock_future
             _ = ranker.rank_files(files, prompt_context, parallel=True)
-            # Should fall back to sequential processing
-            assert mock_strategy.rank_file.call_count == 20
-        else:
-            with patch.object(executor, "submit") as mock_submit:
-                mock_future = Mock()
-                mock_future.result.return_value = RankedFile(
-                    analysis=files[0], score=0.5, factors=RankingFactors(), explanation=""
-                )
-                mock_submit.return_value = mock_future
-                _ = ranker.rank_files(files, prompt_context, parallel=True)
-                assert mock_submit.call_count == 20
+            assert mock_submit.call_count == 20
 
     def test_rank_files_with_threshold(self, ranker, test_config):
         test_config.ranking.threshold = 0.5
@@ -973,12 +952,6 @@ class TestEdgeCases:
 
     def test_parallel_ranking_timeout(self, ranker):
         """Test handling of timeout in parallel ranking."""
-        import sys
-
-        # Skip test on Windows Python 3.13+ where parallel is disabled
-        if sys.platform == "win32" and sys.version_info >= (3, 13):
-            pytest.skip("Parallel ranking disabled on Windows Python 3.13+")
-
         files = [FileAnalysis(path=f"file{i}.py", content="") for i in range(3)]
         prompt_context = PromptContext(text="test", keywords=[], task_type="general")
 
@@ -988,24 +961,16 @@ class TestEdgeCases:
 
         ranker._get_strategy = Mock(return_value=mock_strategy)
 
-        # Access executor property to trigger lazy initialization
-        executor = ranker.executor
-        if executor is None:
-            # Executor disabled on this platform - test sequential fallback
+        # Mock future that times out
+        mock_future = Mock()
+        mock_future.result.side_effect = FutureTimeoutError()
+
+        with patch.object(ranker._executor, "submit", return_value=mock_future):
             _ = ranker.rank_files(files, prompt_context, parallel=True)
-            # Should handle gracefully with sequential processing
+
+            # Should handle timeout gracefully
+            # Files that timeout get score 0
             assert all(hasattr(f, "relevance_score") for f in files)
-        else:
-            # Mock future that times out
-            mock_future = Mock()
-            mock_future.result.side_effect = FutureTimeoutError()
-
-            with patch.object(executor, "submit", return_value=mock_future):
-                _ = ranker.rank_files(files, prompt_context, parallel=True)
-
-                # Should handle timeout gracefully
-                # Files that timeout get score 0
-                assert all(hasattr(f, "relevance_score") for f in files)
 
     def test_tfidf_with_empty_content(self):
         """Test TF-IDF calculator handles empty content gracefully."""
@@ -1039,16 +1004,7 @@ class TestEdgeCases:
 
     def test_shutdown(self, ranker):
         """Test ranker shutdown."""
+        ranker.shutdown()
 
-        # Access executor to trigger lazy initialization (if applicable)
-        executor = ranker.executor
-
-        if executor is not None:
-            # Only test shutdown if executor exists
-            ranker.shutdown()
-            # Executor should be shut down
-            assert executor._shutdown
-        else:
-            # On Windows Python 3.13+, executor may be None
-            # Shutdown should still work without error
-            ranker.shutdown()  # Should not raise
+        # Executor should be shut down
+        assert ranker._executor._shutdown

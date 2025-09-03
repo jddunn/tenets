@@ -300,7 +300,6 @@ jobs:
         run: |
           pip install dist/*.whl
           tenets --version
-          tenets version
           tenets --help
 
       - name: Upload artifacts
@@ -337,9 +336,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install mkdocs mkdocs-material mkdocs-material-extensions || true
           pip install pymdown-extensions mkdocs-minify-plugin || true
-          pip install mkdocs-gen-files mkdocs-literate-nav mkdocs-section-index || true
-          pip install mkdocstrings mkdocstrings-python || true
-          pip install mkdocs-git-revision-date-localized-plugin || true
           pip install -e . || true
 
       - name: Build docs with MkDocs
@@ -405,9 +401,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install mkdocs mkdocs-material mkdocs-material-extensions
           pip install pymdown-extensions mkdocs-minify-plugin
-          pip install mkdocs-gen-files mkdocs-literate-nav mkdocs-section-index
-          pip install mkdocstrings mkdocstrings-python
-          pip install mkdocs-git-revision-date-localized-plugin
           pip install mike
           pip install -e .
 

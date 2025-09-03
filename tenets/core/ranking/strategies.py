@@ -142,9 +142,6 @@ class FastRankingStrategy(RankingStrategy):
 
     def _calculate_path_relevance(self, file_path: str, prompt_context: PromptContext) -> float:
         """Calculate path relevance score."""
-        # Convert Path to string if needed
-        if hasattr(file_path, "__fspath__"):
-            file_path = str(file_path)
         path_lower = file_path.lower()
         score = 0.0
 
@@ -168,9 +165,7 @@ class FastRankingStrategy(RankingStrategy):
 
     def _calculate_type_relevance(self, file: FileAnalysis, prompt_context: PromptContext) -> float:
         """Calculate file type relevance."""
-        # Convert Path to string if needed
-        file_path = str(file.path) if hasattr(file.path, "__fspath__") else file.path
-        path_lower = file_path.lower()
+        path_lower = file.path.lower()
         task_type = prompt_context.task_type
 
         if task_type == "test":
@@ -381,8 +376,7 @@ class BalancedRankingStrategy(RankingStrategy):
         self, file: FileAnalysis, import_graph: Dict[str, Set[str]]
     ) -> float:
         """Calculate how central a file is in the import graph."""
-        # Convert Path to string if needed
-        file_path = str(file.path) if hasattr(file.path, "__fspath__") else file.path
+        file_path = file.path
 
         # Count incoming edges (files that import this file)
         incoming = sum(1 for deps in import_graph.values() if file_path in deps)
@@ -471,9 +465,7 @@ class BalancedRankingStrategy(RankingStrategy):
 
     def _calculate_type_relevance(self, file: FileAnalysis, prompt_context: PromptContext) -> float:
         """Calculate file type relevance."""
-        # Convert Path to string if needed
-        file_path = str(file.path) if hasattr(file.path, "__fspath__") else file.path
-        path_lower = file_path.lower()
+        path_lower = file.path.lower()
         task_type = prompt_context.task_type
 
         # Map file patterns to task types
@@ -791,9 +783,7 @@ class ThoroughRankingStrategy(RankingStrategy):
 
     def _analyze_test_coverage(self, file: FileAnalysis) -> float:
         """Analyze test coverage relevance."""
-        # Convert Path to string if needed
-        file_path = str(file.path) if hasattr(file.path, "__fspath__") else file.path
-        path_lower = file_path.lower()
+        path_lower = file.path.lower()
 
         # Check if this is a test file
         if "test" in path_lower or "spec" in path_lower:
@@ -824,9 +814,7 @@ class ThoroughRankingStrategy(RankingStrategy):
         self, file: FileAnalysis, dependency_tree: Dict[str, Any]
     ) -> float:
         """Calculate file's depth in dependency tree."""
-        # Convert Path to string if needed
-        file_path = str(file.path) if hasattr(file.path, "__fspath__") else file.path
-        depth = dependency_tree.get(file_path, {}).get("depth", -1)
+        depth = dependency_tree.get(file.path, {}).get("depth", -1)
 
         if depth == -1:
             return 0.5  # Unknown

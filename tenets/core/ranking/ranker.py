@@ -177,11 +177,6 @@ class RelevanceRanker:
             use_stopwords if use_stopwords is not None else config.ranking.use_stopwords
         )
 
-        # ML configuration
-        self.use_ml = (
-            config.ranking.use_ml if config and hasattr(config.ranking, "use_ml") else False
-        )
-
         # Initialize strategies lazily to avoid loading unnecessary models
         self._strategies_cache: Dict[RankingAlgorithm, RankingStrategy] = {}
         self.strategies = self._strategies_cache  # Alias for compatibility
@@ -194,14 +189,11 @@ class RelevanceRanker:
         self.custom_rankers: List[Callable] = []
         self._custom_rankers: List[Callable] = self.custom_rankers
 
-        # Thread pool for parallel ranking (lazy initialization to avoid Windows issues)
-        from tenets.utils.multiprocessing import get_ranking_workers, log_worker_info
-
-        max_workers = get_ranking_workers(config)
-        self.max_workers = max_workers  # Store for logging
-        self._executor_instance = None  # Will be created lazily
+        # Thread pool for parallel ranking
+        max_workers = int(config.ranking.workers or 4)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
         # Backwards-compat alias expected by some tests
-        self._executor = None
+        self._executor = self.executor
 
         # Statistics and cache
         self.stats = RankingStats()
@@ -214,33 +206,10 @@ class RelevanceRanker:
         # Also expose module-level symbol on instance for convenience
         self.SentenceTransformer = SentenceTransformer
 
-        # Log worker configuration
-        log_worker_info(self.logger, "RelevanceRanker", max_workers)
         self.logger.info(
             f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
-            f"use_stopwords={self.use_stopwords}, use_ml={self.use_ml}"
+            f"workers={max_workers}, use_stopwords={self.use_stopwords}"
         )
-
-    @property
-    def executor(self):
-        """Lazy initialization of ThreadPoolExecutor to avoid Windows import issues."""
-        if self._executor_instance is None:
-            import sys
-
-            # On Windows with Python 3.13, there can be issues with ThreadPoolExecutor
-            # when called from module imports. Disable parallel processing in this case.
-            if sys.platform == "win32" and sys.version_info >= (3, 13):
-                self.logger.warning(
-                    "Disabling parallel ranking on Windows with Python 3.13+ due to compatibility issues"
-                )
-                self._executor_instance = None  # Force sequential processing
-                self._executor = None
-            else:
-                self._executor_instance = concurrent.futures.ThreadPoolExecutor(
-                    max_workers=self.max_workers
-                )
-                self._executor = self._executor_instance  # Backwards-compat alias
-        return self._executor_instance
 
     def _init_core_strategies(self):
         """Initialize core ranking strategies.
@@ -293,19 +262,7 @@ class RelevanceRanker:
             threshold_applied=self.config.ranking.threshold,
         )
 
-        # Check if we need to disable parallel on Windows Python 3.13+
-        import sys
-
-        if sys.platform == "win32" and sys.version_info >= (3, 13) and parallel:
-            self.logger.warning(
-                "Disabling parallel ranking on Windows with Python 3.13+ due to compatibility issues"
-            )
-            parallel = False
-
-        self.logger.info(
-            f"Ranking {len(files)} files using {self.stats.algorithm_used} algorithm "
-            f"(parallel={parallel}, workers={self.max_workers if parallel else 1})"
-        )
+        self.logger.info(f"Ranking {len(files)} files using {self.stats.algorithm_used} algorithm")
 
         # Select strategy
         if algorithm:
@@ -441,11 +398,8 @@ class RelevanceRanker:
         ranked_files = []
         weights = strategy.get_weights()
 
-        if parallel and len(files) > 10 and self.executor is not None:
-            # Parallel ranking (only if executor is available)
-            self.logger.info(
-                f"Using parallel ranking with {self.max_workers} workers for {len(files)} files"
-            )
+        if parallel and len(files) > 10:
+            # Parallel ranking
             futures = []
 
             for file in files:
@@ -475,10 +429,6 @@ class RelevanceRanker:
                     )
         else:
             # Sequential ranking
-            self.logger.info(
-                f"Using sequential ranking for {len(files)} files "
-                f"(parallel={parallel}, threshold for parallel: >10 files)"
-            )
             for file in files:
                 try:
                     ranked_file = self._rank_single_file(
@@ -845,8 +795,7 @@ class RelevanceRanker:
 
     def shutdown(self):
         """Shutdown the ranker and clean up resources."""
-        if self._executor_instance is not None:
-            self._executor_instance.shutdown(wait=True)
+        self.executor.shutdown(wait=True)
         self.logger.info("RelevanceRanker shutdown complete")
 
 

@@ -708,7 +708,7 @@ scanner:
    ```bash
    # Include minified files for this run
    tenets distill "analyze bundle" --include-minified
-
+   
    # Exclude specific patterns
    tenets examine . --exclude "*.min.js,dist/"
    ```
@@ -901,166 +901,69 @@ graph LR
 
 ## Relevance Ranking System
 
-### Unified Ranking Architecture
-
-**IMPORTANT**: The `rank` command now uses the EXACT SAME sophisticated ranking pipeline as the `distill` command. This ensures consistency and leverages the full power of the multi-factor ranking system.
+### Multi-Factor Ranking Architecture
 
 ```mermaid
 graph TD
     subgraph "Ranking Strategies"
-        FAST[Fast Strategy<br/>~10ms/file<br/>Keyword + Path Only]
-        BALANCED[Balanced Strategy<br/>~100ms/file<br/>TF-IDF + BM25 + Structure]
-        THOROUGH[Thorough Strategy<br/>~200ms/file<br/>Full Analysis + Git]
-        ML_STRAT[ML Strategy<br/>~500ms/file<br/>Semantic Embeddings]
+        FAST[Fast Strategy<br/>~10ms/file<br/>Keyword + Path]
+        BALANCED[Balanced Strategy<br/>~50ms/file<br/>TF-IDF + Structure]
+        THOROUGH[Thorough Strategy<br/>~200ms/file<br/>Deep Analysis]
+        ML_STRAT[ML Strategy<br/>~500ms/file<br/>Semantic Understanding]
     end
 
-    subgraph "Text Analysis (40% in Balanced)"
-        KEY_MATCH[Keyword Matching<br/>20%<br/>Direct term hits]
-        TFIDF_SIM[TF-IDF Similarity<br/>20%<br/>Statistical relevance]
-        BM25_SCORE[BM25 Score<br/>15%<br/>Probabilistic ranking]
+    subgraph "Semantic Understanding - 25%"
+        SEM_SIM[Semantic Similarity<br/>ML-based understanding<br/>Local embeddings]
     end
 
-    subgraph "Code Structure Analysis (25% in Balanced)"
-        PATH_REL[Path Relevance<br/>15%<br/>Directory structure]
-        IMP_CENT[Import Centrality<br/>10%<br/>Dependency importance]
+    subgraph "Text Matching - 30%"
+        KEY_MATCH[Keyword Matching<br/>15%<br/>Direct term hits]
+        TFIDF_SIM[TF-IDF Similarity<br/>15%<br/>Statistical relevance]
     end
 
-    subgraph "File Characteristics (15% in Balanced)"
-        COMPLEXITY_REL[Complexity Relevance<br/>5%<br/>Code complexity signals]
-        FILE_TYPE[File Type Relevance<br/>5%<br/>Extension/type matching]
-        CODE_PAT[Code Patterns<br/>5%<br/>AST pattern matching]
+    subgraph "Code Structure - 20%"
+        IMP_CENT[Import Centrality<br/>10%<br/>PageRank-style]
+        PATH_REL[Path Relevance<br/>10%<br/>Directory structure]
     end
 
-    subgraph "Git Signals (10% in Balanced)"
+    subgraph "Git Signals - 15% (Optional)"
         GIT_REC[Git Recency<br/>5%<br/>Recent changes]
         GIT_FREQ[Git Frequency<br/>5%<br/>Change frequency]
+        GIT_AUTH[Git Authors<br/>5%<br/>Author expertise]
     end
 
-    subgraph "ML Enhancement (Only in ML Strategy)"
-        SEM_SIM[Semantic Similarity<br/>25%<br/>Embedding-based understanding]
-        LOCAL_EMB[Local Embeddings<br/>sentence-transformers]
-        EMBED_CACHE[Embedding Cache<br/>Performance optimization]
+    subgraph "File Characteristics - 10%"
+        FILE_TYPE[File Type<br/>5%<br/>Type relevance]
+        CODE_PAT[Code Patterns<br/>5%<br/>Pattern matching]
     end
 
-    subgraph "Unified Pipeline"
-        FILE_DISCOVERY[File Discovery<br/>Scanner + Filters]
-        ANALYSIS[Code Analysis<br/>AST + Structure]
-        RANKING[Multi-Factor Ranking<br/>Strategy-specific weights]
-        AGGREGATION[Context Aggregation<br/>Token optimization]
+    subgraph "Scoring Engine"
+        WEIGHTED[Weighted Combination]
+        THRESHOLD[Threshold Filtering]
+        NORMALIZED[Score Normalization]
+        RANKED[Final Rankings]
     end
 
     FAST --> KEY_MATCH
     BALANCED --> TFIDF_SIM
-    BALANCED --> BM25_SCORE
     THOROUGH --> IMP_CENT
     ML_STRAT --> SEM_SIM
 
-    FILE_DISCOVERY --> ANALYSIS
-    ANALYSIS --> RANKING
-    RANKING --> AGGREGATION
+    SEM_SIM --> WEIGHTED
+    KEY_MATCH --> WEIGHTED
+    TFIDF_SIM --> WEIGHTED
+    IMP_CENT --> WEIGHTED
+    PATH_REL --> WEIGHTED
+    GIT_REC --> WEIGHTED
+    GIT_FREQ --> WEIGHTED
+    GIT_AUTH --> WEIGHTED
+    FILE_TYPE --> WEIGHTED
+    CODE_PAT --> WEIGHTED
 
-    KEY_MATCH --> RANKING
-    TFIDF_SIM --> RANKING
-    BM25_SCORE --> RANKING
-    PATH_REL --> RANKING
-    IMP_CENT --> RANKING
-    COMPLEXITY_REL --> RANKING
-    FILE_TYPE --> RANKING
-    CODE_PAT --> RANKING
-    GIT_REC --> RANKING
-    GIT_FREQ --> RANKING
-
-    SEM_SIM --> LOCAL_EMB
-    LOCAL_EMB --> EMBED_CACHE
-    EMBED_CACHE --> RANKING
+    WEIGHTED --> THRESHOLD
+    THRESHOLD --> NORMALIZED
+    NORMALIZED --> RANKED
 ```
-
-### Strategy Comparison and Usage
-
-| Strategy | Speed | Accuracy | Use Cases | Factors Used |
-|----------|-------|----------|-----------|--------------|
-| **Fast** | Very Fast<br/>(~10ms/file) | Basic | • Quick file discovery<br/>• Keyword-based search<br/>• Interactive exploration | • Keyword matching (60%)<br/>• Path relevance (30%)<br/>• File type (10%) |
-| **Balanced** | Moderate<br/>(~100ms/file) | Good | • **DEFAULT for both rank and distill**<br/>• Production usage<br/>• Most common scenarios | • Keyword (20%), TF-IDF (20%), BM25 (15%)<br/>• Path (15%), Import centrality (10%)<br/>• Complexity (5%), File type (5%), Git (10%) |
-| **Thorough** | Slower<br/>(~200ms/file) | High | • Complex codebases<br/>• Deep analysis needed<br/>• Research and investigation | • All balanced factors<br/>• Enhanced git analysis<br/>• Deeper structural analysis |
-| **ML** | Slowest<br/>(~500ms/file) | Highest | • Semantic understanding needed<br/>• Natural language queries<br/>• Advanced AI workflows | • All factors + semantic similarity (25%)<br/>• Local embedding models<br/>• Context-aware ranking |
-
-### Modular Ranking Architecture
-
-The ranking system is designed as a **fully modular component** that can be used independently or as part of the larger distillation pipeline.
-
-#### Component Architecture
-
-```python
-# Core Components and Their Responsibilities
-tenets/core/ranking/
-├── __init__.py         # Public API exports
-├── ranker.py           # RelevanceRanker class - main ranking engine
-├── strategies.py       # Ranking strategies (Fast, Balanced, Thorough, ML)
-└── factors.py          # Individual ranking factor calculations
-
-# Integration Points
-tenets/core/distiller/distiller.py
-├── __init__: self.ranker = RelevanceRanker(config)  # Component instantiation
-└── _rank_files(): return self.ranker.rank_files()   # Delegation to ranker
-
-tenets/__init__.py (Tenets class)
-├── rank_files(): Uses distiller._rank_files()       # Reuses same pipeline
-└── distill(): Uses distiller._rank_files()          # Consistent ranking
-```
-
-#### Key Design Principles
-
-1. **Single Source of Truth**: The `RelevanceRanker` class is the sole authority for ranking logic
-2. **Strategy Pattern**: Different ranking strategies (fast/balanced/thorough) are encapsulated
-3. **Dependency Injection**: Ranker is injected into Distiller, not hardcoded
-4. **Interface Consistency**: Both `rank` and `distill` commands use identical ranking
-
-#### Benefits of Modular Design
-
-- **Consistency**: Same ranking behavior across all commands
-- **Testability**: Ranker can be tested in isolation
-- **Extensibility**: New ranking strategies can be added without changing core logic
-- **Reusability**: Other tools can import and use the ranker independently
-- **Maintainability**: Changes to ranking logic happen in one place
-- Analyzes all discovered files (no artificial limits)
-- Uses proper prompt parsing with `PromptParser`
-- Leverages sophisticated `BalancedRankingStrategy` by default
-- Proper keyword extraction with RAKE/YAKE fallbacks
-- Same file discovery and filtering as `distill`
-
-#### Pipeline Consistency
-
-```mermaid
-graph LR
-    subgraph "Unified Pipeline Components"
-        PROMPT_PARSER[Prompt Parser<br/>Intent detection<br/>Keyword extraction]
-        FILE_SCANNER[File Scanner<br/>Gitignore support<br/>Test exclusion]
-        CODE_ANALYZER[Code Analyzer<br/>AST parsing<br/>Structure analysis]
-        RELEVANCE_RANKER[Relevance Ranker<br/>Multi-factor scoring<br/>Strategy selection]
-    end
-
-    subgraph "Commands Using Same Pipeline"
-        DISTILL_CMD[tenets distill]
-        RANK_CMD[tenets rank]
-    end
-
-    DISTILL_CMD --> PROMPT_PARSER
-    RANK_CMD --> PROMPT_PARSER
-
-    PROMPT_PARSER --> FILE_SCANNER
-    FILE_SCANNER --> CODE_ANALYZER
-    CODE_ANALYZER --> RELEVANCE_RANKER
-
-    RELEVANCE_RANKER --> CONTEXT_BUILDER[Context Builder<br/>Only for distill]
-```
-
-#### Why This Matters
-
-1. **Consistency**: Both commands use identical logic for finding and ranking relevant files
-2. **Performance**: Leverages sophisticated caching and optimization from the main pipeline
-3. **Accuracy**: Uses proper NLP and multi-factor analysis instead of simple keyword matching
-4. **Maintainability**: Single source of truth for ranking logic - no code duplication
-5. **Feature Parity**: `rank` gets all improvements made to the `distill` ranking system
 
 ### Factor Calculation Details
 
@@ -1764,36 +1667,36 @@ tenets:
     --max-tokens     # Token limit
     --exclude        # Exclude patterns
     --session        # Session name
-
+    
   examine:           # Code quality analysis
     --show-details   # Detailed metrics
     --hotspots       # Show maintenance hotspots
     --ownership      # Show code ownership
     --format         # Output format
-
+    
   chronicle:         # Git history analysis
     --since          # Time range
     --author         # Filter by author
     --format         # Output format
-
+    
   momentum:          # Velocity tracking (WIP)
     --team           # Team metrics
     --detailed       # Detailed breakdown
-
+    
   session:           # Session management
     create           # Create new session
     list             # List sessions
     delete           # Delete session
-
+    
   tenet:            # Manage guiding principles
     add             # Add new tenet
     list            # List tenets
     remove          # Remove tenet
-
+    
   instill:          # Apply tenets and system instructions
     --dry-run       # Preview what would be applied
     --force         # Force application
-
+    
   system-instruction: # Manage system instructions
     set             # Set instruction
     get             # Get current
@@ -2010,110 +1913,6 @@ graph LR
     E2E_COV --> SECURITY
     PERF_COV --> COMPATIBILITY
 ```
-
-## Guiding Principles (Tenets) System
-
-### Overview
-
-The Guiding Principles system (internally called "Tenets") provides a way to inject persistent, context-aware instructions into generated code context. These principles help maintain consistency across AI interactions and combat context drift by ensuring important architectural decisions, coding standards, and project-specific requirements are consistently reinforced.
-
-### Output Format Conventions
-
-Following OpenAI's recommendations for structured output, tenets are formatted as "guiding principles" in human-readable formats:
-
-#### Markdown Format
-```markdown
-**🎯 Key Guiding Principle:** Always validate user input before processing
-**📌 Important Guiding Principle:** Use async/await for all I/O operations
-**💡 Guiding Principle:** Prefer composition over inheritance
-```
-
-#### XML Format (Recommended by OpenAI)
-```xml
-<guiding_principle priority="high" category="security">
-  Always validate and sanitize user input
-</guiding_principle>
-
-<guiding_principles>
-  <guiding_principle priority="critical">Maintain backward compatibility</guiding_principle>
-  <guiding_principle priority="medium">Use descriptive variable names</guiding_principle>
-</guiding_principles>
-```
-
-#### JSON Format
-```json
-/* GUIDING PRINCIPLE: Follow REST API conventions for all endpoints */
-```
-
-### Injection Strategy
-
-The system uses intelligent injection strategies to place guiding principles where they'll be most effective:
-
-```mermaid
-graph TD
-    subgraph "Injection Decision Engine"
-        ANALYZER[Content Analyzer<br/>Structure & complexity]
-        STRATEGY[Strategy Selector<br/>Top, distributed, contextual]
-        INJECTOR[Smart Injector<br/>Natural break detection]
-    end
-    
-    subgraph "Priority System"
-        CRITICAL[Critical Principles<br/>Security, data integrity]
-        HIGH[High Priority<br/>Architecture, performance]
-        MEDIUM[Medium Priority<br/>Style, conventions]
-        LOW[Low Priority<br/>Preferences, suggestions]
-    end
-    
-    subgraph "Reinforcement"
-        TOP_INJECTION[Top of Context<br/>Most visible]
-        DISTRIBUTED[Throughout Content<br/>Natural sections]
-        END_SUMMARY[End Reinforcement<br/>Key reminders]
-    end
-    
-    ANALYZER --> STRATEGY
-    STRATEGY --> INJECTOR
-    
-    CRITICAL --> TOP_INJECTION
-    HIGH --> DISTRIBUTED
-    MEDIUM --> DISTRIBUTED
-    LOW --> END_SUMMARY
-```
-
-### Injection Behavior
-
-The system ensures guiding principles are present when needed:
-
-#### Session-Based Injection
-- **First Output Rule**: Guiding principles are ALWAYS injected on the first distill in any session
-- **Named Sessions**: After first injection, follows configured frequency (adaptive/periodic/always)
-- **Unnamed Sessions**: Treated as important contexts that always receive guiding principles
-- **No Delay**: Previously required 5 operations before first injection; now immediate
-
-#### Configuration
-
-```yaml
-tenet:
-  auto_instill: true
-  max_per_context: 5
-  injection_strategy: strategic
-  injection_frequency: adaptive  # 'always', 'periodic', 'adaptive', 'manual'
-  injection_interval: 3          # For periodic mode
-  min_session_length: 1          # Now 1 (was 5) - first injection always happens
-  system_instruction: "Prefer small, safe diffs and add tests"
-  system_instruction_enabled: true
-```
-
-#### Injection Frequencies
-- **always**: Inject on every distill operation
-- **periodic**: Inject every N operations (set by `injection_interval`)
-- **adaptive**: Smart injection based on context complexity and session state
-- **manual**: Only inject when explicitly requested
-
-### Integration with Distill Command
-
-When using the `distill` command, guiding principles are automatically injected based on configuration.
-
-**Note:** System instructions are excluded from HTML reports (which are meant for human consumption) but included in formats intended for AI consumption (markdown, XML, JSON).
 
 ## Future Roadmap & Vision
 

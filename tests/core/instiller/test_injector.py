@@ -244,7 +244,7 @@ More content.
 
         formatted = injector._format_tenet(tenet, "markdown", position=0)
 
-        assert "**🎯 Key Guiding Principle:**" in formatted
+        assert "**🎯 Key Principle:**" in formatted
         assert "Test principle" in formatted
 
     def test_format_tenet_xml(self, injector):
@@ -253,7 +253,7 @@ More content.
 
         formatted = injector._format_tenet(tenet, "xml", position=0)
 
-        assert "<guiding_principle" in formatted
+        assert "<tenet" in formatted
         assert 'priority="critical"' in formatted
         assert "Test principle" in formatted
 
@@ -263,14 +263,14 @@ More content.
 
         formatted = injector._format_tenet(tenet, "json", position=0)
 
-        assert "/* GUIDING PRINCIPLE:" in formatted
+        assert "/* TENET:" in formatted
         assert "Test principle" in formatted
 
     def test_create_reinforcement_section_markdown(self, injector, sample_tenets):
         """Test creating reinforcement section for markdown."""
         section = injector._create_reinforcement_section(sample_tenets[:2], "markdown")
 
-        assert "## 🎯 Key Guiding Principles to Remember" in section
+        assert "## 🎯 Key Principles to Remember" in section
         assert "type hints" in section
         assert "exceptions" in section
 
@@ -278,9 +278,9 @@ More content.
         """Test creating reinforcement section for XML."""
         section = injector._create_reinforcement_section(sample_tenets[:2], "xml")
 
-        assert "<guiding_principles_reinforcement>" in section
-        assert "<guiding_principle" in section
-        assert "</guiding_principles_reinforcement>" in section
+        assert "<reinforcement>" in section
+        assert "<principle" in section
+        assert "</reinforcement>" in section
 
     def test_calculate_optimal_injection_count(self, injector):
         """Test calculating optimal tenet count."""
@@ -333,7 +333,7 @@ More content.
         content, metadata = injector.inject_tenets("Short content", tenets, format="markdown")
 
         if metadata.get("reinforcement_added"):
-            assert "Key Guiding Principles to Remember" in content
+            assert "Key Principles to Remember" in content
 
     def test_injection_avoids_code_blocks(self, injector):
         """Test that injection avoids code blocks."""

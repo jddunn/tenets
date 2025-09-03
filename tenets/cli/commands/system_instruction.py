@@ -206,6 +206,8 @@ def test_instruction(
         # 2) patch("tenets.Tenets", MagicMock())
         from unittest.mock import MagicMock, Mock  # fallback and detection
 
+        from tenets import Tenets
+
         config = TenetsConfig()
 
         if not config.tenet.system_instruction:
@@ -438,7 +440,7 @@ def edit_instruction(
             subprocess.call([editor, tmp_path])
 
             # Read edited content
-            with open(tmp_path) as f:
+            with open(tmp_path, "r") as f:
                 new_instruction = f.read()
 
             # Check if changed

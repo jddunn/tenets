@@ -384,6 +384,7 @@ nav:
   - Getting Started:
       - Quick Start: quickstart.md
       - Installation: installation.md
+      - First Steps: first-steps.md
   - User Guide:
       - CLI Reference: CLI.md
       - Supported Languages: supported-languages.md
