@@ -2,6 +2,7 @@
 
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -479,112 +480,619 @@ def _format_xml(files: List, show_scores: bool, show_factors: bool, prompt: str)
 def _format_html(
     files: List, show_scores: bool, show_factors: bool, prompt: str, tree_view: bool
 ) -> str:
-    """Format as HTML with interactive features."""
+    """Format as HTML with interactive features using shared template system."""
+    import json
+    from datetime import datetime
+    
+    # Prepare data for JavaScript
+    files_data = []
+    for file in files:
+        file_data = {
+            "path": str(file.path),
+            "score": getattr(file, "relevance_score", 0.0),
+            "rank": getattr(file, "relevance_rank", 0)
+        }
+        if hasattr(file, "relevance_factors"):
+            file_data["factors"] = file.relevance_factors
+        files_data.append(file_data)
+    
+    files_json = json.dumps(files_data)
+    
+    # Calculate statistics
+    total_files = len(files)
+    high_relevance_count = len([f for f in files if getattr(f, 'relevance_score', 0) >= 0.5])
+    max_score = max((getattr(f, 'relevance_score', 0) for f in files), default=0)
+    avg_score = sum(getattr(f, 'relevance_score', 0) for f in files) / len(files) if files else 0
+    
+    # Enhanced custom styles for rank report
+    custom_styles = """
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+            --background: #ffffff;
+            --surface: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--background);
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Enhanced Rank Report Styles */
+        .rank-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            background: #f8fafc;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .export-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .export-button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+        
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .file-item {
+            background: white;
+            margin: 1rem 0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .file-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .file-path {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+        
+        .file-score {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 3rem;
+            right: 1rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s;
+        }
+        
+        .copy-button:hover {
+            background: #f1f5f9;
+        }
+        
+        .copy-button.copied {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        
+        .factors {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .factor-item {
+            background: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .tree-view {
+            font-family: 'Monaco', 'Consolas', monospace;
+            white-space: pre;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        .highlight {
+            background: yellow;
+            font-weight: bold;
+            padding: 0 2px;
+        }
+        
+        /* Tab Interface */
+        .tab-container {
+            margin-bottom: 2rem;
+        }
+        
+        .tab-nav {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 8px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.3s;
+        }
+        
+        .tab-button:hover {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-top: 1rem;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 2rem 0;
+        }
+    </style>
+    """
+    
+    # JavaScript for interactivity
+    scripts = f"""
+    <script>
+        // Store files data globally
+        window.filesData = {files_json};
+        
+        // Copy individual file path
+        function copyFilePath(index) {{
+            const file = window.filesData[index];
+            if (file) {{
+                navigator.clipboard.writeText(file.path).then(function() {{
+                    const button = document.getElementById('copy-' + index);
+                    const originalText = button.innerText;
+                    button.innerText = 'Copied!';
+                    button.classList.add('copied');
+                    setTimeout(() => {{
+                        button.innerText = originalText;
+                        button.classList.remove('copied');
+                    }}, 2000);
+                }});
+            }}
+        }}
+        
+        // Copy all file paths
+        function copyAllPaths() {{
+            const paths = window.filesData.map(f => f.path).join('\\n');
+            navigator.clipboard.writeText(paths).then(function() {{
+                const button = document.getElementById('copy-all-btn');
+                const originalText = button.innerText;
+                button.innerText = '✓ Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {{
+                    button.innerText = originalText;
+                    button.classList.remove('copied');
+                }}, 2000);
+            }});
+        }}
+        
+        // Export as JSON
+        function exportAsJSON() {{
+            const data = {{
+                prompt: "{prompt.replace('"', '\\"')}",
+                total_files: {total_files},
+                files: window.filesData,
+                statistics: {{
+                    high_relevance: {high_relevance_count},
+                    max_score: {max_score:.3f},
+                    avg_score: {avg_score:.3f}
+                }},
+                generated_at: "{datetime.now().isoformat()}"
+            }};
+            const blob = new Blob([JSON.stringify(data, null, 2)], {{type: 'application/json'}});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ranked_files.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }}
+        
+        // Export as CSV
+        function exportAsCSV() {{
+            let csv = 'Rank,Path,Score\\n';
+            window.filesData.forEach((file, index) => {{
+                csv += `${{index + 1}},"${{file.path}}",${{file.score.toFixed(3)}}\\n`;
+            }});
+            const blob = new Blob([csv], {{type: 'text/csv'}});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ranked_files.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }}
+        
+        // Search/filter files
+        function searchFiles() {{
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const fileItems = document.querySelectorAll('.file-item');
+            
+            fileItems.forEach((item, index) => {{
+                const file = window.filesData[index];
+                const matchesSearch = searchTerm === '' || 
+                    file.path.toLowerCase().includes(searchTerm);
+                item.style.display = matchesSearch ? 'block' : 'none';
+            }});
+        }}
+        
+        // Tab switching
+        function openTab(evt, tabName) {{
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {{
+                tabContents[i].classList.remove('active');
+            }}
+            
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {{
+                tabButtons[i].classList.remove('active');
+            }}
+            
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+            
+            // Initialize chart if switching to chart tab
+            if (tabName === 'chart-tab' && !window.chartInitialized) {{
+                initializeChart();
+                window.chartInitialized = true;
+            }}
+        }}
+        
+        // Initialize distribution chart
+        function initializeChart() {{
+            const ctx = document.getElementById('distChart');
+            if (!ctx) return;
+            
+            // Group files by score ranges
+            const scoreRanges = {{
+                '0.0-0.2': 0,
+                '0.2-0.4': 0,
+                '0.4-0.6': 0,
+                '0.6-0.8': 0,
+                '0.8-1.0': 0
+            }};
+            
+            window.filesData.forEach(file => {{
+                const score = file.score;
+                if (score <= 0.2) scoreRanges['0.0-0.2']++;
+                else if (score <= 0.4) scoreRanges['0.2-0.4']++;
+                else if (score <= 0.6) scoreRanges['0.4-0.6']++;
+                else if (score <= 0.8) scoreRanges['0.6-0.8']++;
+                else scoreRanges['0.8-1.0']++;
+            }});
+            
+            new Chart(ctx, {{
+                type: 'bar',
+                data: {{
+                    labels: Object.keys(scoreRanges),
+                    datasets: [{{
+                        label: 'Number of Files',
+                        data: Object.values(scoreRanges),
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(139, 92, 246, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(139, 92, 246, 1)'
+                        ],
+                        borderWidth: 1
+                    }}]
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {{
+                        title: {{
+                            display: true,
+                            text: 'File Score Distribution'
+                        }},
+                        legend: {{
+                            display: false
+                        }}
+                    }},
+                    scales: {{
+                        y: {{
+                            beginAtZero: true,
+                            ticks: {{
+                                stepSize: 1
+                            }}
+                        }}
+                    }}
+                }}
+            }});
+        }}
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    """
+    
+    # Build the HTML content sections
+    header_html = f"""
+    <div class="rank-header">
+        <h1>🎯 Ranked Files</h1>
+        <p>Query: <strong>{prompt}</strong></p>
+        <p>Generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    </div>
+    """
+    
+    # Controls section
+    controls_html = """
+    <div class="controls">
+        <input type="text" id="searchBox" class="search-box" placeholder="🔍 Search files..." onkeyup="searchFiles()">
+        <button class="export-button" onclick="exportAsJSON()">📥 Export JSON</button>
+        <button class="export-button" onclick="exportAsCSV()">📊 Export CSV</button>
+        <button id="copy-all-btn" class="export-button" onclick="copyAllPaths()">📋 Copy All Paths</button>
+    </div>
+    """
+    
+    # Statistics grid
+    stats_html = f"""
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{total_files}</div>
+            <div class="stat-label">Total Files</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{high_relevance_count}</div>
+            <div class="stat-label">High Relevance</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{max_score:.2f}</div>
+            <div class="stat-label">Top Score</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{avg_score:.2f}</div>
+            <div class="stat-label">Avg Score</div>
+        </div>
+    </div>
+    """
+    
+    # Tab navigation
+    tab_nav_html = """
+    <div class="tab-container">
+        <div class="tab-nav">
+            <button class="tab-button active" onclick="openTab(event, 'list-tab')">📄 File List</button>
+            <button class="tab-button" onclick="openTab(event, 'tree-tab')">🌳 Tree View</button>
+            <button class="tab-button" onclick="openTab(event, 'chart-tab')">📊 Charts</button>
+        </div>
+    </div>
+    """
+    
+    # File list content
+    file_list_html = '<div id="list-tab" class="tab-content active"><ul class="file-list">'
+    for i, file in enumerate(files):
+        path = str(file.path)
+        score = getattr(file, "relevance_score", 0.0)
+        
+        file_list_html += f"""
+        <li class="file-item">
+            <div class="file-path">{path}</div>
+            {f'<div class="file-score">{score:.3f}</div>' if show_scores else ''}
+            <button id="copy-{i}" class="copy-button" onclick="copyFilePath({i})">📋 Copy</button>
+        """
+        
+        if show_factors and hasattr(file, "relevance_factors"):
+            file_list_html += '<div class="factors">'
+            for factor, value in file.relevance_factors.items():
+                file_list_html += f'<span class="factor-item">{factor}: {value:.2%}</span>'
+            file_list_html += '</div>'
+        
+        file_list_html += '</li>'
+    
+    file_list_html += '</ul></div>'
+    
+    # Tree view content
+    tree_html = '<div id="tree-tab" class="tab-content">'
+    if tree_view:
+        # Generate tree structure
+        from collections import defaultdict
+        dirs = defaultdict(list)
+        for file in files:
+            dir_path = Path(file.path).parent
+            dirs[dir_path].append(file)
+        
+        tree_html += '<div class="tree-view">'
+        for dir_path in sorted(dirs.keys()):
+            tree_html += f'📂 {dir_path}\n'
+            for file in sorted(dirs[dir_path], key=lambda f: getattr(f, "relevance_score", 0.0), reverse=True):
+                name = Path(file.path).name
+                score = getattr(file, "relevance_score", 0.0)
+                tree_html += f'  📄 {name} [{score:.3f}]\n'
+        tree_html += '</div>'
+    else:
+        tree_html += '<p>Enable --tree flag to see tree view</p>'
+    tree_html += '</div>'
+    
+    # Chart content
+    chart_html = """
+    <div id="chart-tab" class="tab-content">
+        <div class="chart-container">
+            <canvas id="distChart"></canvas>
+        </div>
+    </div>
+    """
+    
+    # Combine all sections
+    content_html = f"""
+    <div class="container">
+        {header_html}
+        {controls_html}
+        {stats_html}
+        {tab_nav_html}
+        {file_list_html}
+        {tree_html}
+        {chart_html}
+    </div>
+    """
+    
+    # Build final HTML using template
     html = f"""<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ranked Files - Tenets</title>
-    <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 20px; background: #f5f5f5; }}
-        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
-        h1 {{ color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }}
-        .prompt {{ background: #f0f0f0; padding: 10px; border-radius: 4px; margin-bottom: 20px; }}
-        .file-list {{ list-style: none; padding: 0; }}
-        .file-item {{ background: #f8f8f8; margin: 10px 0; padding: 15px; border-radius: 4px; border-left: 3px solid #4CAF50; }}
-        .file-path {{ font-family: 'Monaco', 'Consolas', monospace; font-size: 14px; color: #2196F3; }}
-        .file-score {{ float: right; background: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }}
-        .factors {{ margin-top: 10px; font-size: 12px; color: #666; }}
-        .factor-item {{ display: inline-block; margin-right: 15px; }}
-        .tree-view {{ font-family: 'Monaco', 'Consolas', monospace; white-space: pre; background: #2d2d2d; color: #f8f8f2; padding: 20px; border-radius: 4px; overflow-x: auto; }}
-    </style>
+    {custom_styles}
+    {scripts}
 </head>
 <body>
-    <div class="container">
-        <h1>Ranked Files</h1>
-        <div class="prompt">
-            <strong>Query:</strong> {prompt}
-        </div>
-        <div class="stats">
-            <strong>Total Files:</strong> {len(files)}
-        </div>
-"""
-
-    if tree_view:
-        # Tree view
-        html += '<div class="tree-view">'
-        html += _build_html_tree(files, show_scores, show_factors)
-        html += "</div>"
-    else:
-        # List view
-        html += '<ul class="file-list">'
-        for i, file in enumerate(files, 1):
-            score_html = ""
-            if show_scores:
-                score = getattr(file, "relevance_score", 0.0)
-                score_html = f'<span class="file-score">{score:.3f}</span>'
-
-            factors_html = ""
-            if show_factors and hasattr(file, "relevance_factors"):
-                factors_html = '<div class="factors">'
-                for factor, value in file.relevance_factors.items():
-                    factors_html += f'<span class="factor-item">{factor}: {value:.2%}</span>'
-                factors_html += "</div>"
-
-            html += f"""
-            <li class="file-item">
-                {score_html}
-                <span class="file-path">{file.path}</span>
-                {factors_html}
-            </li>
-            """
-
-        html += "</ul>"
-
-    html += """
-    </div>
+    {content_html}
 </body>
-</html>
-"""
+</html>"""
+    
     return html
-
-
-def _build_html_tree(files: List, show_scores: bool, show_factors: bool) -> str:
-    """Build HTML tree representation sorted by relevance."""
-    # Group by directory
-    from collections import defaultdict
-
-    dirs = defaultdict(list)
-
-    for file in files:
-        dir_path = Path(file.path).parent
-        dirs[dir_path].append(file)
-
-    # Sort directories by the highest scoring file in each
-    def get_max_score(dir_path):
-        return max((getattr(f, "relevance_score", 0.0) for f in dirs[dir_path]), default=0.0)
-
-    sorted_dirs = sorted(dirs.keys(), key=get_max_score, reverse=True)
-
-    lines = []
-    for dir_path in sorted_dirs:
-        lines.append(f"[D] {dir_path}/")
-        # Sort files within directory by score
-        sorted_files = sorted(
-            dirs[dir_path], key=lambda f: getattr(f, "relevance_score", 0.0), reverse=True
-        )
-        for file in sorted_files:
-            name = Path(file.path).name
-            score_str = ""
-            if show_scores:
-                score = getattr(file, "relevance_score", 0.0)
-                score_str = f" [{score:.3f}]"
-            lines.append(f"  [F] {name}{score_str}")
-
-            if show_factors and hasattr(file, "relevance_factors"):
-                for factor, value in file.relevance_factors.items():
-                    lines.append(f"      {factor}: {value:.2%}")
-
-    return "\n".join(lines)
 
 
 def _get_display_path(path, style: str) -> str:
