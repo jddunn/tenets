@@ -141,6 +141,9 @@ class TenetManager:
                     tenet.session_bindings = [session]
         else:
             # Create tenet from string content
+            # Ensure content is a string before calling strip()
+            if not isinstance(content, str):
+                raise TypeError(f"Expected string or Tenet, got {type(content).__name__}: {content}")
             tenet = Tenet(
                 content=content.strip(),
                 priority=priority if isinstance(priority, Priority) else Priority(priority),

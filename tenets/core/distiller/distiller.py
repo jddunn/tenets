@@ -37,6 +37,19 @@ class Distiller:
         """
         self.config = config
         self.logger = get_logger(__name__)
+        
+        # Log multiprocessing configuration
+        import os
+        from tenets.utils.multiprocessing import get_scanner_workers, get_ranking_workers
+        cpu_count = os.cpu_count() or 1
+        scanner_workers = get_scanner_workers(config)
+        ranking_workers = get_ranking_workers(config)
+        self.logger.info(
+            f"Distiller initialized (CPU cores: {cpu_count}, "
+            f"scanner workers: {scanner_workers}, "
+            f"ranking workers: {ranking_workers}, "
+            f"ML enabled: {config.ranking.use_ml})"
+        )
 
         # Initialize components
         self.scanner = FileScanner(config)
@@ -99,10 +112,14 @@ class Distiller:
             ... )
             >>> print(result.context)
         """
+        import time
+        start_time = time.time()
         self.logger.info(f"Distilling context for: {prompt[:100]}...")
 
         # 1. Parse and understand the prompt
+        parse_start = time.time()
         prompt_context = self._parse_prompt(prompt)
+        self.logger.debug(f"Prompt parsing took {time.time() - parse_start:.2f}s")
 
         # Override test inclusion if explicitly specified
         if include_tests is not None:
@@ -113,12 +130,14 @@ class Distiller:
         paths = self._normalize_paths(paths)
 
         # 3. Discover relevant files
+        discover_start = time.time()
         files = self._discover_files(
             paths=paths,
             prompt_context=prompt_context,
             include_patterns=include_patterns,
             exclude_patterns=exclude_patterns,
         )
+        self.logger.debug(f"File discovery took {time.time() - discover_start:.2f}s")
 
         # 4. Analyze files for structure and content
         # Prepend pinned files (avoid duplicates) while preserving original discovery order
@@ -147,9 +166,11 @@ class Distiller:
         analyzed_files = self._analyze_files(files=files, mode=mode, prompt_context=prompt_context)
 
         # 5. Rank files by relevance
+        rank_start = time.time()
         ranked_files = self._rank_files(
             files=analyzed_files, prompt_context=prompt_context, mode=mode
         )
+        self.logger.debug(f"File ranking took {time.time() - rank_start:.2f}s")
 
         # 6. Add git context if requested
         git_context = None
@@ -159,6 +180,7 @@ class Distiller:
             )
 
         # 7. Aggregate files within token budget
+        aggregate_start = time.time()
         aggregated = self._aggregate_files(
             files=ranked_files,
             prompt_context=prompt_context,
@@ -171,6 +193,7 @@ class Distiller:
             docstring_weight=docstring_weight,
             summarize_imports=summarize_imports,
         )
+        self.logger.debug(f"File aggregation took {time.time() - aggregate_start:.2f}s")
 
         # 8. Format the output
         formatted = self._format_output(

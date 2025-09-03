@@ -313,6 +313,12 @@ tenets tenet add "Include error handling"
 tenets instill # Apply tenets to the session
 ```
 
+**Injection Behavior:**
+- **First Output**: Tenets are automatically injected on the first `distill` in any session
+- **Unnamed Sessions**: Always receive tenets to establish context
+- **Named Sessions**: Follow configured frequency after first injection
+- **No Delay**: Immediate injection (previously waited for 5 operations)
+
 ### System Instruction (Global Prompt)
 
 Set a single “system” instruction that can be auto-injected at the top of distilled context (once per session by default):

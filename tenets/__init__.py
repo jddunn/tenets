@@ -43,28 +43,34 @@ from tenets.models.tenet import Priority, Tenet, TenetCategory  # re-export for 
 from tenets.utils.logger import get_logger
 
 
-# Lightweight, patchable factories for heavy components (allow tests to patch tenets.Distiller/Instiller)
-def Distiller(*args, **kwargs):  # type: ignore[override]
-    from tenets.core.distiller import Distiller as _Distiller
+# Lazy imports using standard Python 3.7+ __getattr__ (PEP 562)
+# This allows tests to patch at package level and improves import performance
+_LAZY_IMPORTS = {
+    'Distiller': 'tenets.core.distiller.Distiller',
+    'Instiller': 'tenets.core.instiller.Instiller',
+    'CodeAnalyzer': 'tenets.core.analysis.analyzer.CodeAnalyzer',
+    'TenetManager': 'tenets.core.instiller.manager.TenetManager',
+    'ContextResult': 'tenets.models.context.ContextResult',
+    'Priority': 'tenets.models.tenet.Priority',
+    'Tenet': 'tenets.models.tenet.Tenet',
+    'TenetCategory': 'tenets.models.tenet.TenetCategory',
+}
 
-    return _Distiller(*args, **kwargs)
-
-
-def Instiller(*args, **kwargs):  # type: ignore[override]
-    from tenets.core.instiller import Instiller as _Instiller
-
-    return _Instiller(*args, **kwargs)
-
-
-def CodeAnalyzer(*args, **kwargs):  # type: ignore[override]
-    """Lightweight, patchable factory for the code analyzer.
-
-    Tests patch this symbol at the package level (tenets.CodeAnalyzer),
-    so expose a simple wrapper that imports on demand.
+def __getattr__(name):
+    """Lazy import heavy components on first access.
+    
+    This is the standard Python 3.7+ way to implement lazy imports (PEP 562).
+    It preserves type hints, works with IDEs, and maintains proper class identity.
     """
-    from tenets.core.analysis.analyzer import CodeAnalyzer as _CodeAnalyzer
-
-    return _CodeAnalyzer(*args, **kwargs)
+    if name in _LAZY_IMPORTS:
+        import importlib
+        module_path, attr_name = _LAZY_IMPORTS[name].rsplit('.', 1)
+        module = importlib.import_module(module_path)
+        attr = getattr(module, attr_name)
+        # Cache for future access
+        globals()[name] = attr
+        return attr
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # Type-checking only imports (no runtime side-effects)
@@ -223,6 +229,8 @@ class Tenets:
     def distiller(self):
         """Lazy load distiller when needed."""
         if self._distiller is None:
+            # Import locally to trigger lazy loading
+            from tenets.core.distiller import Distiller
             self._distiller = Distiller(self.config)
         return self._distiller
 
@@ -230,6 +238,8 @@ class Tenets:
     def instiller(self):
         """Lazy load instiller when needed."""
         if self._instiller is None:
+            # Import locally to trigger lazy loading
+            from tenets.core.instiller import Instiller
             self._instiller = Instiller(self.config)
         return self._instiller
 
@@ -238,6 +248,8 @@ class Tenets:
         """Lazy load tenet manager when needed."""
         if self._tenet_manager is None:
             if self._instiller is None:
+                # Import locally to trigger lazy loading
+                from tenets.core.instiller import Instiller
                 self._instiller = Instiller(self.config)
             self._tenet_manager = self._instiller.manager
         return self._tenet_manager
@@ -388,21 +400,22 @@ class Tenets:
             summarize_imports=summarize_imports,
         )
 
-        # Inject system instruction if configured
-        try:
-            modified, meta = self.instiller.inject_system_instruction(
-                result.context, format=result.format, session=session
-            )
-            if meta.get("system_instruction_injected"):
-                result = ContextResult(
-                    files=result.files,
-                    context=modified,
-                    format=result.format,
-                    metadata={**result.metadata, "system_instruction": meta},
+        # Inject system instruction if configured (skip for HTML reports meant for humans)
+        if format.lower() != "html":
+            try:
+                modified, meta = self.instiller.inject_system_instruction(
+                    result.context, format=result.format, session=session
                 )
-        except Exception:
-            # Best-effort; don't fail distill if injection fails
-            pass
+                if meta.get("system_instruction_injected"):
+                    result = ContextResult(
+                        files=result.files,
+                        context=modified,
+                        format=result.format,
+                        metadata={**result.metadata, "system_instruction": meta},
+                    )
+            except Exception:
+                # Best-effort; don't fail distill if injection fails
+                pass
 
         # Apply tenets if configured
         should_apply_tenets = (
@@ -955,9 +968,12 @@ class Tenets:
 __all__ = [
     "CodeAnalyzer",
     "ContextResult",
+    "Distiller",
+    "Instiller",
     "Priority",
     "Tenet",
     "TenetCategory",
+    "TenetManager",
     "Tenets",
     "TenetsConfig",
     "__version__",

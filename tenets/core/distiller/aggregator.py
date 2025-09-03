@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
+from tenets.models.summary import FileSummary
 from tenets.utils.logger import get_logger
 from tenets.utils.tokens import count_tokens
 
@@ -241,7 +242,7 @@ class ContextAggregator:
                             "content": summary_content,
                             "tokens": actual_summary_tokens,
                             "summarized": True,
-                            "summary": summary,
+                            "summary": self._convert_summarization_result_to_file_summary(summary, str(file.path)),
                             "transformations": transformed_stats,
                             "metadata": metadata,
                         }
@@ -289,6 +290,28 @@ class ContextAggregator:
         )
 
         return result
+
+    def _convert_summarization_result_to_file_summary(self, result, file_path: str) -> FileSummary:
+        """Convert a SummarizationResult to a FileSummary."""
+        from tenets.core.summarizer.summarizer import SummarizationResult
+        
+        if isinstance(result, SummarizationResult):
+            return FileSummary(
+                content=result.summary,
+                was_summarized=True,
+                original_tokens=len(result.original_text.split()) * 1.3,  # Rough token estimate
+                summary_tokens=len(result.summary.split()) * 1.3,  # Rough token estimate
+                original_lines=result.original_text.count('\n') + 1,
+                summary_lines=result.summary.count('\n') + 1,
+                strategy=result.strategy_used,
+                compression_ratio=result.compression_ratio,
+                file_path=file_path,
+                instructions=[f"Summarized from {result.original_length} to {result.summary_length} characters using {result.strategy_used} strategy"],
+                metadata={"time_elapsed": result.time_elapsed}
+            )
+        else:
+            # If it's already a FileSummary or other format, return as-is
+            return result
 
     def _estimate_git_tokens(self, git_context: Dict[str, Any]) -> int:
         """Estimate tokens needed for git context."""
