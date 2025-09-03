@@ -168,4 +168,3 @@ class TFIDFCalculator:
     @idf_cache.setter
     def idf_cache(self, value: Dict[str, float]) -> None:
         self._calculator.idf_cache = value
-

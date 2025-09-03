@@ -32,7 +32,7 @@ from .implementations.swift_analyzer import SwiftAnalyzer
 
 class ProjectDetector:
     """Detects project type and structure using language analyzers.
-    
+
     This class leverages the language-specific analyzers to detect project
     types and entry points, avoiding duplication of language-specific knowledge.
     """
@@ -40,7 +40,7 @@ class ProjectDetector:
     def __init__(self):
         """Initialize project detector with language analyzers."""
         self.logger = get_logger(__name__)
-        
+
         # Initialize all language analyzers
         self.analyzers = [
             PythonAnalyzer(),
@@ -60,10 +60,10 @@ class ProjectDetector:
             HTMLAnalyzer(),
             CSSAnalyzer(),
         ]
-        
+
         # Build dynamic mappings from analyzers
         self._build_mappings()
-        
+
         # Additional framework patterns not tied to specific languages
         self.FRAMEWORK_PATTERNS = {
             "docker": ["Dockerfile", "docker-compose.yml", "docker-compose.yaml"],
@@ -78,21 +78,21 @@ class ProjectDetector:
         self.ENTRY_POINTS = {}
         self.PROJECT_INDICATORS = {}
         self.EXTENSION_TO_LANGUAGE = {}
-        
+
         for analyzer in self.analyzers:
             lang = analyzer.language_name
-            
+
             # Build entry points mapping
-            if hasattr(analyzer, 'entry_points') and analyzer.entry_points:
+            if hasattr(analyzer, "entry_points") and analyzer.entry_points:
                 self.ENTRY_POINTS[lang] = analyzer.entry_points
-            
+
             # Build project indicators mapping
-            if hasattr(analyzer, 'project_indicators') and analyzer.project_indicators:
+            if hasattr(analyzer, "project_indicators") and analyzer.project_indicators:
                 for project_type, indicators in analyzer.project_indicators.items():
                     # Prefix with language for uniqueness
                     key = f"{lang}_{project_type}" if project_type != lang else project_type
                     self.PROJECT_INDICATORS[key] = indicators
-            
+
             # Build extension to language mapping
             for ext in analyzer.file_extensions:
                 self.EXTENSION_TO_LANGUAGE[ext] = lang
@@ -146,7 +146,7 @@ class ProjectDetector:
         frameworks = []
         file_names = {f.name for f in all_files if f.is_file()}
         dir_names = {f.name for f in all_files if f.is_dir()}
-        
+
         # Check language-specific project indicators
         for project_type, indicators in self.PROJECT_INDICATORS.items():
             for indicator in indicators:
@@ -202,7 +202,7 @@ class ProjectDetector:
             List of entry point file paths relative to project root
         """
         entry_points = []
-        
+
         # Check language-specific entry points
         for lang in languages:
             if lang in self.ENTRY_POINTS:
@@ -221,13 +221,13 @@ class ProjectDetector:
             try:
                 with open(package_json, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    
+
                 # Check main field
                 if "main" in data:
                     main_file = path / data["main"]
                     if main_file.exists():
                         entry_points.append(data["main"])
-                
+
                 # Check scripts for common entry points
                 if "scripts" in data:
                     for script_name in ["start", "dev", "serve"]:
@@ -321,7 +321,7 @@ class ProjectDetector:
 
         # Detect project info
         project_info = self.detect_project_type(path)
-        
+
         # Use detected entry points
         if project_info["entry_points"]:
             main_file = path / project_info["entry_points"][0]
