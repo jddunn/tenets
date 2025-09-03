@@ -174,7 +174,7 @@ class TestProjectDetector:
         (tmp_path / "config.py").write_text("")
 
         found_main = detector.find_main_file(tmp_path)
-        
+
         assert found_main is not None
         assert found_main.name == "main.py"
 
@@ -184,11 +184,11 @@ class TestProjectDetector:
         assert len(detector.ENTRY_POINTS) > 0
         assert "python" in detector.ENTRY_POINTS
         assert "javascript" in detector.ENTRY_POINTS
-        
+
         # Check project indicators
         assert len(detector.PROJECT_INDICATORS) > 0
         assert any("django" in key for key in detector.PROJECT_INDICATORS)
-        
+
         # Check extension mappings
         assert ".py" in detector.EXTENSION_TO_LANGUAGE
         assert detector.EXTENSION_TO_LANGUAGE[".py"] == "python"
@@ -200,9 +200,9 @@ class TestProjectDetector:
         # Create Docker files
         (tmp_path / "Dockerfile").write_text("FROM python:3.9")
         (tmp_path / "docker-compose.yml").write_text("version: '3'")
-        
+
         result = detector.detect_project_type(tmp_path)
-        
+
         assert "docker" in result["frameworks"]
 
     def test_go_project_detection(self, detector, tmp_path):
@@ -211,9 +211,9 @@ class TestProjectDetector:
         (tmp_path / "go.mod").write_text("module example.com/test")
         (tmp_path / "go.sum").write_text("")
         (tmp_path / "main.go").write_text("package main")
-        
+
         result = detector.detect_project_type(tmp_path)
-        
+
         assert "go" in result["languages"]
         assert result["type"] in ["module", "cli", "go"]
         assert any("go.mod" in ep or "main.go" in ep for ep in result["entry_points"])
@@ -226,9 +226,9 @@ class TestProjectDetector:
         src_dir.mkdir(parents=True)
         (src_dir / "Application.java").write_text("@SpringBootApplication")
         (tmp_path / "application.properties").write_text("")
-        
+
         result = detector.detect_project_type(tmp_path)
-        
+
         assert "java" in result["languages"]
         # Should detect Spring framework
         assert any("spring" in f.lower() or "maven" in f.lower() for f in result["frameworks"])
@@ -238,25 +238,27 @@ class TestProjectDetector:
         # Empty project - low confidence
         result_empty = detector.detect_project_type(tmp_path)
         assert result_empty["confidence"] == 0.0
-        
+
         # Project with language files - medium confidence
         (tmp_path / "main.py").write_text("")
         result_lang = detector.detect_project_type(tmp_path)
         assert result_lang["confidence"] > 0.0
-        
+
         # Project with framework indicators - higher confidence
         (tmp_path / "setup.py").write_text("")
         (tmp_path / "__init__.py").write_text("")
         result_framework = detector.detect_project_type(tmp_path)
         # Should have high confidence (may already be at 1.0)
         # Use approximate comparison for floating point
-        assert result_framework["confidence"] >= result_lang["confidence"] - 0.01  # Allow small floating point difference
+        assert (
+            result_framework["confidence"] >= result_lang["confidence"] - 0.01
+        )  # Allow small floating point difference
         assert result_framework["confidence"] >= 0.5  # At least medium confidence
 
     def test_empty_project(self, detector, tmp_path):
         """Test detection on empty project."""
         result = detector.detect_project_type(tmp_path)
-        
+
         assert result["type"] == "unknown"
         assert result["languages"] == []
         assert result["frameworks"] == []
@@ -267,6 +269,6 @@ class TestProjectDetector:
         """Test detection on non-existent path."""
         fake_path = tmp_path / "nonexistent"
         result = detector.detect_project_type(fake_path)
-        
+
         assert result["type"] == "unknown"
         assert result["confidence"] == 0.0

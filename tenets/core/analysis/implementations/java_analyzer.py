@@ -41,8 +41,12 @@ class JavaAnalyzer(LanguageAnalyzer):
     language_name = "java"
     file_extensions = [".java"]
     entry_points = [
-        "Main.java", "Application.java", "App.java",
-        "pom.xml", "build.gradle", "build.gradle.kts"
+        "Main.java",
+        "Application.java",
+        "App.java",
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
     ]
     project_indicators = {
         "spring": ["application.properties", "application.yml", "@SpringBootApplication"],
