@@ -8,8 +8,6 @@ from tenets.config import TenetsConfig
 from tenets.core.summarizer.strategies import (
     CompressiveStrategy,
     ExtractiveStrategy,
-    NLPEnhancedStrategy,
-    TextRankStrategy,
 )
 from tenets.core.summarizer.summarizer import (
     BatchSummarizationResult,
@@ -20,6 +18,16 @@ from tenets.core.summarizer.summarizer import (
 )
 from tenets.models.analysis import CodeStructure, FileAnalysis
 from tenets.models.summary import FileSummary
+
+# Import strategies that require optional dependencies conditionally
+try:
+    from tenets.core.summarizer.strategies import NLPEnhancedStrategy, TextRankStrategy
+
+    ADVANCED_STRATEGIES_AVAILABLE = True
+except ImportError:
+    ADVANCED_STRATEGIES_AVAILABLE = False
+    NLPEnhancedStrategy = None
+    TextRankStrategy = None
 
 
 @pytest.fixture
@@ -147,22 +155,21 @@ class TestSummarizer:
         assert len(result.summary) <= len(text)
         assert result.strategy_used == "compressive"
 
+    @pytest.mark.skipif(
+        not ADVANCED_STRATEGIES_AVAILABLE, reason="TextRank strategy requires sklearn/nltk"
+    )
     @patch("tenets.core.summarizer.strategies.SKLEARN_AVAILABLE", True)
     def test_summarize_textrank(self, summarizer):
         """Test TextRank summarization."""
         text = " ".join([f"Sentence {i}." for i in range(10)])
 
         # Need to manually add TextRank strategy if sklearn available
-        try:
-            summarizer.strategies[SummarizationMode.TEXTRANK] = TextRankStrategy()
+        summarizer.strategies[SummarizationMode.TEXTRANK] = TextRankStrategy()
 
-            result = summarizer.summarize(text, mode=SummarizationMode.TEXTRANK, target_ratio=0.3)
+        result = summarizer.summarize(text, mode=SummarizationMode.TEXTRANK, target_ratio=0.3)
 
-            assert isinstance(result, SummarizationResult)
-            assert result.strategy_used == "textrank"
-        except ImportError:
-            # Skip if sklearn not available
-            pytest.skip("scikit-learn not available")
+        assert isinstance(result, SummarizationResult)
+        assert result.strategy_used == "textrank"
 
     def test_summarize_with_max_length(self, summarizer):
         """Test summarization with max length constraint."""
@@ -220,7 +227,6 @@ class TestSummarizer:
 
         # First call
         result1 = summarizer.summarize(text, target_ratio=0.5)
-        cache_misses = summarizer.stats["cache_misses"]
 
         # Second call should hit cache
         result2 = summarizer.summarize(text, target_ratio=0.5)
@@ -353,6 +359,9 @@ class TestStrategiesWithNLP:
 
         assert len(summary) <= len(text)
 
+    @pytest.mark.skipif(
+        not ADVANCED_STRATEGIES_AVAILABLE, reason="TextRank strategy requires sklearn/nltk"
+    )
     @patch("tenets.core.summarizer.strategies.NLP_AVAILABLE", True)
     @patch("tenets.core.summarizer.strategies.SKLEARN_AVAILABLE", True)
     def test_textrank_with_nlp(self):
@@ -364,6 +373,9 @@ class TestStrategiesWithNLP:
 
         assert len(summary) < len(text)
 
+    @pytest.mark.skipif(
+        not ADVANCED_STRATEGIES_AVAILABLE, reason="NLPEnhancedStrategy requires ML dependencies"
+    )
     @patch("tenets.core.summarizer.strategies.NLP_AVAILABLE", True)
     @patch("tenets.core.nlp.embeddings.create_embedding_model")
     def test_nlp_enhanced_strategy(self, mock_create_model):
@@ -372,15 +384,12 @@ class TestStrategiesWithNLP:
         mock_model = Mock()
         mock_create_model.return_value = mock_model
 
-        try:
-            strategy = NLPEnhancedStrategy()
+        strategy = NLPEnhancedStrategy()
 
-            text = "Machine learning is transforming industries. Deep learning models are powerful. Natural language processing enables text understanding."
-            summary = strategy.summarize(text, target_ratio=0.5)
+        text = "Machine learning is transforming industries. Deep learning models are powerful. Natural language processing enables text understanding."
+        summary = strategy.summarize(text, target_ratio=0.5)
 
-            assert len(summary) <= len(text)
-        except ImportError:
-            pytest.skip("NLP components not available")
+        assert len(summary) <= len(text)
 
 
 class TestBatchSummarization:
@@ -417,7 +426,7 @@ class TestBatchSummarization:
             # Make None cause an error
             def side_effect(text, **kwargs):
                 if text is None:
-                    raise Exception("Invalid input")
+                    raise ValueError("Invalid input")
                 return Mock(
                     original_length=len(text),
                     summary_length=len(text) // 2,
@@ -426,7 +435,7 @@ class TestBatchSummarization:
 
             mock_summarize.side_effect = side_effect
 
-            result = summarizer.batch_summarize(texts)
+            summarizer.batch_summarize(texts)
 
             # One should fail
             assert mock_summarize.call_count == 3
