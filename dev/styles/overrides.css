@@ -95,7 +95,18 @@ label.md-header__button[for="__search"]::before {
   inset: 0;
   background: rgba(0, 0, 0, 0.4) !important; /* lighter overlay */
   backdrop-filter: blur(3px);
+  pointer-events: none !important;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Show overlay only when search is active */
+.md-search[data-md-state="active"] .md-search__overlay,
+.md-search[aria-expanded="true"] .md-search__overlay {
   pointer-events: auto !important;
+  opacity: 1;
+  visibility: visible;
 }
 .md-search__inner[role="dialog"],
 .md-search[aria-expanded="true"] .md-search__inner,
