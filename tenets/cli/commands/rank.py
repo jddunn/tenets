@@ -30,14 +30,14 @@ console = Console()
 
 def _get_language_from_extension(file_path: Path) -> str:
     """Get programming language from file extension.
-    
+
     Args:
         file_path: Path object representing the file.
-        
+
     Returns:
         String identifier for the programming language, defaults to 'text'
         if extension is not recognized.
-        
+
     Examples:
         >>> _get_language_from_extension(Path("test.py"))
         'python'
@@ -385,7 +385,7 @@ def _format_ranked_files(
     stats: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Format ranked files for output based on specified format.
-    
+
     Args:
         files: List of FileAnalysis objects to format.
         format: Output format (json, xml, html, tree, markdown).
@@ -395,10 +395,10 @@ def _format_ranked_files(
         show_path: Path display style (relative, absolute, name).
         prompt: Original query prompt for context.
         stats: Optional ranking statistics dictionary.
-        
+
     Returns:
         Formatted string representation of the ranked files.
-        
+
     Raises:
         ValueError: If format is not recognized.
     """
@@ -415,22 +415,19 @@ def _format_ranked_files(
 
 
 def _format_markdown(
-    files: List[FileAnalysis], 
-    show_scores: bool, 
-    show_factors: bool, 
-    show_path: str
+    files: List[FileAnalysis], show_scores: bool, show_factors: bool, show_path: str
 ) -> str:
     """Format ranked files as markdown list.
-    
+
     Args:
         files: List of FileAnalysis objects to format.
         show_scores: Whether to include relevance scores.
         show_factors: Whether to include ranking factors.
         show_path: Path display style (relative, absolute, name).
-        
+
     Returns:
         Markdown formatted string with numbered list of files.
-        
+
     Examples:
         >>> files = [FileAnalysis(path="test.py", relevance_score=0.85)]
         >>> _format_markdown(files, True, False, "relative")
@@ -459,22 +456,19 @@ def _format_markdown(
 
 
 def _format_tree(
-    files: List[FileAnalysis], 
-    show_scores: bool, 
-    show_factors: bool, 
-    show_path: str
+    files: List[FileAnalysis], show_scores: bool, show_factors: bool, show_path: str
 ) -> str:
     """Format ranked files as tree structure sorted by relevance.
-    
+
     Args:
         files: List of FileAnalysis objects to format.
         show_scores: Whether to include relevance scores.
         show_factors: Whether to include ranking factors.
         show_path: Path display style (relative, absolute, name).
-        
+
     Returns:
         Tree-formatted string representation of files grouped by directory.
-        
+
     Note:
         Uses simple ASCII characters on Windows to avoid encoding issues.
         Files are grouped by directory and sorted by relevance score.
@@ -497,10 +491,10 @@ def _format_tree(
     # Sort directories by the highest scoring file in each
     def get_max_score(dir_path: Path) -> float:
         """Get maximum score from files in directory.
-        
+
         Args:
             dir_path: Directory path to check.
-            
+
         Returns:
             Maximum relevance score of files in directory.
         """
@@ -541,22 +535,22 @@ def _format_tree(
 
 
 def _format_json(
-    files: List[FileAnalysis], 
-    show_scores: bool, 
-    show_factors: bool, 
-    stats: Optional[Dict[str, Any]]
+    files: List[FileAnalysis],
+    show_scores: bool,
+    show_factors: bool,
+    stats: Optional[Dict[str, Any]],
 ) -> str:
     """Format ranked files as JSON.
-    
+
     Args:
         files: List of FileAnalysis objects to format.
         show_scores: Whether to include relevance scores.
         show_factors: Whether to include ranking factors.
         stats: Optional statistics dictionary to include.
-        
+
     Returns:
         JSON formatted string with file data and optional statistics.
-        
+
     Examples:
         >>> files = [FileAnalysis(path="test.py", relevance_score=0.85)]
         >>> result = _format_json(files, True, False, None)
@@ -586,22 +580,19 @@ def _format_json(
 
 
 def _format_xml(
-    files: List[FileAnalysis], 
-    show_scores: bool, 
-    show_factors: bool, 
-    prompt: str
+    files: List[FileAnalysis], show_scores: bool, show_factors: bool, prompt: str
 ) -> str:
     """Format ranked files as XML.
-    
+
     Args:
         files: List of FileAnalysis objects to format.
         show_scores: Whether to include relevance scores.
         show_factors: Whether to include ranking factors.
         prompt: Original query prompt to include in output.
-        
+
     Returns:
         XML formatted string with file rankings.
-        
+
     Note:
         Generates well-formed XML with UTF-8 encoding declaration.
         Each file is wrapped in a <file> element with nested attributes.
@@ -635,21 +626,17 @@ def _format_xml(
 
 
 def _format_html(
-    files: List[FileAnalysis], 
-    show_scores: bool, 
-    show_factors: bool, 
-    prompt: str, 
-    tree_view: bool
+    files: List[FileAnalysis], show_scores: bool, show_factors: bool, prompt: str, tree_view: bool
 ) -> str:
     """Format ranked files as interactive HTML with charts and controls.
-    
+
     Args:
         files: List of FileAnalysis objects to format.
         show_scores: Whether to include relevance scores.
         show_factors: Whether to include ranking factors.
         prompt: Original query prompt for display.
         tree_view: Whether to generate tree view tab.
-        
+
     Returns:
         Complete HTML document string with interactive features including:
         - File list with search/filter
@@ -657,7 +644,7 @@ def _format_html(
         - Score distribution charts
         - Export to JSON/CSV
         - Copy to clipboard functionality
-        
+
     Note:
         Uses Chart.js for visualizations and includes responsive design.
         Avoids f-string backslash issues by using chr() for special characters.
@@ -680,7 +667,9 @@ def _format_html(
     total_files: int = len(files)
     high_relevance_count: int = len([f for f in files if getattr(f, "relevance_score", 0) >= 0.5])
     max_score: float = max((getattr(f, "relevance_score", 0) for f in files), default=0)
-    avg_score: float = sum(getattr(f, "relevance_score", 0) for f in files) / len(files) if files else 0
+    avg_score: float = (
+        sum(getattr(f, "relevance_score", 0) for f in files) / len(files) if files else 0
+    )
 
     # Enhanced custom styles for rank report
     custom_styles: str = """
@@ -951,12 +940,12 @@ def _format_html(
     # JavaScript for interactivity - Fixed f-string backslash issues
     # Create variables for special characters
     newline: str = chr(10)  # newline character
-    quote: str = chr(34)    # double quote character
-    bslash: str = chr(92)   # backslash character
-    
+    quote: str = chr(34)  # double quote character
+    bslash: str = chr(92)  # backslash character
+
     # Escape the prompt for JavaScript
     escaped_prompt: str = prompt.replace('"', '\\"').replace("'", "\\'")
-    
+
     scripts: str = f"""
     <script>
         // Store files data globally
@@ -1284,17 +1273,17 @@ def _format_html(
 
 def _get_display_path(path: Union[str, Path], style: str) -> str:
     """Get display path based on style preference.
-    
+
     Args:
         path: File path as string or Path object.
         style: Display style - 'absolute', 'name', or 'relative'.
-        
+
     Returns:
         Formatted path string according to the specified style.
-        
+
     Raises:
         ValueError: If path cannot be made relative (for 'relative' style).
-        
+
     Examples:
         >>> _get_display_path(Path("/home/user/project/file.py"), "name")
         'file.py'
@@ -1318,13 +1307,13 @@ def _get_display_path(path: Union[str, Path], style: str) -> str:
 
 def _show_stats(stats: Union[Dict[str, Any], Any]) -> None:
     """Show ranking statistics in a formatted table.
-    
+
     Args:
         stats: Statistics dictionary or object with to_dict() method.
-        
+
     Returns:
         None
-        
+
     Note:
         Prints statistics to console using Rich Table formatting.
         Float values are formatted to 3 decimal places.
