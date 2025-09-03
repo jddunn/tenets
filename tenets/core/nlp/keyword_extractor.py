@@ -753,6 +753,7 @@ class TFIDFCalculator:
             documents: List of (doc_id, text) tuples
         """
         import os
+
         cpu_count = os.cpu_count() or 1
         self.logger.info(
             f"Building TF-IDF corpus from {len(documents)} documents "
@@ -968,6 +969,7 @@ class BM25Calculator:
             documents: List of (doc_id, text) tuples
         """
         import os
+
         cpu_count = os.cpu_count() or 1
         self.logger.info(
             f"Building BM25 corpus from {len(documents)} documents "

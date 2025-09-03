@@ -656,11 +656,6 @@ class Instiller:
 
         # Compute token increase (original first, then modified) so patched mocks match
         orig_tokens = estimate_tokens(content)
-<<<<<<< HEAD
-=======
-
-        from tenets.utils.tokens import count_tokens
->>>>>>> 092b85e57738d42b42406413ac53c8c9210c6835
 
         meta.update(
             {

@@ -414,10 +414,13 @@ def distill(
 
                 # Offer to open in browser for HTML, or folder for XML/JSON
                 import click
-                
+
                 if format == "html":
-                    if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                    if click.confirm(
+                        "\nWould you like to open it in your browser now?", default=False
+                    ):
                         import webbrowser
+
                         # Ensure absolute path for file URI
                         file_path = default_file.resolve()
                         webbrowser.open(file_path.as_uri())
@@ -426,21 +429,27 @@ def distill(
                         console.print(
                             "[cyan]💡 Tip:[/cyan] Open the file in a browser or use --output to specify a different path"
                         )
-                else:
-                    # For XML/JSON, offer to open the folder
-                    if click.confirm(f"\nWould you like to open the folder containing the {format.upper()} file?", default=False):
-                        import platform
-                        folder = default_file.parent.resolve()
-                        if platform.system() == "Windows":
-                            import os
-                            os.startfile(folder)
-                        elif platform.system() == "Darwin":  # macOS
-                            import subprocess
-                            subprocess.run(["open", folder])
-                        else:  # Linux
-                            import subprocess
-                            subprocess.run(["xdg-open", folder])
-                        console.print(f"[green]✓[/green] Opened folder: {folder}")
+                # For XML/JSON, offer to open the folder
+                elif click.confirm(
+                    f"\nWould you like to open the folder containing the {format.upper()} file?",
+                    default=False,
+                ):
+                    import platform
+
+                    folder = default_file.parent.resolve()
+                    if platform.system() == "Windows":
+                        import os
+
+                        os.startfile(folder)
+                    elif platform.system() == "Darwin":  # macOS
+                        import subprocess
+
+                        subprocess.run(["open", folder], check=False)
+                    else:  # Linux
+                        import subprocess
+
+                        subprocess.run(["xdg-open", folder], check=False)
+                    console.print(f"[green]✓[/green] Opened folder: {folder}")
             else:
                 # Non-interactive mode: print raw output for piping
                 print(output_text)

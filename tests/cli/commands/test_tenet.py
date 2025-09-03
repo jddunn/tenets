@@ -47,9 +47,10 @@ def mock_tenets():
     # Mock manager methods - add_tenet doesn't return anything in the actual implementation
     # The actual implementation calls add_tenet with keyword argument tenet=
     def mock_add_tenet(**kwargs):
-        if 'tenet' in kwargs:
-            tenet = kwargs['tenet']
-            setattr(tenet, "id", "abc123def456")
+        if "tenet" in kwargs:
+            tenet = kwargs["tenet"]
+            tenet.id = "abc123def456"
+
     mock.add_tenet = MagicMock(side_effect=mock_add_tenet)
     mock.get_all_tenets.return_value = [mock_tenet]
     mock.get_tenet.return_value = mock_tenet
@@ -79,7 +80,7 @@ class TestTenetAdd:
             # Check that add_tenet was called with a Tenet object
             mock_tenets.add_tenet.assert_called_once()
             # The actual implementation calls add_tenet with keyword argument tenet=
-            tenet_arg = mock_tenets.add_tenet.call_args.kwargs['tenet']
+            tenet_arg = mock_tenets.add_tenet.call_args.kwargs["tenet"]
             assert tenet_arg.content == "Always use type hints"
             assert tenet_arg.priority.value == "medium"  # default
             assert tenet_arg.category is None
@@ -96,7 +97,7 @@ class TestTenetAdd:
             # Check that add_tenet was called with a Tenet object
             mock_tenets.add_tenet.assert_called_once()
             # The actual implementation calls add_tenet with keyword argument tenet=
-            tenet_arg = mock_tenets.add_tenet.call_args.kwargs['tenet']
+            tenet_arg = mock_tenets.add_tenet.call_args.kwargs["tenet"]
             assert tenet_arg.content == "Validate all inputs"
             assert tenet_arg.priority.value == "critical"
             assert tenet_arg.category is None
@@ -114,7 +115,7 @@ class TestTenetAdd:
             # Check that add_tenet was called with a Tenet object
             mock_tenets.add_tenet.assert_called_once()
             # The actual implementation calls add_tenet with keyword argument tenet=
-            tenet_arg = mock_tenets.add_tenet.call_args.kwargs['tenet']
+            tenet_arg = mock_tenets.add_tenet.call_args.kwargs["tenet"]
             assert tenet_arg.content == "Use async for I/O"
             assert tenet_arg.priority.value == "medium"
             assert (
@@ -135,7 +136,7 @@ class TestTenetAdd:
             # Check that add_tenet was called with a Tenet object
             mock_tenets.add_tenet.assert_called_once()
             # The actual implementation calls add_tenet with keyword argument tenet=
-            tenet_arg = mock_tenets.add_tenet.call_args.kwargs['tenet']
+            tenet_arg = mock_tenets.add_tenet.call_args.kwargs["tenet"]
             assert tenet_arg.content == "Feature-specific rule"
             assert tenet_arg.priority.value == "medium"
             assert tenet_arg.category is None
@@ -162,7 +163,7 @@ class TestTenetAdd:
             # Check that add_tenet was called with a Tenet object
             mock_tenets.add_tenet.assert_called_once()
             # The actual implementation calls add_tenet with keyword argument tenet=
-            tenet_arg = mock_tenets.add_tenet.call_args.kwargs['tenet']
+            tenet_arg = mock_tenets.add_tenet.call_args.kwargs["tenet"]
             assert tenet_arg.content == "Sanitize user input"
             assert tenet_arg.priority.value == "critical"
             assert (

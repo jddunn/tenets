@@ -4,7 +4,7 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import click
 import typer
@@ -203,12 +203,13 @@ def rank(
 
         # Output results
         if output:
-            output.write_text(output_content, encoding='utf-8')
+            output.write_text(output_content, encoding="utf-8")
             console.print(f"[green]OK[/green] Saved ranking to {output}")
             # Offer to open HTML in browser
             if format == "html" and sys.stdin.isatty():
                 if click.confirm("\nWould you like to open it in your browser now?", default=False):
                     import webbrowser
+
                     file_path = output.resolve()
                     webbrowser.open(file_path.as_uri())
                     console.print("[green]OK[/green] Opened in browser")
@@ -217,12 +218,12 @@ def rank(
             if sys.stdin.isatty():  # Interactive mode
                 import re
                 from datetime import datetime
-                
+
                 # Create filename from prompt
-                safe_prompt = re.sub(r'[^\w\s-]', '', prompt[:30]).strip()
-                safe_prompt = re.sub(r'[-\s]+', '-', safe_prompt)
+                safe_prompt = re.sub(r"[^\w\s-]", "", prompt[:30]).strip()
+                safe_prompt = re.sub(r"[-\s]+", "-", safe_prompt)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                
+
                 # Determine file extension
                 ext = format.lower()
                 if ext == "html":
@@ -231,19 +232,22 @@ def rank(
                     ext = "xml"
                 else:  # json
                     ext = "json"
-                
+
                 default_file = Path(f"tenets_rank_{safe_prompt}_{timestamp}.{ext}")
-                default_file.write_text(output_content, encoding='utf-8')
-                
-                console.print(f"[green]OK[/green] {format.upper()} output saved to [cyan]{default_file}[/cyan]")
+                default_file.write_text(output_content, encoding="utf-8")
+
                 console.print(
-                    f"[dim]File size:[/dim] {len(output_content):,} bytes"
+                    f"[green]OK[/green] {format.upper()} output saved to [cyan]{default_file}[/cyan]"
                 )
-                
+                console.print(f"[dim]File size:[/dim] {len(output_content):,} bytes")
+
                 # Offer to open in browser for HTML, or folder for XML/JSON
                 if format == "html":
-                    if click.confirm("\nWould you like to open it in your browser now?", default=False):
+                    if click.confirm(
+                        "\nWould you like to open it in your browser now?", default=False
+                    ):
                         import webbrowser
+
                         file_path = default_file.resolve()
                         webbrowser.open(file_path.as_uri())
                         console.print("[green]OK[/green] Opened in browser")
@@ -251,22 +255,28 @@ def rank(
                         console.print(
                             "[cyan]Tip:[/cyan] Open the file in a browser or use --output to specify a different path"
                         )
-                else:
-                    # For XML/JSON, offer to open the folder
-                    if click.confirm(f"\nWould you like to open the folder containing the {format.upper()} file?", default=False):
-                        import webbrowser
-                        import platform
-                        folder = default_file.parent.resolve()
-                        if platform.system() == "Windows":
-                            import os
-                            os.startfile(folder)
-                        elif platform.system() == "Darwin":  # macOS
-                            import subprocess
-                            subprocess.run(["open", folder])
-                        else:  # Linux
-                            import subprocess
-                            subprocess.run(["xdg-open", folder])
-                        console.print(f"[green]OK[/green] Opened folder: {folder}")
+                # For XML/JSON, offer to open the folder
+                elif click.confirm(
+                    f"\nWould you like to open the folder containing the {format.upper()} file?",
+                    default=False,
+                ):
+                    import platform
+                    import webbrowser
+
+                    folder = default_file.parent.resolve()
+                    if platform.system() == "Windows":
+                        import os
+
+                        os.startfile(folder)
+                    elif platform.system() == "Darwin":  # macOS
+                        import subprocess
+
+                        subprocess.run(["open", folder], check=False)
+                    else:  # Linux
+                        import subprocess
+
+                        subprocess.run(["xdg-open", folder], check=False)
+                    console.print(f"[green]OK[/green] Opened folder: {folder}")
             else:
                 # Non-interactive mode: print raw output
                 print(output_content)
@@ -482,28 +492,27 @@ def _format_html(
 ) -> str:
     """Format as HTML with interactive features using shared template system."""
     import json
-    from datetime import datetime
-    
+
     # Prepare data for JavaScript
     files_data = []
     for file in files:
         file_data = {
             "path": str(file.path),
             "score": getattr(file, "relevance_score", 0.0),
-            "rank": getattr(file, "relevance_rank", 0)
+            "rank": getattr(file, "relevance_rank", 0),
         }
         if hasattr(file, "relevance_factors"):
             file_data["factors"] = file.relevance_factors
         files_data.append(file_data)
-    
+
     files_json = json.dumps(files_data)
-    
+
     # Calculate statistics
     total_files = len(files)
-    high_relevance_count = len([f for f in files if getattr(f, 'relevance_score', 0) >= 0.5])
-    max_score = max((getattr(f, 'relevance_score', 0) for f in files), default=0)
-    avg_score = sum(getattr(f, 'relevance_score', 0) for f in files) / len(files) if files else 0
-    
+    high_relevance_count = len([f for f in files if getattr(f, "relevance_score", 0) >= 0.5])
+    max_score = max((getattr(f, "relevance_score", 0) for f in files), default=0)
+    avg_score = sum(getattr(f, "relevance_score", 0) for f in files) / len(files) if files else 0
+
     # Enhanced custom styles for rank report
     custom_styles = """
     <style>
@@ -521,13 +530,13 @@ def _format_html(
             --border: #e2e8f0;
             --shadow: rgba(0, 0, 0, 0.1);
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
@@ -536,7 +545,7 @@ def _format_html(
             margin: 0;
             padding: 0;
         }
-        
+
         /* Enhanced Rank Report Styles */
         .rank-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -546,7 +555,7 @@ def _format_html(
             margin-bottom: 2rem;
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
-        
+
         .controls {
             background: #f8fafc;
             padding: 1rem 2rem;
@@ -558,7 +567,7 @@ def _format_html(
             flex-wrap: wrap;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
+
         .search-box {
             flex: 1;
             min-width: 200px;
@@ -567,7 +576,7 @@ def _format_html(
             border-radius: 0.5rem;
             font-size: 1rem;
         }
-        
+
         .export-button {
             background: #667eea;
             color: white;
@@ -579,20 +588,20 @@ def _format_html(
             font-weight: 500;
             transition: all 0.3s;
         }
-        
+
         .export-button:hover {
             background: #764ba2;
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
-        
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
             margin: 2rem 0;
         }
-        
+
         .stat-card {
             background: white;
             border-radius: 0.5rem;
@@ -600,25 +609,25 @@ def _format_html(
             text-align: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
+
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
             color: #667eea;
         }
-        
+
         .stat-label {
             font-size: 0.875rem;
             color: #64748b;
             margin-top: 0.25rem;
         }
-        
+
         .file-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-        
+
         .file-item {
             background: white;
             margin: 1rem 0;
@@ -629,12 +638,12 @@ def _format_html(
             position: relative;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
+
         .file-item:hover {
             transform: translateX(4px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        
+
         .file-path {
             font-family: 'Monaco', 'Consolas', monospace;
             font-size: 0.9rem;
@@ -642,7 +651,7 @@ def _format_html(
             margin-bottom: 0.5rem;
             word-break: break-all;
         }
-        
+
         .file-score {
             position: absolute;
             top: 1rem;
@@ -654,7 +663,7 @@ def _format_html(
             font-size: 0.875rem;
             font-weight: 600;
         }
-        
+
         .copy-button {
             position: absolute;
             top: 3rem;
@@ -667,24 +676,24 @@ def _format_html(
             font-size: 0.75rem;
             transition: all 0.3s;
         }
-        
+
         .copy-button:hover {
             background: #f1f5f9;
         }
-        
+
         .copy-button.copied {
             background: #10b981;
             color: white;
             border-color: #10b981;
         }
-        
+
         .factors {
             margin-top: 0.75rem;
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
-        
+
         .factor-item {
             background: white;
             padding: 0.25rem 0.5rem;
@@ -693,7 +702,7 @@ def _format_html(
             color: #64748b;
             border: 1px solid #e2e8f0;
         }
-        
+
         .tree-view {
             font-family: 'Monaco', 'Consolas', monospace;
             white-space: pre;
@@ -704,18 +713,18 @@ def _format_html(
             overflow-x: auto;
             margin: 1rem 0;
         }
-        
+
         .highlight {
             background: yellow;
             font-weight: bold;
             padding: 0 2px;
         }
-        
+
         /* Tab Interface */
         .tab-container {
             margin-bottom: 2rem;
         }
-        
+
         .tab-nav {
             display: flex;
             align-items: center;
@@ -725,7 +734,7 @@ def _format_html(
             gap: 8px;
             flex-wrap: wrap;
         }
-        
+
         .tab-button {
             background: none;
             border: none;
@@ -737,17 +746,17 @@ def _format_html(
             color: #64748b;
             transition: all 0.3s;
         }
-        
+
         .tab-button:hover {
             background: #e2e8f0;
             color: #2d3748;
         }
-        
+
         .tab-button.active {
             background: #667eea;
             color: white;
         }
-        
+
         .tab-content {
             display: none;
             padding: 20px;
@@ -756,11 +765,11 @@ def _format_html(
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             margin-top: 1rem;
         }
-        
+
         .tab-content.active {
             display: block;
         }
-        
+
         /* Charts */
         .chart-container {
             position: relative;
@@ -769,13 +778,13 @@ def _format_html(
         }
     </style>
     """
-    
+
     # JavaScript for interactivity
     scripts = f"""
     <script>
         // Store files data globally
         window.filesData = {files_json};
-        
+
         // Copy individual file path
         function copyFilePath(index) {{
             const file = window.filesData[index];
@@ -792,7 +801,7 @@ def _format_html(
                 }});
             }}
         }}
-        
+
         // Copy all file paths
         function copyAllPaths() {{
             const paths = window.filesData.map(f => f.path).join('\\n');
@@ -807,7 +816,7 @@ def _format_html(
                 }}, 2000);
             }});
         }}
-        
+
         // Export as JSON
         function exportAsJSON() {{
             const data = {{
@@ -831,7 +840,7 @@ def _format_html(
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }}
-        
+
         // Export as CSV
         function exportAsCSV() {{
             let csv = 'Rank,Path,Score\\n';
@@ -848,47 +857,47 @@ def _format_html(
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }}
-        
+
         // Search/filter files
         function searchFiles() {{
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
             const fileItems = document.querySelectorAll('.file-item');
-            
+
             fileItems.forEach((item, index) => {{
                 const file = window.filesData[index];
-                const matchesSearch = searchTerm === '' || 
+                const matchesSearch = searchTerm === '' ||
                     file.path.toLowerCase().includes(searchTerm);
                 item.style.display = matchesSearch ? 'block' : 'none';
             }});
         }}
-        
+
         // Tab switching
         function openTab(evt, tabName) {{
             const tabContents = document.getElementsByClassName('tab-content');
             for (let i = 0; i < tabContents.length; i++) {{
                 tabContents[i].classList.remove('active');
             }}
-            
+
             const tabButtons = document.getElementsByClassName('tab-button');
             for (let i = 0; i < tabButtons.length; i++) {{
                 tabButtons[i].classList.remove('active');
             }}
-            
+
             document.getElementById(tabName).classList.add('active');
             evt.currentTarget.classList.add('active');
-            
+
             // Initialize chart if switching to chart tab
             if (tabName === 'chart-tab' && !window.chartInitialized) {{
                 initializeChart();
                 window.chartInitialized = true;
             }}
         }}
-        
+
         // Initialize distribution chart
         function initializeChart() {{
             const ctx = document.getElementById('distChart');
             if (!ctx) return;
-            
+
             // Group files by score ranges
             const scoreRanges = {{
                 '0.0-0.2': 0,
@@ -897,7 +906,7 @@ def _format_html(
                 '0.6-0.8': 0,
                 '0.8-1.0': 0
             }};
-            
+
             window.filesData.forEach(file => {{
                 const score = file.score;
                 if (score <= 0.2) scoreRanges['0.0-0.2']++;
@@ -906,7 +915,7 @@ def _format_html(
                 else if (score <= 0.8) scoreRanges['0.6-0.8']++;
                 else scoreRanges['0.8-1.0']++;
             }});
-            
+
             new Chart(ctx, {{
                 type: 'bar',
                 data: {{
@@ -957,16 +966,16 @@ def _format_html(
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     """
-    
+
     # Build the HTML content sections
     header_html = f"""
     <div class="rank-header">
         <h1>🎯 Ranked Files</h1>
         <p>Query: <strong>{prompt}</strong></p>
-        <p>Generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p>Generated at {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
     </div>
     """
-    
+
     # Controls section
     controls_html = """
     <div class="controls">
@@ -976,7 +985,7 @@ def _format_html(
         <button id="copy-all-btn" class="export-button" onclick="copyAllPaths()">📋 Copy All Paths</button>
     </div>
     """
-    
+
     # Statistics grid
     stats_html = f"""
     <div class="stats-grid">
@@ -998,7 +1007,7 @@ def _format_html(
         </div>
     </div>
     """
-    
+
     # Tab navigation
     tab_nav_html = """
     <div class="tab-container">
@@ -1009,52 +1018,55 @@ def _format_html(
         </div>
     </div>
     """
-    
+
     # File list content
     file_list_html = '<div id="list-tab" class="tab-content active"><ul class="file-list">'
     for i, file in enumerate(files):
         path = str(file.path)
         score = getattr(file, "relevance_score", 0.0)
-        
+
         file_list_html += f"""
         <li class="file-item">
             <div class="file-path">{path}</div>
-            {f'<div class="file-score">{score:.3f}</div>' if show_scores else ''}
+            {f'<div class="file-score">{score:.3f}</div>' if show_scores else ""}
             <button id="copy-{i}" class="copy-button" onclick="copyFilePath({i})">📋 Copy</button>
         """
-        
+
         if show_factors and hasattr(file, "relevance_factors"):
             file_list_html += '<div class="factors">'
             for factor, value in file.relevance_factors.items():
                 file_list_html += f'<span class="factor-item">{factor}: {value:.2%}</span>'
-            file_list_html += '</div>'
-        
-        file_list_html += '</li>'
-    
-    file_list_html += '</ul></div>'
-    
+            file_list_html += "</div>"
+
+        file_list_html += "</li>"
+
+    file_list_html += "</ul></div>"
+
     # Tree view content
     tree_html = '<div id="tree-tab" class="tab-content">'
     if tree_view:
         # Generate tree structure
         from collections import defaultdict
+
         dirs = defaultdict(list)
         for file in files:
             dir_path = Path(file.path).parent
             dirs[dir_path].append(file)
-        
+
         tree_html += '<div class="tree-view">'
         for dir_path in sorted(dirs.keys()):
-            tree_html += f'📂 {dir_path}\n'
-            for file in sorted(dirs[dir_path], key=lambda f: getattr(f, "relevance_score", 0.0), reverse=True):
+            tree_html += f"📂 {dir_path}\n"
+            for file in sorted(
+                dirs[dir_path], key=lambda f: getattr(f, "relevance_score", 0.0), reverse=True
+            ):
                 name = Path(file.path).name
                 score = getattr(file, "relevance_score", 0.0)
-                tree_html += f'  📄 {name} [{score:.3f}]\n'
-        tree_html += '</div>'
+                tree_html += f"  📄 {name} [{score:.3f}]\n"
+        tree_html += "</div>"
     else:
-        tree_html += '<p>Enable --tree flag to see tree view</p>'
-    tree_html += '</div>'
-    
+        tree_html += "<p>Enable --tree flag to see tree view</p>"
+    tree_html += "</div>"
+
     # Chart content
     chart_html = """
     <div id="chart-tab" class="tab-content">
@@ -1063,7 +1075,7 @@ def _format_html(
         </div>
     </div>
     """
-    
+
     # Combine all sections
     content_html = f"""
     <div class="container">
@@ -1076,7 +1088,7 @@ def _format_html(
         {chart_html}
     </div>
     """
-    
+
     # Build final HTML using template
     html = f"""<!DOCTYPE html>
 <html>
@@ -1091,7 +1103,7 @@ def _format_html(
     {content_html}
 </body>
 </html>"""
-    
+
     return html
 
 

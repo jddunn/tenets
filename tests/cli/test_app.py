@@ -14,14 +14,14 @@ def test_version_flag():
     """Test that --version flag shows version and exits."""
     runner = CliRunner()
     result = runner.invoke(app, ["--version"])
-    
+
     # Print debug info if test fails
     if result.exit_code != 0:
         print(f"Exit code: {result.exit_code}")
         print(f"Output: {result.output}")
         if result.exception:
             print(f"Exception: {result.exception}")
-    
+
     assert result.exit_code == 0
     assert f"tenets v{__version__}" in result.output
     # Should exit immediately, not show help
@@ -32,16 +32,16 @@ def test_version_command():
     """Test that version command still works."""
     runner = CliRunner()
     result = runner.invoke(app, ["version"])
-    
+
     assert result.exit_code == 0
-    assert f"tenets v{__version__}" in result.output or f"Tenets" in result.output
+    assert f"tenets v{__version__}" in result.output or "Tenets" in result.output
 
 
 def test_version_flag_with_other_commands():
     """Test that --version takes precedence over other commands."""
     runner = CliRunner()
     result = runner.invoke(app, ["--version", "distill", "test"])
-    
+
     assert result.exit_code == 0
     assert f"tenets v{__version__}" in result.output
     # Should not execute distill command
@@ -52,7 +52,7 @@ def test_version_verbose():
     """Test version command with --verbose flag."""
     runner = CliRunner()
     result = runner.invoke(app, ["version", "--verbose"])
-    
+
     assert result.exit_code == 0
     # Verbose version should show more info
     assert "Tenets" in result.output
