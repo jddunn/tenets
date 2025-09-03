@@ -17,5 +17,5 @@
     "theme_color": "#1a2332",
     "background_color": "#fdfdf9",
     "display": "standalone",
-    "start_url": "https://tenets.dev"
+    "start_url": "/"
 }
