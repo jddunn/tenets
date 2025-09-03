@@ -1,0 +1,113 @@
+:root{
+  --back-to-top-size: 44px;
+  --back-to-top-bg: rgba(17, 24, 39, 0.9);
+  --back-to-top-bg-light: rgba(255, 255, 255, 0.95);
+  --back-to-top-color: var(--md-accent-fg-color, #f59e0b);
+  --back-to-top-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+  --back-to-top-border: rgba(255, 255, 255, 0.2);
+}
+
+/* Button base */
+.back-to-top {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: var(--back-to-top-size);
+  height: var(--back-to-top-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--back-to-top-bg);
+  color: var(--back-to-top-color) !important;
+  border: 1px solid var(--back-to-top-border);
+  box-shadow: var(--back-to-top-shadow);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 10px) scale(0.98);
+  transition: opacity .2s ease, transform .2s ease, visibility .2s ease, background .2s ease, color .2s ease;
+  z-index: 13001; /* above header (12000) */
+  pointer-events: auto;
+  will-change: opacity, transform;
+}
+
+/* Visible state */
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0) scale(1);
+}
+
+
+/* Icon */
+.back-to-top svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+  color: var(--back-to-top-color) !important;
+}
+
+/* Text icon styling (preferred) */
+.back-to-top .back-to-top-icon {
+  font-size: 22px;
+  line-height: 1;
+  display: inline-block;
+  color: var(--back-to-top-color);
+  font-weight: 900;
+  text-shadow: 0 2px 6px rgba(245, 158, 11, 0.45);
+}
+
+/* Hide SVG fallback by default to avoid double icon */
+.back-to-top .back-to-top-svg-fallback { display: none; }
+
+/* Hover/active */
+.back-to-top:hover {
+  background: rgba(31, 41, 55, 0.8);
+}
+.back-to-top:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Focus ring */
+.back-to-top:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35), var(--back-to-top-shadow);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top {
+    transition: none;
+  }
+}
+
+/* Light/Dark scheme awareness via Material attribute */
+html[data-md-color-scheme="default"] .back-to-top {
+  background: var(--back-to-top-bg-light);
+  color: var(--back-to-top-color);
+  border-color: rgba(17, 24, 39, 0.08);
+}
+
+html[data-md-color-scheme="slate"] .back-to-top {
+  background: var(--back-to-top-bg);
+  color: var(--back-to-top-color);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Ensure inner shapes also use currentColor in both themes */
+.back-to-top svg path,
+.back-to-top svg line,
+.back-to-top svg polyline,
+.back-to-top svg rect {
+  stroke: currentColor;
+  stroke-width: 2.25;
+}
+
+/* Filled caret uses theme accent via currentColor */
+.back-to-top svg .filled {
+  fill: currentColor !important;
+  stroke: none !important;
+}

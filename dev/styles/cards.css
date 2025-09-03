@@ -1,0 +1,512 @@
+/* Card Component Styles - FIXED VERSION
+   Path: docs/styles/cards.css
+   Always show 2 cards minimum, hover highlighting for workflow
+   ======================================================= */
+
+/* =====================================================
+   BASE CARD STYLES
+   ===================================================== */
+
+.card,
+.md-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fdfdf9;
+  border-radius: 12px;
+  box-shadow: 
+    4px 4px 10px rgba(26, 35, 50, 0.06),
+    -4px -4px 10px rgba(255, 255, 255, 0.8),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-md-color-scheme="slate"] .card,
+[data-md-color-scheme="slate"] .md-card {
+  background: #263244;
+  box-shadow: 
+    4px 4px 10px rgba(0, 0, 0, 0.3),
+    -4px -4px 10px rgba(255, 255, 255, 0.02),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.03);
+}
+
+.card:hover,
+.md-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    6px 6px 20px rgba(245, 158, 11, 0.1),
+    -6px -6px 20px rgba(255, 255, 255, 0.9);
+}
+
+/* =====================================================
+   CORE FEATURES GRID - ALWAYS 2 COLUMNS MINIMUM
+   ===================================================== */
+
+.core-features,
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Always 2 columns minimum */
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* 3 columns on larger screens */
+@media screen and (min-width: 1024px) {
+  .core-features.three-col,
+  .features-grid.three-col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 4 columns on very large screens */
+@media screen and (min-width: 1400px) {
+  .core-features.four-col,
+  .features-grid.four-col {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Force 2 columns on tablets */
+@media screen and (min-width: 640px) and (max-width: 1023px) {
+  .core-features,
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Single column only on mobile */
+@media screen and (max-width: 639px) {
+  .core-features,
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* =====================================================
+   FEATURE CARDS - Compressed Style
+   ===================================================== */
+
+.feature-card {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
+  border: 1px solid rgba(245, 158, 11, 0.08);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-md-color-scheme="slate"] .feature-card {
+  background: linear-gradient(135deg, #263244 0%, #1a2332 100%);
+  border-color: rgba(251, 191, 36, 0.08);
+}
+
+/* Ornamental corner */
+.feature-card::after {
+  content: '◆';
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  color: rgba(245, 158, 11, 0.2);
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover::after {
+  transform: rotate(45deg);
+  color: rgba(245, 158, 11, 0.4);
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(245, 158, 11, 0.2);
+  box-shadow: 
+    0 12px 32px rgba(245, 158, 11, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.feature-card-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, 
+    rgba(245, 158, 11, 0.1) 0%, 
+    rgba(251, 191, 36, 0.05) 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feature-card-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: #f59e0b;
+}
+
+.feature-card-title,
+.feature-card h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+[data-md-color-scheme="slate"] .feature-card-title,
+[data-md-color-scheme="slate"] .feature-card h3 {
+  color: #fbbf24;
+}
+
+.feature-card-description,
+.feature-card p {
+  font-size: 0.85rem;
+  color: #6b5d4f;
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+[data-md-color-scheme="slate"] .feature-card-description,
+[data-md-color-scheme="slate"] .feature-card p {
+  color: #d4ccb8;
+}
+
+/* =====================================================
+   HOW IT WORKS CARDS - Interactive Hover States
+   ===================================================== */
+
+/* Feature lists inside large cards */
+.feature-card-large .feature-list {
+  margin: 0.5rem 0 0 0; /* keep tight to the title/description */
+  padding: 0; /* align exactly with the title's left edge */
+  list-style-type: disc; /* ensure default bullets appear */
+  list-style-position: inside; /* bullets + text flush with title */
+  text-align: left; /* explicit left align in case of inherited center */
+}
+.feature-card-large .feature-list li {
+  margin: 0.25rem 0; /* reduce vertical spacing */
+  padding: 0; /* remove inner padding that can center content */
+}
+.feature-card-large .feature-list li strong { white-space: nowrap; }
+
+.workflow-steps,
+.how-it-works-cards {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+}
+
+.workflow-card,
+.how-it-works-card {
+  flex: 1;
+  min-width: 200px;
+  max-width: 250px;
+  padding: 1.5rem 1rem;
+  background: #fdfdf9;
+  border-radius: 12px;
+  box-shadow: 
+    3px 3px 10px rgba(26, 35, 50, 0.05),
+    -3px -3px 10px rgba(255, 255, 255, 0.7);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+  filter: grayscale(0.3);
+  position: relative;
+}
+
+[data-md-color-scheme="slate"] .workflow-card,
+[data-md-color-scheme="slate"] .how-it-works-card {
+  background: #263244;
+  box-shadow: 
+    3px 3px 10px rgba(0, 0, 0, 0.2),
+    -3px -3px 10px rgba(255, 255, 255, 0.02);
+}
+
+/* Default darker state */
+.workflow-card::before,
+.how-it-works-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 35, 50, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+[data-md-color-scheme="slate"] .workflow-card::before,
+[data-md-color-scheme="slate"] .how-it-works-card::before {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Hover and active states - highlighted */
+.workflow-card:hover,
+.workflow-card.active,
+.workflow-card.highlighted,
+.how-it-works-card:hover,
+.how-it-works-card.active,
+.how-it-works-card.highlighted {
+  transform: translateY(-8px) scale(1.05);
+  opacity: 1;
+  filter: grayscale(0);
+  background: linear-gradient(135deg, #fdfdf9 0%, #fbbf24 10%);
+  box-shadow: 
+    0 10px 30px rgba(245, 158, 11, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+[data-md-color-scheme="slate"] .workflow-card:hover,
+[data-md-color-scheme="slate"] .workflow-card.active,
+[data-md-color-scheme="slate"] .how-it-works-card:hover,
+[data-md-color-scheme="slate"] .how-it-works-card.active {
+  background: linear-gradient(135deg, #263244 0%, #364152 100%);
+}
+
+/* Remove overlay on hover */
+.workflow-card:hover::before,
+.workflow-card.active::before,
+.how-it-works-card:hover::before,
+.how-it-works-card.active::before {
+  opacity: 0;
+}
+
+/* Step number */
+.step-number,
+.workflow-number {
+  width: 40px;
+  height: 40px;
+  background: #f7f5f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #f59e0b;
+  box-shadow: 
+    2px 2px 6px rgba(26, 35, 50, 0.1),
+    -2px -2px 6px rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+.workflow-card:hover .step-number,
+.workflow-card.active .step-number,
+.how-it-works-card:hover .workflow-number,
+.how-it-works-card.active .workflow-number {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.workflow-card h4,
+.how-it-works-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: #1a2332;
+  transition: all 0.3s ease;
+}
+
+[data-md-color-scheme="slate"] .workflow-card h4,
+[data-md-color-scheme="slate"] .how-it-works-card h4 {
+  color: #d4ccb8;
+}
+
+.workflow-card:hover h4,
+.workflow-card.active h4,
+.how-it-works-card:hover h4,
+.how-it-works-card.active h4 {
+  color: #f59e0b;
+}
+
+[data-md-color-scheme="slate"] .workflow-card:hover h4,
+[data-md-color-scheme="slate"] .workflow-card.active h4,
+[data-md-color-scheme="slate"] .how-it-works-card:hover h4,
+[data-md-color-scheme="slate"] .how-it-works-card.active h4 {
+  color: #fbbf24;
+}
+
+.workflow-card p,
+.how-it-works-card p {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #6b5d4f;
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+[data-md-color-scheme="slate"] .workflow-card p,
+[data-md-color-scheme="slate"] .how-it-works-card p {
+  color: #d4ccb8;
+}
+
+.workflow-card:hover p,
+.workflow-card.active p,
+.how-it-works-card:hover p,
+.how-it-works-card.active p {
+  color: #3e342a;
+}
+
+[data-md-color-scheme="slate"] .workflow-card:hover p,
+[data-md-color-scheme="slate"] .workflow-card.active p,
+[data-md-color-scheme="slate"] .how-it-works-card:hover p,
+[data-md-color-scheme="slate"] .how-it-works-card.active p {
+  color: #fdfdf9;
+}
+
+/* Click to highlight behavior */
+.workflow-card.clicked,
+.how-it-works-card.clicked {
+  animation: cardPulse 0.5s ease;
+}
+
+@keyframes cardPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* =====================================================
+   STAT CARDS - Compressed Layout
+   ===================================================== */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns minimum */
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+@media screen and (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  padding: 1.25rem;
+  background: #fdfdf9;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.1);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+[data-md-color-scheme="slate"] .stat-card {
+  background: #263244;
+  border-color: rgba(251, 191, 36, 0.1);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    #f59e0b 0%,
+    #fbbf24 50%,
+    #f59e0b 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f59e0b;
+  line-height: 1;
+  margin: 0;
+}
+
+.stat-label {
+  font-size: 0.8125rem;
+  color: #6b5d4f;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.5rem;
+}
+
+[data-md-color-scheme="slate"] .stat-label {
+  color: #d4ccb8;
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+   ===================================================== */
+
+@media screen and (max-width: 768px) {
+  .feature-card {
+    padding: 1.25rem;
+    min-height: 180px;
+  }
+  
+  .feature-card-title,
+  .feature-card h3 {
+    font-size: 1rem;
+  }
+  
+  .feature-card-description,
+  .feature-card p {
+    font-size: 0.8125rem;
+  }
+  
+  .workflow-steps,
+  .how-it-works-cards {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .workflow-card,
+  .how-it-works-card {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .core-features,
+  .features-grid {
+    padding: 0 0.5rem;
+  }
+  
+  .feature-card {
+    padding: 1rem;
+    min-height: 160px;
+  }
+  
+  .feature-card-icon {
+    width: 32px;
+    height: 32px;
+  }
+}

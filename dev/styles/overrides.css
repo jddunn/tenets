@@ -1,0 +1,384 @@
+/* Strong override to color search icons using the site accent (amber)
+   Covers header button, drawer button, and input-leading icon across theme versions. */
+
+/* Header/drawer search button (label toggles search dialog) */
+label.md-header__button.md-icon[for="__search"],
+label.md-header__button[for="__search"].md-icon,
+label.md-header__button[for="__search"] .md-icon {
+  color: var(--md-accent-fg-color) !important;
+  /* center the icon within its square button to avoid appearing too high */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 13010; /* above neighboring elements */
+}
+
+/* Ensure the header search toggle itself has a solid hit area */
+label.md-header__button[for="__search"] {
+  width: 34px;
+  height: 34px;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+/* Make the inline icon inside the search form clickable and above input */
+.md-search .md-search__icon[for="__search"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 2;
+}
+
+/* Input-leading icon inside the search form */
+.md-search .md-search__icon,
+.md-search .md-search__icon.md-icon,
+.md-search .md-search__icon .md-icon {
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Force inline SVGs to adopt the accent and be visible */
+label.md-header__button[for="__search"] svg,
+label.md-header__button[for="__search"] .md-icon svg,
+.md-search__icon svg,
+.md-search .md-search__icon svg {
+  fill: var(--md-accent-fg-color) !important;
+  stroke: none !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure search icon paths are visible */
+label.md-header__button[for="__search"] svg path,
+.md-search__icon svg path {
+  fill: var(--md-accent-fg-color) !important;
+  d: path("M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z") !important;
+}
+
+/* When theme uses currentColor in icons, ensure it flows */
+.md-search .md-search__icon .md-icon,
+label.md-header__button[for="__search"] .md-icon {
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Pseudo-element fallback (older/newer variants using mask images) */
+.md-search .md-search__icon::before,
+label.md-header__button[for="__search"] .md-icon::before,
+label.md-header__button[for="__search"]::before {
+  background-color: var(--md-accent-fg-color) !important;
+}
+
+/* Toast notifications for copy actions */
+#tenets-toast-container{
+  position: fixed;
+  left: 50%;
+  bottom: calc(76px + env(safe-area-inset-bottom)); /* above footer/back-to-top */
+  transform: translateX(-50%);
+  z-index: 13005; /* above back-to-top */
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Ensure search modal always appears above header/content */
+.md-search__overlay {
+  /* Above header and any page overlays */
+  z-index: 26050 !important;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4) !important; /* lighter overlay */
+  backdrop-filter: blur(3px);
+  pointer-events: auto !important;
+}
+.md-search__inner[role="dialog"],
+.md-search[aria-expanded="true"] .md-search__inner,
+.md-search[data-md-state="active"] .md-search__inner {
+  z-index: 26060 !important;
+  position: fixed !important;
+  top: 10vh !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  max-width: min(90vw, 768px) !important;
+  width: 100% !important;
+  background: var(--md-default-bg-color) !important;
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.35), 0 8px 20px rgba(0,0,0,.25);
+  padding: 1rem !important;
+}
+
+/* On very small screens, allow full width */
+@media (max-width: 600px) {
+  .md-search__inner[role="dialog"],
+  .md-search[aria-expanded="true"] .md-search__inner,
+  .md-search[data-md-state="active"] .md-search__inner {
+    max-width: 100vw;
+    margin: 10vh auto 0;
+  }
+  
+  .md-search__scrollwrap {
+    max-height: 60vh !important;
+  }
+  
+  .md-search__output {
+    max-height: 50vh !important;
+  }
+}
+
+[data-md-color-scheme="slate"] .md-search__overlay {
+  background: rgba(0, 0, 0, 0.5) !important; /* lighter for dark mode too */
+  backdrop-filter: blur(3px);
+}
+
+/* Elevate active search container in stacking context without changing layout */
+.md-search[aria-expanded="true"],
+.md-search[data-md-state="active"] {
+  z-index: 26060 !important;
+}
+
+/* Ensure full-width form and input inside the modal dialog */
+.md-search[data-md-state="active"] .md-search__form,
+.md-search__inner .md-search__form { 
+  width: 100% !important; 
+  height: auto !important;
+  background: var(--md-default-bg-color) !important;
+  padding: 0.5rem !important;
+  border-bottom: 2px solid var(--md-accent-fg-color) !important;
+}
+
+/* When search is active, show the input properly */
+.md-search[data-md-state="active"] .md-search__input,
+.md-search__inner .md-search__input { 
+  width: 100% !important;
+  padding: 0.5rem 1rem !important;
+  color: var(--md-default-fg-color) !important;
+  background: var(--md-default-bg-color) !important;
+  font-size: 1rem !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* Fix light theme input text visibility in modal */
+[data-md-color-scheme="default"] .md-search[data-md-state="active"] .md-search__input,
+[data-md-color-scheme="default"] .md-search__inner .md-search__input {
+  color: #1a2332 !important;
+  caret-color: #1a2332 !important;
+  background: #ffffff !important;
+}
+
+/* Fix dark theme input text visibility in modal */
+[data-md-color-scheme="slate"] .md-search[data-md-state="active"] .md-search__input,
+[data-md-color-scheme="slate"] .md-search__inner .md-search__input {
+  color: #ffffff !important;
+  caret-color: #fbbf24 !important;
+  background: #1a2332 !important;
+}
+
+/* Ensure placeholder is visible */
+.md-search[data-md-state="active"] .md-search__input::placeholder,
+.md-search__inner .md-search__input::placeholder {
+  color: var(--md-default-fg-color--light) !important;
+  opacity: 0.7 !important;
+}
+
+.md-search__inner .md-search__output {
+  width: 100% !important;
+  margin-left: 0;
+  margin-right: 0;
+  background: var(--md-default-bg-color) !important; /* solid results panel */
+  box-shadow: none;
+  max-height: 65vh !important;
+  min-height: 350px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative;
+}
+
+/* Ensure search scrollwrap is scrollable */
+.md-search__scrollwrap {
+  max-height: 70vh !important;
+  min-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative;
+  pointer-events: auto !important;
+}
+
+/* Make search results fully interactive */
+.md-search-result,
+.md-search-result__list,
+.md-search-result__item,
+.md-search-result__link {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.md-search-result__link {
+  display: block !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure proper hover states */
+.md-search-result__link:hover,
+.md-search-result__item:hover .md-search-result__link {
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
+/* Search container - keep visible but compact */
+.md-search,
+.md-header .md-search,
+.md-header__inner .md-search {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 1000 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  clip-path: none !important;
+}
+
+/* Compact search form when not active */
+.md-search:not([data-md-state="active"]) .md-search__form,
+.md-header .md-search:not([data-md-state="active"]) .md-search__form {
+  width: 2.2rem !important;
+  height: 2.2rem !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Hide input when not active - but don't interfere with active state */
+.md-header .md-search:not([data-md-state="active"]) .md-search__input {
+  width: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+}
+
+/* Show only icon when not active */
+.md-search:not([data-md-state="active"]) .md-search__icon {
+  display: flex !important;
+  cursor: pointer !important;
+}
+
+/* Always show the search button in the header - highest priority */
+label.md-header__button[for="__search"],
+.md-header__button.md-icon[for="__search"],
+.md-header .md-header__button[for="__search"],
+.md-header label[for="__search"] { 
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 1001 !important;
+  width: 2.2rem !important;
+  height: 2.2rem !important;
+  padding: 0 !important;
+  margin: 0 0.2rem !important;
+  overflow: visible !important;
+  clip: auto !important;
+  clip-path: none !important;
+  border: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Ensure the search form itself is visible when appropriate */
+@media screen and (min-width: 60em) {
+  .md-search__form {
+    display: inline-flex !important;
+  }
+}
+
+/* On smaller screens, show the search button icon */
+@media screen and (max-width: 59.9375em) {
+  label.md-header__button[for="__search"] {
+    display: inline-flex !important;
+  }
+}
+
+/* Hide Material's default clipboard toast to avoid duplicates */
+.md-clipboard__message {
+  display: none !important;
+}
+
+.tenets-toast{
+  min-width: 180px;
+  max-width: 360px;
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: center;
+  color: #ffffff !important;
+  background: rgba(26, 35, 50, 0.95) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(245, 158, 11, 0.1);
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+}
+
+[data-md-color-scheme="slate"] .tenets-toast{
+  color: #ffffff !important;
+  background: rgba(38, 50, 68, 0.95) !important;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.tenets-toast.visible{
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.tenets-toast.tenets-toast--error{
+  background: rgba(239, 68, 68, 0.95) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+/* Drawer visibility safety: when the drawer toggle is checked, force primary nav visible */
+@media screen and (max-width: 1099px){
+  .md-toggle--drawer:checked ~ .md-container .md-sidebar--primary,
+  #__drawer:checked ~ .md-container .md-sidebar--primary{
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* ----------------------------------------------------
+   Core Features cards: force bullets fully flush-left
+   ---------------------------------------------------- */
+/* Target UL within the large feature cards on the home page */
+.md-typeset .features-grid .feature-card-large ul.feature-list,
+.features-grid .feature-card-large ul.feature-list,
+.feature-card-large ul.feature-list {
+  /* kill any theme/UA indentation */
+  margin: 0 !important;
+  margin-left: 0 !important;
+  padding: 0 !important;
+  padding-left: 0 !important;
+  padding-inline-start: 0 !important;
+  /* ensure we actually show bullets */
+  list-style-type: disc !important;
+  list-style-position: inside !important; /* bullet + text align with title edge */
+  text-align: left !important;
+}
+
+.md-typeset .features-grid .feature-card-large ul.feature-list > li,
+.features-grid .feature-card-large ul.feature-list > li,
+.feature-card-large ul.feature-list > li {
+  margin: 0 !important;
+  padding: 0 !important; /* no extra left pad on li items */
+  text-align: left !important;
+}

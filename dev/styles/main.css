@@ -1,0 +1,806 @@
+/* MkDocs Material Theme Customization - Enhanced Version
+   Path: docs/styles/main.css
+   Based on Material for MkDocs v9.5+ documentation
+   ============================================ */
+
+/* Import optimized fonts with display swap for performance */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* =====================================================
+   ROOT VARIABLES - Material Design 3 Color System
+   ===================================================== */
+
+:root {
+  /* Brand Colors */
+  --tenets-navy-900: #1a2332;
+  --tenets-navy-800: #263244;
+  --tenets-navy-700: #364152;
+  --tenets-amber-500: #f59e0b;
+  --tenets-amber-400: #fbbf24;
+  --tenets-amber-300: #fcd34d;
+
+  /* Spacing Scale */
+  --md-spacing-unit: 0.25rem;
+  --md-spacing-xs: calc(var(--md-spacing-unit) * 2);
+  --md-spacing-sm: calc(var(--md-spacing-unit) * 3);
+  --md-spacing-md: calc(var(--md-spacing-unit) * 4);
+  --md-spacing-lg: calc(var(--md-spacing-unit) * 6);
+  --md-spacing-xl: calc(var(--md-spacing-unit) * 8);
+
+  /* Transitions */
+  --md-transition-fast: 0.15s ease-in-out;
+  --md-transition-default: 0.25s ease-in-out;
+  --md-transition-slow: 0.4s ease-in-out;
+}
+
+/* =====================================================
+   LIGHT MODE - Material Theme Override
+   ===================================================== */
+
+[data-md-color-scheme="default"] {
+  /* Primary Colors */
+  --md-primary-fg-color: #1a2332;
+  --md-primary-fg-color--light: #263244;
+  --md-primary-fg-color--dark: #0f1721;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #ffffff;
+
+  /* Accent Colors */
+  --md-accent-fg-color: #f59e0b;
+  --md-accent-fg-color--transparent: rgba(245, 158, 11, 0.1);
+  --md-accent-bg-color: #f59e0b;
+  --md-accent-bg-color--light: #fbbf24;
+
+  /* Text Colors */
+  --md-default-fg-color: rgba(0, 0, 0, 0.87);
+  --md-default-fg-color--light: rgba(0, 0, 0, 0.54);
+  --md-default-fg-color--lighter: rgba(0, 0, 0, 0.32);
+  --md-default-fg-color--lightest: rgba(0, 0, 0, 0.07);
+
+  /* Background Colors */
+  --md-default-bg-color: #ffffff;
+  --md-default-bg-color--light: #f5f5f5;
+  --md-default-bg-color--lighter: #eeeeee;
+  --md-default-bg-color--lightest: #e0e0e0;
+
+  /* Code Colors */
+  --md-code-fg-color: #1a2332;
+  --md-code-bg-color: #f5f5f5;
+  --md-code-hl-color: rgba(255, 235, 59, 0.5);
+  --md-code-hl-number-color: #d52a2a;
+  --md-code-hl-special-color: #db1457;
+  --md-code-hl-function-color: #6f42c1;
+  --md-code-hl-constant-color: #1976d2;
+  --md-code-hl-keyword-color: #7c4dff;
+  --md-code-hl-string-color: #388e3c;
+  --md-code-hl-name-color: var(--md-default-fg-color);
+  --md-code-hl-operator-color: var(--md-default-fg-color--light);
+  --md-code-hl-punctuation-color: var(--md-default-fg-color--light);
+  --md-code-hl-comment-color: var(--md-default-fg-color--lighter);
+  --md-code-hl-generic-color: var(--md-default-fg-color--lighter);
+  --md-code-hl-variable-color: var(--md-default-fg-color);
+
+  /* Footer */
+  --md-footer-fg-color: #ffffff;
+  --md-footer-fg-color--light: rgba(255, 255, 255, 0.7);
+  --md-footer-fg-color--lighter: rgba(255, 255, 255, 0.45);
+  --md-footer-bg-color: #1a2332;
+  --md-footer-bg-color--dark: #0f1721;
+
+  /* Shadows */
+  --md-shadow-z1: 0 2px 4px rgba(0,0,0,0.1);
+  --md-shadow-z2: 0 4px 8px rgba(0,0,0,0.12);
+  --md-shadow-z3: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+/* =====================================================
+   DARK MODE - Slate Theme Override
+   ===================================================== */
+
+[data-md-color-scheme="slate"] {
+  /* Primary Colors */
+  --md-primary-fg-color: #1a2332;
+  --md-primary-fg-color--light: #263244;
+  --md-primary-fg-color--dark: #0f1721;
+  --md-primary-bg-color: #1a2332;
+  --md-primary-bg-color--light: #263244;
+
+  /* Accent Colors */
+  --md-accent-fg-color: #fbbf24;
+  --md-accent-fg-color--transparent: rgba(251, 191, 36, 0.1);
+  --md-accent-bg-color: #fbbf24;
+  --md-accent-bg-color--light: #fcd34d;
+
+  /* Text Colors - Enhanced for better readability */
+  --md-default-fg-color: rgba(255, 255, 255, 0.95);
+  --md-default-fg-color--light: rgba(255, 255, 255, 0.70);
+  --md-default-fg-color--lighter: rgba(255, 255, 255, 0.45);
+  --md-default-fg-color--lightest: rgba(255, 255, 255, 0.12);
+
+  /* Background Colors - Proper dark theme hierarchy */
+  --md-default-bg-color: #1a2332;
+  --md-default-bg-color--light: #263244;
+  --md-default-bg-color--lighter: #364152;
+  --md-default-bg-color--lightest: #475569;
+
+  /* Code Colors - Optimized for dark mode */
+  --md-code-fg-color: #fbbf24;
+  --md-code-bg-color: #263244;
+  --md-code-hl-color: rgba(251, 191, 36, 0.15);
+  --md-code-hl-number-color: #ff9575;
+  --md-code-hl-special-color: #f48fb1;
+  --md-code-hl-function-color: #bb86fc;
+  --md-code-hl-constant-color: #82b1ff;
+  --md-code-hl-keyword-color: #c792ea;
+  --md-code-hl-string-color: #c3e88d;
+  --md-code-hl-name-color: var(--md-default-fg-color);
+  --md-code-hl-operator-color: #89ddff;
+  --md-code-hl-punctuation-color: var(--md-default-fg-color--light);
+  --md-code-hl-comment-color: #546e7a;
+  --md-code-hl-generic-color: var(--md-default-fg-color--lighter);
+  --md-code-hl-variable-color: #eeffff;
+
+  /* Footer */
+  --md-footer-fg-color: #ffffff;
+  --md-footer-fg-color--light: rgba(255, 255, 255, 0.7);
+  --md-footer-fg-color--lighter: rgba(255, 255, 255, 0.45);
+  --md-footer-bg-color: #0f1721;
+  --md-footer-bg-color--dark: #000000;
+
+  /* Shadows - Stronger for dark mode */
+  --md-shadow-z1: 0 2px 4px rgba(0,0,0,0.2);
+  --md-shadow-z2: 0 4px 8px rgba(0,0,0,0.3);
+  --md-shadow-z3: 0 8px 16px rgba(0,0,0,0.4);
+}
+
+/* =====================================================
+   TYPOGRAPHY - Material Design Type System
+   ===================================================== */
+
+.md-typeset {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--md-default-fg-color);
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings - Material Design hierarchy */
+.md-typeset h1 {
+  font-size: 2.125rem;
+  font-weight: 400;
+  line-height: 1.235;
+  letter-spacing: 0;
+  margin: 2.5rem 0 1.25rem;
+}
+
+.md-typeset h2 {
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.334;
+  letter-spacing: 0;
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset h3 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.0075em;
+  margin: 1.75rem 0 0.75rem;
+}
+
+.md-typeset h4 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.0075em;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.md-typeset h5,
+.md-typeset h6 {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.0125em;
+  margin: 1.25rem 0 0.5rem;
+}
+
+/* Paragraphs and lists */
+.md-typeset p,
+.md-typeset ul,
+.md-typeset ol,
+.md-typeset blockquote {
+  margin-bottom: 1rem;
+}
+
+.md-typeset ul,
+.md-typeset ol {
+  padding-left: 1.5rem;
+}
+
+.md-typeset li {
+  margin-bottom: 0.25rem;
+}
+
+/* Links - Material Design states */
+.md-typeset a {
+  color: var(--md-accent-fg-color);
+  text-decoration: none;
+  transition: color var(--md-transition-fast);
+}
+
+.md-typeset a:hover {
+  text-decoration: underline;
+}
+
+.md-typeset a:focus {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+}
+
+/* Code - Monospace styling */
+.md-typeset code,
+.md-typeset kbd,
+.md-typeset pre {
+  font-family: 'JetBrains Mono', 'Roboto Mono', 'Source Code Pro', Consolas, Monaco, monospace;
+  font-feature-settings: "kern" 0;
+}
+
+.md-typeset code {
+  font-size: 0.85em;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  background-color: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  word-break: break-word;
+}
+
+.md-typeset pre {
+  overflow: auto;
+  margin: 1rem 0;
+}
+
+.md-typeset pre > code {
+  display: block;
+  padding: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background-color: var(--md-code-bg-color);
+  border-radius: 0.25rem;
+  box-shadow: var(--md-shadow-z1);
+}
+
+/* =====================================================
+   HEADER - Fixed positioning and styling
+   ===================================================== */
+
+.md-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 4;
+  background-color: var(--md-primary-bg-color);
+  box-shadow: var(--md-shadow-z2);
+  transition: transform var(--md-transition-default),
+              box-shadow var(--md-transition-default);
+}
+
+.md-header--shadow {
+  box-shadow: var(--md-shadow-z3);
+}
+
+.md-header[data-md-state="hidden"] {
+  transform: translateY(-100%);
+}
+
+/* Header inner container */
+.md-header__inner {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  height: 3.5rem;
+}
+
+/* Logo styling */
+.md-header__button.md-logo {
+  margin-right: 0.5rem;
+}
+
+.md-header__button.md-logo img,
+.md-logo img {
+  height: 2rem;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* Site title */
+.md-header__title {
+  flex-grow: 1;
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 3rem;
+}
+
+.md-header__title--active .md-header__topic {
+  font-weight: 700;
+}
+
+/* Repository info - show icon only */
+.md-header__source {
+  margin-left: auto;
+}
+
+.md-source__repository {
+  display: none;
+}
+
+.md-source__icon {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.md-source__icon svg {
+  fill: var(--md-default-fg-color);
+  transition: fill var(--md-transition-fast);
+}
+
+.md-source:hover .md-source__icon svg {
+  fill: var(--md-accent-fg-color);
+}
+
+/* =====================================================
+   NAVIGATION - Tabs and sidebar
+   ===================================================== */
+
+/* Navigation tabs */
+.md-tabs {
+  /* Let header.css handle the positioning */
+  position: relative;
+  z-index: 3;
+  background-color: var(--md-primary-fg-color);
+  box-shadow: var(--md-shadow-z1);
+}
+
+.md-tabs__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.md-tabs__item {
+  display: inline-block;
+  height: 3rem;
+  padding: 0 0.75rem;
+}
+
+.md-tabs__link {
+  display: block;
+  padding: 0.75rem 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  transition: color var(--md-transition-fast),
+              border-color var(--md-transition-fast);
+  border-bottom: 2px solid transparent;
+}
+
+.md-tabs__link:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Tabs: keep background transparent; highlight via underline/glow only */
+.md-tabs__link--active {
+  color: var(--md-default-fg-color) !important;
+  background: transparent !important;
+  border-bottom: 2px solid var(--md-accent-fg-color) !important;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--md-accent-fg-color) 35%, transparent);
+}
+
+/* Sidebar navigation */
+.md-sidebar {
+  position: fixed;
+  top: 6.5rem;
+  width: 15.5rem;
+  height: calc(100% - 6.5rem);
+  overflow-y: auto;
+  background-color: var(--md-default-bg-color);
+  transition: transform var(--md-transition-default);
+}
+
+.md-sidebar--primary {
+  left: 0;
+}
+
+.md-sidebar--secondary {
+  right: 0;
+}
+
+@media screen and (max-width: 68.6875em) { /* <= 1099px */
+  .md-sidebar--primary {
+  transform: translateX(-100%);
+  /* prevent invisible off-canvas sidebar from blocking content */
+  pointer-events: none;
+  }
+
+  .md-sidebar--primary[data-md-state="open"] {
+    transform: translateX(0);
+    box-shadow: var(--md-shadow-z3);
+  pointer-events: auto;
+  }
+}
+
+/* Show TOC (secondary sidebar) on tablet/desktop; hide only on narrow phones */
+@media screen and (max-width: 44.9375em) { /* ~719px */
+  .md-sidebar--secondary {
+    display: none;
+  }
+}
+
+/* Navigation items */
+.md-nav__title {
+  padding: 1rem;
+  font-weight: 700;
+  background-color: var(--md-default-bg-color--light);
+}
+
+.md-nav__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.md-nav__item {
+  padding: 0;
+}
+
+.md-nav__link {
+  display: block;
+  padding: 0.625rem 1rem;
+  color: var(--md-default-fg-color);
+  font-size: 0.875rem;
+  transition: color var(--md-transition-fast),
+              background-color var(--md-transition-fast);
+}
+
+.md-nav__link:hover {
+  color: var(--md-accent-fg-color);
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+.md-nav__link--active {
+  color: var(--md-accent-fg-color);
+  font-weight: 700;
+}
+
+.md-nav__link[data-md-state="blur"] {
+  color: var(--md-default-fg-color--lighter);
+}
+
+/* =====================================================
+   SEARCH - Input and results
+   ===================================================== */
+
+.md-search {
+  position: relative;
+}
+
+.md-search__form {
+  position: relative;
+  border-radius: 0.25rem;
+  background-color: var(--md-default-bg-color--light);
+  transition: background-color var(--md-transition-fast);
+}
+
+.md-search__form:hover {
+  background-color: var(--md-default-bg-color--lighter);
+}
+
+.md-search__input {
+  width: 100%;
+  padding: 0.5rem 2.5rem 0.5rem 3rem;
+  font-size: 0.875rem;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.md-search__input::placeholder {
+  color: var(--md-default-fg-color--light);
+}
+
+.md-search__icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--md-default-fg-color--light);
+}
+
+.md-search__output {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: var(--md-default-bg-color);
+  border-radius: 0.25rem;
+  box-shadow: var(--md-shadow-z3);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* =====================================================
+   CONTENT - Main content area
+   ===================================================== */
+
+.md-container {
+  padding-top: 6.5rem;
+}
+
+.md-content {
+  max-width: 61rem;
+  margin: 0 auto;
+  /* slightly more breathing room for non-home pages */
+  padding: 2rem 2rem;
+}
+
+.md-content__inner {
+  margin: 0 2rem;
+  padding-bottom: 3rem;
+}
+
+/* On wider screens, increase the content max-width to reserve space for the right TOC
+   while keeping the page visually centered (avoid pushing content to the left) */
+@media screen and (min-width: 75em) { /* ~1200px */
+  .is-api .md-content {
+    max-width: calc(61rem + 16rem); /* content width + ~TOC width */
+    /* keep regular symmetric padding; no extra right padding that shifts center */
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+}
+
+/* Ensure homepage remains full-bleed and centered; override any wide layout constraints */
+@media screen and (min-width: 75em) {
+  .md-container:has(.victorian-hero) .md-content {
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+/* Desktop: hide the left sidebar entirely to avoid double sidebars */
+@media screen and (min-width: 1100px) {
+  .md-sidebar--primary { display: none !important; }
+  /* Ensure content is not offset when sidebar is hidden */
+  .md-container .md-content { margin-left: 0 !important; }
+}
+
+/* Right TOC visibility: hide by default, show only on API pages; still hide on phones */
+.md-sidebar--secondary { display: none; }
+.is-api .md-sidebar--secondary { display: block; }
+@media screen and (max-width: 44.9375em) { /* ~719px */
+  .md-sidebar--secondary { display: none !important; }
+}
+
+/* =====================================================
+   TABLES - Material Design data tables
+   ===================================================== */
+
+.md-typeset table:not([class]) {
+  font-size: 0.875rem;
+  background-color: var(--md-default-bg-color);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  box-shadow: var(--md-shadow-z1);
+}
+
+.md-typeset table:not([class]) th {
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  text-align: left;
+  background-color: var(--md-default-bg-color--light);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset table:not([class]) td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset table:not([class]) tr:last-child td {
+  border-bottom: none;
+}
+
+.md-typeset table:not([class]) tr:hover {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+/* =====================================================
+   ADMONITIONS - Material Design cards
+   ===================================================== */
+
+.md-typeset .admonition,
+.md-typeset details {
+  margin: 1.5rem 0;
+  padding: 0;
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  box-shadow: var(--md-shadow-z1);
+  overflow: hidden;
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  background-color: var(--md-default-bg-color--light);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset .admonition-title::before,
+.md-typeset summary::before {
+  margin-right: 0.5rem;
+}
+
+.md-typeset .admonition > :last-child,
+.md-typeset details > :last-child {
+  margin-bottom: 0.75rem;
+}
+
+/* =====================================================
+   FOOTER - Site footer
+   ===================================================== */
+
+.md-footer {
+  background-color: var(--md-footer-bg-color);
+  color: var(--md-footer-fg-color);
+}
+
+.md-footer-nav {
+  background-color: var(--md-footer-bg-color);
+  padding: 2rem 0;
+}
+
+.md-footer-nav__inner {
+  padding: 0 1rem;
+}
+
+.md-footer-nav__link {
+  padding: 0.5rem 0;
+  color: var(--md-footer-fg-color--light);
+  transition: color var(--md-transition-fast);
+}
+
+.md-footer-nav__link:hover {
+  color: var(--md-footer-fg-color);
+}
+
+.md-footer-meta {
+  background-color: var(--md-footer-bg-color--dark);
+  padding: 1rem 0;
+}
+
+.md-footer-meta__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0 1rem;
+}
+
+.md-footer-copyright {
+  color: var(--md-footer-fg-color--lighter);
+  font-size: 0.75rem;
+}
+
+.md-footer-social {
+  margin: 0 -0.25rem;
+}
+
+.md-footer-social__link {
+  display: inline-block;
+  padding: 0.25rem;
+  color: var(--md-footer-fg-color--light);
+  transition: color var(--md-transition-fast);
+}
+
+.md-footer-social__link:hover {
+  color: var(--md-footer-fg-color);
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+   ===================================================== */
+
+/* Mobile Navigation Toggle */
+@media screen and (max-width: 76.1875em) {
+  .md-nav__toggle:checked ~ .md-nav {
+    display: block;
+  }
+
+  .md-nav--primary .md-nav__title {
+    background-color: var(--md-primary-fg-color);
+    color: white;
+  }
+
+  .md-nav--primary .md-nav__title::before {
+    color: white;
+  }
+
+  .md-search__form {
+    width: 100%;
+  }
+}
+
+/* Tablet */
+@media screen and (max-width: 59.9375em) {
+  .md-content__inner {
+    margin: 0;
+  }
+}
+
+/* Mobile */
+@media screen and (max-width: 39.9375em) {
+  .md-content {
+    padding: 1rem;
+  }
+
+  .md-typeset h1 {
+    font-size: 1.75rem;
+  }
+
+  .md-typeset h2 {
+    font-size: 1.25rem;
+  }
+
+  .md-typeset h3 {
+    font-size: 1.125rem;
+  }
+}
+
+/* =====================================================
+   UTILITIES
+   ===================================================== */
+
+/* Clearfix */
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Print styles */
+@media print {
+  .md-header,
+  .md-tabs,
+  .md-sidebar,
+  .md-footer {
+    display: none;
+  }
+
+  .md-content {
+    padding: 0;
+    margin: 0;
+  }
+}

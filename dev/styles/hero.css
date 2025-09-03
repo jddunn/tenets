@@ -1,0 +1,665 @@
+/* Hero Section - COMPRESSED VERSION
+   Path: docs/styles/hero.css
+   Less padding, tighter spacing
+   ================================================== */
+
+/* =====================================================
+   HERO SECTION - Compressed spacing
+   ===================================================== */
+
+.victorian-hero,
+.hero-section {
+  position: relative;
+  min-height: calc(100vh - 10rem); /* Reduced from 100vh - 6.5rem */
+  background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
+  padding: 2rem 2rem 1.5rem; /* Much less padding */
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-top: 76px; /* Account for fixed header */
+}
+
+[data-md-color-scheme="slate"] .victorian-hero,
+[data-md-color-scheme="slate"] .hero-section {
+  background: linear-gradient(135deg, #1a2332 0%, #263244 100%);
+}
+
+/* Lantern/Logo Container - Smaller */
+.lantern-container,
+.torch-container,
+.hero-logo {
+  width: 100px; /* Reduced from 140px */
+  height: 100px;
+  margin: 0 auto 1rem; /* Less margin */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lantern-icon,
+.torch-logo-static,
+.hero-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 12px rgba(245, 158, 11, 0.3));
+}
+
+/* Glow effect - Subtler */
+.lantern-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, transparent 60%);
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* Hero Typography - Compressed */
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.5rem, 6vw, 4rem); /* Slightly smaller */
+  font-weight: 900;
+  margin: 0.5rem 0; /* Less margin */
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-transform: lowercase;
+  letter-spacing: -0.02em;
+}
+
+.hero-tagline {
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  color: #6b5d4f;
+  margin: 0.5rem 0 1rem; /* Tighter spacing */
+  font-style: italic;
+  font-weight: 300;
+}
+
+[data-md-color-scheme="slate"] .hero-tagline {
+  color: #fbbf24;
+}
+
+.hero-description {
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  line-height: 1.6;
+  color: #3e342a;
+  margin: 0 auto 1.5rem; /* Less bottom margin */
+  max-width: 700px;
+}
+
+[data-md-color-scheme="slate"] .hero-description {
+  color: #d4ccb8;
+}
+
+/* Hero Actions - Compressed */
+.hero-actions {
+  display: flex;
+  gap: 0.875rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 1.5rem 0; /* Much less margin */
+}
+
+/* Terminal Showcase - Compressed */
+.terminal-showcase {
+  margin: 2rem auto 1rem; /* Less margin */
+  max-width: 900px;
+}
+
+.terminal {
+  background: linear-gradient(135deg, #1a1d24 0%, #0f1117 100%);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.terminal-header {
+  background: linear-gradient(135deg, #2d3139 0%, #1f2229 100%);
+  padding: 0.625rem 1rem; /* Slightly less padding */
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terminal-buttons {
+  display: flex;
+  gap: 6px;
+  margin-right: 1rem;
+}
+
+.terminal-button {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.terminal-button.red { background: #ff5f57; }
+.terminal-button.yellow { background: #ffbd2e; }
+.terminal-button.green { background: #28ca42; }
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.terminal-body {
+  padding: 1.25rem; /* Less padding */
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #e8e6e3;
+  min-height: 250px; /* Shorter */
+  max-height: 400px; /* Shorter */
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.prompt {
+  color: #10b981;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.command {
+  color: #60a5fa;
+}
+
+.output {
+  color: #e8e6e3;
+  display: block;
+  margin: 0.5rem 0;
+}
+
+/* =====================================================
+   FEATURES SECTION - Compressed
+   ===================================================== */
+
+.features-section {
+  padding: 3rem 0 2rem; /* Much less padding */
+  background: var(--md-default-bg-color);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem; /* Less margin */
+}
+
+.ornament {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(245, 158, 11, 0.3) 50%, transparent 100%);
+  position: relative;
+}
+
+.ornament::after {
+  content: '◆';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #f59e0b;
+  font-size: 0.75rem;
+}
+
+.ornament.left::after { right: -8px; }
+.ornament.right::after { left: -8px; }
+
+.section-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; /* Smaller */
+  font-weight: 900;
+  color: #1a2332;
+  margin: 0;
+}
+
+[data-md-color-scheme="slate"] .section-header h2 {
+  color: #fbbf24;
+}
+
+/* Feature Cards Grid - 2 columns always visible */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; /* slightly larger to balance smaller text */
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Ensure 2 cards minimum */
+@media screen and (min-width: 640px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Large screens: lock to 3 columns and widen container */
+@media screen and (min-width: 1100px) {
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1400px;
+  }
+}
+
+/* Extra large screens: keep 3 columns but allow more breathing room */
+@media screen and (min-width: 1600px) {
+  .features-grid {
+    max-width: 1600px;
+    gap: 2rem;
+  }
+}
+
+/* Ensure the features section container can grow wider */
+.features-section .section-container { max-width: 1400px; }
+@media screen and (min-width: 1600px) {
+  .features-section .section-container { max-width: 1600px; }
+}
+
+@media screen and (min-width: 960px) {
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.feature-card {
+  padding: 1.5rem; /* Less padding */
+  background: #fdfdf9;
+  border-radius: 16px;
+  box-shadow:
+    4px 4px 12px rgba(26, 35, 50, 0.06),
+    -4px -4px 12px rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+[data-md-color-scheme="slate"] .feature-card {
+  background: #263244;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    6px 6px 20px rgba(245, 158, 11, 0.1),
+    -6px -6px 20px rgba(255, 255, 255, 0.9);
+}
+
+.feature-icon {
+  width: 40px; /* Smaller icon */
+  height: 40px;
+  margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+  font-size: 1.125rem; /* Smaller */
+  margin: 0 0 0.5rem;
+  color: #1a2332;
+}
+
+[data-md-color-scheme="slate"] .feature-card h3 {
+  color: #fbbf24;
+}
+
+.feature-card p {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #6b5d4f;
+  margin: 0;
+}
+
+[data-md-color-scheme="slate"] .feature-card p {
+  color: #d4ccb8;
+}
+
+/* =====================================================
+   WHY TENETS SECTION - Compressed
+   ===================================================== */
+
+.why-tenets-section {
+  padding: 2rem 0; /* Compressed */
+  background: var(--md-default-bg-color--light);
+}
+
+.why-tenets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.why-card {
+  padding: 1.5rem; /* Less padding */
+  background: #fdfdf9;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow:
+    4px 4px 12px rgba(26, 35, 50, 0.06),
+    -4px -4px 12px rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.why-icon {
+  margin-bottom: 1rem;
+}
+
+.why-card h3 {
+  font-size: 1.125rem;
+  margin: 0 0 0.5rem;
+  color: #1a2332;
+}
+
+.why-card p {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #6b5d4f;
+  margin: 0;
+}
+
+/* =====================================================
+   HOW IT WORKS - With hover highlighting
+   ===================================================== */
+
+.workflow-section {
+  padding: 2.5rem 0; /* Compressed */
+  background: var(--md-default-bg-color);
+}
+
+.workflow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.workflow-step {
+  flex: 1;
+  min-width: 140px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  background: #fdfdf9;
+  border-radius: 12px;
+  box-shadow:
+    3px 3px 10px rgba(26, 35, 50, 0.05),
+    -3px -3px 10px rgba(255, 255, 255, 0.7);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  opacity: 0.7;
+}
+
+[data-md-color-scheme="slate"] .workflow-step {
+  background: #263244;
+  opacity: 0.6;
+}
+
+/* Hover and active states */
+.workflow-step:hover,
+.workflow-step.active {
+  transform: translateY(-8px) scale(1.05);
+  opacity: 1;
+  background: linear-gradient(135deg, #fdfdf9 0%, #fbbf24 100%);
+  box-shadow:
+    0 10px 30px rgba(245, 158, 11, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+[data-md-color-scheme="slate"] .workflow-step:hover,
+[data-md-color-scheme="slate"] .workflow-step.active {
+  background: linear-gradient(135deg, #263244 0%, #364152 100%);
+}
+
+.workflow-step:hover .step-number,
+.workflow-step.active .step-number {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  color: #1a2332;
+  transform: scale(1.1);
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  background: #f7f5f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #f59e0b;
+  box-shadow:
+    2px 2px 6px rgba(26, 35, 50, 0.1),
+    -2px -2px 6px rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+.workflow-step h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: #1a2332;
+}
+
+[data-md-color-scheme="slate"] .workflow-step h4 {
+  color: #fbbf24;
+}
+
+.workflow-step p {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #6b5d4f;
+  margin: 0;
+}
+
+[data-md-color-scheme="slate"] .workflow-step p {
+  color: #d4ccb8;
+}
+
+.workflow-arrow {
+  font-size: 1.5rem;
+  color: #f59e0b;
+  opacity: 0.5;
+}
+
+/* =====================================================
+   ARCHITECTURE SECTION - Compressed
+   ===================================================== */
+
+.architecture-section {
+  padding: 2.5rem 0;
+  background: var(--md-default-bg-color--light);
+}
+
+.architecture-wrapper {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fdfdf9;
+  border-radius: 16px;
+  box-shadow:
+    inset 2px 2px 8px rgba(26, 35, 50, 0.05),
+    inset -2px -2px 8px rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .architecture-wrapper {
+  background: #1a2332;
+}
+
+.architecture-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.arch-box {
+  fill: #fdfdf9;
+  stroke: #f59e0b;
+  stroke-width: 2;
+  filter: drop-shadow(2px 2px 4px rgba(26, 35, 50, 0.1));
+  transition: all 0.3s ease;
+}
+
+.arch-box:hover {
+  fill: #fbbf24;
+  transform: translateY(-2px);
+}
+
+.arch-label {
+  fill: #1a2332;
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.arch-arrow {
+  stroke: #f59e0b;
+  stroke-width: 2;
+  fill: none;
+}
+
+.architecture-note {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6b5d4f;
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+/* =====================================================
+   CTA SECTION - Compressed
+   ===================================================== */
+
+.cta-section {
+  padding: 3rem 0 2rem; /* Less padding */
+  background: var(--md-default-bg-color);
+}
+
+.cta-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem; /* Less padding */
+  text-align: center;
+  background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
+  border-radius: 20px;
+  box-shadow:
+    8px 8px 24px rgba(26, 35, 50, 0.08),
+    -8px -8px 24px rgba(255, 255, 255, 0.9);
+}
+
+[data-md-color-scheme="slate"] .cta-content {
+  background: linear-gradient(135deg, #263244 0%, #1a2332 100%);
+}
+
+.cta-content h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; /* Smaller */
+  margin: 0 0 0.75rem;
+  color: #1a2332;
+}
+
+[data-md-color-scheme="slate"] .cta-content h2 {
+  color: #fbbf24;
+}
+
+.cta-content p {
+  font-size: 1rem;
+  color: #6b5d4f;
+  margin: 0 0 1.5rem;
+}
+
+.cta-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-primary.large {
+  padding: 0.875rem 2rem; /* Slightly smaller */
+  font-size: 1.05rem;
+}
+
+/* =====================================================
+   MOBILE RESPONSIVE - Compressed
+   ===================================================== */
+
+@media screen and (max-width: 768px) {
+  .victorian-hero,
+  .hero-section {
+    min-height: calc(100vh - 8rem);
+    padding: 1.5rem 1rem 1rem;
+    margin-top: 64px;
+  }
+
+  .lantern-container,
+  .hero-logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 0.75rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+    margin: 0.25rem 0;
+  }
+
+  .hero-tagline {
+    font-size: 1rem;
+    margin: 0.25rem 0 0.75rem;
+  }
+
+  .hero-description {
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero-actions {
+    margin: 1rem 0;
+  }
+
+  .terminal-showcase {
+    margin: 1.5rem auto 0.5rem;
+  }
+
+  .terminal-body {
+    padding: 1rem;
+    min-height: 180px;
+    max-height: 300px;
+    font-size: 0.75rem;
+  }
+
+  .features-grid,
+  .why-tenets-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .workflow-diagram {
+    flex-direction: column;
+  }
+
+  .workflow-arrow {
+    transform: rotate(90deg);
+  }
+}
