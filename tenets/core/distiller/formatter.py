@@ -233,9 +233,9 @@ class ContextFormatter:
                 if summary and hasattr(summary, "metadata") and summary.metadata:
                     lines.append("")
                     if is_docs_context_aware:
-                        lines.append(f"*Summary strategy: {summary.strategy_used} (context-aware)*")
+                        lines.append(f"*Summary strategy: {summary.strategy} (context-aware)*")
                     else:
-                        lines.append(f"*Summary strategy: {summary.strategy_used}*")
+                        lines.append(f"*Summary strategy: {summary.strategy}*")
 
                 lines.append("")
 

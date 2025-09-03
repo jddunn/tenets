@@ -7,33 +7,50 @@
    ===================================================== */
 
 .md-search__form {
-  border-radius: 10px;
-  background: var(--md-default-bg-color--light);
+  border-radius: 8px;
+  background: var(--md-default-bg-color) !important;
   border: 1px solid var(--md-default-bg-color--lighter);
 }
 
-[data-md-color-scheme="default"] .md-search__form {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: #f7f5f0;
+/* When search is not expanded, keep it compact */
+.md-search:not([data-md-state="active"]) .md-search__form {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-[data-md-color-scheme="slate"] .md-search__form {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  background: #263244;
+[data-md-color-scheme="default"] .md-search[data-md-state="active"] .md-search__form {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: #ffffff !important;
+}
+
+[data-md-color-scheme="slate"] .md-search[data-md-state="active"] .md-search__form {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: #263244 !important;
 }
 
 /* Search Input */
 .md-search__input {
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
-  color: var(--md-default-fg-color);
+  color: var(--md-default-fg-color) !important;
   font-weight: 600;
+  background: transparent !important;
+}
+
+/* Fix input text color visibility */
+[data-md-color-scheme="default"] .md-search__input {
+  color: #1a2332 !important;
+}
+
+[data-md-color-scheme="slate"] .md-search__input {
+  color: #ffffff !important;
 }
 
 .md-search__input::placeholder {
-  opacity: 0.85;
+  opacity: 0.5;
   font-style: italic;
-  color: var(--md-default-fg-color--light);
+  color: var(--md-default-fg-color--light) !important;
 }
 
 /* Search Output Container */
@@ -42,8 +59,22 @@
   border: 1px solid var(--md-default-bg-color--lighter);
   margin-top: 0.5rem;
   overflow: hidden;
-  max-height: 72vh;
-  overflow-y: auto;
+  max-height: 65vh !important;
+  min-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative;
+  display: block !important;
+}
+
+/* Ensure scrollable container */
+.md-search__scrollwrap {
+  max-height: 65vh !important;
+  min-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative;
+  display: block !important;
 }
 
 /* Z-index and positioning safeguards (non-invasive) */
@@ -105,14 +136,28 @@ body.tenets-search-open { overflow: hidden; }
 .md-search-result__link {
   border-radius: 4px;
   padding: 0.75rem 1rem;
-  display: block;
-  text-decoration: none;
+  display: block !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto !important;
 }
-/* Z-index and positioning safeguards */
-/* z-index handled in overrides.css to avoid conflicts */
+
+/* Make sure links are clickable */
+a.md-search-result__link {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
 
 .md-search-result__link:hover {
-  background: transparent;
+  background: rgba(245, 158, 11, 0.1) !important;
+  text-decoration: none !important;
+}
+
+.md-search-result__link:focus {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: -2px;
 }
 
 /* Search Result Title */
@@ -214,9 +259,18 @@ body.tenets-search-open { overflow: hidden; }
 
 /* Make placeholder larger and centered on small screens when empty */
 @media screen and (max-width: 600px) {
-  .md-search__input::placeholder { font-size: 1.1rem; opacity: 0.9; color: var(--md-default-fg-color); }
+  .md-search__input::placeholder { font-size: 1.1rem; opacity: 0.5; color: var(--md-default-fg-color--light); }
   .md-search__inner[role="dialog"] { margin: 12vh auto 0; max-width: min(96vw, 740px); }
-  .md-search__scrollwrap { display: block; min-height: unset; }
+  .md-search__scrollwrap { 
+    display: block; 
+    min-height: unset;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .md-search__output {
+    max-height: 50vh !important;
+  }
 }
 
 /* =====================================================
@@ -276,6 +330,23 @@ body.tenets-search-open { overflow: hidden; }
   font-weight: 600;
 }
 
+/* Ensure search results list is interactive */
+.md-search-result__list {
+  padding: 0;
+  pointer-events: auto !important;
+}
+
+.md-search-result__item {
+  pointer-events: auto !important;
+}
+
+/* Fix for search result container */
+.md-search-result {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+
 /* =====================================================
    MOBILE SEARCH
    ===================================================== */
@@ -287,7 +358,9 @@ body.tenets-search-open { overflow: hidden; }
   }
   
   .md-search__scrollwrap {
-    max-height: 80vh;
+    max-height: 65vh !important;
+    min-height: 350px !important;
+    overflow-y: auto !important;
   }
   
   .md-search__form {
@@ -300,6 +373,9 @@ body.tenets-search-open { overflow: hidden; }
     border-radius: 0;
     border: none;
     margin-top: 0;
+    max-height: 60vh !important;
+    min-height: 300px !important;
+    overflow-y: auto !important;
   }
 }
 

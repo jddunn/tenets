@@ -93,10 +93,15 @@ tenets distill "implement OAuth2" ./src > context.md
 # Generate interactive HTML report
 tenets distill "analyze authentication" --format html -o report.html
 
+# NEW: See what files would be included WITHOUT the content
+tenets rank "implement OAuth2" --top 10        # Show top 10 most relevant files
+tenets rank "fix summarizing truncation bug" --tree --factors         # Tree view with ranking breakdown
+tenets rank "review API" --format json -o ranked.json --mode thorough  # Export for automation, most accurate and slowest
+
 # Choose your speed/accuracy trade-off
-tenets distill "find bug" --mode fast         # <5s, keyword matching
-tenets distill "fix feature" --mode balanced  # 10-30s, TF-IDF ranking (default)
-tenets distill "refactor API" --mode thorough # 30-60s+, semantic analysis
+tenets distill "find summarizer truncation bug" --mode fast         # <5s, keyword matching
+tenets distill "fix feature to reset user credentials" --mode balanced  # 10-30s, TF-IDF ranking (default)
+tenets distill "refactor API" --mode thorough # semantic analysis
 
 # Make copying the default (in .tenets.yml)
 # output:\n#   copy_on_distill: true
@@ -201,40 +206,55 @@ ranking:
     batch_size: 100 # Larger batches for ML
 ```
 
-## Key Features
-
-### Intelligent Context Distillation
+### Ranking files for relevance
 
 Like repomix on steroids - smart filters, automatic relevance ranking, and configurable aggregation:
 
-### Analysis Modes (Presets)
+**File Ranking / Hierarchy**
+
+The `rank` command exposes the powerful ranking engine without extracting file contents - perfect for understanding what's relevant before building context:
+
+```bash
+# See what files are most relevant to your query
+tenets rank "implement payment gateway" --top 20
+
+# Understand WHY files are ranked (see the scoring factors)
+tenets rank "fix authentication" --factors
+# Shows: semantic_similarity: 85%, keyword_match: 72%, import_centrality: 45%, etc.
+
+# Export ranked files for automation or further processing
+tenets rank "database migration" --format json | jq '.files[].path' | xargs git diff
+
+# Tree view to understand project structure relevance
+tenets rank "add caching" --tree --scores
+📂 src/
+  📄 cache_manager.py [0.892]
+  📄 redis_client.py [0.834]
+📂 src/api/
+  📄 endpoints.py [0.756]
+  📄 middleware.py [0.623]
+
+# Use in scripts to analyze impact
+for file in $(tenets rank "user authentication" --top 5 --no-scores); do
+  echo "Analyzing $file..."
+  # Your analysis here
+done
+```
+
+**Why use `rank` instead of `distill`?**
+- **Preview**: See what files would be included before generating full context
+- **Performance**: Much faster - no file reading or content processing
+- **Automation**: Export file lists for CI/CD, code review, or custom scripts  
+- **Understanding**: See ranking factors to understand WHY files are relevant
+- **Planning**: Identify key files before making changes
 
 Tenets offers three ranking modes that balance speed vs. accuracy:
 
 | Mode         | Speed          | Accuracy | Use Case                                | What It Does                                                                                                        |
 | ------------ | -------------- | -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **fast**     | ⚡ <5s         | Good     | Quick exploration, simple queries       | • Keyword & path matching<br>• Basic file type relevance<br>• No deep analysis                                      |
-| **balanced** | ⚡⚡ 10-30s    | Better   | Most use cases (default)                | • TF-IDF corpus analysis<br>• BM25 relevance scoring<br>• Structure analysis<br>• Import/export tracking            |
-| **thorough** | ⚡⚡⚡ 30-60s+ | Best     | Complex refactoring, deep understanding | • Everything from balanced<br>• Semantic similarity (ML)<br>• Code pattern detection<br>• Dependency graph analysis |
-
-**Mode Examples:**
-
-```bash
-# Fast mode - Quick keyword search (best for simple queries)
-tenets distill "find login function" --mode fast
-# ✅ Great for: Finding specific functions/files, quick exploration
-# ❌ Skip for: Understanding complex flows, architecture analysis
-
-# Balanced mode - Smart ranking with corpus analysis (default)
-tenets distill "implement caching layer" --mode balanced
-# ✅ Great for: Feature implementation, bug fixes, code reviews
-# ❌ Skip for: When you need semantic understanding
-
-# Thorough mode - Deep analysis with ML (when accuracy matters)
-tenets distill "refactor authentication system" --mode thorough --max-tokens 100000
-# ✅ Great for: Major refactoring, security reviews, understanding complex systems
-# ❌ Skip for: Quick lookups, simple tasks, large codebases (>1000 files)
-```
+| **fast**     | ⚡ Fastest         | Good     | Quick exploration, simple queries       | • Keyword & path matching<br>• Basic file type relevance<br>• No deep analysis                                      |
+| **balanced** | ⚡⚡ Fast    | Better   | Most use cases (default)                | • TF-IDF corpus analysis<br>• BM25 relevance scoring<br>• Structure analysis<br>• Import/export tracking            |
+| **thorough** | ⚡⚡⚡ Slower | Best     | Complex refactoring, deep understanding | • Everything from balanced<br>• Semantic similarity (ML)<br>• Code pattern detection<br>• Dependency graph analysis |
 
 **Performance Tips:**
 
@@ -292,6 +312,12 @@ tenets tenet add "Follow RESTful conventions"
 tenets tenet add "Include error handling"
 tenets instill # Apply tenets to the session
 ```
+
+**Injection Behavior:**
+- **First Output**: Tenets are automatically injected on the first `distill` in any session
+- **Unnamed Sessions**: Always receive tenets to establish context
+- **Named Sessions**: Follow configured frequency after first injection
+- **No Delay**: Immediate injection (previously waited for 5 operations)
 
 ### System Instruction (Global Prompt)
 
@@ -572,7 +598,7 @@ tenets distill "understand auth flow" --include-tests
 tenets distill "fix failing tests" --exclude-tests
 
 # Traditional manual filtering (still works)
-tenets distill "review code" --exclude "test_*,*_test.py,tests/**"
+tenets distill "review code for payments" --exclude "test_*,*_test.py,tests/**"
 ```
 
 **Configuration:**
@@ -980,6 +1006,34 @@ tenets = Tenets()
 result = tenets.distill("implement user authentication")
 print(f"Generated {result.token_count} tokens")
 print(result.context[:500])  # First 500 chars
+
+# Get ranked files without content (much faster!)
+from tenets.core.ranking import RelevanceRanker
+from tenets.core.prompt import PromptParser
+
+# Parse prompt and get files
+parser = PromptParser()
+prompt_context = parser.parse("implement OAuth2")
+
+# Scan and analyze
+from tenets.core.scanner import FileScanner
+from tenets.core.analysis.analyzer import CodeAnalyzer
+
+scanner = FileScanner()
+files = scanner.scan("./src")
+analyzer = CodeAnalyzer()
+analyzed = [analyzer.analyze_file(f) for f in files]
+
+# Rank files
+ranker = RelevanceRanker(algorithm="balanced")
+ranked_files = ranker.rank(analyzed, prompt_context, threshold=0.1)
+
+# Use the rankings
+for file in ranked_files[:10]:
+    print(f"{file.path}: {file.relevance_score:.3f}")
+    if hasattr(file, 'relevance_factors'):
+        for factor, score in file.relevance_factors.items():
+            print(f"  - {factor}: {score:.2%}")
 
 # Generate interactive HTML report
 result = tenets.distill("review API design", format="html")
