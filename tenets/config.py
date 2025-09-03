@@ -579,7 +579,8 @@ class RankingConfig:
     Attributes:
         algorithm: Default ranking algorithm (fast, balanced, thorough, ml)
         threshold: Minimum relevance score to include file
-        use_tfidf: Whether to use TF-IDF for keyword matching
+        text_similarity_algorithm: Text similarity algorithm ('bm25' or 'tfidf', default: 'bm25')
+        use_tfidf: Whether to use TF-IDF for keyword matching (deprecated, use text_similarity_algorithm)
         use_stopwords: Whether to use stopwords filtering
         use_embeddings: Whether to use semantic embeddings (requires ML)
         use_git: Whether to include git signals in ranking
@@ -593,7 +594,8 @@ class RankingConfig:
 
     algorithm: str = "balanced"
     threshold: float = 0.1
-    use_tfidf: bool = True
+    text_similarity_algorithm: str = "bm25"  # 'bm25' (default) or 'tfidf' (fallback)
+    use_tfidf: bool = True  # Deprecated, kept for backward compat
     use_stopwords: bool = False  # For code search, use minimal stopwords
     use_embeddings: bool = False
     use_git: bool = True

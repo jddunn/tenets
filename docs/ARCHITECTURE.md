@@ -33,7 +33,7 @@
 
 Tenets is a sophisticated, local-first code intelligence platform that revolutionizes how developers interact with their codebases when working with AI assistants. Unlike traditional code search tools or simple context builders, Tenets employs advanced multi-stage analysis combining natural language processing, machine learning, static code analysis, git history mining, and intelligent ranking to build optimal context for any given task.
 
-The system operates entirely locally, ensuring complete privacy and security while delivering state-of-the-art code understanding capabilities. Every component is designed with performance in mind, utilizing aggressive caching, parallel processing, and incremental computation to handle codebases ranging from small projects to massive monorepos with millions of files.
+The system operates entirely locally, ensuring complete privacy and security while delivering advanced code understanding capabilities. Every component is designed with performance in mind, utilizing aggressive caching, parallel processing, and incremental computation to handle codebases ranging from small projects to massive monorepos with millions of files.
 
 ### Core Architecture Principles
 
@@ -81,6 +81,7 @@ graph TB
             RAKE[RAKE Keywords]
             YAKE[YAKE Fallback]
             TFIDF[TF-IDF Analysis]
+            BM25[BM25 Ranking]
         end
     end
 
@@ -163,6 +164,7 @@ graph TB
     KEYWORDS --> RAKE
     RAKE --> YAKE
     ENTITIES --> TFIDF
+    ENTITIES --> BM25
 
     PARSER --> SCANNER
     SCANNER --> GITIGNORE
@@ -261,7 +263,8 @@ tenets/core/nlp/
 ├── stopwords.py        # Stopword management with fallbacks
 ├── embeddings.py       # Embedding generation (ML optional)
 ├── ml_utils.py         # ML utility functions
-└── tfidf.py           # TF-IDF calculations
+├── bm25.py            # BM25 ranking algorithm (primary)
+└── tfidf.py           # TF-IDF calculations (fallback)
 ```
 
 #### Similarity Computation Consolidation
@@ -379,7 +382,8 @@ graph TD
 | **RAKE** | Fast | Good | Low | ✅ Yes | • Technical docs<br/>• Multi-word phrases<br/>• Fast processing | • No semantic understanding<br/>• Language-dependent stopwords<br/>• May miss single important words |
 | **SimpleRAKE** | Fast | Good | Minimal | ✅ Yes | • No NLTK dependencies<br/>• Built-in implementation<br/>• Fast processing | • No advanced NLP features<br/>• Basic tokenization only |
 | **YAKE** | Moderate | Very Good | Low | ❌ No | • Statistical analysis<br/>• Language independent<br/>• Capital letter aware | • Python 3.13 bug<br/>• Can produce duplicates<br/>• No deep semantics |
-| **TF-IDF** | Moderate | Good | Medium<br/>(corpus-dependent) | ✅ Yes | • Corpus comparison<br/>• Document uniqueness<br/>• Always available | • Needs document corpus<br/>• No phrase extraction<br/>• Statistical only |
+| **BM25** | Fast | Excellent | High<br/>(handles length variation) | ✅ Yes | • Primary ranking algorithm<br/>• Better for code search<br/>• Handles file size variation | • Needs document corpus<br/>• Statistical only<br/>• No semantic understanding |
+| **TF-IDF** | Fast | Good | Medium<br/>(corpus-dependent) | ✅ Yes | • Optional fallback<br/>• Document uniqueness<br/>• Simpler algorithm | • Less effective for varying lengths<br/>• No term saturation<br/>• Statistical only |
 | **Frequency** | Very Fast | Basic | Minimal | ✅ Yes | • Fallback option<br/>• Simple analysis<br/>• Guaranteed to work | • Very basic<br/>• No context awareness<br/>• Misses importance |
 
 #### Detailed Algorithm Analysis
@@ -442,9 +446,38 @@ Secondary method for Python < 3.13
 - Mixed content (code + documentation)
 - When capitalization matters (class names, constants)
 
+##### **BM25 (Best Matching 25)**
+```
+Primary text similarity algorithm - default for ranking
+```
+
+**How it works:**
+- Probabilistic ranking function with term saturation (k1=1.2)
+- Document length normalization (b=0.75) handles varying file sizes
+- Prevents over-weighting of repeated terms
+- Better ranking quality than TF-IDF for code search
+
+**Pros:**
+- ✅ Superior ranking for varying document lengths
+- ✅ Term saturation prevents keyword stuffing bias
+- ✅ Industry standard for search engines
+- ✅ Pure Python implementation
+- ✅ Better for code files of different sizes
+
+**Cons:**
+- ❌ Requires a corpus of documents
+- ❌ More complex than TF-IDF
+- ❌ Still statistical, no semantic understanding
+- ❌ Memory usage grows with corpus size
+
+**Best Use Cases:**
+- Default text similarity for all ranking
+- Code search across files of varying sizes
+- Finding relevant files for prompts
+
 ##### **TF-IDF (Term Frequency-Inverse Document Frequency)**
 ```
-Fallback method - always available
+Optional fallback method - configurable via text_similarity_algorithm
 ```
 
 **How it works:**
@@ -2451,7 +2484,7 @@ The architecture is designed to be:
 - **Scalable**: From small projects to massive monorepos
 - **Extensible**: Plugin system for custom logic
 - **Private**: Everything runs locally
-- **Intelligent**: State-of-the-art ML when available
+- **Intelligent**: Advanced ML when available
 - **Practical**: Works today, improves tomorrow
 
 ### Key Architectural Strengths

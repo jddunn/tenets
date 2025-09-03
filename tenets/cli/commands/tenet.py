@@ -68,7 +68,9 @@ def get_tenet_manager():
                                 (
                                     str(tenet.category.value)
                                     if hasattr(tenet.category, "value")
-                                    else str(tenet.category) if tenet.category else None
+                                    else str(tenet.category)
+                                    if tenet.category
+                                    else None
                                 ),
                                 session_val,
                                 "pending",
@@ -114,7 +116,9 @@ def get_tenet_manager():
                                 (
                                     str(new_tenet.category.value)
                                     if hasattr(new_tenet.category, "value")
-                                    else str(new_tenet.category) if new_tenet.category else None
+                                    else str(new_tenet.category)
+                                    if new_tenet.category
+                                    else None
                                 ),
                                 session,
                                 "pending",
