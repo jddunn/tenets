@@ -1,10 +1,18 @@
-"""Rank command - show ranked files without content."""
+"""Rank command - show ranked files without content.
+
+This module provides the rank command for the tenets CLI, which allows users to
+see which files are most relevant to their query without displaying the actual
+content of those files. This is useful for previewing what would be included
+in a full distill operation or for generating file lists for automation.
+"""
 
 import json
 import sys
+from collections import defaultdict
 from datetime import datetime
+from io import StringIO
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import click
 import typer
@@ -14,16 +22,33 @@ from rich.table import Table
 from rich.tree import Tree
 
 from tenets import Tenets
+from tenets.models.analysis import FileAnalysis
 from tenets.utils.timing import CommandTimer
 
 console = Console()
 
 
 def _get_language_from_extension(file_path: Path) -> str:
-    """Get language from file extension."""
-    ext = file_path.suffix.lower()
+    """Get programming language from file extension.
+    
+    Args:
+        file_path: Path object representing the file.
+        
+    Returns:
+        String identifier for the programming language, defaults to 'text'
+        if extension is not recognized.
+        
+    Examples:
+        >>> _get_language_from_extension(Path("test.py"))
+        'python'
+        >>> _get_language_from_extension(Path("script.js"))
+        'javascript'
+        >>> _get_language_from_extension(Path("unknown.xyz"))
+        'text'
+    """
+    ext: str = file_path.suffix.lower()
     # Common language mappings
-    lang_map = {
+    lang_map: Dict[str, str] = {
         ".py": "python",
         ".js": "javascript",
         ".ts": "typescript",
@@ -119,17 +144,44 @@ def rank(
     show_stats: bool = typer.Option(False, "--stats", help="Show ranking statistics"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed debug information"),
     copy: bool = typer.Option(False, "--copy", help="Copy file list to clipboard"),
-):
-    """
-    Rank files by relevance without showing their content.
+) -> None:
+    """Rank files by relevance without showing their content.
 
     This command runs the same intelligent ranking as 'distill' but only shows
     the list of relevant files, their scores, and optionally the ranking factors.
     Useful for understanding what files would be included in context or for
     feeding file lists to other tools.
 
-    Examples:
+    Args:
+        prompt: The query or task to rank files against.
+        path: Path to analyze (directory or files).
+        format: Output format (markdown, json, xml, html, tree).
+        output: Optional file path to save output.
+        mode: Ranking algorithm mode (fast, balanced, thorough).
+        top: Show only top N files.
+        min_score: Minimum relevance score threshold (0.0-1.0).
+        max_files: Maximum number of files to display.
+        tree_view: Whether to show results as directory tree.
+        show_scores: Whether to display relevance scores.
+        show_factors: Whether to show ranking factor breakdown.
+        show_path: Path display style (relative, absolute, name).
+        include: Include file patterns (comma-separated).
+        exclude: Exclude file patterns (comma-separated).
+        include_tests: Whether to include test files.
+        exclude_tests: Whether to explicitly exclude test files.
+        no_git: Whether to disable git signals in ranking.
+        session: Optional session name for stateful ranking.
+        show_stats: Whether to show ranking statistics.
+        verbose: Whether to show detailed debug information.
+        copy: Whether to copy file list to clipboard.
 
+    Returns:
+        None
+
+    Raises:
+        SystemExit: On error with exit code 1.
+
+    Examples:
         # Show top 10 most relevant files
         tenets rank "implement OAuth2" --top 10
 
@@ -146,14 +198,14 @@ def rank(
         tenets rank "database queries" --top 20 --copy --no-scores
     """
     # Initialize timer
-    is_json_quiet = format.lower() == "json" and not output
-    timer = CommandTimer(console, is_json_quiet)
+    is_json_quiet: bool = format.lower() == "json" and not output
+    timer: CommandTimer = CommandTimer(console, is_json_quiet)
 
     try:
         timer.start("Initializing ranking...")
 
         # Initialize tenets with same distiller pipeline
-        tenets_instance = Tenets()
+        tenets_instance: Tenets = Tenets()
 
         # Use the same distiller pipeline that the distill command uses
         # This ensures consistent ranking behavior
@@ -164,7 +216,7 @@ def rank(
 
         # Use distiller's ranking pipeline by calling rank_files directly
         # This ensures we get the same sophisticated ranking as distill
-        result = tenets_instance.rank_files(
+        result: Any = tenets_instance.rank_files(
             prompt=prompt,
             paths=[path] if path else None,
             mode=mode,
@@ -175,7 +227,7 @@ def rank(
             explain=show_factors,
         )
 
-        ranked_files = result.files
+        ranked_files: List[FileAnalysis] = result.files
 
         # Apply threshold filtering if min_score is set
         if min_score:
@@ -190,7 +242,7 @@ def rank(
             ranked_files = ranked_files[:max_files]
 
         # Format output
-        output_content = _format_ranked_files(
+        output_content: str = _format_ranked_files(
             ranked_files,
             format=format,
             tree_view=tree_view,
@@ -210,7 +262,7 @@ def rank(
                 if click.confirm("\nWould you like to open it in your browser now?", default=False):
                     import webbrowser
 
-                    file_path = output.resolve()
+                    file_path: Path = output.resolve()
                     webbrowser.open(file_path.as_uri())
                     console.print("[green]OK[/green] Opened in browser")
         elif format in ["html", "xml", "json"]:
@@ -220,12 +272,12 @@ def rank(
                 from datetime import datetime
 
                 # Create filename from prompt
-                safe_prompt = re.sub(r"[^\w\s-]", "", prompt[:30]).strip()
+                safe_prompt: str = re.sub(r"[^\w\s-]", "", prompt[:30]).strip()
                 safe_prompt = re.sub(r"[-\s]+", "-", safe_prompt)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                timestamp: str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
                 # Determine file extension
-                ext = format.lower()
+                ext: str = format.lower()
                 if ext == "html":
                     ext = "html"
                 elif ext == "xml":
@@ -233,7 +285,7 @@ def rank(
                 else:  # json
                     ext = "json"
 
-                default_file = Path(f"tenets_rank_{safe_prompt}_{timestamp}.{ext}")
+                default_file: Path = Path(f"tenets_rank_{safe_prompt}_{timestamp}.{ext}")
                 default_file.write_text(output_content, encoding="utf-8")
 
                 console.print(
@@ -263,7 +315,7 @@ def rank(
                     import platform
                     import webbrowser
 
-                    folder = default_file.parent.resolve()
+                    folder: Path = default_file.parent.resolve()
                     if platform.system() == "Windows":
                         import os
 
@@ -286,10 +338,10 @@ def rank(
             print(output_content)
 
         # Check if we should copy to clipboard
-        do_copy = copy
+        do_copy: bool = copy
         try:
             # Check config flag for auto-copy (similar to distill command)
-            cfg = getattr(tenets_instance, "config", None)
+            cfg: Any = getattr(tenets_instance, "config", None)
             if cfg and getattr(getattr(cfg, "output", None), "copy_on_rank", False):
                 do_copy = True
         except Exception:
@@ -298,6 +350,7 @@ def rank(
         # Copy to clipboard if requested or config enabled
         if do_copy and pyperclip:
             # Create simple file list for clipboard
+            clip_content: str
             if show_scores:
                 clip_content = "\n".join(
                     f"{f.path} ({f.relevance_score:.3f})" for f in ranked_files
@@ -322,17 +375,33 @@ def rank(
 
 
 def _format_ranked_files(
-    files: List,
+    files: List[FileAnalysis],
     format: str,
     tree_view: bool,
     show_scores: bool,
     show_factors: bool,
     show_path: str,
     prompt: str,
-    stats: Optional[Dict] = None,
+    stats: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Format ranked files for output."""
-
+    """Format ranked files for output based on specified format.
+    
+    Args:
+        files: List of FileAnalysis objects to format.
+        format: Output format (json, xml, html, tree, markdown).
+        tree_view: Whether to show tree view.
+        show_scores: Whether to include relevance scores.
+        show_factors: Whether to include ranking factor breakdown.
+        show_path: Path display style (relative, absolute, name).
+        prompt: Original query prompt for context.
+        stats: Optional ranking statistics dictionary.
+        
+    Returns:
+        Formatted string representation of the ranked files.
+        
+    Raises:
+        ValueError: If format is not recognized.
+    """
     if format == "json":
         return _format_json(files, show_scores, show_factors, stats)
     elif format == "xml":
@@ -345,21 +414,41 @@ def _format_ranked_files(
         return _format_markdown(files, show_scores, show_factors, show_path)
 
 
-def _format_markdown(files: List, show_scores: bool, show_factors: bool, show_path: str) -> str:
-    """Format as markdown list."""
-    lines = ["# Ranked Files\n"]
+def _format_markdown(
+    files: List[FileAnalysis], 
+    show_scores: bool, 
+    show_factors: bool, 
+    show_path: str
+) -> str:
+    """Format ranked files as markdown list.
+    
+    Args:
+        files: List of FileAnalysis objects to format.
+        show_scores: Whether to include relevance scores.
+        show_factors: Whether to include ranking factors.
+        show_path: Path display style (relative, absolute, name).
+        
+    Returns:
+        Markdown formatted string with numbered list of files.
+        
+    Examples:
+        >>> files = [FileAnalysis(path="test.py", relevance_score=0.85)]
+        >>> _format_markdown(files, True, False, "relative")
+        '# Ranked Files\\n\\n1. **test.py** - Score: 0.850\\n\\n'
+    """
+    lines: List[str] = ["# Ranked Files\n"]
 
     for i, file in enumerate(files, 1):
-        path = _get_display_path(file.path, show_path)
+        path: str = _get_display_path(file.path, show_path)
 
         if show_scores:
-            score = getattr(file, "relevance_score", 0.0)
+            score: float = getattr(file, "relevance_score", 0.0)
             lines.append(f"{i}. **{path}** - Score: {score:.3f}")
         else:
             lines.append(f"{i}. **{path}**")
 
         if show_factors and hasattr(file, "relevance_factors"):
-            factors = file.relevance_factors
+            factors: Dict[str, float] = file.relevance_factors
             lines.append("   - Factors:")
             for factor, value in factors.items():
                 lines.append(f"     - {factor}: {value:.2%}")
@@ -369,76 +458,115 @@ def _format_markdown(files: List, show_scores: bool, show_factors: bool, show_pa
     return "\n".join(lines)
 
 
-def _format_tree(files: List, show_scores: bool, show_factors: bool, show_path: str) -> str:
-    """Format as tree structure sorted by relevance."""
+def _format_tree(
+    files: List[FileAnalysis], 
+    show_scores: bool, 
+    show_factors: bool, 
+    show_path: str
+) -> str:
+    """Format ranked files as tree structure sorted by relevance.
+    
+    Args:
+        files: List of FileAnalysis objects to format.
+        show_scores: Whether to include relevance scores.
+        show_factors: Whether to include ranking factors.
+        show_path: Path display style (relative, absolute, name).
+        
+    Returns:
+        Tree-formatted string representation of files grouped by directory.
+        
+    Note:
+        Uses simple ASCII characters on Windows to avoid encoding issues.
+        Files are grouped by directory and sorted by relevance score.
+    """
     import platform
 
     # Use simple characters on Windows to avoid encoding issues
     if platform.system() == "Windows":
-        tree = Tree("[Ranked Files (sorted by relevance)]")
+        tree: Tree = Tree("[Ranked Files (sorted by relevance)]")
     else:
-        tree = Tree("📁 Ranked Files (sorted by relevance)")
+        tree = Tree("📂 Ranked Files (sorted by relevance)")
 
     # Group by directory while preserving order
-    from collections import defaultdict
-
-    dirs = defaultdict(list)
+    dirs: Dict[Path, List[FileAnalysis]] = defaultdict(list)
 
     for file in files:
-        dir_path = Path(file.path).parent
+        dir_path: Path = Path(file.path).parent
         dirs[dir_path].append(file)
 
     # Sort directories by the highest scoring file in each
-    def get_max_score(dir_path):
+    def get_max_score(dir_path: Path) -> float:
+        """Get maximum score from files in directory.
+        
+        Args:
+            dir_path: Directory path to check.
+            
+        Returns:
+            Maximum relevance score of files in directory.
+        """
         return max((getattr(f, "relevance_score", 0.0) for f in dirs[dir_path]), default=0.0)
 
-    sorted_dirs = sorted(dirs.keys(), key=get_max_score, reverse=True)
+    sorted_dirs: List[Path] = sorted(dirs.keys(), key=get_max_score, reverse=True)
 
     # Build tree with sorted directories and files
-    import platform
-
-    # Use simple characters on Windows to avoid encoding issues
-    dir_prefix = "[D]" if platform.system() == "Windows" else "📂"
-    file_prefix = "[F]" if platform.system() == "Windows" else "📄"
+    dir_prefix: str = "[D]" if platform.system() == "Windows" else "📁"
+    file_prefix: str = "[F]" if platform.system() == "Windows" else "📄"
 
     for dir_path in sorted_dirs:
-        dir_branch = tree.add(f"{dir_prefix} {dir_path}")
+        dir_branch: Tree = tree.add(f"{dir_prefix} {dir_path}")
         # Sort files within directory by score
-        sorted_files = sorted(
+        sorted_files: List[FileAnalysis] = sorted(
             dirs[dir_path], key=lambda f: getattr(f, "relevance_score", 0.0), reverse=True
         )
         for file in sorted_files:
-            name = Path(file.path).name
+            name: str = Path(file.path).name
             if show_scores:
-                score = getattr(file, "relevance_score", 0.0)
-                file_text = f"{file_prefix} {name} [{score:.3f}]"
+                score: float = getattr(file, "relevance_score", 0.0)
+                file_text: str = f"{file_prefix} {name} [{score:.3f}]"
             else:
                 file_text = f"{file_prefix} {name}"
 
-            file_branch = dir_branch.add(file_text)
+            file_branch: Tree = dir_branch.add(file_text)
 
             if show_factors and hasattr(file, "relevance_factors"):
-                factors = file.relevance_factors
+                factors: Dict[str, float] = file.relevance_factors
                 for factor, value in factors.items():
                     file_branch.add(f"{factor}: {value:.2%}")
 
     # Convert to string
-    from io import StringIO
-
-    from rich.console import Console
-
-    string_io = StringIO()
-    temp_console = Console(file=string_io, force_terminal=True)
+    string_io: StringIO = StringIO()
+    temp_console: Console = Console(file=string_io, force_terminal=True)
     temp_console.print(tree)
     return string_io.getvalue()
 
 
-def _format_json(files: List, show_scores: bool, show_factors: bool, stats: Optional[Dict]) -> str:
-    """Format as JSON."""
-    data = {"total_files": len(files), "files": []}
+def _format_json(
+    files: List[FileAnalysis], 
+    show_scores: bool, 
+    show_factors: bool, 
+    stats: Optional[Dict[str, Any]]
+) -> str:
+    """Format ranked files as JSON.
+    
+    Args:
+        files: List of FileAnalysis objects to format.
+        show_scores: Whether to include relevance scores.
+        show_factors: Whether to include ranking factors.
+        stats: Optional statistics dictionary to include.
+        
+    Returns:
+        JSON formatted string with file data and optional statistics.
+        
+    Examples:
+        >>> files = [FileAnalysis(path="test.py", relevance_score=0.85)]
+        >>> result = _format_json(files, True, False, None)
+        >>> json.loads(result)['total_files']
+        1
+    """
+    data: Dict[str, Any] = {"total_files": len(files), "files": []}
 
     for file in files:
-        file_data = {
+        file_data: Dict[str, Any] = {
             "path": str(file.path),
             "rank": getattr(file, "relevance_rank", 0),
         }
@@ -457,9 +585,28 @@ def _format_json(files: List, show_scores: bool, show_factors: bool, stats: Opti
     return json.dumps(data, indent=2)
 
 
-def _format_xml(files: List, show_scores: bool, show_factors: bool, prompt: str) -> str:
-    """Format as XML."""
-    lines = ['<?xml version="1.0" encoding="UTF-8"?>']
+def _format_xml(
+    files: List[FileAnalysis], 
+    show_scores: bool, 
+    show_factors: bool, 
+    prompt: str
+) -> str:
+    """Format ranked files as XML.
+    
+    Args:
+        files: List of FileAnalysis objects to format.
+        show_scores: Whether to include relevance scores.
+        show_factors: Whether to include ranking factors.
+        prompt: Original query prompt to include in output.
+        
+    Returns:
+        XML formatted string with file rankings.
+        
+    Note:
+        Generates well-formed XML with UTF-8 encoding declaration.
+        Each file is wrapped in a <file> element with nested attributes.
+    """
+    lines: List[str] = ['<?xml version="1.0" encoding="UTF-8"?>']
     lines.append("<ranking>")
     lines.append(f"  <prompt>{prompt}</prompt>")
     lines.append(f"  <total_files>{len(files)}</total_files>")
@@ -488,15 +635,37 @@ def _format_xml(files: List, show_scores: bool, show_factors: bool, prompt: str)
 
 
 def _format_html(
-    files: List, show_scores: bool, show_factors: bool, prompt: str, tree_view: bool
+    files: List[FileAnalysis], 
+    show_scores: bool, 
+    show_factors: bool, 
+    prompt: str, 
+    tree_view: bool
 ) -> str:
-    """Format as HTML with interactive features using shared template system."""
-    import json
-
+    """Format ranked files as interactive HTML with charts and controls.
+    
+    Args:
+        files: List of FileAnalysis objects to format.
+        show_scores: Whether to include relevance scores.
+        show_factors: Whether to include ranking factors.
+        prompt: Original query prompt for display.
+        tree_view: Whether to generate tree view tab.
+        
+    Returns:
+        Complete HTML document string with interactive features including:
+        - File list with search/filter
+        - Tree view visualization
+        - Score distribution charts
+        - Export to JSON/CSV
+        - Copy to clipboard functionality
+        
+    Note:
+        Uses Chart.js for visualizations and includes responsive design.
+        Avoids f-string backslash issues by using chr() for special characters.
+    """
     # Prepare data for JavaScript
-    files_data = []
+    files_data: List[Dict[str, Any]] = []
     for file in files:
-        file_data = {
+        file_data: Dict[str, Any] = {
             "path": str(file.path),
             "score": getattr(file, "relevance_score", 0.0),
             "rank": getattr(file, "relevance_rank", 0),
@@ -505,16 +674,16 @@ def _format_html(
             file_data["factors"] = file.relevance_factors
         files_data.append(file_data)
 
-    files_json = json.dumps(files_data)
+    files_json: str = json.dumps(files_data)
 
     # Calculate statistics
-    total_files = len(files)
-    high_relevance_count = len([f for f in files if getattr(f, "relevance_score", 0) >= 0.5])
-    max_score = max((getattr(f, "relevance_score", 0) for f in files), default=0)
-    avg_score = sum(getattr(f, "relevance_score", 0) for f in files) / len(files) if files else 0
+    total_files: int = len(files)
+    high_relevance_count: int = len([f for f in files if getattr(f, "relevance_score", 0) >= 0.5])
+    max_score: float = max((getattr(f, "relevance_score", 0) for f in files), default=0)
+    avg_score: float = sum(getattr(f, "relevance_score", 0) for f in files) / len(files) if files else 0
 
     # Enhanced custom styles for rank report
-    custom_styles = """
+    custom_styles: str = """
     <style>
         :root {
             --primary-color: #2563eb;
@@ -779,10 +948,16 @@ def _format_html(
     </style>
     """
 
-    # JavaScript for interactivity
-    # Use chr(10) for newline to avoid f-string backslash issues in Python 3.11
-    newline = chr(10)
-    scripts = f"""
+    # JavaScript for interactivity - Fixed f-string backslash issues
+    # Create variables for special characters
+    newline: str = chr(10)  # newline character
+    quote: str = chr(34)    # double quote character
+    bslash: str = chr(92)   # backslash character
+    
+    # Escape the prompt for JavaScript
+    escaped_prompt: str = prompt.replace('"', '\\"').replace("'", "\\'")
+    
+    scripts: str = f"""
     <script>
         // Store files data globally
         window.filesData = {files_json};
@@ -810,7 +985,7 @@ def _format_html(
             navigator.clipboard.writeText(paths).then(function() {{
                 const button = document.getElementById('copy-all-btn');
                 const originalText = button.innerText;
-                button.innerText = '✓ Copied!';
+                button.innerText = '✔ Copied!';
                 button.classList.add('copied');
                 setTimeout(() => {{
                     button.innerText = originalText;
@@ -822,7 +997,7 @@ def _format_html(
         // Export as JSON
         function exportAsJSON() {{
             const data = {{
-                prompt: "{prompt.replace('"', '\\"')}",
+                prompt: "{escaped_prompt}",
                 total_files: {total_files},
                 files: window.filesData,
                 statistics: {{
@@ -970,7 +1145,7 @@ def _format_html(
     """
 
     # Build the HTML content sections
-    header_html = f"""
+    header_html: str = f"""
     <div class="rank-header">
         <h1>🎯 Ranked Files</h1>
         <p>Query: <strong>{prompt}</strong></p>
@@ -979,7 +1154,7 @@ def _format_html(
     """
 
     # Controls section
-    controls_html = """
+    controls_html: str = """
     <div class="controls">
         <input type="text" id="searchBox" class="search-box" placeholder="🔍 Search files..." onkeyup="searchFiles()">
         <button class="export-button" onclick="exportAsJSON()">📥 Export JSON</button>
@@ -989,7 +1164,7 @@ def _format_html(
     """
 
     # Statistics grid
-    stats_html = f"""
+    stats_html: str = f"""
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-value">{total_files}</div>
@@ -1011,7 +1186,7 @@ def _format_html(
     """
 
     # Tab navigation
-    tab_nav_html = """
+    tab_nav_html: str = """
     <div class="tab-container">
         <div class="tab-nav">
             <button class="tab-button active" onclick="openTab(event, 'list-tab')">📄 File List</button>
@@ -1022,10 +1197,10 @@ def _format_html(
     """
 
     # File list content
-    file_list_html = '<div id="list-tab" class="tab-content active"><ul class="file-list">'
+    file_list_html: str = '<div id="list-tab" class="tab-content active"><ul class="file-list">'
     for i, file in enumerate(files):
-        path = str(file.path)
-        score = getattr(file, "relevance_score", 0.0)
+        path: str = str(file.path)
+        score: float = getattr(file, "relevance_score", 0.0)
 
         file_list_html += f"""
         <li class="file-item">
@@ -1045,24 +1220,22 @@ def _format_html(
     file_list_html += "</ul></div>"
 
     # Tree view content
-    tree_html = '<div id="tree-tab" class="tab-content">'
+    tree_html: str = '<div id="tree-tab" class="tab-content">'
     if tree_view:
         # Generate tree structure
-        from collections import defaultdict
-
-        dirs = defaultdict(list)
+        dirs: Dict[Path, List[FileAnalysis]] = defaultdict(list)
         for file in files:
-            dir_path = Path(file.path).parent
+            dir_path: Path = Path(file.path).parent
             dirs[dir_path].append(file)
 
         tree_html += '<div class="tree-view">'
         for dir_path in sorted(dirs.keys()):
-            tree_html += f"📂 {dir_path}\n"
+            tree_html += f"📁 {dir_path}\n"
             for file in sorted(
                 dirs[dir_path], key=lambda f: getattr(f, "relevance_score", 0.0), reverse=True
             ):
-                name = Path(file.path).name
-                score = getattr(file, "relevance_score", 0.0)
+                name: str = Path(file.path).name
+                score: float = getattr(file, "relevance_score", 0.0)
                 tree_html += f"  📄 {name} [{score:.3f}]\n"
         tree_html += "</div>"
     else:
@@ -1070,7 +1243,7 @@ def _format_html(
     tree_html += "</div>"
 
     # Chart content
-    chart_html = """
+    chart_html: str = """
     <div id="chart-tab" class="tab-content">
         <div class="chart-container">
             <canvas id="distChart"></canvas>
@@ -1079,7 +1252,7 @@ def _format_html(
     """
 
     # Combine all sections
-    content_html = f"""
+    content_html: str = f"""
     <div class="container">
         {header_html}
         {controls_html}
@@ -1092,7 +1265,7 @@ def _format_html(
     """
 
     # Build final HTML using template
-    html = f"""<!DOCTYPE html>
+    html: str = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -1109,8 +1282,25 @@ def _format_html(
     return html
 
 
-def _get_display_path(path, style: str) -> str:
-    """Get display path based on style."""
+def _get_display_path(path: Union[str, Path], style: str) -> str:
+    """Get display path based on style preference.
+    
+    Args:
+        path: File path as string or Path object.
+        style: Display style - 'absolute', 'name', or 'relative'.
+        
+    Returns:
+        Formatted path string according to the specified style.
+        
+    Raises:
+        ValueError: If path cannot be made relative (for 'relative' style).
+        
+    Examples:
+        >>> _get_display_path(Path("/home/user/project/file.py"), "name")
+        'file.py'
+        >>> _get_display_path("./src/main.py", "relative")
+        'src/main.py'
+    """
     # Ensure path is a Path object
     if not isinstance(path, Path):
         path = Path(path)
@@ -1126,12 +1316,24 @@ def _get_display_path(path, style: str) -> str:
             return str(path)
 
 
-def _show_stats(stats) -> None:
-    """Show ranking statistics."""
-    table = Table(title="Ranking Statistics")
+def _show_stats(stats: Union[Dict[str, Any], Any]) -> None:
+    """Show ranking statistics in a formatted table.
+    
+    Args:
+        stats: Statistics dictionary or object with to_dict() method.
+        
+    Returns:
+        None
+        
+    Note:
+        Prints statistics to console using Rich Table formatting.
+        Float values are formatted to 3 decimal places.
+    """
+    table: Table = Table(title="Ranking Statistics")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
 
+    stats_dict: Dict[str, Any]
     if hasattr(stats, "to_dict"):
         stats_dict = stats.to_dict()
     else:
