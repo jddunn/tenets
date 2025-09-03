@@ -252,9 +252,9 @@ Tenets offers three ranking modes that balance speed vs. accuracy:
 
 | Mode         | Speed          | Accuracy | Use Case                                | What It Does                                                                                                        |
 | ------------ | -------------- | -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **fast**     | ⚡ Fastest         | Good     | Quick exploration, simple queries       | • Keyword & path matching<br>• Basic file type relevance<br>• No deep analysis                                      |
-| **balanced** | ⚡⚡ Fast    | Better   | Most use cases (default)                | • TF-IDF corpus analysis<br>• BM25 relevance scoring<br>• Structure analysis<br>• Import/export tracking            |
-| **thorough** | ⚡⚡⚡ Slower | Best     | Complex refactoring, deep understanding | • Everything from balanced<br>• Semantic similarity (ML)<br>• Code pattern detection<br>• Dependency graph analysis |
+| **fast**     | Fastest         | Good     | Quick exploration, simple queries       | • Keyword & path matching<br>• Basic file type relevance<br>• No deep analysis                                      |
+| **balanced** | Fast    | Better   | Most use cases (default)                | • TF-IDF corpus analysis<br>• BM25 relevance scoring<br>• Structure analysis<br>• Import/export tracking            |
+| **thorough** | Slower | Best     | Complex refactoring, deep understanding | • Everything from balanced<br>• Semantic similarity (ML)<br>• Code pattern detection<br>• Dependency graph analysis |
 
 **Performance Tips:**
 
@@ -882,6 +882,12 @@ mkdocs serve --livereload --dirtyreload
 make docs-build
 # Or directly:
 mkdocs build
+
+
+  Fix test failures and suppress pytest ResourceWarningsFixed tenet command tests by correcting mock
+  method signatures to use keyword arguments, adjusted instiller injection logic for adaptive mode to
+  respect complexity thresholds on first distill, and suppressed coverage.py SQLite ResourceWarnings
+  in pytest configuration.
 
 # Deploy to GitHub Pages (requires permissions)
 make docs-deploy

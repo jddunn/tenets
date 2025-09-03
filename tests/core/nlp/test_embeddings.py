@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from tenets.core.nlp.embeddings import (
+    SENTENCE_TRANSFORMERS_AVAILABLE,
     EmbeddingModel,
     FallbackEmbeddings,
     LocalEmbeddings,
@@ -37,7 +38,9 @@ class TestEmbeddingModel:
         assert model.get_embedding_dim() == 384
 
 
-@patch("tenets.core.nlp.embeddings.SENTENCE_TRANSFORMERS_AVAILABLE", True)
+@pytest.mark.skipif(
+    not SENTENCE_TRANSFORMERS_AVAILABLE, reason="sentence-transformers not available"
+)
 @patch("tenets.core.nlp.embeddings.SentenceTransformer")
 class TestLocalEmbeddings:
     """Test suite for LocalEmbeddings."""
@@ -207,7 +210,7 @@ class TestCreateEmbeddingModel:
         mock_instance = Mock()
         mock_local.return_value = mock_instance
 
-        model = create_embedding_model(model_name="custom-model", cache_dir="/tmp/cache")
+        create_embedding_model(model_name="custom-model", cache_dir="/tmp/cache")
 
         mock_local.assert_called_with("custom-model", cache_dir="/tmp/cache")
 
