@@ -13,7 +13,7 @@ This guide provides instructions for setting up your development environment, ru
 1. Fork the repository on GitHub.
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/<your-username>/tenets.git
+   git clone https://github.com/jddunn/tenets.git
    cd tenets
    ```
 
@@ -30,6 +30,7 @@ This project uses `pre-commit` to automatically run linters and formatters befor
 
 ```bash
 pre-commit install
+```
 
 ### Alternative Installs
 
@@ -162,16 +163,167 @@ ruff format .
 
 ## 5. Building Documentation
 
-The documentation is built using `mkdocs`.
+The documentation is built using [MkDocs](https://www.mkdocs.org/) with the [Material theme](https://squidfunk.github.io/mkdocs-material/).
+
+### Installing Documentation Dependencies
 
 ```bash
-# Serve the documentation locally
+# Install MkDocs and theme
+pip install mkdocs mkdocs-material
+
+# Or if you installed with dev dependencies, it's already included:
+pip install -e ".[dev]"
+```
+
+### Serving Documentation Locally
+
+#### FAST Development Mode (Recommended for editing docs)
+
+```bash
+# Use the lightweight dev config with dirty reload for FASTEST iteration
+mkdocs serve -f mkdocs.dev.yml --dirtyreload
+
+# Without dirty reload (still faster than full build)
+mkdocs serve -f mkdocs.dev.yml
+```
+
+**mkdocs.dev.yml** differences:
+- **Disables heavy plugins**: No API generation, no mkdocstrings, no minification
+- **Faster rebuilds**: Skips expensive operations
+- **Dirty reload**: Only rebuilds changed pages (not entire site)
+- **Perfect for**: Writing/editing documentation content
+
+#### Full Production Mode (for testing final output)
+
+```bash
+# Full build with all features including API docs generation
 mkdocs serve
 
-# Build the static site
-mkdocs build
+# Serve on a different port
+mkdocs serve -a localhost:8080
+
+# Serve with verbose output for debugging
+mkdocs serve --verbose
+
+# With clean rebuild
+mkdocs serve --clean
 ```
-The site will be available at `http://127.0.0.1:8000`.
+
+The development server includes:
+- **Live reload**: Changes to docs files automatically refresh the browser
+- **API docs generation**: Auto-generates from Python docstrings
+- **Full theme features**: All navigation and search features enabled
+
+### Building Static Documentation
+
+```bash
+# Build the static site to site/ directory
+mkdocs build
+
+# Build with strict mode (fails on warnings)
+mkdocs build --strict
+
+# Build with verbose output
+mkdocs build --verbose
+
+# Clean build (removes old files first)
+mkdocs build --clean
+```
+
+### Documentation Structure
+
+```
+docs/
+├── index.md           # Homepage
+├── overrides/        # Custom HTML templates
+│   └── home.html     # Custom homepage
+├── styles/           # Custom CSS
+│   ├── main.css
+│   ├── search.css
+│   └── ...
+├── assets/           # Images and screenshots
+│   └── images/
+└── *.md             # Documentation pages
+```
+
+### API Documentation Generation
+
+The API documentation is **auto-generated** from Python docstrings using `mkdocstrings` and `gen-files` plugins.
+
+#### How it works:
+
+1. **`docs/gen_api.py`** script runs during build:
+   - Scans all Python modules in `tenets/`
+   - Generates markdown files with `:::` mkdocstrings syntax
+   - Creates navigation structure in `api/` directory
+
+2. **`mkdocstrings`** plugin processes the generated files:
+   - Extracts docstrings from Python code
+   - Renders them as formatted documentation
+   - Includes type hints, parameters, returns, examples
+
+#### Regenerating API docs:
+
+```bash
+# Full build with API generation (automatic)
+mkdocs build
+
+# Or serve with API generation
+mkdocs serve  # Uses mkdocs.yml which has gen-files enabled
+
+# Skip API generation for faster dev
+mkdocs serve -f mkdocs.dev.yml --dirtyreload
+```
+
+#### Writing Good Docstrings for API docs:
+
+```python
+def example_function(param1: str, param2: int = 0) -> bool:
+    """Short summary of what this function does.
+    
+    Longer description with more details about the function's
+    behavior, use cases, and any important notes.
+    
+    Args:
+        param1: Description of first parameter
+        param2: Description of second parameter (default: 0)
+        
+    Returns:
+        Description of return value
+        
+    Raises:
+        ValueError: When something goes wrong
+        
+    Example:
+        >>> example_function("test", 42)
+        True
+    """
+```
+
+### Making Documentation Changes
+
+1. **For content/markdown**: Edit files in `docs/` directory
+2. **For API docs**: Update docstrings in Python source files
+3. **Preview changes**:
+   - Fast: `mkdocs serve -f mkdocs.dev.yml --dirtyreload`
+   - Full: `mkdocs serve`
+4. **Test the build**: `mkdocs build --strict`
+5. **Check for broken links** in the browser console
+
+### Deploying Documentation
+
+```bash
+# Deploy to GitHub Pages (requires push permissions)
+mkdocs gh-deploy
+
+# Deploy with custom commit message
+mkdocs gh-deploy -m "Update documentation"
+
+# Deploy without pushing (dry run)
+mkdocs gh-deploy --no-push
+```
+
+The site will be available at `https://[username].github.io/tenets/`.
 
 ### 2. Making Changes
 
@@ -448,42 +600,6 @@ logging.basicConfig(level=logging.DEBUG)
 1. **Import errors**: Ensure you've installed in development mode (`pip install -e .`)
 2. **Type errors**: Run `mypy` to catch type issues
 3. **Test failures**: Check if you need to install optional dependencies
-
-## Performance Profiling
-
-### CPU Profiling
-
-```bash
-# Profile a command
-python -m cProfile -o profile.stats tenets analyze .
-
-# View results
-python -m pstats profile.stats
-> sort cumtime
-> stats 20
-```
-
-### Memory Profiling
-
-```python
-from memory_profiler import profile
-
-@profile
-def memory_intensive_function():
-    # Your code here
-    pass
-```
-
-### Benchmarking
-
-```python
-import pytest
-
-@pytest.mark.benchmark
-def test_performance(benchmark):
-    result = benchmark(function_to_test, arg1, arg2)
-    assert result == expected
-```
 
 ## Contributing Guidelines
 
