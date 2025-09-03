@@ -780,6 +780,8 @@ def _format_html(
     """
 
     # JavaScript for interactivity
+    # Use chr(10) for newline to avoid f-string backslash issues in Python 3.11
+    newline = chr(10)
     scripts = f"""
     <script>
         // Store files data globally
@@ -804,7 +806,7 @@ def _format_html(
 
         // Copy all file paths
         function copyAllPaths() {{
-            const paths = window.filesData.map(f => f.path).join('{"\\n"}');
+            const paths = window.filesData.map(f => f.path).join('{newline}');
             navigator.clipboard.writeText(paths).then(function() {{
                 const button = document.getElementById('copy-all-btn');
                 const originalText = button.innerText;
@@ -843,9 +845,9 @@ def _format_html(
 
         // Export as CSV
         function exportAsCSV() {{
-            let csv = 'Rank,Path,Score{"\\n"}';
+            let csv = 'Rank,Path,Score{newline}';
             window.filesData.forEach((file, index) => {{
-                csv += `${{index + 1}},"${{file.path}}",${{file.score.toFixed(3)}}{"\\n"}`;
+                csv += `${{index + 1}},"${{file.path}}",${{file.score.toFixed(3)}}{newline}`;
             }});
             const blob = new Blob([csv], {{type: 'text/csv'}});
             const url = URL.createObjectURL(blob);
