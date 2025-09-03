@@ -16,7 +16,7 @@ import typer
 
 from tenets.config import TenetsConfig
 from tenets.core.analysis.analyzer import CodeAnalyzer
-from tenets.core.project_detector import ProjectDetector
+from tenets.core.analysis.project_detector import ProjectDetector
 from tenets.utils.logger import get_logger
 
 # Expose FileScanner and CodeAnalyzer under expected names for tests/patching
