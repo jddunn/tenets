@@ -248,7 +248,6 @@ def detect_intent(prompt: str, use_ml: bool = False) -> str:
     parser = PromptParser(TenetsConfig(), use_ml=use_ml, use_cache=False)
     context = parser.parse(prompt, use_cache=False)
 
-
     return context.intent
 
 
