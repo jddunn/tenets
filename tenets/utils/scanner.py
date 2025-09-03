@@ -112,6 +112,14 @@ class FileScanner:
         self.config = config
         self.logger = get_logger(__name__)
 
+        # Log multiprocessing configuration
+        from tenets.utils.multiprocessing import get_scanner_workers, log_worker_info
+
+        self.workers = get_scanner_workers(config)
+        parallel_mode = getattr(config.scanner, "parallel_mode", "auto") if config else "auto"
+        log_worker_info(self.logger, "FileScanner", self.workers)
+        self.logger.info(f"FileScanner initialized (parallel_mode: {parallel_mode})")
+
         # Build ignore patterns
         self.ignore_patterns = set(self.DEFAULT_IGNORE_PATTERNS)
         if (

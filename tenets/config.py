@@ -736,7 +736,7 @@ class TenetConfig:
     injection_frequency: str = "adaptive"  # 'always', 'periodic', 'adaptive', 'manual'
     injection_interval: int = 3  # Every Nth distill for periodic mode
     session_complexity_threshold: float = 0.7  # 0-1, triggers injection when exceeded
-    min_session_length: int = 5  # Minimum distills before first injection
+    min_session_length: int = 1  # Minimum distills before later injections (first is always done)
     adaptive_injection: bool = True  # Enable smart context-aware injection
     track_injection_history: bool = True  # Track per-session injection patterns
     decay_rate: float = 0.1  # How quickly tenet importance decays (0=never, 1=immediate)

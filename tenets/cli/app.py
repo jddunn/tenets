@@ -99,6 +99,11 @@ from tenets.cli.commands.viz import viz_app
 
 app.add_typer(viz_app, name="viz", help="Visualize codebase insights")
 
+# Import rank (medium weight)
+from tenets.cli.commands.rank import rank
+
+app.command(name="rank", help="Rank files by relevance without content")(rank)
+
 # Register the heavy main commands - these are what's slowing us down
 # We'll import them conditionally only when they're actually needed
 import sys as _sys
@@ -164,9 +169,10 @@ def version(
         print(f"tenets v{__version__}")
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main_callback(
     ctx: typer.Context,
+    version: bool = typer.Option(False, "--version", help="Show version and exit"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress non-essential output"),
     silent: bool = typer.Option(False, "--silent", help="Only show errors"),
@@ -177,6 +183,18 @@ def main_callback(
     Distill relevant context from your codebase and instill guiding principles
     to maintain consistency across AI interactions.
     """
+    # Handle --version flag
+    if version:
+        from tenets import __version__
+
+        print(f"tenets v{__version__}")
+        raise typer.Exit()
+
+    # If no command is specified and not version, show help
+    if ctx.invoked_subcommand is None and not version:
+        print(ctx.get_help())
+        raise typer.Exit()
+
     # Store options in context for commands to access
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose

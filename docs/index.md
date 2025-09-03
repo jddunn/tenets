@@ -338,7 +338,67 @@ $ tenets distill "implement OAuth2 authentication"
     </div>
   </div>
 
-  <!-- Example 2: Python API vs Output -->
+  <!-- Example 2: Rank Command vs Output -->
+  <div class="see-grid">
+    <div class="see-code">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Rank Files</div>
+      </div>
+      <div class="see-body">
+
+```bash
+$ tenets rank "fix authentication bug" --top 10 --factors
+🔍 Scanning codebase...
+📊 Ranking files by relevance...
+
+1. src/auth/service.py - Score: 0.892
+   - semantic_similarity: 85%
+   - keyword_match: 92%
+   - import_centrality: 78%
+   
+2. src/auth/middleware.py - Score: 0.834
+   - semantic_similarity: 79%
+   - keyword_match: 88%
+   - import_centrality: 65%
+```
+
+      </div>
+    </div>
+    <div class="see-output" data-shot="ranking" data-caption="File ranking with relevance factors">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Tree View</div>
+      </div>
+      <div class="see-body">
+
+```bash
+$ tenets rank "add caching" --tree --scores
+📁 Ranked Files
+├── 📂 src/
+│   ├── 📄 cache_manager.py [0.892]
+│   ├── 📄 redis_client.py [0.834]
+│   └── 📄 config.py [0.756]
+├── 📂 src/api/
+│   ├── 📄 endpoints.py [0.723]
+│   └── 📄 middleware.py [0.689]
+└── 📂 tests/
+    └── 📄 test_cache.py [0.534]
+```
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Example 3: Python API vs Output -->
   <div class="see-grid">
     <div class="see-code">
       <div class="see-header">
