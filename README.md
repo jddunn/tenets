@@ -22,6 +22,7 @@ Intelligent context aggregation that:
 - **Aggregates** them within your token budget
 - **Formats** perfectly for any use case
 - **Pins** critical files per session for guaranteed inclusion
+- **Injects** your tenets (guiding principles) into session interactions automatically in prompts
 - **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
 
 ## Installation

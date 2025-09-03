@@ -47,6 +47,26 @@ class TestJavaScriptAnalyzerInitialization:
         assert ".mjs" in analyzer.file_extensions
         assert ".cjs" in analyzer.file_extensions
         assert analyzer.logger is not None
+    
+    def test_entry_points(self):
+        """Test that entry points are defined."""
+        analyzer = JavaScriptAnalyzer()
+        
+        assert hasattr(analyzer, 'entry_points')
+        assert isinstance(analyzer.entry_points, list)
+        assert "index.js" in analyzer.entry_points
+        assert "main.js" in analyzer.entry_points
+        assert "package.json" in analyzer.entry_points
+    
+    def test_project_indicators(self):
+        """Test that project indicators are defined."""
+        analyzer = JavaScriptAnalyzer()
+        
+        assert hasattr(analyzer, 'project_indicators')
+        assert isinstance(analyzer.project_indicators, dict)
+        assert "react" in analyzer.project_indicators
+        assert "node" in analyzer.project_indicators
+        assert "express" in analyzer.project_indicators
 
 
 class TestImportExtraction:

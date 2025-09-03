@@ -34,8 +34,9 @@ from typing import List, Optional
 
 from tenets.config import TenetsConfig
 
-# Import TF-IDF/BM25 (moved from ranking.tfidf to nlp.tfidf)
-from ..nlp.tfidf import BM25Calculator, TFIDFCalculator
+# Import BM25 (primary) and TF-IDF (fallback)
+from ..nlp.bm25 import BM25Calculator
+from ..nlp.tfidf import TFIDFCalculator
 
 # Import main classes
 from .factors import (
