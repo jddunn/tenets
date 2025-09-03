@@ -74,16 +74,16 @@ from .intent_detector import (
     SemanticIntentDetector,
 )
 
+# Import main parser classes
+from .parser import (
+    PromptParser,
+)
+
 # Import temporal parser classes
 from .temporal_parser import (
     TemporalExpression,
     TemporalParser,
     TemporalPatternMatcher,
-)
-
-# Import main parser classes
-from .parser import (
-    PromptParser,
 )
 
 # Import from models
@@ -221,8 +221,12 @@ def extract_keywords(text: str, max_keywords: int = 20) -> List[str]:
     from tenets.core.nlp.keyword_extractor import KeywordExtractor
 
     extractor = KeywordExtractor(
+<<<<<<< HEAD
         use_stopwords=True,
         stopword_set="prompt",  # Use aggressive stopwords for prompts
+=======
+        use_stopwords=True, stopword_set="prompt"  # Use aggressive stopwords for prompts
+>>>>>>> 092b85e57738d42b42406413ac53c8c9210c6835
     )
 
     return extractor.extract(text, max_keywords=max_keywords, include_scores=False)
