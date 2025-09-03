@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from tenets.core.project_detector import ProjectDetector
+from tenets.core.analysis.project_detector import ProjectDetector
 
 
 class TestProjectDetector:
