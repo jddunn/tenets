@@ -46,6 +46,8 @@
   color: var(--md-accent-fg-color);
 }
 
+/* Minimal search styling - don't interfere with Material Design functionality */
+
 /* Custom scrollbar for search */
 .md-search__scrollwrap::-webkit-scrollbar {
   width: 8px;
@@ -63,3 +65,52 @@
 .md-search__scrollwrap::-webkit-scrollbar-thumb:hover {
   background: var(--md-accent-fg-color--transparent);
 }
+
+/* Native reset button restyle (we add class sf-reset) */
+.md-search__form {
+  position: relative; /* anchor reset button */
+}
+
+.md-search__form .sf-reset {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--md-default-fg-color--lighter);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: background .15s ease, color .15s ease, opacity .12s ease;
+}
+
+/* Show only when we have value (set via JS data attribute) */
+.md-search__form .sf-reset[data-has-value="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.md-search__form .sf-reset:hover {
+  background: var(--md-default-fg-color--transparent);
+  color: var(--md-default-fg-color);
+}
+
+.md-search__form .sf-reset:focus {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+}
+
+/* Hide any default svg icon inside (keep for a11y if present) */
+.md-search__form .sf-reset svg { display: none; }

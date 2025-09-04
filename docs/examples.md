@@ -176,6 +176,6 @@ repos:
 
 ## Next Steps
 
-- Review [Best Practices](best-practices.md) for optimal usage
-- See [CLI Reference](CLI.md) for all available options
-- Check [Configuration](CONFIG.md) for customization options
+- Review [Best Practices](best_practices.md) for optimal usage
+- See [CLI Reference](cli.md) for all available options
+- Check [Configuration](config.md) for customization options

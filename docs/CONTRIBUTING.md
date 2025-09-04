@@ -143,7 +143,7 @@ mkdocs serve
 
 - Register custom rankers via provided registration API (see `tenets/core/ranking/ranker.py`)
 - Provide deterministic output; avoid network calls in ranking stage
-- Document new algorithm flags in `CONFIG.md`
+- Document new algorithm flags in `config.md`
 
 ## Performance Considerations
 
@@ -166,7 +166,7 @@ mkdocs serve
 
 ## Code of Conduct
 
-This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). By participating you agree to uphold it.
+This project follows the [Code of Conduct](code_of_conduct.md). By participating you agree to uphold it.
 
 ## License
 

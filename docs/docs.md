@@ -7,10 +7,10 @@ title: Documentation
 Welcome to the Tenets documentation hub. Explore guides and references below.
 
 - Quick Start: [Get started fast](quickstart.md)
-- Supported Languages: [List](supported-languages.md)
-- CLI Reference: [Commands](CLI.md)
-- Configuration: [Config guide](CONFIG.md)
-- Architecture: [System overview](ARCHITECTURE.md)
+- Supported Languages: [List](supported_languages.md)
+- CLI Reference: [Commands](cli.md)
+- Configuration: [Config guide](config.md)
+- Architecture: [System overview](architecture.md)
 
 - API Reference: [Browse API](api/index.md)
 
