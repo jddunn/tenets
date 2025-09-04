@@ -404,19 +404,7 @@
     background: rgba(0, 0, 0, 0.7);
   }
 
-  /* Ensure search components are above everything on mobile and interactive */
-  .md-search__overlay { z-index: 24050 !important; pointer-events: auto !important; }
-
-  .md-search__inner[role="dialog"],
-  .md-search[aria-expanded="true"],
-  .md-search[data-md-state="active"] { z-index: 24060 !important; }
-
-  /* Center search dialog on mobile */
-  .md-search[aria-expanded="true"] .md-search__inner,
-  .md-search[data-md-state="active"] .md-search__inner {
-    margin: 12vh auto 0 !important;
-    max-width: min(92vw, 720px) !important;
-  }
+  /* Let MkDocs Material handle search positioning and overlay */
 
 
   /* Phones only: hide the right-hand TOC */
