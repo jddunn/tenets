@@ -342,6 +342,7 @@ extra_css:
   - styles/back-to-top.css
   - styles/see-it-in-action.css
   - styles/search.css
+  - styles/image-modal.css
 
   # Responsive
   - styles/mobile.css
@@ -368,6 +369,7 @@ extra_javascript:
   - js/mobile-menu.js
   - js/copy-buttons.js
   - js/back-to-top.js
+  - js/image-modal.js
 
   # Homepage specific
   - js/lantern.js

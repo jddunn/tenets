@@ -142,41 +142,41 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 }
 
 /* Tabs list and items styling */
-.md-tabs__list { 
-  display:flex !important; 
-  gap:0.35rem; 
+.md-tabs__list {
+  display:flex !important;
+  gap:0.35rem;
   align-items:center;
   margin: 0;
   padding: 0.5rem 1rem;
 }
-.md-tabs__item { 
-  margin:0; 
+.md-tabs__item {
+  margin:0;
   display: inline-block !important;
 }
-.md-tabs__link { 
-  position:relative; 
-  padding:0.32rem 0.65rem !important; 
-  font-size:0.72rem !important; 
-  font-weight:600 !important; 
+.md-tabs__link {
+  position:relative;
+  padding:0.32rem 0.65rem !important;
+  font-size:0.72rem !important;
+  font-weight:600 !important;
   border-radius:18px;
-  color:#2a2723 !important; 
+  color:#2a2723 !important;
   text-decoration:none !important;
   transition:all .3s ease;
   display: inline-flex !important;
   align-items: center;
 }
-.md-tabs__link:hover { 
-  transform:translateY(-2px); 
-  color:#f59e0b !important; 
+.md-tabs__link:hover {
+  transform:translateY(-2px);
+  color:#f59e0b !important;
 }
-.md-tabs__link--active { 
-  color:#1a2332 !important; 
+.md-tabs__link--active {
+  color:#1a2332 !important;
 }
-[data-md-color-scheme="slate"] .md-tabs__link { 
-  color:#e6dcc6 !important; 
+[data-md-color-scheme="slate"] .md-tabs__link {
+  color:#e6dcc6 !important;
 }
-[data-md-color-scheme="slate"] .md-tabs__link--active { 
-  color:#fbbf24 !important; 
+[data-md-color-scheme="slate"] .md-tabs__link--active {
+  color:#fbbf24 !important;
 }
 /* Safety: if both toggle labels end up visible, hide redundant one by scheme */
 [data-md-color-scheme="default"] .md-header__inner label.md-header__button[for^="__palette_"]:not(:last-of-type) { display:none !important; }
@@ -194,9 +194,9 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   .md-tabs,
   .md-header + .md-tabs,
   .md-container > .md-tabs,
-  .md-header__inner .md-tabs { 
-    display:flex !important; 
-    visibility:visible !important; 
+  .md-header__inner .md-tabs {
+    display:flex !important;
+    visibility:visible !important;
     opacity:1 !important;
     position: relative !important;
     z-index: 100;
@@ -229,7 +229,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
     opacity: 1 !important;
     background: transparent !important;
   }
-  
+
   [data-md-color-scheme="slate"] .md-tabs {
     background: transparent !important;
   }
@@ -389,18 +389,19 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 
 .md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form {
   background: #fdfdf9;
-  border-radius: 18px;
+  border-radius: 14px;
   box-shadow:
     inset 2px 2px 4px rgba(26, 35, 50, 0.05),
     inset -2px -2px 4px rgba(255, 255, 255, 0.75);
   transition: all 0.25s ease;
   overflow: hidden;
-  height: 34px; /* visually centers icon */
-  width: 34px;  /* icon-only */
+  height: 26px; /* much more compact */
+  width: 200px;  /* slightly narrower */
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0; /* no inner padding when icon-only */
+  justify-content: flex-start;
+  padding: 0 0.4rem; /* tighter padding */
+  position: relative; /* anchor icons inside the form */
 }
 
 [data-md-color-scheme="slate"] .md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form {
@@ -410,30 +411,78 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
     inset -2px -2px 5px rgba(255, 255, 255, 0.02);
 }
 
-/* Do not hide the input; let Material handle visibility and focus */
-
-.md-search__input::placeholder {
-  color: #6b5d4f;
-  opacity: 0.6;
+/* Ensure input is visible and styled properly */
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__input {
+  display: block !important;
+  width: 100% !important; /* Full width */
+  padding: 0 1.9rem 0 0.6rem !important; /* Normal left, space right for icon */
+  height: 26px !important; /* match container height */
+  background: transparent !important;
+  color: #2a2723 !important;
+  font-size: 0.7rem !important; /* smaller font */
+  line-height: 26px !important; /* vertically center text */
+  border: none !important;
 }
 
-[data-md-color-scheme="slate"] .md-header .md-search__input { color: #fdfdf9; }
+/* Always show placeholder "Search..." */
+.md-search__input::placeholder {
+  content: "Search..." !important;
+  color: #6b5d4f !important;
+  opacity: 0.7 !important;
+  visibility: visible !important;
+}
+
+/* Force placeholder text via attribute if needed */
+.md-search__input:placeholder-shown {
+  color: #2a2723 !important;
+}
+
+.md-search__input {
+  placeholder: "Search..." !important;
+}
+
+[data-md-color-scheme="slate"] .md-search__input::placeholder {
+  color: #a09580 !important;
+  opacity: 0.7 !important;
+}
+
+[data-md-color-scheme="slate"] .md-header .md-search__input {
+  color: #fdfdf9 !important;
+}
+[data-md-color-scheme="slate"] .md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__input {
+  color: #fdfdf9 !important;
+}
 [data-md-color-scheme="slate"] .md-header .md-search__icon svg { fill:#fbbf24 !important; }
 
-/* Center the icon within the 34x34 button when inactive only */
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__icon {
-  position: static;
+/* Position the search icon on the RIGHT side of the input (compact state) */
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form > .md-search__icon:first-of-type {
+  position: absolute;
+  right: 0.45rem;  /* Changed from left to right */
   transform: none;
   color: #f59e0b;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
-  width: 34px;
+  height: 26px;
+  width: 18px;
   line-height: 0; /* prevent inline SVG extra leading from shifting vertically */
+  pointer-events: none; /* Icon is decorative, input handles clicks */
 }
 
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__icon svg { width:16px; height:16px; fill:#f59e0b !important; stroke:none; }
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form > .md-search__icon:first-of-type svg {
+  width: 14px; height: 14px; fill: #f59e0b !important; stroke: none;
+}
+
+/* Hide the trailing icon in compact state to avoid duplication */
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form > .md-search__icon:last-of-type {
+  display: none !important;
+}
+
+/* Adjust padding - left padding normal, right padding for icon */
+.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__input {
+  padding-left: 0.6rem !important;  /* Normal left padding */
+  padding-right: 1.9rem !important; /* Space for icon on right */
+}
 
 /* When active, allow Material defaults to lay out the form and icons */
 .md-header .md-search[aria-expanded="true"] .md-search__form,
@@ -442,6 +491,13 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   height: auto !important;
   padding: var(--md-text-spacing, 0.35rem 0.6rem) !important;
   border-radius: 10px;
+  position: relative;
+}
+
+/* Space for close button in active search */
+.md-header .md-search[aria-expanded="true"] .md-search__input,
+.md-header .md-search[data-md-state="active"] .md-search__input {
+  padding-right: 40px !important;
 }
 
 /* Let the active search grow across the header row so typing isn't clipped */
@@ -723,23 +779,40 @@ label.md-header__button[for^="__palette_"][data-tooltip]:hover::after {
 label.md-header__button[for^="__palette_"] { order: 2; }
 .md-source { order: 4; }
 
-/* Show the search button as compact icon */
-label.md-header__button[for="__search"] {
-  display: inline-flex !important;
-  position: relative !important;
-  width: 2.2rem !important;
-  height: 2.2rem !important;
-  margin: 0 0.2rem !important;
-  padding: 0 !important;
-  border: none !important;
-  clip: auto !important;
-  clip-path: none !important;
-  overflow: visible !important;
-  cursor: pointer !important;
-  align-items: center;
-  justify-content: center;
-  color: var(--md-accent-fg-color) !important;
-  background: transparent !important;
+/* AGGRESSIVELY hide ALL header search toggle buttons/labels that are NOT inside .md-search container */
+.md-header label.md-header__button[for="__search"],
+.md-header .md-header__button.md-icon[for="__search"],
+.md-header__inner > label[for="__search"],
+.md-header__inner > .md-header__button[for="__search"],
+.md-header__option > label[for="__search"],
+.md-header__option label[for="__search"],
+label[for="__search"].md-header__button,
+label.md-icon[for="__search"]:not(.md-search__icon),
+.md-header > label[for="__search"],
+body > label[for="__search"],
+header label[for="__search"]:not(.md-search__icon) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Only allow the search icon INSIDE the .md-search container */
+.md-search label.md-search__icon[for="__search"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  position: absolute !important;
+  left: auto !important;
+  right: 0.45rem !important;
+}
+
+/* Ensure the in-form search icon remains visible and positioned */
+.md-header .md-search .md-search__form .md-search__icon[for="__search"] {
+  display: flex !important;
 }
 
 /* MOBILE - Responsive at 1100px */
@@ -808,10 +881,13 @@ label.md-header__button[for="__search"] {
     height: 52px !important;
   }
 
-  /* Hide header search on mobile by default, but unhide when active */
-  /* Keep search button visible on mobile (icon-only); full dialog opens on tap */
+  /* Keep search visible and functional on mobile */
   .md-search { display: flex !important; order: 2; margin: 0 0.25rem; }
-  .md-search .md-search__form { width: 34px; height: 34px; }
+  .md-search .md-search__form {
+    width: auto !important;
+    min-width: 160px !important;
+    height: 26px !important;
+  }
   .mobile-drawer-search-wrapper { margin-top: 0.25rem !important; }
 
   /* Keep GitHub visible on mobile, after search */
