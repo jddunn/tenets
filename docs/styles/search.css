@@ -1,147 +1,65 @@
-/* Search Styling - MkDocs Material Compatible
-   Minimal theming that works with default Material search functionality
+/* Search Styling - Minimal MkDocs Material Override
+   Only essential theming without breaking functionality
    ===================================================================== */
 
-/* =====================================================
-   SEARCH ICONS AND BUTTONS
-   ===================================================== */
+/* Make search modal larger and centered */
+@media screen and (min-width: 60em) {
+  .md-search__inner {
+    max-width: 66rem !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
 
-/* Search icon styling (amber theme) */
-.md-search__icon[for="__search"] {
-  cursor: pointer;
-  transition: all 0.2s ease;
+  .md-search__form {
+    height: 2.8rem !important;
+  }
+
+  .md-search__input {
+    font-size: 1.1rem !important;
+    padding-left: 3.2rem !important;
+    padding-right: 2rem !important;
+    height: 2.8rem !important;
+  }
+
+  .md-search__output {
+    max-height: 75vh !important;
+  }
 }
 
-.md-search__icon[for="__search"]:hover {
-  color: #f59e0b;
-  transform: scale(1.05);
+/* Search icon color */
+.md-search__icon {
+  color: var(--md-accent-fg-color);
 }
 
-/* =====================================================
-   SEARCH INPUT AND FORM
-   ===================================================== */
-
-/* Search input font and placeholder */
-.md-search__input {
-  font-family: 'Inter', sans-serif;
-}
-
-.md-search__input::placeholder {
-  font-style: italic;
-  opacity: 0.6;
-}
-
-/* =====================================================
-   SEARCH RESULTS THEMING
-   ===================================================== */
-
-/* Search result items with subtle hover */
-.md-search-result__item:hover {
-  background: rgba(245, 158, 11, 0.05);
-}
-
-/* Search result titles use display font */
+/* Search result styling */
 .md-search-result__title {
-  font-family: 'Playfair Display', serif;
   font-weight: 600;
 }
 
-/* Search result icons */
-.md-search-result__icon {
-  color: #f59e0b;
+.md-search-result__teaser {
+  line-height: 1.6;
 }
 
 /* Highlighted search terms */
 .md-search-result mark {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-  color: #1a2332;
-  padding: 0.125rem 0.25rem;
-  border-radius: 3px;
-  font-weight: 600;
+  background-color: var(--md-accent-fg-color--transparent);
+  color: var(--md-accent-fg-color);
 }
 
-/* Dark mode mark color adjustment */
-[data-md-color-scheme="slate"] .md-search-result mark {
-  color: #0f1419;
-}
-
-/* =====================================================
-   SEARCH SUGGESTIONS
-   ===================================================== */
-
-.md-search__suggest:hover {
-  background: rgba(245, 158, 11, 0.1);
-}
-
-/* =====================================================
-   SEARCH META AND NO RESULTS
-   ===================================================== */
-
-.md-search-result__meta::before {
-  content: "§ ";
-  color: #f59e0b;
-  font-weight: bold;
-  margin-right: 0.25rem;
-}
-
-/* No results with search emoji */
-.md-search-result__meta--no-result::before {
-  content: "🔍 ";
-  font-size: 1.5rem;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-/* =====================================================
-   SEARCH LOADING STATE
-   ===================================================== */
-
-.md-search__input[data-md-state="pending"] ~ .md-search__icon::after {
-  content: "";
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0.875rem;
-  height: 0.875rem;
-  border: 2px solid #f59e0b;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: searchSpin 1s linear infinite;
-}
-
-@keyframes searchSpin {
-  to { transform: translateY(-50%) rotate(360deg); }
-}
-
-/* =====================================================
-   MOBILE SEARCH ADJUSTMENTS
-   ===================================================== */
-
-@media screen and (max-width: 600px) {
-  .md-search__input::placeholder {
-    font-size: 1rem;
-  }
-}
-
-/* =====================================================
-   CUSTOM SCROLLBAR (MINIMAL)
-   ===================================================== */
-
+/* Custom scrollbar for search */
 .md-search__scrollwrap::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .md-search__scrollwrap::-webkit-scrollbar-track {
-  background: rgba(245, 158, 11, 0.1);
-  border-radius: 3px;
+  background: var(--md-default-bg-color--lighter);
 }
 
 .md-search__scrollwrap::-webkit-scrollbar-thumb {
-  background: #f59e0b;
-  border-radius: 3px;
+  background: var(--md-accent-fg-color);
+  border-radius: 4px;
 }
 
 .md-search__scrollwrap::-webkit-scrollbar-thumb:hover {
-  background: #fbbf24;
+  background: var(--md-accent-fg-color--transparent);
 }
