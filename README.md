@@ -9,7 +9,7 @@
 [![PyPI version](https://badge.fury.io/py/tenets.svg)](https://pypi.org/project/tenets/)
 [![CI](https://github.com/jddunn/tenets/actions/workflows/ci.yml/badge.svg)](https://github.com/jddunn/tenets/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/jddunn/tenets)
-[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/latest)
 
 **tenets** automatically finds and builds the most relevant context from your codebase. Instead of manually copying files or searching for documentation, tenets intelligently aggregates exactly what you need for debugging, building features, or coding with AI assistants. Works with any codebase but best with Git repos.
 
@@ -154,7 +154,7 @@ ignore:
 
 ## Documentation
 
-- **[Full Documentation](https://tenets.dev/docs)** - Complete guide and API reference
+- **[Full Documentation](https://tenets.dev/latest)** - Complete guide and API reference
 - **[CLI Reference](docs/cli.md)** - All commands and options
 - **[Configuration Guide](docs/config.md)** - Detailed configuration options
 - **[Architecture Overview](docs/architecture/index.md)** - How tenets works internally
