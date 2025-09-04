@@ -16,22 +16,22 @@
   #__drawer,
   .md-overlay { display: none !important; }
   /* Keep tabs visible on desktop */
-  .md-tabs { 
-    display: flex !important; 
+  .md-tabs {
+    display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
   }
-  .md-tabs__list { 
-    display: flex !important; 
+  .md-tabs__list {
+    display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
   }
-  .md-tabs__item { 
-    display: block !important; 
+  .md-tabs__item {
+    display: block !important;
     visibility: visible !important;
   }
-  .md-tabs__link { 
-    display: inline-flex !important; 
+  .md-tabs__link {
+    display: inline-flex !important;
     visibility: visible !important;
     opacity: 1 !important;
   }
@@ -86,27 +86,60 @@
     fill: #f59e0b;
   }
 
-  /* Right side controls */
-  label.md-header__button[for^="__palette_"] { display: flex !important; order: 2; }
+  /* Mobile header order: hamburger (1), search container (2), theme (3), github (4) */
 
-  /* Prefer inline .md-search on tablet; search icon on very small screens */
-  .md-header__inner .md-search { order: 3; display: flex !important; align-items: center; }
-  /* let theme decide search icon visibility except tiny screens */
-  .md-header__inner label.md-header__button[for="__search"] { display: inline-flex; }
+  /* Search container - includes both icon and form */
+  .md-header__inner .md-search {
+    order: 2;
+    display: flex !important;
+    align-items: center;
+    flex: 1;
+    max-width: 280px; /* wider for better typing */
+    min-width: 180px; /* ensure minimum width */
+    margin-right: 0.5rem;
+  }
 
-  .md-source { display: inline-flex !important; order: 4; }
+  /* Search icon button - positioned within search container */
+  .md-header__inner .md-search .md-search__icon,
+  .md-header__inner label.md-header__button[for="__search"] {
+    order: 1;
+    margin-right: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  /* Search form - positioned after icon */
+  .md-header__inner .md-search .md-search__form {
+    order: 2;
+    flex: 1;
+  }
+
+  /* Theme toggle */
+  label.md-header__button[for^="__palette_"] {
+    display: flex !important;
+    order: 3;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  /* GitHub source */
+  .md-source {
+    display: inline-flex !important;
+    order: 4;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+  }
 
   /* Keep GitHub inline next to theme toggle (no fixed positioning) */
   .md-header__source,
   .md-header .md-source { position: static !important; margin-right: 0.25rem !important; }
-  
+
   /* Fix GitHub icon color on mobile */
   .md-source__icon svg,
   .md-header .md-source__icon svg,
   .md-source svg {
     fill: #f59e0b !important;
   }
-  
+
   [data-md-color-scheme="slate"] .md-source__icon svg,
   [data-md-color-scheme="slate"] .md-header .md-source__icon svg,
   [data-md-color-scheme="slate"] .md-source svg {
@@ -144,21 +177,21 @@
     background: #fff !important;
     overflow: hidden !important;
   }
-  
+
   /* Show drawer when checkbox is checked - Material for MkDocs structure */
   .md-toggle--drawer:checked ~ .md-container .md-sidebar--primary,
   #__drawer:checked ~ .md-container .md-sidebar--primary,
   input[type="checkbox"]#__drawer:checked ~ .md-container .md-sidebar--primary {
     transform: translateX(0) !important;
   }
-  
+
   /* Style the drawer content */
   .md-sidebar--primary .md-sidebar__scrollwrap {
     height: 100% !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
-  
+
   .md-sidebar--primary .md-nav--primary {
     background: linear-gradient(180deg, #fdfdf9 0%, #f7f5f0 100%) !important;
     height: 100% !important;
@@ -167,7 +200,7 @@
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav--primary {
     background: linear-gradient(180deg, #1a2332 0%, #263244 100%) !important;
   }
-  
+
   /* Overlay styling */
   .md-overlay {
     position: fixed !important;
@@ -182,7 +215,7 @@
     pointer-events: none !important;
     cursor: pointer !important;
   }
-  
+
   .md-toggle--drawer:checked ~ .md-overlay,
   #__drawer:checked ~ .md-overlay,
   input[type="checkbox"]#__drawer:checked ~ .md-overlay {
@@ -209,13 +242,13 @@
     color: transparent !important; /* Hide text */
     overflow: hidden;
   }
-  
+
   /* Hide the text content but keep the container */
   .md-nav--primary .md-nav__title:first-child::after,
   .md-sidebar--primary .md-nav__title:first-child::after {
     display: none !important;
   }
-  
+
   /* Hide any duplicate titles */
   .md-nav--primary .md-nav__title ~ .md-nav__title,
   .md-sidebar--primary .md-nav__title ~ .md-nav__title {
@@ -231,7 +264,7 @@
   .md-sidebar--primary .md-nav__title .md-nav__button img {
     display: none !important;
   }
-  
+
   /* Hide any text spans in the title */
   .md-nav--primary .md-nav__title span,
   .md-sidebar--primary .md-nav__title span,
@@ -239,7 +272,7 @@
   .md-sidebar--primary .md-nav__title .md-ellipsis {
     display: none !important;
   }
-  
+
   /* Logo in drawer header - use pseudo element to show only icon */
   .md-nav--primary .md-nav__title:first-child::before,
   .md-sidebar--primary .md-nav__title:first-child::before {
@@ -253,7 +286,7 @@
     position: relative;
     z-index: 1;
   }
-  
+
   /* Light mode should use dark logo on amber background for contrast */
   [data-md-color-scheme="default"] .md-nav--primary .md-nav__title:first-child::before,
   [data-md-color-scheme="default"] .md-sidebar--primary .md-nav__title:first-child::before {
@@ -265,7 +298,7 @@
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title:first-child::before {
     background-image: url('../logos/tenets_dark_icon_transparent_cropped.png');
   }
-  
+
   /* Ensure we're hiding ALL possible logo/title elements */
   .md-nav--primary *[class*="logo"],
   .md-sidebar--primary *[class*="logo"],
@@ -299,7 +332,7 @@
   .md-sidebar--primary .md-nav__back {
     display: none !important;
   }
-  
+
   /* Navigation items */
   .md-nav--primary > .md-nav__list > .md-nav__item,
   .md-sidebar--primary > .md-nav__list > .md-nav__item {
@@ -389,7 +422,7 @@
     border: 1px solid rgba(245, 158, 11, 0.3);
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
   }
-  
+
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link[href*="blog"],
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link[href*="contact"],
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link[href*="blog"],
@@ -412,18 +445,26 @@
     .md-sidebar--secondary { display: none !important; }
   }
 
-  /* Very small screens: show compact search icon and compact GitHub, hide inline search input */
+  /* Very small screens: keep search visible but more compact */
   @media screen and (max-width: 600px) {
-    /* Use the search icon button on tiny screens */
-    .md-header__inner label.md-header__button[for="__search"] {
+    /* Keep search form visible but make it more compact */
+    .md-header__inner .md-search {
       display: flex !important;
-      order: 3;
-      align-items: center;
-      justify-content: center;
+      min-width: 120px; /* smaller minimum for tiny screens */
+      max-width: 200px;
     }
-    /* Hide inline search form on very small screens, but keep button visible */
-    .md-header__inner .md-search__form { display: none !important; }
-    .md-header__inner .md-search { display: flex !important; }
+    .md-header__inner .md-search__form {
+      display: flex !important; /* keep form visible */
+      width: 100% !important;
+      height: 26px !important; /* very compact on mobile */
+    }
+    /* Adjust input for small screens */
+    .md-header__inner .md-search__input {
+      font-size: 0.7rem !important;
+      padding: 0 0.3rem 0 1.6rem !important;
+      height: 26px !important;
+      line-height: 26px !important;
+    }
 
     /* Compact GitHub/source: icon only */
     .md-header__source,
