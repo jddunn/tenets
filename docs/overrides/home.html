@@ -31,7 +31,7 @@
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .screenshot-item {
     width: 100%;
     border: 1px solid rgba(245, 158, 11, 0.2);
@@ -44,7 +44,7 @@
     background: #1e1e1e;
     position: relative;
   }
-  
+
   /* Terminal screenshots - add padding and constrain size */
   .screenshot-item.terminal-shot {
     padding: 40px;
@@ -54,7 +54,7 @@
     align-items: center;
     min-height: 200px;
   }
-  
+
   .screenshot-item.terminal-shot img {
     width: auto;
     max-width: 85%;
@@ -64,7 +64,7 @@
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
-  
+
   /* Context screenshots - centered with gradient like sessions */
   #pane-context .screenshot-item {
     padding: 40px;
@@ -74,7 +74,7 @@
     align-items: center;
     min-height: 200px;
   }
-  
+
   #pane-context .screenshot-item img {
     width: auto;
     max-width: 85%;
@@ -86,7 +86,7 @@
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
-  
+
   /* Session screenshots - terminal style with padding */
   #pane-sessions .screenshot-item {
     padding: 40px;
@@ -96,7 +96,7 @@
     justify-content: center;
     align-items: center;
   }
-  
+
   #pane-sessions .screenshot-item img {
     width: auto;
     max-width: 85%;
@@ -108,35 +108,36 @@
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
-  
+
   /* Stagger animation for multiple screenshots */
   .screenshot-item:nth-child(1) {
     animation-delay: 0.1s;
   }
-  
+
   .screenshot-item:nth-child(2) {
     animation-delay: 0.3s;
   }
-  
+
   .screenshot-item:nth-child(3) {
     animation-delay: 0.5s;
   }
-  
+
   @keyframes fadeInUp {
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
+
   .screenshot-item:hover {
     border-color: rgba(245, 158, 11, 0.4);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
   }
-  
-  /* Analysis and Quality screenshots - centered with gradient */
+
+  /* Analysis, Rank, Quality and Velocity screenshots - centered with gradient */
   #pane-analysis .screenshot-item,
+  #pane-rank .screenshot-item,
   #pane-quality .screenshot-item,
   #pane-velocity .screenshot-item {
     padding: 40px;
@@ -146,8 +147,9 @@
     align-items: center;
     min-height: 200px;
   }
-  
+
   #pane-analysis .screenshot-item img,
+  #pane-rank .screenshot-item img,
   #pane-quality .screenshot-item img,
   #pane-velocity .screenshot-item img {
     width: auto;
@@ -160,38 +162,40 @@
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
-  
+
   .screenshot-item img {
     width: 100%;
     height: auto;
     display: block;
   }
-  
+
   /* Light theme adjustments */
   [data-md-color-scheme="default"] .screenshot-item.terminal-shot,
   [data-md-color-scheme="default"] #pane-sessions .screenshot-item,
   [data-md-color-scheme="default"] #pane-context .screenshot-item,
   [data-md-color-scheme="default"] #pane-analysis .screenshot-item,
+  [data-md-color-scheme="default"] #pane-rank .screenshot-item,
   [data-md-color-scheme="default"] #pane-quality .screenshot-item,
   [data-md-color-scheme="default"] #pane-velocity .screenshot-item {
     background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
   }
-  
+
   [data-md-color-scheme="default"] .screenshot-item.terminal-shot img,
   [data-md-color-scheme="default"] #pane-sessions .screenshot-item img {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
-  
+
   /* Trigger animation when pane becomes active */
   .see-pane {
     display: none;
   }
-  
+
   input[type="radio"]:checked ~ .see-panes .see-pane {
     display: none;
   }
-  
+
   #tab-context:checked ~ .see-panes #pane-context,
+  #tab-rank:checked ~ .see-panes #pane-rank,
   #tab-analysis:checked ~ .see-panes #pane-analysis,
   #tab-quality:checked ~ .see-panes #pane-quality,
   #tab-sessions:checked ~ .see-panes #pane-sessions,
@@ -199,9 +203,10 @@
   #tab-viz:checked ~ .see-panes #pane-viz {
     display: block;
   }
-  
+
   /* Re-trigger animation when tab is selected */
   #tab-context:checked ~ .see-panes #pane-context .screenshot-item,
+  #tab-rank:checked ~ .see-panes #pane-rank .screenshot-item,
   #tab-analysis:checked ~ .see-panes #pane-analysis .screenshot-item,
   #tab-quality:checked ~ .see-panes #pane-quality .screenshot-item,
   #tab-sessions:checked ~ .see-panes #pane-sessions .screenshot-item,
@@ -209,7 +214,7 @@
   #tab-viz:checked ~ .see-panes #pane-viz .screenshot-item {
     animation: fadeInUp 0.6s ease forwards;
   }
-  
+
   /* Screenshot caption */
   .screenshot-caption {
     padding: 8px 12px;
@@ -219,7 +224,7 @@
     text-align: center;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
-  
+
   /* Caption inside terminal shots */
   .terminal-shot .screenshot-caption {
     background: transparent;
@@ -228,12 +233,12 @@
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.85em;
   }
-  
+
   [data-md-color-scheme="slate"] .screenshot-caption {
     background: rgba(255, 255, 255, 0.03);
     border-top-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   [data-md-color-scheme="default"] .terminal-shot .screenshot-caption {
     color: rgba(0, 0, 0, 0.6);
   }
@@ -387,9 +392,11 @@
               <div class="see-title">Output</div>
             </div>
             <div class="see-body">
-              <div class="shot-frame">
-                <img src="{{ 'assets/images/screenshots/rank.png' | url }}" alt="Ranking the most relevant files" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
-                <span class="see-hint">Click to reveal</span>
+              <div class="screenshots-container">
+                <div class="screenshot-item">
+                  <img src="{{ 'assets/images/screenshots/rank.png' | url }}" alt="Ranking the most relevant files" loading="lazy" onerror="this.onerror=null; this.src='{{ 'logos/tenets_dark_icon_transparent.png' | url }}'" />
+                  <div class="screenshot-caption">Ranking files by relevance using multi-factor scoring</div>
+                </div>
               </div>
             </div>
           </div>

@@ -1,0 +1,323 @@
+/* Image Modal Styling - Victorian Neumorphic Theme
+   ===================================================================== */
+
+/* Modal Overlay */
+.image-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(26, 35, 50, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 20000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: zoom-out;
+}
+
+[data-md-color-scheme="slate"] .image-modal-overlay {
+  background: rgba(10, 17, 30, 0.95);
+}
+
+.image-modal-overlay.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+}
+
+/* Modal Container */
+.image-modal-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  padding: 20px;
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.image-modal-overlay.active .image-modal-container {
+  transform: scale(1);
+}
+
+/* Modal Image Wrapper with Neumorphic Frame */
+.image-modal-wrapper {
+  position: relative;
+  background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow:
+    0 20px 60px rgba(26, 35, 50, 0.15),
+    0 10px 30px rgba(26, 35, 50, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 4px rgba(26, 35, 50, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+[data-md-color-scheme="slate"] .image-modal-wrapper {
+  background: linear-gradient(135deg, #1a2332 0%, #263244 100%);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.05),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+/* Modal Image */
+.image-modal-img {
+  display: block;
+  max-width: calc(90vw - 72px);
+  max-height: calc(90vh - 140px);
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Victorian Ornamental Corners */
+.image-modal-wrapper::before,
+.image-modal-wrapper::after,
+.modal-corner-left::before,
+.modal-corner-right::before {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 20%, 20% 20%, 20% 100%, 0 100%);
+  opacity: 0.6;
+}
+
+.image-modal-wrapper::before { top: -2px; left: -2px; }
+.image-modal-wrapper::after {
+  top: -2px;
+  right: -2px;
+  transform: rotate(90deg);
+}
+
+.modal-corner-left,
+.modal-corner-right {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+}
+
+.modal-corner-left { bottom: -2px; left: -2px; }
+.modal-corner-left::before { transform: rotate(-90deg); }
+
+.modal-corner-right { bottom: -2px; right: -2px; }
+.modal-corner-right::before { transform: rotate(180deg); }
+
+/* Close Button */
+.image-modal-close {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 36px;
+  height: 36px;
+  background: #fdfdf9;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  box-shadow:
+    3px 3px 10px rgba(26, 35, 50, 0.1),
+    -3px -3px 10px rgba(255, 255, 255, 0.8),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+[data-md-color-scheme="slate"] .image-modal-close {
+  background: #263244;
+  border-color: rgba(251, 191, 36, 0.3);
+  box-shadow:
+    3px 3px 10px rgba(0, 0, 0, 0.3),
+    -3px -3px 10px rgba(255, 255, 255, 0.02);
+}
+
+.image-modal-close:hover {
+  transform: rotate(90deg) scale(1.1);
+  box-shadow:
+    4px 4px 16px rgba(245, 158, 11, 0.2),
+    -4px -4px 16px rgba(255, 255, 255, 0.9);
+}
+
+.image-modal-close::before,
+.image-modal-close::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 2px;
+  background: #f59e0b;
+  border-radius: 2px;
+}
+
+.image-modal-close::before { transform: rotate(45deg); }
+.image-modal-close::after { transform: rotate(-45deg); }
+
+/* Caption */
+.image-modal-caption {
+  text-align: center;
+  margin-top: 16px;
+  padding: 8px 16px;
+  background: rgba(245, 158, 11, 0.05);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #2a2723;
+  font-weight: 500;
+}
+
+[data-md-color-scheme="slate"] .image-modal-caption {
+  background: rgba(251, 191, 36, 0.08);
+  color: #e6dcc6;
+}
+
+/* Navigation Arrows */
+.image-modal-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: #fdfdf9;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 158, 11, 0.25);
+  box-shadow:
+    4px 4px 12px rgba(26, 35, 50, 0.08),
+    -4px -4px 12px rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+[data-md-color-scheme="slate"] .image-modal-nav {
+  background: #263244;
+  border-color: rgba(251, 191, 36, 0.25);
+  box-shadow:
+    4px 4px 12px rgba(0, 0, 0, 0.3),
+    -4px -4px 12px rgba(255, 255, 255, 0.02);
+}
+
+.image-modal-nav:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow:
+    6px 6px 18px rgba(245, 158, 11, 0.15),
+    -6px -6px 18px rgba(255, 255, 255, 0.9);
+}
+
+.image-modal-nav.prev { left: -60px; }
+.image-modal-nav.next { right: -60px; }
+
+.image-modal-nav::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid #f59e0b;
+  border-right: 2px solid #f59e0b;
+  transform: rotate(-135deg);
+}
+
+.image-modal-nav.next::before {
+  transform: rotate(45deg);
+}
+
+/* Loading Spinner */
+.image-modal-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(245, 158, 11, 0.2);
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: modalSpin 0.8s linear infinite;
+}
+
+@keyframes modalSpin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Zoom Indicator */
+.image-modal-zoom {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(26, 35, 50, 0.8);
+  color: #fdfdf9;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-modal-overlay.active .image-modal-zoom {
+  opacity: 1;
+  animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  20%, 80% { opacity: 1; }
+}
+
+/* Make clickable images show zoom cursor */
+.example-showcase img,
+.screenshot-item img,
+.feature-card img,
+.clickable-image {
+  cursor: zoom-in;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.example-showcase img:hover,
+.screenshot-item img:hover,
+.feature-card img:hover,
+.clickable-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .image-modal-container {
+    max-width: 95vw;
+    max-height: 95vh;
+    padding: 10px;
+  }
+
+  .image-modal-wrapper {
+    padding: 10px;
+  }
+
+  .image-modal-close {
+    top: 10px;
+    right: 10px;
+  }
+
+  .image-modal-nav {
+    display: none; /* Hide nav arrows on mobile */
+  }
+
+  .modal-corner-left,
+  .modal-corner-right,
+  .image-modal-wrapper::before,
+  .image-modal-wrapper::after {
+    display: none; /* Simplify on mobile */
+  }
+}
