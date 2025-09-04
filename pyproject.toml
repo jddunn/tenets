@@ -4,7 +4,7 @@
 name = "tenets"
 version = "0.1.0"
 description = "AI-native code exploration and context management platform"
-authors = [{name = "Tenets Team", email = "team@tenets.dev"}]
+authors = [{name = "Johnny Dunn", email = "team@manic.agency"}]
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
@@ -47,7 +47,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/jddunn/tenets"
-Documentation = "https://docs.tenets.dev"
+Documentation = "https://tenets.dev"
 Repository = "https://github.com/jddunn/tenets"
 Issues = "https://github.com/jddunn/tenets/issues"
 Changelog = "https://github.com/jddunn/tenets/blob/main/CHANGELOG.md"

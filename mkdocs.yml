@@ -149,7 +149,12 @@ plugins:
             - import os, sys
             - sys.path.insert(0, os.path.abspath('.'))
           options:
-            show_source: true
+            # Show actual documentation
+            show_source: true # Show source code
+            show_submodules: false # Don't auto-expand submodules
+            inherited_members: true # Show inherited members
+
+            # UI/UX settings
             show_root_heading: true
             show_root_toc_entry: true
             show_object_full_path: false
@@ -158,18 +163,20 @@ plugins:
             show_symbol_type_toc: true
             members_order: source
             group_by_category: true
-            show_submodules: true
+
+            # Documentation style
             docstring_style: google
             docstring_section_style: table
             merge_init_into_class: true
-            show_if_no_docstring: false
+            show_if_no_docstring: true # Show even without docstring
             separate_signature: true
             line_length: 80
             show_signature_annotations: true
             signature_crossrefs: true
-            filters: ['!^_']
-            inherited_members: true
-            preload_modules: []
+
+            # Filtering - show more content
+            filters: ['!^_'] # Only hide single underscore private
+            preload_modules: ['tenets']
 
   # Git revision dates
   - git-revision-date-localized:
@@ -324,6 +331,8 @@ extra_css:
   # Base styles
   - styles/variables.css
   - styles/main.css
+  # Architecture performance styles
+  - styles/architecture.css
 
   # Animations
   - styles/animations.css
@@ -362,6 +371,8 @@ extra_javascript:
   # Core functionality
   - js/main.js
   - js/page-flags.js
+  # Architecture lazy loading
+  - js/architecture-lazy-load.js
 
   # Components
   - js/theme-toggle.js
@@ -370,6 +381,7 @@ extra_javascript:
   - js/copy-buttons.js
   - js/back-to-top.js
   - js/image-modal.js
+  - js/search-fix.js # Comprehensive search behavior fixes
 
   # Homepage specific
   - js/lantern.js
@@ -387,12 +399,25 @@ nav:
       - Quick Start: quickstart.md
       - Installation: installation.md
   - User Guide:
-      - CLI Reference: CLI.md
-      - Supported Languages: supported-languages.md
-      - Best Practices: best-practices.md
+      - CLI Reference: cli.md
+      - Supported Languages: supported_languages.md
+      - Best Practices: best_practices.md
       - Examples: examples.md
-  - Architecture: ARCHITECTURE.md
-  - API Docs: api/index.md
+  - Architecture:
+      - Overview: architecture/index.md
+      - System Overview: architecture/overview.md
+      - Core Systems: architecture/core_systems.md
+      - Data & Storage: architecture/data_storage.md
+      - Integration & APIs: architecture/integration.md
+      - Performance: architecture/performance.md
+  - API Reference:
+      - Overview: api/index.md
+      - Core: api/tenets/core/index.md
+      - CLI: api/tenets/cli/index.md
+      - Models: api/tenets/models/index.md
+      - Utils: api/tenets/utils/index.md
+      - Storage: api/tenets/storage/index.md
+      - Visualization: api/tenets/viz/index.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
 

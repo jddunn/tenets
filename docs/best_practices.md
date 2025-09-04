@@ -89,5 +89,5 @@ Use Tenets output to:
 ## Next Steps
 
 - See [Examples](examples.md) for real-world scenarios
-- Review [CLI Reference](CLI.md) for all options
-- Check [Configuration](CONFIG.md) for customization
+- Review [CLI Reference](cli.md) for all options
+- Check [Configuration](config.md) for customization

@@ -107,6 +107,6 @@ tenets viz deps --format html --output deps.html
 
 ## 7. Next
 
-* See full CLI options: [CLI Reference](CLI.md)
-* Tune ranking & tokens: [Configuration](CONFIG.md)
-* Dive deeper: [Architecture](ARCHITECTURE.md)
+* See full CLI options: [CLI Reference](cli.md)
+* Tune ranking & tokens: [Configuration](config.md)
+* Dive deeper: [Architecture](architecture.md)
