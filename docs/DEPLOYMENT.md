@@ -31,10 +31,25 @@ git push && git push --tags
 ```
 Resume automation next merge.
 
-### First Release Bootstrap
-If repository has no version tag yet:
-- Merge a `feat: initial release` commit → workflow sets starting version (e.g. 0.1.0)
-- Alternatively manually create `v0.1.0` tag once, then rely on automation.
+### First Release Bootstrap (v0.1.0)
+
+**For the initial v0.1.0 release, follow this manual process:**
+
+1. **Update CHANGELOG.md** with v0.1.0 entries (on dev branch)
+2. **Commit and push to dev:** `git commit -m "docs: update CHANGELOG for v0.1.0"`
+3. **Merge dev → master**
+4. **From master, create and push tag:**
+   ```bash
+   git checkout master && git pull
+   git tag -a v0.1.0 -m "Release v0.1.0 - Initial public release"
+   git push origin v0.1.0  # This triggers everything!
+   ```
+5. **The tag push automatically triggers:**
+   - GitHub Release creation with artifacts
+   - PyPI package publishing (if PYPI_API_TOKEN is set)
+   - Documentation deployment to GitHub Pages
+
+**After v0.1.0:** Automation takes over - commits trigger version bumps based on conventional commit messages.
 
 ### Verification Checklist
 | Step | Command / Action |
