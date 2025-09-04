@@ -157,7 +157,7 @@ ignore:
 - **[Full Documentation](https://tenets.dev/docs)** - Complete guide and API reference
 - **[CLI Reference](docs/cli.md)** - All commands and options
 - **[Configuration Guide](docs/config.md)** - Detailed configuration options
-- **[Architecture Overview](docs/architecture.md)** - How tenets works internally
+- **[Architecture Overview](docs/architecture/index.md)** - How tenets works internally
 
 ### Smart Summarization
 
