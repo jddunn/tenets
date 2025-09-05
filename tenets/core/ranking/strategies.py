@@ -211,7 +211,7 @@ class BalancedRankingStrategy(RankingStrategy):
     """Balanced multi-factor ranking strategy."""
 
     name = "balanced"
-    description = "Multi-factor ranking with TF-IDF and structure analysis"
+    description = "Multi-factor ranking with BM25 and structure analysis"
 
     def __init__(self):
         """Initialize balanced ranking strategy."""
@@ -273,8 +273,8 @@ class BalancedRankingStrategy(RankingStrategy):
         """Get weights for balanced ranking."""
         return {
             "keyword_match": 0.20,
-            "bm25_score": 0.25,  # BM25 prioritized for better ranking
-            "tfidf_similarity": 0.10,  # TF-IDF as supplementary signal
+            "bm25_score": 0.35,  # Primary probabilistic ranking
+            "tfidf_similarity": 0.00,  # Available for experimentation
             "path_relevance": 0.15,
             "import_centrality": 0.10,
             "git_recency": 0.05,
@@ -671,19 +671,19 @@ class ThoroughRankingStrategy(RankingStrategy):
     def get_weights(self) -> Dict[str, float]:
         """Get weights for thorough ranking."""
         return {
-            "keyword_match": 0.15,
-            "tfidf_similarity": 0.15,
-            "bm25_score": 0.10,
+            "keyword_match": 0.10,
+            "tfidf_similarity": 0.00,  # Available for experimentation
+            "bm25_score": 0.20,  # Primary probabilistic ranking
             "path_relevance": 0.10,
             "import_centrality": 0.10,
             "git_recency": 0.05,
             "git_frequency": 0.05,
             "complexity_relevance": 0.05,
             "type_relevance": 0.05,
-            "code_patterns": 0.10,
-            "ast_relevance": 0.05,
-            "documentation_score": 0.03,
-            "git_author_relevance": 0.02,
+            "code_patterns": 0.15,  # Increased for thorough mode
+            "ast_relevance": 0.10,  # Increased for thorough mode
+            "documentation_score": 0.05,
+            "git_author_relevance": 0.05,
         }
 
     def _analyze_ast_relevance(

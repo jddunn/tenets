@@ -51,22 +51,25 @@ graph TD
 ## Performance Modes
 
 ### Fast Mode
-- **Response Time**: Fast
+- **Response Time**: Fastest (1.0x baseline)
 - **Accuracy**: Good for quick exploration
 - **Methods**: Keyword matching, path analysis, basic scoring
 - **Use Cases**: Interactive exploration, quick searches
+- **Performance**: Baseline for all comparisons
 
 ### Balanced Mode (Default)
-- **Response Time**: Relatively fast
+- **Response Time**: ~6.4x slower than Fast mode
 - **Accuracy**: Excellent for most use cases
 - **Methods**: TF-IDF, BM25, structural analysis
 - **Use Cases**: General development, feature building
+- **Performance**: 540% slower than Fast mode
 
 ### Thorough Mode
-- **Response Time**: Slow
+- **Response Time**: ~13.3x slower than Fast mode (~2.1x slower than Balanced)
 - **Accuracy**: Typically makes for best possible relevance
 - **Methods**: ML models, semantic similarity, dependency graphs
 - **Use Cases**: Complex refactoring, architectural changes
+- **Performance**: 1230% slower than Fast mode
 
 ## Optimization Strategies
 
@@ -171,7 +174,24 @@ def warm_cache(project_path):
             cache.preload(file)
 ```
 
-## Algorithm Feature Comparison\n\n### Algorithm Capabilities\n\n| Feature | Fast Mode | Balanced Mode | Thorough Mode |\n|---------|-----------|---------------|---------------|\n| **Keyword Matching** | \u2705 Basic | \u2705 Enhanced | \u2705 Advanced |\n| **Path Analysis** | \u2705 Simple | \u2705 Full | \u2705 Full |\n| **TF-IDF Scoring** | \u274c | \u2705 Standard | \u2705 Optimized |\n| **BM25 Ranking** | \u274c | \u2705 Standard | \u2705 Enhanced |\n| **Semantic Similarity** | \u274c | \u26a0\ufe0f Optional | \u2705 Full ML |\n| **Git History Analysis** | \u274c | \u2705 Recent | \u2705 Complete |\n| **Dependency Graphs** | \u274c | \u26a0\ufe0f Basic | \u2705 Full Graph |\n| **Pattern Recognition** | \u2705 Regex | \u2705 Enhanced | \u2705 ML-based |\n| **Import Analysis** | \u26a0\ufe0f Basic | \u2705 Standard | \u2705 Deep |\n| **Complexity Analysis** | \u274c | \u2705 Basic | \u2705 Full Metrics |\n\n### Processing Characteristics\n\n| Aspect | Fast | Balanced | Thorough |\n|--------|------|----------|----------|\n| **Parallel Workers** | 4 threads | 8 threads | 16+ threads |\n| **Batch Size** | 1000 files | 100 files | 10 files |\n| **Cache Strategy** | LRU only | LRU + TTL | Multi-level |\n| **Memory Usage** | Minimal | Moderate | Adaptive |\n| **Incremental Updates** | \u274c | \u2705 | \u2705 |\n| **Streaming Results** | \u274c | \u26a0\ufe0f Partial | \u2705 Full |\n\n### Scalability Characteristics\n\n| Codebase Type | Fast Mode | Balanced Mode | Thorough Mode |\n|---------------|-----------|---------------|---------------|\n| **Small Projects** (<1K files) | \u2705 Instant | \u2705 Quick | \u26a0\ufe0f Overkill |\n| **Medium Projects** (1-10K) | \u2705 Very Fast | \u2705 Optimal | \u2705 Detailed |\n| **Large Monorepos** (10-50K) | \u2705 Recommended | \u26a0\ufe0f Slower | \u274c Too Slow |\n| **Massive Codebases** (50K+) | \u2705 Only Option | \u274c Impractical | \u274c Unusable |
+## Algorithm Feature Comparison
+
+### Performance Benchmarks
+
+| Mode | Relative Speed | Performance Multiplier | Percentage Slower |
+|------|---------------|------------------------|-------------------|
+| **Fast** | 1.0x | Baseline | 0% |
+| **Balanced** | 6.4x slower | 6.4x | 540% |
+| **Thorough** | 13.3x slower | 13.3x | 1230% |
+
+### Performance by File Count
+
+| Files | Fast Mode | Balanced Mode | Thorough Mode |
+|-------|-----------|---------------|---------------|
+| **10 files** | 1.0x | 10.2x slower | 17.6x slower |
+| **50 files** | 1.0x | 4.9x slower | 11.5x slower |
+| **100 files** | 1.0x | 3.5x slower | 10.2x slower |
+| **200 files** | 1.0x | 7.1x slower | 13.9x slower |\n\n### Algorithm Capabilities\n\n| Feature | Fast Mode | Balanced Mode | Thorough Mode |\n|---------|-----------|---------------|---------------|\n| **Keyword Matching** | \u2705 Basic | \u2705 Enhanced | \u2705 Advanced |\n| **Path Analysis** | \u2705 Simple | \u2705 Full | \u2705 Full |\n| **TF-IDF Scoring** | \u274c | \u2705 Standard | \u2705 Optimized |\n| **BM25 Ranking** | \u274c | \u2705 Standard | \u2705 Enhanced |\n| **Semantic Similarity** | \u274c | \u26a0\ufe0f Optional | \u2705 Full ML |\n| **Git History Analysis** | \u274c | \u2705 Recent | \u2705 Complete |\n| **Dependency Graphs** | \u274c | \u26a0\ufe0f Basic | \u2705 Full Graph |\n| **Pattern Recognition** | \u2705 Regex | \u2705 Enhanced | \u2705 ML-based |\n| **Import Analysis** | \u26a0\ufe0f Basic | \u2705 Standard | \u2705 Deep |\n| **Complexity Analysis** | \u274c | \u2705 Basic | \u2705 Full Metrics |\n\n### Processing Characteristics\n\n| Aspect | Fast | Balanced | Thorough |\n|--------|------|----------|----------|\n| **Parallel Workers** | 4 threads | 8 threads | 16+ threads |\n| **Batch Size** | 1000 files | 100 files | 10 files |\n| **Cache Strategy** | LRU only | LRU + TTL | Multi-level |\n| **Memory Usage** | Minimal | Moderate | Adaptive |\n| **Incremental Updates** | \u274c | \u2705 | \u2705 |\n| **Streaming Results** | \u274c | \u26a0\ufe0f Partial | \u2705 Full |\n\n### Scalability Characteristics\n\n| Codebase Type | Fast Mode | Balanced Mode | Thorough Mode |\n|---------------|-----------|---------------|---------------|\n| **Small Projects** (<1K files) | \u2705 Instant | \u2705 Quick | \u26a0\ufe0f Overkill |\n| **Medium Projects** (1-10K) | \u2705 Very Fast | \u2705 Optimal | \u2705 Detailed |\n| **Large Monorepos** (10-50K) | \u2705 Recommended | \u26a0\ufe0f Slower | \u274c Too Slow |\n| **Massive Codebases** (50K+) | \u2705 Only Option | \u274c Impractical | \u274c Unusable |
 
 
 ## Bottleneck Analysis
