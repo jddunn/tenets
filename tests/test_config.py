@@ -257,7 +257,7 @@ class TestSubsystemConfigs:
 
         assert ranking.algorithm == "balanced"
         assert ranking.threshold == 0.1
-        assert ranking.use_tfidf is True
+        assert ranking.use_tfidf is False  # TF-IDF not recommended by default
         assert ranking.use_embeddings is False
         assert ranking.embedding_model == "all-MiniLM-L6-v2"
         assert ranking.workers == 2

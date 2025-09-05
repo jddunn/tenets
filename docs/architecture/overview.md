@@ -202,7 +202,7 @@ graph LR
 | **CLI Framework** | Typer + Rich | Modern CLI with progress bars |
 | **Configuration** | YAML + Pydantic | Type-safe configuration |
 | **Code Parsing** | AST + Tree-sitter | Multi-language analysis |
-| **Text Analysis** | TF-IDF + BM25 | Statistical relevance |
+| **Text Analysis** | BM25 (primary) | Probabilistic relevance scoring |
 | **ML Models** | Sentence Transformers | Semantic similarity |
 | **Keyword Extraction** | YAKE | Statistical extraction |
 | **Git Integration** | GitPython | Version control mining |

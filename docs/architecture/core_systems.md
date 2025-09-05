@@ -33,7 +33,7 @@ graph TB
     end
 
     subgraph "Ranking Pipeline"
-        F1[TF-IDF Scoring]
+        F1[BM25 Scoring]
         F2[BM25 Relevance]
         F3[Semantic Similarity]
         F4[Git Signals]
@@ -81,14 +81,14 @@ graph TD
 
     subgraph "Keyword Extraction"
         YAKE_EXT[YAKE Extractor<br/>Statistical]
-        TFIDF_EXT[TF-IDF Extractor<br/>Frequency-based]
+        TFIDF_EXT[TF-IDF Extractor<br/>Alternative option]
         FREQ_EXT[Frequency Extractor<br/>Fallback]
     end
 
     subgraph "Embedding Generation"
         LOCAL_EMB[Local Embeddings<br/>sentence-transformers]
         MODEL_SEL[Model Selection<br/>MiniLM, MPNet]
-        FALLBACK[TF-IDF Fallback<br/>No ML required]
+        FALLBACK[BM25 Fallback<br/>No ML required]
     end
 
     subgraph "Similarity Computing"
@@ -237,7 +237,8 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 
 #### Fast Algorithm (`FastRankingStrategy`)
 - **Use Case**: Quick exploration, CI/CD, large codebases
-- **Speed**: Sub-second on most projects
+- **Speed**: Sub-second on most projects (1.0x baseline)
+- **Performance**: Baseline for all comparisons
 - **Factors**: Keyword matching, path analysis, file size heuristics
 - **Accuracy**: Good for obvious relevance matches
 
@@ -252,13 +253,14 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 
 #### Balanced Algorithm (`BalancedRankingStrategy`) - **Default**
 - **Use Case**: Daily development, general context building
-- **Speed**: 1-3 seconds on typical projects
-- **Factors**: TF-IDF, BM25, basic git signals, structural analysis
+- **Speed**: 1-3 seconds on typical projects (~6.4x slower than Fast)
+- **Performance**: 540% slower than Fast mode
+- **Factors**: BM25, keywords, basic git signals, structural analysis
 - **Accuracy**: High for most development tasks
 
 ```python
 # Balanced algorithm combines:
-- TF-IDF relevance scoring (40% weight)
+- BM25 relevance scoring (35% weight)
 - BM25 document ranking (30% weight)
 - Git activity signals (15% weight)
 - File structure analysis (15% weight)
@@ -266,7 +268,8 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 
 #### Thorough Algorithm (`ThoroughRankingStrategy`)
 - **Use Case**: Complex refactoring, architecture reviews, debugging
-- **Speed**: 3-10 seconds depending on codebase
+- **Speed**: 3-10 seconds depending on codebase (~13.3x slower than Fast, ~2.1x slower than Balanced)
+- **Performance**: 1230% slower than Fast mode
 - **Factors**: ML semantic similarity, dependency graphs, pattern analysis
 - **Accuracy**: Highest, finds subtle relevance connections
 
@@ -286,9 +289,9 @@ The ranking system combines multiple signals to determine file relevance:
 ```mermaid
 graph TD
     subgraph "Ranking Strategies"
-        FAST[Fast Strategy<br/>~10ms/file<br/>Keywords + Path]
-        BALANCED[Balanced Strategy<br/>~50ms/file<br/>TF-IDF + Structure]
-        THOROUGH[Thorough Strategy<br/>~200ms/file<br/>Deep Analysis + ML]
+        FAST[Fast Strategy<br/>1.0x speed<br/>Keywords + Path]
+        BALANCED[Balanced Strategy<br/>6.4x slower<br/>BM25 + Structure]
+        THOROUGH[Thorough Strategy<br/>13.3x slower<br/>Deep Analysis + ML]
     end
 
     subgraph "Core Ranking Factors"
@@ -327,36 +330,41 @@ graph TD
 
 ### Ranking Factors Explained
 
-#### 1. **TF-IDF (Term Frequency-Inverse Document Frequency)**
-```python
-class TFIDFCalculator:
-    def calculate_relevance(self, document, query_terms, corpus):
-        """
-        TF-IDF measures how important a word is in a document
-        relative to a collection of documents (corpus).
-
-        TF = (term frequency in doc) / (total terms in doc)
-        IDF = log(total docs / docs containing term)
-        TF-IDF = TF × IDF
-        """
-```
-
-**Example**: If your prompt is "authentication login", files with these terms will score higher, but common terms like "function" get lower weights.
-
-#### 2. **BM25 (Best Matching 25)**
+#### 1. **BM25 (Best Matching 25) - Primary Ranking Algorithm**
 ```python
 class BM25Calculator:
     def score(self, query, document):
         """
-        BM25 is a probabilistic ranking function that improves
-        on TF-IDF by considering document length normalization
-        and term saturation.
+        BM25 is the primary probabilistic ranking function used
+        throughout Tenets for document relevance scoring.
 
-        More sophisticated than TF-IDF for search relevance.
+        Key features:
+        - Document length normalization (parameter b)
+        - Term frequency saturation (parameter k1)
+        - Significantly faster than alternatives
+        - Industry standard in search engines
         """
 ```
 
-**Use Case**: Better handles documents of varying lengths and prevents over-weighting of term repetition.
+**Use Case**: Primary ranking algorithm with 35% weight in balanced mode, handling varying document lengths and preventing term repetition over-weighting.
+
+#### 2. **TF-IDF (Term Frequency-Inverse Document Frequency) - Optional**
+```python
+class TFIDFCalculator:
+    def calculate_relevance(self, document, query_terms, corpus):
+        """
+        TF-IDF is available as an alternative ranking method
+        for experimentation. Not recommended for production use.
+
+        TF = (term frequency in doc) / (total terms in doc)
+        IDF = log(total docs / docs containing term)
+        TF-IDF = TF × IDF
+
+        Note: BM25 provides superior performance and accuracy.
+        """
+```
+
+**Status**: Available for experimentation but not recommended. Use BM25 for production workloads.
 
 #### 3. **Git Activity Signals**
 ```python
@@ -507,7 +515,7 @@ def calculate_maintainability_index(self, metrics):
 | Factor Category | Weight | Components | Description |
 |-----------------|--------|------------|-------------|
 | **Semantic Similarity** | 25% | Embedding cosine similarity, contextual relevance | ML-based understanding of semantic meaning |
-| **Text Matching** | 30% | Keyword matches (15%), TF-IDF (15%) | Direct term matching and statistical relevance |
+| **Text Matching** | 35% | Keyword matches (20%), BM25 (15%) | Direct term matching and probabilistic relevance |
 | **Code Structure** | 20% | Import centrality (10%), path relevance (10%) | File importance in codebase architecture |
 | **Git Signals** | 15% | Recency (5%), frequency (5%), authors (5%) | Version control activity indicators |
 | **File Characteristics** | 10% | File type (5%), code patterns (5%) | Language and pattern-based relevance |
@@ -756,7 +764,7 @@ graph LR
 
     subgraph "Extraction Methods"
         YAKE[YAKE Algorithm<br/>Statistical extraction]
-        TFIDF[TF-IDF<br/>Term importance]
+        BM25[BM25<br/>Probabilistic relevance]
         NER[Named Entity<br/>Code entities]
     end
 
@@ -770,7 +778,7 @@ graph LR
     INTENT --> EXPLORE
 
     KEYWORDS --> YAKE
-    KEYWORDS --> TFIDF
+    KEYWORDS --> BM25
     KEYWORDS --> NER
 ```
 
@@ -913,10 +921,18 @@ class TenetsPlugin:
 
 | Operation | Small Project (<1K files) | Medium Project (1K-10K files) | Large Project (10K+ files) |
 |-----------|---------------------------|-------------------------------|----------------------------|
-| **Fast Mode** | <1s | 1-3s | 3-8s |
-| **Balanced Mode** | 1-2s | 3-8s | 10-30s |
-| **Thorough Mode** | 2-5s | 8-20s | 30s-2m |
+| **Fast Mode** | <1s (1.0x baseline) | 1-3s | 3-8s |
+| **Balanced Mode** | 1-2s (~6.4x slower) | 3-8s | 10-30s |
+| **Thorough Mode** | 2-5s (~13.3x slower) | 8-20s | 30s-2m |
 | **Cache Hit** | <100ms | <200ms | <500ms |
+
+### Relative Performance
+
+| Mode | Speed Multiplier | Percentage Slower |
+|------|-----------------|-------------------|
+| **Fast** | 1.0x | 0% (baseline) |
+| **Balanced** | 6.4x | 540% |
+| **Thorough** | 13.3x | 1230% |
 
 ### Memory Usage
 

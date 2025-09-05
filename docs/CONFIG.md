@@ -86,8 +86,8 @@ scanner:
 ranking:
   algorithm: balanced             # fast | balanced | thorough | ml | custom
   threshold: 0.10                 # 0.0-1.0 (lower includes more files)
-  text_similarity_algorithm: bm25 # bm25 (default) | tfidf
-  use_tfidf: true                # Deprecated - use text_similarity_algorithm
+  text_similarity_algorithm: bm25 # bm25 (recommended) | tfidf (experimental)
+  # Note: TF-IDF is available for experimentation but BM25 is significantly faster
   use_stopwords: false           # Filter common tokens
   use_embeddings: false          # Semantic similarity (requires ML)
   use_git: true                  # Include git signals
@@ -245,7 +245,7 @@ nlp:
   bm25_k1: 1.2                   # Term frequency saturation parameter
   bm25_b: 0.75                   # Length normalization parameter
 
-  # TF-IDF settings (when used as fallback)
+  # TF-IDF settings (experimental - use only if needed)
   tfidf_use_sublinear: true      # Sublinear TF scaling
   tfidf_use_idf: true           # Use IDF
   tfidf_norm: l2                # Normalization
@@ -261,7 +261,7 @@ nlp:
 
   # Cache settings
   cache_embeddings_ttl_days: 30  # Embeddings cache TTL
-  cache_tfidf_ttl_days: 7       # TF-IDF cache TTL
+  cache_tfidf_ttl_days: 7       # TF-IDF cache TTL (if using TF-IDF)
   cache_keywords_ttl_days: 7     # Keywords cache TTL
 
   # Performance
@@ -335,7 +335,7 @@ custom: {}  # User-defined custom settings
 - `threshold`: Lower values (0.05-0.10) include more files, higher (0.20-0.30) for stricter matching
 - `algorithm`:
   - `fast`: Quick keyword matching (~10ms/file)
-  - `balanced`: Structural analysis + BM25 + TF-IDF (default)
+  - `balanced`: Structural analysis + BM25 scoring (default)
   - `thorough`: Full analysis with relationships
   - `ml`: Machine learning with embeddings (requires extras)
 - `custom_weights`: Fine-tune ranking factors (values 0.0-1.0)
@@ -383,7 +383,7 @@ export TENETS_QUIET=false
 # Ranking configuration
 export TENETS_RANKING_ALGORITHM=thorough
 export TENETS_RANKING_THRESHOLD=0.05
-export TENETS_RANKING_USE_TFIDF=true
+export TENETS_RANKING_TEXT_SIMILARITY_ALGORITHM=tfidf  # Use BM25 instead (default)
 export TENETS_RANKING_USE_EMBEDDINGS=true
 export TENETS_RANKING_WORKERS=4
 
@@ -478,7 +478,7 @@ config = TenetsConfig(
     ranking={
         "algorithm": "thorough",
         "threshold": 0.05,
-        "use_tfidf": True,
+        "text_similarity_algorithm": "bm25",  # Recommended
         "use_embeddings": True,
         "workers": 4,
         "custom_weights": {
@@ -574,7 +574,7 @@ max_tokens: 80000
 ranking:
   algorithm: thorough
   threshold: 0.08
-  use_tfidf: true
+  text_similarity_algorithm: bm25  # Recommended over tfidf
   use_embeddings: true
   custom_weights:
     keyword_match: 0.35
@@ -614,7 +614,7 @@ scanner:
 ranking:
   algorithm: fast
   threshold: 0.05
-  use_tfidf: false
+  text_similarity_algorithm: bm25  # Default
   use_embeddings: false
   workers: 8
 scanner:
@@ -630,7 +630,7 @@ cache:
 ranking:
   algorithm: thorough
   threshold: 0.20
-  use_tfidf: true
+  text_similarity_algorithm: bm25  # Recommended over tfidf
   use_embeddings: true
   use_git: true
   workers: 2

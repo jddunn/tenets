@@ -595,7 +595,7 @@ class RankingConfig:
     algorithm: str = "balanced"
     threshold: float = 0.1
     text_similarity_algorithm: str = "bm25"  # 'bm25' (default) or 'tfidf' (fallback)
-    use_tfidf: bool = True  # Deprecated, kept for backward compat
+    use_tfidf: bool = False  # Deprecated - TF-IDF available but not recommended
     use_stopwords: bool = False  # For code search, use minimal stopwords
     use_embeddings: bool = False
     use_git: bool = True
