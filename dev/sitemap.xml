@@ -2,82 +2,98 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://tenets.dev/dev/</loc>
-         <lastmod>2025-09-04</lastmod>
-    </url>
-    <url>
-         <loc>https://tenets.dev/dev/ARCHITECTURE/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/BRANDING/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/CLI/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/CODE_OF_CONDUCT/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/CONFIG/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/CONTRIBUTING/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/DEPLOYMENT/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/DEVELOPMENT/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/SECURITY/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/TESTING/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/VIZ_CHEATSHEET/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
-         <loc>https://tenets.dev/dev/best-practices/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <loc>https://tenets.dev/dev/best_practices/</loc>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/docs/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/examples/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/installation/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/quickstart/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
-         <loc>https://tenets.dev/dev/supported-languages/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <loc>https://tenets.dev/dev/supported_languages/</loc>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
-         <loc>https://tenets.dev/dev/api/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <loc>https://tenets.dev/dev/architecture/</loc>
+         <lastmod>2025-09-05</lastmod>
+    </url>
+    <url>
+         <loc>https://tenets.dev/dev/architecture/core_systems/</loc>
+         <lastmod>2025-09-05</lastmod>
+    </url>
+    <url>
+         <loc>https://tenets.dev/dev/architecture/data_storage/</loc>
+         <lastmod>2025-09-05</lastmod>
+    </url>
+    <url>
+         <loc>https://tenets.dev/dev/architecture/integration/</loc>
+         <lastmod>2025-09-05</lastmod>
+    </url>
+    <url>
+         <loc>https://tenets.dev/dev/architecture/overview/</loc>
+         <lastmod>2025-09-05</lastmod>
+    </url>
+    <url>
+         <loc>https://tenets.dev/dev/architecture/performance/</loc>
+         <lastmod>2025-09-05</lastmod>
     </url>
     <url>
          <loc>https://tenets.dev/dev/includes/abbreviations/</loc>
-         <lastmod>2025-09-04</lastmod>
+         <lastmod>2025-09-05</lastmod>
     </url>
 </urlset>

@@ -20,7 +20,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Constants
-ROOT = Path(__file__).parent
 API_DIR = Path("api")
 PACKAGE_NAME = "tenets"
 
@@ -30,6 +29,7 @@ SKIP_MODULES = {
     "tenets.test",
     "tenets._internal",
     "tenets.examples",
+    "tenets.junit",
 }
 
 # Private module/package prefixes to skip
@@ -79,10 +79,17 @@ def iter_modules(package_name: str) -> Iterator[Tuple[str, bool]]:
 
     # Walk through the package
     for finder, mod_name, ispkg in pkgutil.walk_packages(
-        pkg.__path__, prefix, onerror=lambda x: None
+        pkg.__path__, prefix, onerror=lambda x: logger.debug(f"Error loading module: {x}")
     ):
         if should_document_module(mod_name):
-            yield mod_name, ispkg
+            # Try to import the module to verify it's valid
+            try:
+                importlib.import_module(mod_name)
+                yield mod_name, ispkg
+            except ImportError as e:
+                logger.warning(f"Skipping {mod_name}: {e}")
+            except Exception as e:
+                logger.warning(f"Skipping {mod_name}: {e}")
 
 
 def get_module_doc_path(mod_name: str, is_pkg: bool) -> Path:
@@ -280,25 +287,21 @@ For information on contributing to Tenets, please see the [Contributing Guide](.
 
 def write_nav_file() -> None:
     """Write SUMMARY.md for literate-nav plugin."""
-    nav_content = """# API Reference
-
-* [Overview](index.md)
-* [tenets package](tenets/index.md)
-    * [core](tenets/core/index.md)
-    * [models](tenets/models/index.md)
-    * [utils](tenets/utils/index.md)
-    * [parsers](tenets/parsers/index.md)
-    * [cli](tenets/cli/index.md)
+    nav_content = """* [API Reference](api/index.md)
+    * [Core Modules](api/tenets/core/index.md)
+    * [CLI](api/tenets/cli/index.md)
+    * [Models](api/tenets/models/index.md)
+    * [Utils](api/tenets/utils/index.md)
 """
 
-    with mkdocs_gen_files.open((API_DIR / "SUMMARY.md").as_posix(), "w") as fd:
+    with mkdocs_gen_files.open("SUMMARY.md", "w") as fd:
         fd.write(nav_content)
 
 
 def main():
     """Main entry point for the API documentation generator."""
     # Ensure the package root is in the Python path
-    package_root = ROOT.parent
+    package_root = Path.cwd()  # Use current working directory
     if str(package_root) not in sys.path:
         sys.path.insert(0, str(package_root))
 

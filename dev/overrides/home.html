@@ -4,9 +4,15 @@
 <style>
   /* Hide sidebars on homepage for desktop only; keep mobile drawer working */
   @media (min-width: 1100px) {
-    .md-sidebar,
-    .md-sidebar--primary,
-    .md-nav--primary { display: none !important; }
+    .md-sidebar:not(.md-sidebar--primary) { display: none !important; }
+    /* Hide desktop nav but NOT the mobile drawer nav */
+    .md-nav--primary:not(.md-sidebar--primary .md-nav--primary) { display: none !important; }
+  }
+
+  /* Ensure mobile drawer is available on homepage */
+  @media (max-width: 1099px) {
+    .md-sidebar--primary { display: block !important; }
+    .md-sidebar--primary .md-nav--primary { display: block !important; }
   }
 
   /* Remove extra top margin */
@@ -354,7 +360,7 @@
               <div class="see-dots"><span class="see-dot red"></span><span class="see-dot yellow"></span><span class="see-dot green"></span></div>
               <div class="see-title">Context Building</div>
             </div>
-            <div class="see-body"><pre><code class="language-bash">$ tenets distill "implement OAuth2 authentication with refresh tokens"</code></pre></div>
+            <div class="see-body"><pre><code class="language-bash">$ tenets distill "add mistral api to summarizer" --format html</code></pre></div>
           </div>
           <div class="see-output" data-caption="Context builder assembling the most relevant files">
             <div class="see-header">
