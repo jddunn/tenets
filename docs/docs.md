@@ -10,7 +10,7 @@ Welcome to the Tenets documentation hub. Explore guides and references below.
 - Supported Languages: [List](supported_languages.md)
 - CLI Reference: [Commands](cli.md)
 - Configuration: [Config guide](config.md)
-- Architecture: [System overview](architecture.md)
+- Architecture: [System overview](architecture/index.md)
 
 - API Reference: [Browse API](api/index.md)
 

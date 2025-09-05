@@ -838,4 +838,4 @@ output:
 
 - [CLI Reference](cli.md) - Complete command documentation
 - [API Reference](api/index.md) - Python API documentation
-- [Architecture](architecture.md) - System design details
+- [Architecture](architecture/index.md) - System design details

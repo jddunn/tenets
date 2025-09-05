@@ -278,7 +278,7 @@ For information on contributing to Tenets, please see the [Contributing Guide](.
 
 - [GitHub Issues](https://github.com/jddunn/tenets/issues)
 - [Discord Community](https://discord.gg/DzNgXdYm)
-- [Documentation](https://tenets.dev)
+- [Documentation](https://tenets.dev/latest)
 """
 
     with mkdocs_gen_files.open((API_DIR / "index.md").as_posix(), "w") as fd:
