@@ -49,6 +49,7 @@ class TestLocalEmbeddings:
         """Test LocalEmbeddings initialization."""
         mock_model = Mock()
         mock_model.get_sentence_embedding_dimension.return_value = 768
+        mock_model.eval = Mock()  # Add eval mock
         mock_st.return_value = mock_model
 
         embeddings = LocalEmbeddings(model_name="all-mpnet-base-v2", device="cpu")
@@ -62,6 +63,8 @@ class TestLocalEmbeddings:
         """Test encoding single text."""
         mock_model = Mock()
         mock_model.encode.return_value = np.array([[1, 2, 3]])
+        mock_model.get_sentence_embedding_dimension.return_value = 3
+        mock_model.eval = Mock()  # Add eval mock
         mock_st.return_value = mock_model
 
         embeddings = LocalEmbeddings()
@@ -69,12 +72,15 @@ class TestLocalEmbeddings:
 
         # Should return first element for single text
         assert isinstance(result, np.ndarray)
+        assert np.array_equal(result, np.array([1, 2, 3]))
         mock_model.encode.assert_called_once()
 
     def test_encode_batch(self, mock_st):
         """Test encoding multiple texts."""
         mock_model = Mock()
         mock_model.encode.return_value = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        mock_model.get_sentence_embedding_dimension.return_value = 3
+        mock_model.eval = Mock()  # Add eval mock
         mock_st.return_value = mock_model
 
         embeddings = LocalEmbeddings()
@@ -82,13 +88,15 @@ class TestLocalEmbeddings:
         result = embeddings.encode(texts, batch_size=2)
 
         assert isinstance(result, np.ndarray)
-        assert result.shape[0] == 3
+        assert result.shape == (3, 3)  # 3 texts, 3 dimensions each
+        np.testing.assert_array_equal(result, np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
 
     def test_encode_file(self, mock_st, tmp_path):
         """Test encoding a file."""
         mock_model = Mock()
         mock_model.encode.return_value = np.array([[1, 2, 3], [4, 5, 6]])
         mock_model.get_sentence_embedding_dimension.return_value = 3
+        mock_model.eval = Mock()  # Add eval mock
         mock_st.return_value = mock_model
 
         # Create test file
@@ -106,6 +114,7 @@ class TestLocalEmbeddings:
         """Test encoding empty file."""
         mock_model = Mock()
         mock_model.get_sentence_embedding_dimension.return_value = 384
+        mock_model.eval = Mock()  # Add eval mock
         mock_st.return_value = mock_model
 
         test_file = tmp_path / "empty.txt"
@@ -114,23 +123,49 @@ class TestLocalEmbeddings:
         embeddings = LocalEmbeddings()
         result = embeddings.encode_file(test_file)
 
-        # Should return zero vector
+        # Should return zero vector with correct dimensions
         assert np.all(result == 0)
-        assert result.shape == (384,)
+        assert result.shape == (embeddings.embedding_dim,)
 
     def test_device_selection(self, mock_st):
         """Test automatic device selection."""
         mock_model = Mock()
         mock_model.get_sentence_embedding_dimension.return_value = 384
+        mock_model.eval = Mock()  # Add eval mock
         mock_st.return_value = mock_model
 
-        with patch("torch.cuda.is_available", return_value=True):
+        # Clear the global cache to ensure fresh initialization
+        from tenets.core.nlp.embeddings import clear_model_cache
+        clear_model_cache()
+
+        # Test CUDA available - patch at the import level
+        import sys
+        mock_torch = Mock()
+        mock_torch.cuda.is_available.return_value = True
+        sys.modules['torch'] = mock_torch
+        
+        try:
             embeddings = LocalEmbeddings()
             assert embeddings.device == "cuda"
+        finally:
+            # Restore original torch if it was there
+            if 'torch' in sys.modules:
+                del sys.modules['torch']
+        
+        # Clear cache again
+        clear_model_cache()
 
-        with patch("torch.cuda.is_available", return_value=False):
+        # Test CUDA not available
+        mock_torch = Mock()
+        mock_torch.cuda.is_available.return_value = False
+        sys.modules['torch'] = mock_torch
+        
+        try:
             embeddings = LocalEmbeddings()
             assert embeddings.device == "cpu"
+        finally:
+            if 'torch' in sys.modules:
+                del sys.modules['torch']
 
 
 class TestFallbackEmbeddings:

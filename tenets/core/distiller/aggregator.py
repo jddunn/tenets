@@ -77,6 +77,7 @@ class ContextAggregator:
         remove_comments: bool = False,
         docstring_weight: Optional[float] = None,
         summarize_imports: bool = True,
+        mode: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget.
 
@@ -91,9 +92,40 @@ class ContextAggregator:
         Returns:
             Dictionary with aggregated content and metadata
         """
-        self.logger.info(f"Aggregating {len(files)} files with {strategy} strategy")
+        # Adjust strategy based on mode for better performance
+        actual_strategy = mode if mode else strategy
+        self.logger.info(f"Aggregating {len(files)} files with {actual_strategy} strategy (mode={mode})")
 
-        strat = self.strategies.get(strategy, self.strategies["balanced"])
+        if mode == "fast":
+            # Fast mode: AGGRESSIVE optimization for speed - take only TOP files
+            strat = AggregationStrategy(
+                name="fast",
+                max_full_files=5,  # Only top 5 files total
+                summarize_threshold=1.0,  # NEVER summarize in fast mode (always truncate)
+                min_relevance=0.10,  # Use same as ranking threshold to avoid dropping ranked files
+                preserve_structure=False  # Skip structure preservation for speed
+            )
+        elif mode == "balanced":
+            # Balanced mode: good coverage with reasonable performance
+            strat = AggregationStrategy(
+                name="balanced",
+                max_full_files=10,  # Include top files in full
+                summarize_threshold=0.70,  # Summarize medium relevance files
+                min_relevance=0.20,  # More selective to focus on relevant files
+                preserve_structure=True
+            )
+        elif mode == "thorough":
+            # Thorough mode: maximum comprehensiveness
+            strat = AggregationStrategy(
+                name="thorough",
+                max_full_files=20,  # Many full files
+                summarize_threshold=0.4,  # Include more files in full
+                min_relevance=0.10,  # Same as ranking threshold
+                preserve_structure=True  # Preserve structure
+            )
+        else:
+            # Default to the named strategy
+            strat = self.strategies.get(strategy, self.strategies["balanced"])
 
         # Reserve tokens for structure and git context
         structure_tokens = 500  # Headers, formatting, etc.
@@ -165,6 +197,41 @@ class ContextAggregator:
                     rejection_reasons["token_budget_exceeded"] += 1
                 continue
 
+            # Fast mode: ULTRA aggressive truncation - limit files and content
+            if mode == "fast":
+                # Hard limit: only include top 5 files maximum
+                if i >= 5:
+                    break  # Stop after 5 files for speed
+                    
+                # More generous truncation for better context
+                if i == 0:  # Top file gets most content
+                    content_limit = min(8000, len(file.content))
+                elif i < 3:  # Next 2 files get moderate content
+                    content_limit = min(4000, len(file.content))
+                else:  # Files 4-5 get minimal content
+                    content_limit = min(2000, len(file.content))
+                    
+                truncated_content = file.content[:content_limit]
+                if len(truncated_content) < len(file.content):
+                    truncated_content += f"\n... (truncated from {len(file.content)} to {content_limit} chars)"
+                    
+                truncated_tokens = count_tokens(truncated_content, model)
+                if total_tokens + truncated_tokens <= available_tokens:
+                    included_files.append(
+                        {
+                            "file": file,
+                            "content": truncated_content,
+                            "tokens": truncated_tokens,
+                            "summarized": len(truncated_content) < len(file.content),
+                            "transformations": {},
+                        }
+                    )
+                    total_tokens += truncated_tokens
+                else:
+                    break  # Stop if we're out of tokens
+                continue  # Skip ALL other processing for this file
+
+            # Regular logic for balanced/thorough modes
             if (
                 i < strat.max_full_files
                 and file.relevance_score >= strat.summarize_threshold
@@ -183,16 +250,25 @@ class ContextAggregator:
                 total_tokens += file_tokens
 
             elif total_tokens < available_tokens * 0.9:  # Leave some buffer
-                # Try to summarize
+                # Fast mode already handled above, skip this entire block
+                if mode == "fast":
+                    continue  # Should never reach here, but be safe
+                
+                # Regular summarization for balanced/thorough modes
                 remaining_tokens = available_tokens - total_tokens
                 summary_tokens = min(
-                    file_tokens // 4,  # Aim for 25% of original
+                    file_tokens // 3,  # Aim for 33% of original
                     remaining_tokens // 2,  # Don't use more than half remaining
                 )
 
                 if summary_tokens > 100:  # Worth summarizing
                     # Calculate target ratio based on desired token reduction
                     target_ratio = min(0.5, summary_tokens / file_tokens)
+                    
+                    # Enable ML strategies for thorough mode
+                    original_ml_enabled = self.config.summarizer.enable_ml_strategies
+                    if mode == "thorough":
+                        self.config.summarizer.enable_ml_strategies = True
 
                     # Apply config overrides if provided
                     if docstring_weight is not None or not summarize_imports:
@@ -224,6 +300,10 @@ class ContextAggregator:
                             preserve_structure=True,
                             prompt_keywords=prompt_context.keywords if prompt_context else None,
                         )
+                    
+                    # Restore ML setting after summarization
+                    if mode == "thorough":
+                        self.config.summarizer.enable_ml_strategies = original_ml_enabled
 
                     # Get actual token count of summary
                     summary_content = (
@@ -282,6 +362,11 @@ class ContextAggregator:
                 "files_summarized": len(summarized_files),
                 "files_skipped": len(files) - len(all_files),
                 "token_utilization": total_tokens / available_tokens if available_tokens > 0 else 0,
+            },
+            # Include metadata for formatter
+            "metadata": {
+                "mode": mode if mode else strategy,  # Use actual mode if provided
+                # time_elapsed will be added by distiller
             },
         }
 

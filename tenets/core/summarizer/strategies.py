@@ -40,12 +40,9 @@ try:
 except ImportError:
     SKLEARN_AVAILABLE = False
 
-try:
-    from transformers import pipeline
-
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
+# Disable transformers to save memory
+TRANSFORMERS_AVAILABLE = False
+pipeline = None
 
 
 class SummarizationStrategy(ABC):

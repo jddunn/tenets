@@ -236,19 +236,27 @@ def mock_external_dependencies(monkeypatch, request):
     # Mock file system operations that might be slow or destructive
     monkeypatch.setattr("shutil.rmtree", Mock())
 
-    # Mock network requests
-    mock_requests = Mock()
-    mock_requests.get.return_value.status_code = 200
-    mock_requests.get.return_value.json.return_value = {"data": "test"}
-    monkeypatch.setattr("requests.get", mock_requests.get)
-    monkeypatch.setattr("requests.post", mock_requests.get)
+    # Mock network requests (only if requests is available)
+    try:
+        import requests
+        mock_requests = Mock()
+        mock_requests.get.return_value.status_code = 200
+        mock_requests.get.return_value.json.return_value = {"data": "test"}
+        monkeypatch.setattr("requests.get", mock_requests.get)
+        monkeypatch.setattr("requests.post", mock_requests.get)
+    except ImportError:
+        pass  # Skip mocking requests if not installed
 
     # Decide whether to mock git based on test path (allow real git in git tests)
     test_path = str(getattr(request.node, "fspath", "")).replace("\\", "/")
     if "tests/core/git" not in test_path:
-        mock_git = Mock()
-        mock_git.Repo.return_value = Mock()
-        monkeypatch.setattr("git.Repo", mock_git.Repo)
+        try:
+            import git
+            mock_git = Mock()
+            mock_git.Repo.return_value = Mock()
+            monkeypatch.setattr("git.Repo", mock_git.Repo)
+        except ImportError:
+            pass  # Skip mocking git if not installed
 
     # Mock expensive ML operations (graceful if dependency not installed)
     import importlib
@@ -266,7 +274,11 @@ def mock_external_dependencies(monkeypatch, request):
                 try:
                     # Try to import the module first to see if it's available
                     __import__(module_name)
-                except (ImportError, ModuleNotFoundError):
+                except (ImportError, ModuleNotFoundError, RuntimeError) as e:
+                    # RuntimeError can occur with torch/triton registration conflicts
+                    if "TORCH_LIBRARY" in str(e):
+                        # Torch is already imported, skip
+                        continue
                     # Only create stub if module doesn't exist
                     stub = types.ModuleType(module_name)
                     stub.__file__ = "stub"

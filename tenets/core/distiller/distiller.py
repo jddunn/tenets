@@ -184,6 +184,10 @@ class Distiller:
 
         # 7. Aggregate files within token budget
         aggregate_start = time.time()
+        
+        # Calculate elapsed time before aggregation so it's available for formatter
+        elapsed_time = time.time() - start_time
+        
         aggregated = self._aggregate_files(
             files=ranked_files,
             prompt_context=prompt_context,
@@ -195,8 +199,14 @@ class Distiller:
             remove_comments=remove_comments,
             docstring_weight=docstring_weight,
             summarize_imports=summarize_imports,
+            mode=mode,
         )
         self.logger.debug(f"File aggregation took {time.time() - aggregate_start:.2f}s")
+        
+        # Add timing to aggregated metadata for formatter
+        if "metadata" not in aggregated:
+            aggregated["metadata"] = {}
+        aggregated["metadata"]["time_elapsed"] = f"{elapsed_time:.2f}s"
 
         # 8. Format the output
         formatted = self._format_output(
@@ -205,6 +215,9 @@ class Distiller:
             prompt_context=prompt_context,
             session_name=session_name,
         )
+        
+        # Calculate final elapsed time after formatting
+        final_elapsed = time.time() - start_time
 
         # 9. Build final result with debug information
         metadata = {
@@ -220,6 +233,8 @@ class Distiller:
             # Include the aggregated data for _build_result to use
             "included_files": aggregated["included_files"],
             "total_tokens": aggregated.get("total_tokens", 0),
+            # Add final timing information
+            "time_elapsed": f"{final_elapsed:.2f}s",
         }
 
         # Add debug information for verbose mode
@@ -417,6 +432,7 @@ class Distiller:
         remove_comments: bool = False,
         docstring_weight: Optional[float] = None,
         summarize_imports: bool = True,
+        mode: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Aggregate files within token budget."""
         return self.aggregator.aggregate(
@@ -430,6 +446,7 @@ class Distiller:
             remove_comments=remove_comments,
             docstring_weight=docstring_weight,
             summarize_imports=summarize_imports,
+            mode=mode,
         )
 
     def _format_output(

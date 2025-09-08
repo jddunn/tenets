@@ -59,13 +59,8 @@ from .summarizer import (
 __version__ = "0.1.0"
 
 # Check for ML support
+# Disable transformers to save memory
 ML_AVAILABLE = False
-try:
-    import transformers
-
-    ML_AVAILABLE = True
-except ImportError:
-    pass
 
 
 # Public API exports

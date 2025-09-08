@@ -457,7 +457,11 @@ def distill(
             # Draw clear context boundaries in interactive TTY only
             if interactive:
                 console.rule("Context")
-            print(output_text)
+                # Use console.print with markup=False to avoid Rich interpreting special chars
+                console.print(output_text, markup=False, highlight=False)
+            else:
+                # Non-interactive: use plain print for piping
+                print(output_text)
             if interactive:
                 console.rule("End")
 

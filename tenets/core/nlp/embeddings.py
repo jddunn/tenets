@@ -28,6 +28,18 @@ def _check_sentence_transformers():
 SENTENCE_TRANSFORMERS_AVAILABLE = _check_sentence_transformers()
 SentenceTransformer = None  # Will be imported lazily when needed
 
+# Global model cache to avoid reloading
+_GLOBAL_MODEL_CACHE = {}
+
+def clear_model_cache():
+    """Clear the global model cache to free memory."""
+    global _GLOBAL_MODEL_CACHE
+    _GLOBAL_MODEL_CACHE.clear()
+    
+    # Force garbage collection
+    import gc
+    gc.collect()
+
 
 class EmbeddingModel:
     """Base class for embedding models."""
@@ -91,27 +103,70 @@ class LocalEmbeddings(EmbeddingModel):
                 "Install with: pip install sentence-transformers"
             )
 
+        # Set environment for minimal memory usage
+        import os
+        os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+        os.environ['OMP_NUM_THREADS'] = '1'
+        
         try:
+            # Check global cache first
+            global _GLOBAL_MODEL_CACHE
+            cache_key = f"{model_name}_{device or 'auto'}"
+            
+            if cache_key in _GLOBAL_MODEL_CACHE:
+                self.logger.info(f"Using cached model for {model_name}")
+                cached_model = _GLOBAL_MODEL_CACHE[cache_key]
+                self.model = cached_model['model']
+                self.device = cached_model['device']
+                self.embedding_dim = cached_model['embedding_dim']
+                return
+            
+            # Force garbage collection before loading new model
+            import gc
+            gc.collect()
+            
             # Lazy import SentenceTransformer when actually needed
             global SentenceTransformer
             if SentenceTransformer is None:
                 from sentence_transformers import SentenceTransformer
 
-            # Determine device
-            if device:
+            # Determine device - respect CUDA availability if provided
+            if device is not None:
                 self.device = device
             else:
-                import torch
+                # Auto-detect device
+                try:
+                    # Import torch dynamically
+                    import torch
+                    # Store as module-level for test patching
+                    globals()['torch'] = torch
+                    if torch.cuda.is_available():
+                        self.device = "cuda"
+                    else:
+                        self.device = "cpu"
+                except ImportError:
+                    self.device = "cpu"
 
-                self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            # Load model
+            # Load model with minimal memory
+            self.logger.info(f"Loading {model_name} for the first time (will be cached)...")
             self.model = SentenceTransformer(
-                model_name, device=self.device, cache_folder=str(cache_dir) if cache_dir else None
+                model_name, 
+                device=self.device, 
+                cache_folder=str(cache_dir) if cache_dir else None
             )
+            
+            # Put in eval mode to save memory
+            self.model.eval()
 
             # Get actual embedding dimension
             self.embedding_dim = self.model.get_sentence_embedding_dimension()
+
+            # Cache the model for future use
+            _GLOBAL_MODEL_CACHE[cache_key] = {
+                'model': self.model,
+                'device': self.device,
+                'embedding_dim': self.embedding_dim
+            }
 
             self.logger.info(
                 f"Loaded {model_name} on {self.device}, embedding dim: {self.embedding_dim}"
@@ -179,10 +234,10 @@ class LocalEmbeddings(EmbeddingModel):
                 content = f.read()
         except Exception as e:
             self.logger.warning(f"Failed to read {file_path}: {e}")
-            return np.zeros(self.embedding_dim)
+            return np.zeros((self.embedding_dim,))
 
         if not content:
-            return np.zeros(self.embedding_dim)
+            return np.zeros((self.embedding_dim,))
 
         # Chunk the content
         chunks = []
@@ -192,7 +247,7 @@ class LocalEmbeddings(EmbeddingModel):
                 chunks.append(chunk)
 
         if not chunks:
-            return np.zeros(self.embedding_dim)
+            return np.zeros((self.embedding_dim,))
 
         # Encode chunks
         chunk_embeddings = self.encode(chunks, show_progress=False)

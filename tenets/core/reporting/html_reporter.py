@@ -64,6 +64,7 @@ class HTMLTemplate:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
+    {favicon}
     {styles}
     {scripts}
 </head>
@@ -756,6 +757,7 @@ class HTMLReporter:
         # Combine into template
         html = self.template.get_base_template().format(
             title=report_config.title,
+            favicon="",  # Add empty favicon for now
             styles=self.template.get_styles(),
             scripts=self.template.get_scripts(),
             header=header,

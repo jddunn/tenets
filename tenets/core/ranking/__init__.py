@@ -56,9 +56,9 @@ from .ranker import (
 from .strategies import (
     BalancedRankingStrategy,
     FastRankingStrategy,
-    MLRankingStrategy,
     RankingStrategy,
     ThoroughRankingStrategy,
+    create_ranking_strategy,
 )
 
 # Import ML utilities (optional)
@@ -116,7 +116,7 @@ __all__ = [
     "FastRankingStrategy",
     "BalancedRankingStrategy",
     "ThoroughRankingStrategy",
-    "MLRankingStrategy",
+    "create_ranking_strategy",
     # Text similarity
     "TFIDFCalculator",
     "BM25Calculator",

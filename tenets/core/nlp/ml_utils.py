@@ -288,7 +288,7 @@ def check_ml_dependencies() -> Dict[str, bool]:
         pass
 
     try:
-        import transformers
+        # Disabled transformers import
 
         deps["transformers"] = True
     except ImportError:
