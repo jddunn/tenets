@@ -20,32 +20,32 @@ for path in sorted(src.rglob("*.py")):
         continue
     if "test" in path.name.lower():
         continue
-    
+
     # Get module path
     module_path = path.relative_to(root).with_suffix("")
     doc_path = path.relative_to(root).with_suffix(".md")
     full_doc_path = Path("api", doc_path)
-    
+
     # Get parts for module name
     parts = tuple(module_path.parts)
-    
+
     # Skip if private module (starts with _)
     if any(part.startswith("_") and part != "__init__" for part in parts):
         continue
-    
+
     # Handle __init__.py files
     if parts[-1] == "__init__":
         parts = parts[:-1]
         doc_path = doc_path.with_name("index.md")
         full_doc_path = full_doc_path.with_name("index.md")
-    
+
     # Skip if no parts left (root __init__.py)
     if not parts:
         continue
-    
+
     # Add to navigation
     nav[parts] = doc_path.as_posix()
-    
+
     # Generate the page content
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         identifier = ".".join(parts)
@@ -60,7 +60,7 @@ for path in sorted(src.rglob("*.py")):
         print("        filters:", file=fd)
         print('          - "!^_"', file=fd)
         print('          - "!^test"', file=fd)
-    
+
     # Set edit path to the source file
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
 
