@@ -10,42 +10,33 @@
 6. [Code Analysis Engine](#code-analysis-engine)
 7. [Relevance Ranking System](#relevance-ranking-system)
 8. [Git Integration & Chronicle System](#git-integration--chronicle-system)
-9. [Examination & Quality Analysis](#examination--quality-analysis)
-10. [Momentum & Velocity Tracking](#momentum--velocity-tracking)
-11. [Context Management & Optimization](#context-management--optimization)
-12. [Session Management Architecture](#session-management-architecture)
-13. [Storage & Caching Architecture](#storage--caching-architecture)
-14. [Prompt Parsing & Understanding](#prompt-parsing--understanding)
-15. [Output Generation & Formatting](#output-generation--formatting)
-16. [Performance Architecture](#performance-architecture)
-17. [Configuration System](#configuration-system)
-18. [CLI & API Architecture](#cli--api-architecture)
-19. [Visualization & Reporting](#visualization--reporting)
-20. [Security & Privacy Architecture](#security--privacy-architecture)
-21. [Extensibility & Plugin System](#extensibility--plugin-system)
-22. [Deployment Architecture](#deployment-architecture)
-23. [Testing & Quality Assurance](#testing--quality-assurance)
-24. [Future Roadmap & Vision](#future-roadmap--vision)
+9. [Context Management & Optimization](#context-management--optimization)
+10. [Session Management Architecture](#session-management-architecture)
+11. [Storage & Caching Architecture](#storage--caching-architecture)
+12. [Performance Architecture](#performance-architecture)
+13. [Configuration System](#configuration-system)
+14. [CLI & API Architecture](#cli--api-architecture)
+15. [Security & Privacy Architecture](#security--privacy-architecture)
+16. [Testing & Quality Assurance](#testing--quality-assurance)
+17. [Guiding Principles (Tenets) System](#guiding-principles-tenets-system)
+18. [Output Generation & Visualization](#output-generation--visualization)
+19. [Future Roadmap & Vision](#future-roadmap--vision)
 
 ## System Overview
 
-### What is Tenets?
-
-Tenets is a sophisticated, local-first code intelligence platform that revolutionizes how developers interact with their codebases when working with AI assistants. Unlike traditional code search tools or simple context builders, Tenets employs advanced multi-stage analysis combining natural language processing, machine learning, static code analysis, git history mining, and intelligent ranking to build optimal context for any given task.
-
-The system operates entirely locally, ensuring complete privacy and security while delivering advanced code understanding capabilities. Every component is designed with performance in mind, utilizing aggressive caching, parallel processing, and incremental computation to handle codebases ranging from small projects to massive monorepos with millions of files.
+Tenets is a sophisticated, local-first code intelligence platform that revolutionizes how developers interact with their codebases when working with AI assistants. Unlike traditional code search tools, Tenets employs advanced multi-stage analysis combining NLP, ML, static code analysis, git history mining, and intelligent ranking to build optimal context.
 
 ### Core Architecture Principles
 
-1. **Local-First Processing**: All analysis, ranking, and context generation happens on the developer's machine. No code ever leaves the local environment. External API calls are only made for optional LLM-based summarization, and even then, only with explicit user consent.
+1. **Local-First Processing**: All analysis happens on the developer's machine. No code leaves the local environment. External API calls only for optional LLM-based summarization with explicit consent.
 
-2. **Progressive Enhancement**: The system provides value immediately with just Python installed, and scales up with optional dependencies. Core functionality works without any ML libraries, git integration works without any configuration, and advanced features gracefully degrade when dependencies are missing.
+2. **Progressive Enhancement**: Provides value immediately with just Python installed, scales with optional dependencies. Core functionality works without ML libraries, git integration works without configuration.
 
-3. **Intelligent Caching**: Every expensive operation is cached at multiple levels - memory caches for hot data, SQLite for structured data, disk caches for analysis results, and specialized caches for embeddings. Cache invalidation is intelligent, using file modification times, git commits, and content hashes.
+3. **Intelligent Caching**: Every expensive operation is cached at multiple levels - memory caches for hot data, SQLite for structured data, disk caches for analysis results, specialized caches for embeddings.
 
-4. **Configurable Intelligence**: Every aspect of the ranking and analysis can be configured. Users can adjust factor weights, enable/disable features, add custom ranking functions, and tune performance parameters. The system adapts to different codebases and use cases.
+4. **Configurable Intelligence**: Every aspect of ranking and analysis can be configured. Users can adjust factor weights, enable/disable features, add custom ranking functions.
 
-5. **Streaming Architecture**: The system uses streaming and incremental processing wherever possible. Files are analyzed as they're discovered, rankings are computed in parallel, and results stream to the user as they become available.
+5. **Streaming Architecture**: Uses streaming and incremental processing wherever possible. Files analyzed as discovered, rankings computed in parallel, results stream to user.
 
 ## Complete System Architecture
 
@@ -249,58 +240,19 @@ graph LR
 
 ## NLP/ML Pipeline Architecture
 
-### Centralized NLP Components (Updated)
+### Centralized NLP Components
 
-Tenets uses a centralized NLP architecture to avoid code duplication and ensure consistency:
-
-#### Core NLP Module Structure
 ```
 tenets/core/nlp/
 ├── __init__.py          # Main NLP API exports
-├── similarity.py        # Centralized similarity computations (NEW)
+├── similarity.py        # Centralized similarity computations
 ├── keyword_extractor.py # Unified keyword extraction with SimpleRAKE
 ├── tokenizer.py        # Code and text tokenization
 ├── stopwords.py        # Stopword management with fallbacks
 ├── embeddings.py       # Embedding generation (ML optional)
 ├── ml_utils.py         # ML utility functions
 ├── bm25.py            # BM25 ranking algorithm (primary)
-└── tfidf.py           # TF-IDF calculations (optional alternative to BM25)
-```
-
-#### Similarity Computation Consolidation
-
-All similarity calculations are now centralized in `similarity.py`:
-
-**Unified API:**
-```python
-from tenets.core.nlp import (
-    cosine_similarity,      # Dense or sparse vectors
-    sparse_cosine_similarity,  # Dict-based sparse vectors
-    euclidean_distance,     # L2 distance
-    manhattan_distance,     # L1 distance
-    SemanticSimilarity     # ML-based semantic similarity
-)
-```
-
-**Key Features:**
-- **Automatic Detection**: `cosine_similarity()` auto-detects sparse (dict) vs dense (list/array) vectors
-- **Sparse Vector Support**: Efficient similarity for high-dimensional sparse vectors (BM25/TF-IDF)
-- **No Duplication**: All modules import from central `similarity.py`
-- **Graceful Fallback**: Works without NumPy using pure Python implementations
-
-**Usage Examples:**
-```python
-# Dense vectors
-sim = cosine_similarity([1, 0, 0], [0, 1, 0])  # → 0.0
-
-# Sparse vectors (BM25/TF-IDF)
-vec1 = {"python": 0.8, "code": 0.6}
-vec2 = {"python": 0.7, "test": 0.5}
-sim = sparse_cosine_similarity(vec1, vec2)  # → 0.76
-
-# Semantic similarity (requires ML)
-sem = SemanticSimilarity()
-sim = sem.compute("OAuth authentication", "login system")  # → 0.82
+└── tfidf.py           # TF-IDF calculations (optional alternative)
 ```
 
 ### Pipeline Component Flow
@@ -375,185 +327,14 @@ graph TD
 
 ### Keyword Extraction Algorithms Comparison
 
-#### Algorithm Overview & Trade-offs
-
 | Algorithm | Speed | Quality | Memory | Python 3.13 | Best For | Limitations |
 |-----------|-------|----------|---------|-------------|----------|-------------|
-| **RAKE** | Fast | Good | Low | ✅ Yes | • Technical docs<br/>• Multi-word phrases<br/>• Fast processing | • No semantic understanding<br/>• Language-dependent stopwords<br/>• May miss single important words |
-| **SimpleRAKE** | Fast | Good | Minimal | ✅ Yes | • No NLTK dependencies<br/>• Built-in implementation<br/>• Fast processing | • No advanced NLP features<br/>• Basic tokenization only |
-| **YAKE** | Moderate | Very Good | Low | ❌ No | • Statistical analysis<br/>• Language independent<br/>• Capital letter aware | • Python 3.13 bug<br/>• Can produce duplicates<br/>• No deep semantics |
-| **BM25** | Fast | Excellent | High<br/>(handles length variation) | ✅ Yes | • Primary ranking algorithm<br/>• Better for code search<br/>• Handles file size variation | • Needs document corpus<br/>• Statistical only<br/>• No semantic understanding |
-| **TF-IDF** | Fast | Good | Medium<br/>(corpus-dependent) | ✅ Yes | • Optional alternative to BM25<br/>• Document uniqueness<br/>• Simpler algorithm | • Less effective for varying lengths<br/>• No term saturation<br/>• Statistical only |
-| **Frequency** | Very Fast | Basic | Minimal | ✅ Yes | • Fallback option<br/>• Simple analysis<br/>• Guaranteed to work | • Very basic<br/>• No context awareness<br/>• Misses importance |
-
-#### Detailed Algorithm Analysis
-
-##### **RAKE (Rapid Automatic Keyword Extraction)**
-```
-Primary method for Python 3.13+
-```
-
-**How it works:**
-- Uses word frequency and co-occurrence to identify key phrases
-- Builds a word co-occurrence graph
-- Calculates word scores based on degree/frequency ratio
-
-**Pros:**
-- ✅ Extremely fast - can process thousands of documents per second
-- ✅ Excellent at extracting multi-word technical phrases
-- ✅ No training required - works immediately
-- ✅ Python 3.13 compatible
-- ✅ Good performance with technical documentation
-- ✅ Low memory footprint
-
-**Cons:**
-- ❌ No semantic understanding of word relationships
-- ❌ Dependent on stopword lists for quality
-- ❌ May miss important single-word keywords
-- ❌ Can struggle with very short texts
-
-**Best Use Cases:**
-- API documentation keyword extraction
-- Technical specification analysis
-- Code comment summarization
-- Real-time keyword extraction
-
-##### **YAKE (Yet Another Keyword Extractor)**
-```
-Secondary method for Python < 3.13
-```
-
-**How it works:**
-- Uses statistical features from individual documents
-- Considers word position, frequency, context
-- Pays attention to capitalization and word casing
-
-**Pros:**
-- ✅ Language independent - works without language-specific resources
-- ✅ No training corpus needed
-- ✅ Good at identifying proper nouns and technical terms
-- ✅ Considers word position and context
-- ✅ Handles multiple languages well
-
-**Cons:**
-- ❌ **Critical: Infinite loop bug on Python 3.13**
-- ❌ Can generate duplicate keywords with different cases
-- ❌ No deep semantic understanding
-- ❌ Slower than RAKE for large documents
-
-**Best Use Cases:**
-- Multi-language codebases
-- Mixed content (code + documentation)
-- When capitalization matters (class names, constants)
-
-##### **BM25 (Best Matching 25)**
-```
-Primary text similarity algorithm - default for ranking
-```
-
-**How it works:**
-- Probabilistic ranking function with term saturation (k1=1.2)
-- Document length normalization (b=0.75) handles varying file sizes
-- Prevents over-weighting of repeated terms
-- Default ranking algorithm (better than TF-IDF for code search)
-
-**Pros:**
-- ✅ Superior ranking for varying document lengths
-- ✅ Term saturation prevents keyword stuffing bias
-- ✅ Industry standard for search engines
-- ✅ Pure Python implementation
-- ✅ Better for code files of different sizes
-
-**Cons:**
-- ❌ Requires a corpus of documents
-- ❌ More complex than basic keyword matching
-- ❌ Still statistical, no semantic understanding
-- ❌ Memory usage grows with corpus size
-
-**Best Use Cases:**
-- Default text similarity for all ranking
-- Code search across files of varying sizes
-- Finding relevant files for prompts
-
-##### **TF-IDF (Optional Alternative to BM25)**
-```
-Optional fallback method - configurable via text_similarity_algorithm
-```
-
-**How it works:**
-- Calculates term importance based on frequency in document vs corpus
-- Higher scores for terms that are frequent in document but rare in corpus
-- Uses vector space model for similarity calculations
-
-**Pros:**
-- ✅ Always available - pure Python implementation
-- ✅ Excellent for finding document-specific terms
-- ✅ Good theoretical foundation
-- ✅ Can identify unique technical terms
-- ✅ Supports similarity calculations between documents
-
-**Cons:**
-- ❌ Requires a corpus of documents for comparison
-- ❌ No phrase extraction (single words only)
-- ❌ Memory usage grows with corpus size
-- ❌ No understanding of word relationships
-
-**Best Use Cases:**
-- Finding unique terms in a file
-- Document similarity calculations
-- Corpus-wide keyword analysis
-- Information retrieval tasks
-
-##### **Frequency-based Extraction**
-```
-Final fallback - guaranteed to work
-```
-
-**How it works:**
-- Simple word counting with basic filtering
-- Extracts n-grams (bigrams, trigrams)
-- Scores based on component frequency
-
-**Pros:**
-- ✅ Always works - no dependencies
-- ✅ Minimal memory usage
-- ✅ Very fast
-- ✅ Predictable behavior
-- ✅ Good for debugging
-
-**Cons:**
-- ❌ Very basic - no intelligence
-- ❌ Misses context and importance
-- ❌ Common words can dominate
-- ❌ No semantic understanding
-
-**Best Use Cases:**
-- Emergency fallback
-- Testing and debugging
-- When other methods fail
-- Very resource-constrained environments
-
-#### Selection Strategy
-
-```python
-# Tenets automatic selection logic (simplified)
-if python_version >= 3.13:
-    if rake_available:
-        use_rake()  # Primary choice
-    else:
-        use_bm25()  # Default (or use_tfidf() if configured)
-else:  # Python < 3.13
-    if rake_available:
-        use_rake()  # Still preferred for speed
-    elif yake_available:
-        use_yake()  # Good alternative
-    else:
-        use_bm25()  # Default (or use_tfidf() if configured)
-
-# Final fallback is always frequency-based
-if all_methods_fail:
-    use_frequency()
-```
+| **RAKE** | Fast | Good | Low | ✅ Yes | Technical docs, Multi-word phrases | No semantic understanding |
+| **SimpleRAKE** | Fast | Good | Minimal | ✅ Yes | No NLTK dependencies, Built-in | Basic tokenization only |
+| **YAKE** | Moderate | Very Good | Low | ❌ No | Statistical analysis, Capital aware | Python 3.13 bug |
+| **BM25** | Fast | Excellent | High | ✅ Yes | Primary ranking, Length variation | Needs corpus |
+| **TF-IDF** | Fast | Good | Medium | ✅ Yes | Alternative to BM25 | Less effective for varying lengths |
+| **Frequency** | Very Fast | Basic | Minimal | ✅ Yes | Fallback option | Very basic |
 
 ### Embedding Model Architecture
 
@@ -609,6 +390,7 @@ graph TD
         GIT_IGNORE[.gitignore<br/>Version control]
         GLOBAL_IGNORE[Global Ignores<br/>~/.config/tenets/ignore<br/>Lowest Priority]
     end
+    
     subgraph "Intelligent Test Exclusion"
         INTENT_DETECT[Intent Detection<br/>Test-related prompts?]
         CLI_OVERRIDE[CLI Override<br/>--include-tests / --exclude-tests]
@@ -689,66 +471,7 @@ flowchart TD
     SKIP --> IGNORE
 ```
 
-### Minified & Build File Exclusion
-
-Tenets automatically excludes minified, compiled, and build output files by default to focus on source code only. This significantly improves analysis speed and context relevance.
-
-#### Default Exclusion Patterns
-
-```yaml
-scanner:
-  exclude_minified: true  # Default: exclude minified files
-  minified_patterns:
-    - '*.min.js'          # Minified JavaScript
-    - '*.min.css'         # Minified CSS
-    - '*.bundle.js'       # Webpack bundles
-    - '*.bundle.css'      # CSS bundles
-    - '*.production.js'   # Production builds
-    - '*.prod.js'         # Production builds
-    - '*.dist.js'         # Distribution files
-    - '*.compiled.js'     # Compiled output
-    - '*.minified.*'      # Any minified file
-    - '*.uglified.*'      # UglifyJS output
-  build_directory_patterns:
-    - dist/               # Distribution folder
-    - build/              # Build output
-    - out/                # Output folder
-    - output/             # Alternative output
-    - public/             # Public assets
-    - static/generated/   # Generated statics
-    - .next/              # Next.js build
-    - _next/              # Next.js build
-    - node_modules/       # Dependencies
-```
-
-#### Configuration Options
-
-1. **Disable minified exclusion** (include all files):
-   ```yaml
-   scanner:
-     exclude_minified: false
-   ```
-
-2. **Custom patterns**:
-   ```yaml
-   scanner:
-     minified_patterns:
-       - '*.custom.min.js'
-       - 'vendor/*.js'
-   ```
-
-3. **CLI override**:
-   ```bash
-   # Include minified files for this run
-   tenets distill "analyze bundle" --include-minified
-
-   # Exclude specific patterns
-   tenets examine . --exclude "*.min.js,dist/"
-   ```
-
 ### Intelligent Test File Exclusion
-
-Tenets implements intelligent test file handling to improve context relevance by automatically excluding or including test files based on the user's intent.
 
 ```mermaid
 flowchart TD
@@ -779,21 +502,11 @@ flowchart TD
         GENERIC_PATTERNS["Generic: **/test/**, **/tests/**"]
     end
 
-    subgraph "Test Directories"
-        COMMON_DIRS["tests, __tests__, spec"]
-        LANG_DIRS["unit_tests, integration_tests"]
-        E2E_DIRS["e2e, e2e_tests, functional_tests"]
-    end
-
     PATTERN_MATCH --> PY_PATTERNS
     PATTERN_MATCH --> JS_PATTERNS
     PATTERN_MATCH --> JAVA_PATTERNS
     PATTERN_MATCH --> GO_PATTERNS
     PATTERN_MATCH --> GENERIC_PATTERNS
-
-    DIR_MATCH --> COMMON_DIRS
-    DIR_MATCH --> LANG_DIRS
-    DIR_MATCH --> E2E_DIRS
 
     PY_PATTERNS --> FILTERED_FILES[Filtered File List]
     JS_PATTERNS --> FILTERED_FILES
@@ -801,26 +514,9 @@ flowchart TD
     GO_PATTERNS --> FILTERED_FILES
     GENERIC_PATTERNS --> FILTERED_FILES
 
-    COMMON_DIRS --> FILTERED_FILES
-    LANG_DIRS --> FILTERED_FILES
-    E2E_DIRS --> FILTERED_FILES
-
     SCAN_ALL --> ANALYSIS[File Analysis]
     FILTERED_FILES --> ANALYSIS
 ```
-
-**Intent Detection Patterns:**
-- Test-related keywords: `test`, `tests`, `testing`, `unit`, `integration`, `spec`, `coverage`
-- Test actions: `write tests`, `fix tests`, `run tests`, `test coverage`, `mock`
-- Test files: `test_auth.py`, `auth.test.js`, `*Test.java`
-- Test frameworks: `pytest`, `jest`, `mocha`, `junit`, `rspec`
-
-**Benefits:**
-- **Improved Relevance**: Non-test prompts get cleaner production code context
-- **Automatic Intelligence**: Test prompts automatically include test files
-- **Manual Override**: CLI flags provide full control when needed
-- **Multi-language Support**: Recognizes test patterns across languages
-- **Configuration**: Customizable patterns for project-specific conventions
 
 ## Code Analysis Engine
 
@@ -936,8 +632,6 @@ graph LR
 
 ### Unified Ranking Architecture
 
-**IMPORTANT**: The `rank` command now uses the EXACT SAME sophisticated ranking pipeline as the `distill` command. This ensures consistency and leverages the full power of the multi-factor ranking system.
-
 ```mermaid
 graph TD
     subgraph "Ranking Strategies"
@@ -1008,92 +702,14 @@ graph TD
     EMBED_CACHE --> RANKING
 ```
 
-### Strategy Comparison and Usage
+### Strategy Comparison
 
 | Strategy | Speed | Accuracy | Use Cases | Factors Used |
 |----------|-------|----------|-----------|--------------|
-| **Fast** | Fastest | Basic | • Quick file discovery<br/>• Keyword-based search<br/>• Interactive exploration | • Keyword matching (60%)<br/>• Path relevance (30%)<br/>• File type (10%) |
-| **Balanced** | 1.5x slower | Good | • **DEFAULT for both rank and distill**<br/>• Production usage<br/>• Most common scenarios | • Keyword (20%), BM25 (35%)<br/>• Path (15%), Import centrality (10%)<br/>• Complexity (5%), File type (5%), Git (10%) |
-| **Thorough** | 4x slower | High | • Complex codebases<br/>• Deep analysis needed<br/>• Research and investigation | • All balanced factors<br/>• Enhanced git analysis<br/>• Deeper structural analysis |
-| **ML** | 5x slower | Highest | • Semantic understanding needed<br/>• Natural language queries<br/>• Advanced AI workflows | • All factors + semantic similarity (25%)<br/>• Local embedding models<br/>• Context-aware ranking |
-
-### Modular Ranking Architecture
-
-The ranking system is designed as a **fully modular component** that can be used independently or as part of the larger distillation pipeline.
-
-#### Component Architecture
-
-```python
-# Core Components and Their Responsibilities
-tenets/core/ranking/
-├── __init__.py         # Public API exports
-├── ranker.py           # RelevanceRanker class - main ranking engine
-├── strategies.py       # Ranking strategies (Fast, Balanced, Thorough, ML)
-└── factors.py          # Individual ranking factor calculations
-
-# Integration Points
-tenets/core/distiller/distiller.py
-├── __init__: self.ranker = RelevanceRanker(config)  # Component instantiation
-└── _rank_files(): return self.ranker.rank_files()   # Delegation to ranker
-
-tenets/__init__.py (Tenets class)
-├── rank_files(): Uses distiller._rank_files()       # Reuses same pipeline
-└── distill(): Uses distiller._rank_files()          # Consistent ranking
-```
-
-#### Key Design Principles
-
-1. **Single Source of Truth**: The `RelevanceRanker` class is the sole authority for ranking logic
-2. **Strategy Pattern**: Different ranking strategies (fast/balanced/thorough) are encapsulated
-3. **Dependency Injection**: Ranker is injected into Distiller, not hardcoded
-4. **Interface Consistency**: Both `rank` and `distill` commands use identical ranking
-
-#### Benefits of Modular Design
-
-- **Consistency**: Same ranking behavior across all commands
-- **Testability**: Ranker can be tested in isolation
-- **Extensibility**: New ranking strategies can be added without changing core logic
-- **Reusability**: Other tools can import and use the ranker independently
-- **Maintainability**: Changes to ranking logic happen in one place
-- Analyzes all discovered files (no artificial limits)
-- Uses proper prompt parsing with `PromptParser`
-- Leverages sophisticated `BalancedRankingStrategy` by default
-- Proper keyword extraction with RAKE/YAKE fallbacks
-- Same file discovery and filtering as `distill`
-
-#### Pipeline Consistency
-
-```mermaid
-graph LR
-    subgraph "Unified Pipeline Components"
-        PROMPT_PARSER[Prompt Parser<br/>Intent detection<br/>Keyword extraction]
-        FILE_SCANNER[File Scanner<br/>Gitignore support<br/>Test exclusion]
-        CODE_ANALYZER[Code Analyzer<br/>AST parsing<br/>Structure analysis]
-        RELEVANCE_RANKER[Relevance Ranker<br/>Multi-factor scoring<br/>Strategy selection]
-    end
-
-    subgraph "Commands Using Same Pipeline"
-        DISTILL_CMD[tenets distill]
-        RANK_CMD[tenets rank]
-    end
-
-    DISTILL_CMD --> PROMPT_PARSER
-    RANK_CMD --> PROMPT_PARSER
-
-    PROMPT_PARSER --> FILE_SCANNER
-    FILE_SCANNER --> CODE_ANALYZER
-    CODE_ANALYZER --> RELEVANCE_RANKER
-
-    RELEVANCE_RANKER --> CONTEXT_BUILDER[Context Builder<br/>Only for distill]
-```
-
-#### Why This Matters
-
-1. **Consistency**: Both commands use identical logic for finding and ranking relevant files
-2. **Performance**: Leverages sophisticated caching and optimization from the main pipeline
-3. **Accuracy**: Uses proper NLP and multi-factor analysis instead of simple keyword matching
-4. **Maintainability**: Single source of truth for ranking logic - no code duplication
-5. **Feature Parity**: `rank` gets all improvements made to the `distill` ranking system
+| **Fast** | Fastest | Basic | Quick file discovery | Keyword (60%), Path (30%), File type (10%) |
+| **Balanced** | 1.5x slower | Good | **DEFAULT** Production usage | Keyword (20%), BM25 (35%), Structure (25%), Git (10%) |
+| **Thorough** | 4x slower | High | Complex codebases | All balanced factors + enhanced analysis |
+| **ML** | 5x slower | Highest | Semantic search | Embeddings (25%) + all thorough factors |
 
 ### Factor Calculation Details
 
@@ -1302,49 +918,6 @@ graph TD
 ```
 
 ### Summarization Strategies
-
-#### Import Summarization (NEW)
-
-Tenets now provides intelligent import condensing to reduce token usage while preserving context:
-
-**How It Works:**
-1. Detects import statements across multiple programming languages
-2. Extracts library/package names from various import formats
-3. Groups and counts imports (external vs local)
-4. Produces human-readable summary when threshold exceeded
-
-**Example Transformation:**
-```python
-# Original (15+ lines):
-import os
-import sys
-from pathlib import Path
-from typing import Dict, List, Optional
-import numpy as np
-import pandas as pd
-from flask import Flask, request
-# ... more imports
-
-# Summarized (3 lines):
-# Imports: 15 total
-# Dependencies: flask, numpy, pandas, pathlib, typing
-# Local imports: 2
-```
-
-**Configuration:**
-```yaml
-summarizer:
-  summarize_imports: true  # Enable/disable
-  import_summary_threshold: 5  # Minimum imports to trigger
-```
-
-**Supported Languages:**
-- Python: `import X`, `from X import Y`
-- JavaScript/TypeScript: `import`, `require()`
-- Java: `import package.Class`
-- C/C++: `#include <header>`
-- Go: `import "package"`
-- Rust: `use crate::module`
 
 ```mermaid
 graph LR
@@ -1601,24 +1174,6 @@ graph TD
     JIT --> PRESSURE
 ```
 
-### Performance Benchmarks
-
-#### File Analysis Performance
-
-**Performance benchmarks coming soon**
-
-We're currently collecting comprehensive performance data across different file sizes and languages. Check back for detailed metrics.
-
-#### System Performance
-
-| Codebase | Files | Size | Analysis Speed | Memory Usage |
-|----------|-------|------|----------------|--------------|
-| Small    | <100  | <10MB | Fast | Low |
-| Medium   | ~1K   | ~50MB | Fast | Low |
-| Large    | ~10K  | ~500MB| Moderate | Moderate |
-| Huge     | ~100K | ~5GB  | Slower | High |
-| Monorepo | 1M+   | 50GB+ | Variable | High |
-
 ## Configuration System
 
 ### Configuration Hierarchy
@@ -1698,7 +1253,8 @@ nlp:
   use_stopwords: true
   stopword_set: minimal  # minimal|aggressive|custom
   tokenizer: code        # code|text
-  keyword_extractor: rake # rake|yake|bm25|tfidf|frequency (rake is default for Python 3.13+)
+  keyword_extractor: rake # rake|yake|bm25|tfidf|frequency
+  text_similarity: bm25   # bm25|tfidf
 
 # ML configuration
 ml:
@@ -1728,6 +1284,8 @@ scanner:
   follow_symlinks: false
   max_file_size_mb: 10
   binary_detection: true
+  exclude_minified: true
+  exclude_tests: auto
 
   # Global ignores
   ignore_patterns:
@@ -1743,17 +1301,18 @@ scanner:
 
 # Summarization configuration
 summarizer:
-  # Documentation context-aware summarization
-  docs_context_aware: true           # Enable smart context-aware documentation summarization
-  docs_show_in_place_context: true   # Preserve relevant context sections in-place within summaries
-  docs_context_search_depth: 2       # 1=direct mentions, 2=semantic similarity, 3=deep analysis
-  docs_context_min_confidence: 0.6   # Minimum confidence for context relevance (0.0-1.0)
-  docs_context_max_sections: 10      # Maximum contextual sections to preserve per document
-  docs_context_preserve_examples: true # Always preserve code examples and snippets
+  summarize_imports: true
+  import_summary_threshold: 5
+  docs_context_aware: true
+  docs_show_in_place_context: true
+  docs_context_search_depth: 2
+  docs_context_min_confidence: 0.6
+  docs_context_max_sections: 10
+  docs_context_preserve_examples: true
 
 # Output configuration
 output:
-  format: markdown     # markdown|json|xml
+  format: markdown     # markdown|json|xml|html
   max_tokens: 100000
   include_metadata: true
   include_instructions: true
@@ -1782,6 +1341,13 @@ momentum:
   sprint_duration: 14
   velocity_window: 6
   include_weekends: false
+
+# Tenet configuration
+tenet:
+  auto_instill: true
+  injection_frequency: adaptive
+  max_per_context: 5
+  system_instruction_enabled: true
 ```
 
 ## CLI & API Architecture
@@ -1793,10 +1359,11 @@ momentum:
 tenets:
   distill:           # Build optimal context for prompts
     --copy           # Copy to clipboard
-    --format         # Output format (markdown, xml, json)
+    --format         # Output format (markdown, xml, json, html)
     --max-tokens     # Token limit
     --exclude        # Exclude patterns
     --session        # Session name
+    --algorithm      # Ranking algorithm
 
   examine:           # Code quality analysis
     --show-details   # Detailed metrics
@@ -1928,10 +1495,6 @@ graph TB
 
 ### Secret Detection Patterns (Roadmap)
 
-**Note: Secret detection and redaction is a planned feature for future releases.**
-
-The following architecture represents the planned implementation:
-
 ```mermaid
 graph LR
     subgraph "Detection Methods"
@@ -1977,7 +1540,7 @@ graph LR
 ```mermaid
 graph TB
     subgraph "Test Categories"
-        UNIT[Unit Tests<br/>Target: High coverage<br/>Fast, isolated]
+        UNIT[Unit Tests<br/>Target: >90% coverage<br/>Fast, isolated]
         INTEGRATION[Integration Tests<br/>Component interaction<br/>Real workflows]
         E2E[End-to-End Tests<br/>Complete user journeys<br/>CLI to output]
         PERFORMANCE[Performance Tests<br/>Benchmark regression<br/>Memory usage]
@@ -2048,39 +1611,9 @@ graph LR
 
 ### Overview
 
-The Guiding Principles system (internally called "Tenets") provides a way to inject persistent, context-aware instructions into generated code context. These principles help maintain consistency across AI interactions and combat context drift by ensuring important architectural decisions, coding standards, and project-specific requirements are consistently reinforced.
-
-### Output Format Conventions
-
-Following OpenAI's recommendations for structured output, tenets are formatted as "guiding principles" in human-readable formats:
-
-#### Markdown Format
-```markdown
-**🎯 Key Guiding Principle:** Always validate user input before processing
-**📌 Important Guiding Principle:** Use async/await for all I/O operations
-**💡 Guiding Principle:** Prefer composition over inheritance
-```
-
-#### XML Format (Recommended by OpenAI)
-```xml
-<guiding_principle priority="high" category="security">
-  Always validate and sanitize user input
-</guiding_principle>
-
-<guiding_principles>
-  <guiding_principle priority="critical">Maintain backward compatibility</guiding_principle>
-  <guiding_principle priority="medium">Use descriptive variable names</guiding_principle>
-</guiding_principles>
-```
-
-#### JSON Format
-```json
-/* GUIDING PRINCIPLE: Follow REST API conventions for all endpoints */
-```
+The Guiding Principles system provides persistent, context-aware instructions to maintain consistency across AI interactions and combat context drift.
 
 ### Injection Strategy
-
-The system uses intelligent injection strategies to place guiding principles where they'll be most effective:
 
 ```mermaid
 graph TD
@@ -2112,17 +1645,28 @@ graph TD
     LOW --> END_SUMMARY
 ```
 
-### Injection Behavior
+### Output Formats
 
-The system ensures guiding principles are present when needed:
+**Markdown:**
+```markdown
+**🎯 Key Guiding Principle:** Always validate user input before processing
+**📌 Important Guiding Principle:** Use async/await for all I/O operations
+**💡 Guiding Principle:** Prefer composition over inheritance
+```
 
-#### Session-Based Injection
-- **First Output Rule**: Guiding principles are ALWAYS injected on the first distill in any session
-- **Named Sessions**: After first injection, follows configured frequency (adaptive/periodic/always)
-- **Unnamed Sessions**: Treated as important contexts that always receive guiding principles
-- **No Delay**: Previously required 5 operations before first injection; now immediate
+**XML (Recommended by OpenAI):**
+```xml
+<guiding_principle priority="high" category="security">
+  Always validate and sanitize user input
+</guiding_principle>
 
-#### Configuration
+<guiding_principles>
+  <guiding_principle priority="critical">Maintain backward compatibility</guiding_principle>
+  <guiding_principle priority="medium">Use descriptive variable names</guiding_principle>
+</guiding_principles>
+```
+
+### Configuration
 
 ```yaml
 tenet:
@@ -2131,106 +1675,14 @@ tenet:
   injection_strategy: strategic
   injection_frequency: adaptive  # 'always', 'periodic', 'adaptive', 'manual'
   injection_interval: 3          # For periodic mode
-  min_session_length: 1          # Now 1 (was 5) - first injection always happens
+  min_session_length: 1          # First injection always happens
   system_instruction: "Prefer small, safe diffs and add tests"
   system_instruction_enabled: true
-```
-
-#### Injection Frequencies
-- **always**: Inject on every distill operation
-- **periodic**: Inject every N operations (set by `injection_interval`)
-- **adaptive**: Smart injection based on context complexity and session state
-- **manual**: Only inject when explicitly requested
-
-### Integration with Distill Command
-
-When using the `distill` command, guiding principles are automatically injected based on configuration.
-
-**Note:** System instructions are excluded from HTML reports (which are meant for human consumption) but included in formats intended for AI consumption (markdown, XML, JSON).
-
-## Future Roadmap & Vision
-
-```mermaid
-graph TB
-    subgraph "Core Improvements"
-        INCREMENTAL[Incremental Indexing<br/>Real-time updates<br/>Watch file changes]
-        FASTER_EMBED[Faster Embeddings<br/>Model quantization<br/>ONNX optimization]
-        LANGUAGE_SUP[Better Language Support<br/>30+ languages<br/>Language-specific patterns]
-        IDE_PLUGINS[IDE Plugin Ecosystem<br/>VS Code, IntelliJ, Vim]
-        CROSS_REPO[Cross-repository Analysis<br/>Monorepo support<br/>Dependency tracking]
-    end
-
-    subgraph "ML Enhancements"
-        NEWER_MODELS[Newer Embedding Models<br/>Code-specific transformers<br/>Better accuracy]
-        FINE_TUNING[Fine-tuning Pipeline<br/>Domain-specific models<br/>Custom training]
-        MULTIMODAL[Multi-modal Understanding<br/>Diagrams, images<br/>Architecture docs]
-        CODE_TRANSFORMERS[Code-specific Models<br/>Programming language aware<br/>Syntax understanding]
-    end
-
-    INCREMENTAL --> NEWER_MODELS
-    FASTER_EMBED --> FINE_TUNING
-    LANGUAGE_SUP --> MULTIMODAL
-    IDE_PLUGINS --> CODE_TRANSFORMERS
-    CROSS_REPO --> CODE_TRANSFORMERS
-```
-
-### Medium Term
-
-```mermaid
-graph TB
-    subgraph "Platform Features"
-        WEB_UI[Web UI<br/>Real-time collaboration<br/>Team workspaces]
-        SHARED_CONTEXT[Shared Context Libraries<br/>Team knowledge base<br/>Best practices]
-        KNOWLEDGE_GRAPHS[Knowledge Graphs<br/>Code relationships<br/>Semantic connections]
-        AI_AGENTS[AI Agent Integration<br/>Autonomous assistance<br/>Proactive suggestions]
-    end
-
-    subgraph "Enterprise Features"
-        SSO[SSO/SAML Support<br/>Enterprise authentication<br/>Role-based access]
-        AUDIT[Audit Logging<br/>Compliance tracking<br/>Usage monitoring]
-        COMPLIANCE[Compliance Modes<br/>GDPR, SOX, HIPAA<br/>Data governance]
-        AIR_GAPPED[Air-gapped Deployment<br/>Offline operation<br/>Secure environments]
-        CUSTOM_ML[Custom ML Models<br/>Private model training<br/>Domain expertise]
-    end
-
-    WEB_UI --> SSO
-    SHARED_CONTEXT --> AUDIT
-    KNOWLEDGE_GRAPHS --> COMPLIANCE
-    AI_AGENTS --> AIR_GAPPED
-    AI_AGENTS --> CUSTOM_ML
-```
-
-### Long Term
-
-```mermaid
-graph TB
-    subgraph "Vision Goals"
-        AUTONOMOUS[Autonomous Code Understanding<br/>Self-improving analysis<br/>Minimal human input]
-        PREDICTIVE[Predictive Development<br/>Anticipate needs<br/>Suggest improvements]
-        UNIVERSAL[Universal Code Intelligence<br/>Any language, any domain<br/>Contextual understanding]
-        INDUSTRY_STANDARD[Industry Standard<br/>AI pair programming<br/>Developer toolchain]
-    end
-
-    subgraph "Research Areas"
-        GRAPH_NEURAL[Graph Neural Networks<br/>Code structure understanding<br/>Relationship modeling]
-        REINFORCEMENT[Reinforcement Learning<br/>Ranking optimization<br/>Adaptive behavior]
-        FEW_SHOT[Few-shot Learning<br/>New language support<br/>Rapid adaptation]
-        EXPLAINABLE[Explainable AI<br/>Ranking transparency<br/>Decision reasoning]
-        FEDERATED[Federated Learning<br/>Team knowledge sharing<br/>Privacy-preserving]
-    end
-
-    AUTONOMOUS --> GRAPH_NEURAL
-    PREDICTIVE --> REINFORCEMENT
-    UNIVERSAL --> FEW_SHOT
-    INDUSTRY_STANDARD --> EXPLAINABLE
-    INDUSTRY_STANDARD --> FEDERATED
 ```
 
 ## Output Generation & Visualization
 
 ### Output Formatting System
-
-The output formatting system in Tenets provides multiple format options to suit different use cases and integrations:
 
 ```mermaid
 graph TB
@@ -2267,44 +1719,7 @@ graph TB
     RESPONSIVE --> GIT
 ```
 
-### HTML Report Generation
-
-The HTML formatter leverages the reporting infrastructure to create rich, interactive reports:
-
-#### Features:
-- **Interactive Dashboard**: Collapsible sections, sortable tables, and filterable content
-- **Visual Statistics**: Charts for file distribution, token usage, and relevance scores
-- **Code Previews**: Syntax-highlighted code snippets with truncation for large files
-- **Responsive Design**: Mobile-friendly layout that adapts to screen size
-- **Professional Styling**: Modern UI with gradients, shadows, and animations
-- **Git Integration**: Display of recent commits, contributors, and branch information
-
-#### Architecture:
-
-```python
-class HTMLFormatter:
-    """HTML report generation for distill command."""
-
-    def format_html(self, aggregated, prompt_context, session):
-        # Create HTML template with modern styling
-        template = HTMLTemplate(theme="modern", include_charts=True)
-
-        # Build report sections
-        sections = [
-            self._build_header(prompt_context, session),
-            self._build_prompt_analysis(prompt_context),
-            self._build_statistics(aggregated),
-            self._build_file_cards(aggregated["included_files"]),
-            self._build_git_context(aggregated.get("git_context"))
-        ]
-
-        # Generate final HTML with embedded styles and scripts
-        return template.render(sections)
-```
-
 ### Visualization Components
-
-The visualization system provides rich visual representations of code analysis with intelligent project detection:
 
 ```mermaid
 graph LR
@@ -2367,91 +1782,88 @@ graph LR
     GRAPHGEN --> JSON_OUT
 ```
 
-#### Project Detection System
+## Future Roadmap & Vision
 
-The new ProjectDetector automatically identifies:
-- **Project Type**: Python package, Node.js app, Django project, React app, etc.
-- **Language Distribution**: Percentages of each language in the codebase
-- **Frameworks**: Detects Django, Flask, React, Vue, Spring, Rails, etc.
-- **Entry Points**: Finds main.py, index.js, package.json main field, etc.
-- **Project Structure**: Identifies src/, tests/, docs/ directories
+### Near Term
 
-#### Dependency Visualization Modes
+```mermaid
+graph TB
+    subgraph "Core Improvements"
+        INCREMENTAL[Incremental Indexing<br/>Real-time updates<br/>Watch file changes]
+        FASTER_EMBED[Faster Embeddings<br/>Model quantization<br/>ONNX optimization]
+        LANGUAGE_SUP[Better Language Support<br/>30+ languages<br/>Language-specific patterns]
+        IDE_PLUGINS[IDE Plugin Ecosystem<br/>VS Code, IntelliJ, Vim]
+        CROSS_REPO[Cross-repository Analysis<br/>Monorepo support<br/>Dependency tracking]
+    end
 
-Three levels of dependency aggregation:
-1. **File-level**: Shows individual file dependencies (detailed view)
-2. **Module-level**: Aggregates to module/directory level (balanced view)
-3. **Package-level**: Shows only top-level package dependencies (high-level view)
+    subgraph "ML Enhancements"
+        NEWER_MODELS[Newer Embedding Models<br/>Code-specific transformers<br/>Better accuracy]
+        FINE_TUNING[Fine-tuning Pipeline<br/>Domain-specific models<br/>Custom training]
+        MULTIMODAL[Multi-modal Understanding<br/>Diagrams, images<br/>Architecture docs]
+        CODE_TRANSFORMERS[Code-specific Models<br/>Programming language aware<br/>Syntax understanding]
+    end
 
-#### Graph Generation Features
-
-- **Multiple Formats**: SVG, PNG, PDF, HTML, DOT, JSON
-- **Pure Python**: All dependencies installable via pip (no system deps)
-- **Interactive HTML**: D3.js or Plotly-based interactive visualizations
-- **Clustering**: Group nodes by directory, module, or package
-- **Layout Algorithms**: Hierarchical, circular, shell, force-directed
-- **Node Limiting**: Handle large graphs with --max-nodes option
-
-### Usage Examples
-
-```bash
-# Generate HTML report for context
-tenets distill "review API" --format html -o report.html
-
-# Create interactive dashboard with verbose details
-tenets distill "analyze security" --format html --verbose -o security_context.html
-
-# Generate report with custom styling
-tenets distill "refactor database" --format html --theme dark -o refactor.html
-
-# Dependency visualization with auto-detection
-tenets viz deps  # Auto-detects project type and generates ASCII tree
-tenets viz deps --output deps.svg  # Generate SVG dependency graph
-tenets viz deps --format html --output interactive.html  # Interactive visualization
-
-# Different aggregation levels
-tenets viz deps --level file  # Show all file dependencies (detailed)
-tenets viz deps --level module  # Aggregate by module (balanced)
-tenets viz deps --level package  # Show package architecture (high-level)
-
-# Advanced visualization options
-tenets viz deps --cluster-by directory --layout circular  # Circular with clustering
-tenets viz deps --max-nodes 100 --format png  # Limit to top 100 nodes
-tenets viz deps src/ --include "*.py" --exclude "*test*"  # Filter files
-
-# Export formats
-tenets viz deps --format dot --output graph.dot  # Graphviz DOT for further processing
-tenets viz deps --format json --output data.json  # Raw JSON for custom tools
+    INCREMENTAL --> NEWER_MODELS
+    FASTER_EMBED --> FINE_TUNING
+    LANGUAGE_SUP --> MULTIMODAL
+    IDE_PLUGINS --> CODE_TRANSFORMERS
+    CROSS_REPO --> CODE_TRANSFORMERS
 ```
 
-### Performance Optimizations
+### Medium Term
 
-- **Lazy Loading**: Large code sections load on-demand
-- **Virtual Scrolling**: Efficient rendering of long file lists
-- **Minified Assets**: Compressed CSS and JavaScript
-- **Inline Resources**: No external dependencies for offline viewing
+```mermaid
+graph TB
+    subgraph "Platform Features"
+        WEB_UI[Web UI<br/>Real-time collaboration<br/>Team workspaces]
+        SHARED_CONTEXT[Shared Context Libraries<br/>Team knowledge base<br/>Best practices]
+        KNOWLEDGE_GRAPHS[Knowledge Graphs<br/>Code relationships<br/>Semantic connections]
+        AI_AGENTS[AI Agent Integration<br/>Autonomous assistance<br/>Proactive suggestions]
+    end
+
+    subgraph "Enterprise Features"
+        SSO[SSO/SAML Support<br/>Enterprise authentication<br/>Role-based access]
+        AUDIT[Audit Logging<br/>Compliance tracking<br/>Usage monitoring]
+        COMPLIANCE[Compliance Modes<br/>GDPR, SOX, HIPAA<br/>Data governance]
+        AIR_GAPPED[Air-gapped Deployment<br/>Offline operation<br/>Secure environments]
+        CUSTOM_ML[Custom ML Models<br/>Private model training<br/>Domain expertise]
+    end
+
+    WEB_UI --> SSO
+    SHARED_CONTEXT --> AUDIT
+    KNOWLEDGE_GRAPHS --> COMPLIANCE
+    AI_AGENTS --> AIR_GAPPED
+    AI_AGENTS --> CUSTOM_ML
+```
+
+### Long Term Vision
+
+```mermaid
+graph TB
+    subgraph "Vision Goals"
+        AUTONOMOUS[Autonomous Code Understanding<br/>Self-improving analysis<br/>Minimal human input]
+        PREDICTIVE[Predictive Development<br/>Anticipate needs<br/>Suggest improvements]
+        UNIVERSAL[Universal Code Intelligence<br/>Any language, any domain<br/>Contextual understanding]
+        INDUSTRY_STANDARD[Industry Standard<br/>AI pair programming<br/>Developer toolchain]
+    end
+
+    subgraph "Research Areas"
+        GRAPH_NEURAL[Graph Neural Networks<br/>Code structure understanding<br/>Relationship modeling]
+        REINFORCEMENT[Reinforcement Learning<br/>Ranking optimization<br/>Adaptive behavior]
+        FEW_SHOT[Few-shot Learning<br/>New language support<br/>Rapid adaptation]
+        EXPLAINABLE[Explainable AI<br/>Ranking transparency<br/>Decision reasoning]
+        FEDERATED[Federated Learning<br/>Team knowledge sharing<br/>Privacy-preserving]
+    end
+
+    AUTONOMOUS --> GRAPH_NEURAL
+    PREDICTIVE --> REINFORCEMENT
+    UNIVERSAL --> FEW_SHOT
+    INDUSTRY_STANDARD --> EXPLAINABLE
+    INDUSTRY_STANDARD --> FEDERATED
+```
 
 ## Conclusion
 
-By combining sophisticated NLP/ML techniques with traditional code analysis, git mining, and intelligent caching, we've created a system that truly understands code in context.
-
-The architecture is designed to be:
-
-- **Performant**: Sub-second responses for most operations
-- **Scalable**: From small projects to massive monorepos
-- **Extensible**: Plugin system for custom logic
-- **Private**: Everything runs locally
-- **Intelligent**: Advanced ML when available
-- **Practical**: Works today, improves tomorrow
-
-### Key Architectural Strengths
-
-1. **Multi-Modal Intelligence**: Combines semantic understanding, structural analysis, and historical context
-2. **Progressive Enhancement**: Works with minimal dependencies, scales with available resources
-3. **Local-First Privacy**: Complete data sovereignty and security
-4. **Configurable Ranking**: Every factor can be tuned for specific use cases
-5. **Streaming Performance**: Results available as soon as possible
-6. **Intelligent Caching**: Multiple cache levels with smart invalidation
-7. **Extensible Design**: Plugin architecture for custom functionality
+Tenets combines sophisticated NLP/ML techniques with traditional code analysis, git mining, and intelligent caching to create a system that truly understands code in context. The architecture is designed for scalability, extensibility, and performance while maintaining complete privacy through local-first processing.
 
 The future of code intelligence is local, intelligent, and developer-centric. Tenets embodies this vision while remaining practical and immediately useful for development teams of any size.
