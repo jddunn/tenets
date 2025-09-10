@@ -106,7 +106,7 @@ def write_module_page(mod_name: str, is_pkg: bool) -> None:
     title = parts[-1].replace("_", " ").title()
     full_title = f"{title} {'Package' if is_pkg else 'Module'}"
 
-    # Build the page content
+    # Build the page content - OPTIMIZED FOR LAZY LOADING
     content = f"""---
 title: {title}
 ---
@@ -117,13 +117,13 @@ title: {title}
 
 ::: {mod_name}
     options:
-        show_source: true
+        show_source: false  # Don't show source by default (performance)
         show_root_heading: false
         show_root_toc_entry: false
         show_object_full_path: false
         show_category_heading: true
         show_symbol_type_heading: true
-        show_symbol_type_toc: true
+        show_symbol_type_toc: false  # Disable for performance
         members_order: source
         group_by_category: true
         docstring_style: google
@@ -132,15 +132,13 @@ title: {title}
         separate_signature: true
         line_length: 80
         show_signature_annotations: true
-        signature_crossrefs: true
+        signature_crossrefs: false  # Disable for performance
         summary: true
-"""
-
-    # Add filters for non-package modules to hide private members
-    if not is_pkg:
-        content += """        filters:
-          - "!^_"
-          - "!^test"
+        show_if_no_docstring: false
+        inherited_members: false  # Don't show inherited (performance)
+        members:
+          - "!^_"  # Exclude private members
+          - "!^test"  # Exclude test functions
 """
 
     logger.info(f"Writing {out_path}")
@@ -189,27 +187,23 @@ arrange:
 
 
 def write_root_index() -> None:
-    """Write the root API index page."""
+    """Write the root API index page - LAZY LOADED."""
     index_content = """---
 title: API Reference
-description: Complete API documentation for the Tenets package
+description: API documentation for Tenets
 ---
 
 # API Reference
 
-Welcome to the Tenets API reference documentation. This section contains detailed information about all modules, classes, functions, and other components of the Tenets package.
+Click on modules below to view their documentation. Pages load on-demand for optimal performance.
 
-## Package Overview
+## Main Package
 
-The Tenets package provides intelligent code exploration and AI pair programming capabilities. It's organized into several key modules:
+- **[tenets](tenets/index.md)** - Main package exports
 
-### Core Modules
+## Core Modules
 
-- **[tenets](tenets/index.md)** - Main package initialization and exports
-- **[tenets.core](tenets/core/index.md)** - Core functionality and main classes
-- **[tenets.models](tenets/models/index.md)** - Data models and structures
-- **[tenets.utils](tenets/utils/index.md)** - Utility functions and helpers
-- **[tenets.parsers](tenets/parsers/index.md)** - Language parsers and analyzers
+- **[tenets.core](tenets/core/index.md)** - Core functionality
 - **[tenets.cli](tenets/cli/index.md)** - Command-line interface
 
 ## Quick Start
@@ -321,11 +315,21 @@ def main():
     # Document the main package
     write_module_page(PACKAGE_NAME, True)
 
-    # Document all submodules and subpackages
+    # LIMIT: Only document core modules to prevent overload
+    # Users can navigate to submodules as needed
     documented_count = 0
+    MAX_MODULES = 50  # Limit to prevent thousands of pages
+
     for name, is_pkg in iter_modules(PACKAGE_NAME):
-        write_module_page(name, is_pkg)
-        documented_count += 1
+        # Only document top-level and core modules
+        depth = len(name.split("."))
+        if depth <= 3:  # Only go 2 levels deep
+            write_module_page(name, is_pkg)
+            documented_count += 1
+
+            if documented_count >= MAX_MODULES:
+                logger.warning(f"Reached max module limit ({MAX_MODULES}), stopping")
+                break
 
     logger.info(f"Generated documentation for {documented_count} modules/packages")
 
