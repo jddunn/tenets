@@ -8,7 +8,7 @@ Tenets uses a hierarchical configuration system with multiple override levels:
 
 **Precedence (lowest → highest):**
 1. Default configuration (built-in)
-2. Project file (`.tenets.yml` at repo root) 
+2. Project file (`.tenets.yml` at repo root)
 3. User file (`~/.config/tenets/config.yml` or `~/.tenets.yml`)
 4. Environment variables (`TENETS_*`)
 5. CLI flags (`--mode`, `--max-tokens`, etc.)
@@ -58,7 +58,7 @@ scanner:
   timeout: 5.0                    # Timeout per file (seconds)
   exclude_minified: true          # Skip minified files
   exclude_tests_by_default: true  # Skip test files unless explicit
-  
+
   # Ignore patterns (in addition to .gitignore)
   additional_ignore_patterns:
     - '*.generated.*'
@@ -67,14 +67,14 @@ scanner:
     - '*.egg-info/'
     - __pycache__/
     - .pytest_cache/
-    
+
   # Test file patterns
   test_patterns:
     - test_*.py
     - '*_test.py'
     - '*.test.js'
     - '*.spec.ts'
-    
+
   # Test directories
   test_directories:
     - test
@@ -86,8 +86,8 @@ scanner:
 ranking:
   algorithm: balanced             # fast | balanced | thorough | ml | custom
   threshold: 0.10                 # 0.0-1.0 (lower includes more files)
-  text_similarity_algorithm: bm25 # bm25 (default) | tfidf
-  use_tfidf: true                # Deprecated - use text_similarity_algorithm
+  text_similarity_algorithm: bm25 # bm25 (default) | tfidf (optional)
+  text_similarity_algorithm: bm25  # Using BM25 (default)               # Deprecated - use text_similarity_algorithm instead
   use_stopwords: false           # Filter common tokens
   use_embeddings: false          # Semantic similarity (requires ML)
   use_git: true                  # Include git signals
@@ -96,7 +96,7 @@ ranking:
   workers: 2                     # Parallel ranking workers
   parallel_mode: auto            # thread | process | auto
   batch_size: 100               # Files per batch
-  
+
   # Custom factor weights (0.0-1.0)
   custom_weights:
     keyword_match: 0.25
@@ -119,7 +119,7 @@ summarizer:
   batch_size: 10                # Files per batch
   docstring_weight: 0.5         # Weight for docstrings
   include_all_signatures: true   # Include all function signatures
-  
+
   # LLM settings (optional)
   llm_provider: null            # openai | anthropic | null
   llm_model: null               # Model name
@@ -137,13 +137,13 @@ tenet:
   prefer_natural_breaks: true     # Insert at natural boundaries
   storage_path: ~/.tenets/tenets  # Tenet storage location
   collections_enabled: true       # Enable tenet collections
-  
+
   # Injection frequency
   injection_frequency: adaptive   # always | periodic | adaptive | manual
   injection_interval: 3           # For periodic mode
   session_complexity_threshold: 0.7  # Triggers adaptive injection
   min_session_length: 5           # Min prompts before injection
-  
+
   # Advanced settings
   adaptive_injection: true        # Smart injection timing
   track_injection_history: true   # Track what was injected
@@ -152,12 +152,12 @@ tenet:
   session_aware: true            # Use session context
   session_memory_limit: 100      # Max session history
   persist_session_history: true   # Save session data
-  
+
   # Priority settings
   priority_boost_critical: 2.0    # Boost for critical tenets
   priority_boost_high: 1.5       # Boost for high priority
   skip_low_priority_on_complex: true  # Skip low priority when complex
-  
+
   # System instruction
   system_instruction: null        # Global system instruction
   system_instruction_enabled: false  # Enable system instruction
@@ -174,14 +174,14 @@ cache:
   compression: false            # Compress cache data
   memory_cache_size: 1000       # In-memory cache entries
   max_age_hours: 24            # Max cache age (hours)
-  
+
   # SQLite settings
   sqlite_pragmas:
     journal_mode: WAL
     synchronous: NORMAL
     cache_size: '-64000'
     temp_store: MEMORY
-  
+
   # LLM cache
   llm_cache_enabled: true       # Cache LLM responses
   llm_cache_ttl_hours: 24      # LLM cache TTL
@@ -206,13 +206,13 @@ git:
   history_limit: 100           # Max commits to analyze
   include_blame: false         # Include git blame
   include_stats: true          # Include statistics
-  
+
   # Ignore these authors
   ignore_authors:
     - dependabot[bot]
     - github-actions[bot]
     - renovate[bot]
-  
+
   # Main branch names
   main_branches:
     - main
@@ -227,29 +227,29 @@ nlp:
   code_stopword_set: minimal       # minimal | standard | aggressive
   prompt_stopword_set: aggressive  # minimal | standard | aggressive
   custom_stopword_files: []        # Custom stopword files
-  
+
   # Tokenization
   tokenization_mode: auto          # auto | simple | advanced
   preserve_original_tokens: true   # Keep original tokens
   split_camelcase: true           # Split CamelCase
   split_snakecase: true           # Split snake_case
   min_token_length: 2             # Min token length
-  
+
   # Keyword extraction
-  keyword_extraction_method: auto  # auto | rake | yake | tfidf
+  keyword_extraction_method: auto  # auto | rake | yake | bm25 | tfidf
   max_keywords: 30                # Max keywords to extract
   ngram_size: 3                  # N-gram size
   yake_dedup_threshold: 0.7      # YAKE deduplication
-  
-  # BM25 settings  
+
+  # BM25 settings
   bm25_k1: 1.2                   # Term frequency saturation parameter
   bm25_b: 0.75                   # Length normalization parameter
-  
-  # TF-IDF settings (when used as fallback)
-  tfidf_use_sublinear: true      # Sublinear TF scaling
+
+  # TF-IDF settings (when explicitly configured as alternative to BM25)
+  tfidf_use_sublinear: true      # Sublinear TF scaling (only when TF-IDF is used)
   tfidf_use_idf: true           # Use IDF
   tfidf_norm: l2                # Normalization
-  
+
   # Embeddings
   embeddings_enabled: false       # Enable embeddings
   embeddings_model: all-MiniLM-L6-v2  # Model name
@@ -258,12 +258,12 @@ nlp:
   embeddings_batch_size: 32      # Batch size
   similarity_metric: cosine      # cosine | euclidean | manhattan
   similarity_threshold: 0.7      # Similarity threshold
-  
+
   # Cache settings
   cache_embeddings_ttl_days: 30  # Embeddings cache TTL
-  cache_tfidf_ttl_days: 7       # TF-IDF cache TTL
+  cache_tfidf_ttl_days: 7       # BM25/TF-IDF cache TTL
   cache_keywords_ttl_days: 7     # Keywords cache TTL
-  
+
   # Performance
   multiprocessing_enabled: true   # Use multiprocessing
   multiprocessing_workers: null   # null = auto-detect
@@ -276,20 +276,20 @@ llm:
   fallback_providers:           # Fallback providers
     - anthropic
     - openrouter
-  
+
   # API keys (use environment variables)
   api_keys:
     openai: ${OPENAI_API_KEY}
     anthropic: ${ANTHROPIC_API_KEY}
     openrouter: ${OPENROUTER_API_KEY}
-  
+
   # API endpoints
   api_base_urls:
     openai: https://api.openai.com/v1
     anthropic: https://api.anthropic.com/v1
     openrouter: https://openrouter.ai/api/v1
     ollama: http://localhost:11434
-  
+
   # Model selection
   models:
     default: gpt-4o-mini
@@ -297,19 +297,19 @@ llm:
     analysis: gpt-4o
     embeddings: text-embedding-3-small
     code_generation: gpt-4o
-  
+
   # Rate limits and costs
   max_cost_per_run: 0.1         # Max $ per run
   max_cost_per_day: 10.0        # Max $ per day
   max_tokens_per_request: 4000   # Max tokens per request
   max_context_length: 100000     # Max context length
-  
+
   # Generation settings
   temperature: 0.3              # Creativity (0.0-1.0)
   top_p: 0.95                  # Nucleus sampling
   frequency_penalty: 0.0        # Frequency penalty
   presence_penalty: 0.0         # Presence penalty
-  
+
   # Network settings
   requests_per_minute: 60       # Rate limit
   retry_on_error: true         # Retry failed requests
@@ -318,7 +318,7 @@ llm:
   retry_backoff: 2.0          # Backoff multiplier
   timeout: 30                 # Request timeout (seconds)
   stream: false               # Stream responses
-  
+
   # Logging and caching
   cache_responses: true        # Cache LLM responses
   cache_ttl_hours: 24         # Cache TTL (hours)
@@ -333,9 +333,9 @@ custom: {}  # User-defined custom settings
 
 **Ranking:**
 - `threshold`: Lower values (0.05-0.10) include more files, higher (0.20-0.30) for stricter matching
-- `algorithm`: 
+- `algorithm`:
   - `fast`: Quick keyword matching (~10ms/file)
-  - `balanced`: Structural analysis + BM25 + TF-IDF (default)
+  - `balanced`: Structural analysis + BM25 (default)
   - `thorough`: Full analysis with relationships
   - `ml`: Machine learning with embeddings (requires extras)
 - `custom_weights`: Fine-tune ranking factors (values 0.0-1.0)
@@ -383,7 +383,7 @@ export TENETS_QUIET=false
 # Ranking configuration
 export TENETS_RANKING_ALGORITHM=thorough
 export TENETS_RANKING_THRESHOLD=0.05
-export TENETS_RANKING_USE_TFIDF=true
+export TENETS_RANKING_TEXT_SIMILARITY_ALGORITHM=tfidf  # Use TF-IDF instead of BM25
 export TENETS_RANKING_USE_EMBEDDINGS=true
 export TENETS_RANKING_WORKERS=4
 
@@ -478,7 +478,7 @@ config = TenetsConfig(
     ranking={
         "algorithm": "thorough",
         "threshold": 0.05,
-        "use_tfidf": True,
+        "text_similarity_algorithm": "bm25",  # or "tfidf" for TF-IDF
         "use_embeddings": True,
         "workers": 4,
         "custom_weights": {
@@ -574,7 +574,7 @@ max_tokens: 80000
 ranking:
   algorithm: thorough
   threshold: 0.08
-  use_tfidf: true
+  text_similarity_algorithm: bm25  # Default algorithm
   use_embeddings: true
   custom_weights:
     keyword_match: 0.35
@@ -614,7 +614,7 @@ scanner:
 ranking:
   algorithm: fast
   threshold: 0.05
-  use_tfidf: false
+  text_similarity_algorithm: bm25  # Using BM25 (default)
   use_embeddings: false
   workers: 8
 scanner:
@@ -630,7 +630,7 @@ cache:
 ranking:
   algorithm: thorough
   threshold: 0.20
-  use_tfidf: true
+  text_similarity_algorithm: bm25  # Default algorithm
   use_embeddings: true
   use_git: true
   workers: 2
