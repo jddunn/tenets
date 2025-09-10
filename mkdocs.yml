@@ -123,53 +123,27 @@ plugins:
       lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
 
-  # Auto-generated API docs - ENABLED FOR PRODUCTION
-  - gen-files:
-      scripts:
-        - docs/gen_api.py
-
-  - literate-nav:
-      nav_file: SUMMARY.md
-      implicit_index: true
-
-  - section-index
-
-  # Optional: For better page organization (uncomment if needed)
-  # - awesome-pages:
-  #     collapse_single_pages: false
-  #     strict: false
-
-  - mkdocstrings:
-      enabled: true
-      default_handler: python
-      handlers:
-        python:
-          paths: ['.']
-          setup_commands:
-            - import os, sys
-            - sys.path.insert(0, os.path.abspath('.'))
-          options:
-            show_source: true
-            show_root_heading: true
-            show_root_toc_entry: true
-            show_object_full_path: false
-            show_category_heading: true
-            show_symbol_type_heading: true
-            show_symbol_type_toc: true
-            members_order: source
-            group_by_category: true
-            show_submodules: true
-            docstring_style: google
-            docstring_section_style: table
-            merge_init_into_class: true
-            show_if_no_docstring: false
-            separate_signature: true
-            line_length: 80
-            show_signature_annotations: true
-            signature_crossrefs: true
-            filters: ['!^_']
-            inherited_members: true
-            preload_modules: []
+  # DISABLED: Auto-generated API docs - causing performance issues
+  # The API docs are now static in docs/api/index.md for better performance
+  # - gen-files:
+  #     scripts:
+  #       - docs/gen_api.py
+  #
+  # - literate-nav:
+  #     nav_file: SUMMARY.md
+  #     implicit_index: true
+  #
+  # - section-index
+  #
+  # - mkdocstrings:
+  #     enabled: true
+  #     default_handler: python
+  #     handlers:
+  #       python:
+  #         paths: ['.']
+  #         options:
+  #           show_source: false
+  #           docstring_style: google
 
   # Git revision dates
   - git-revision-date-localized:
