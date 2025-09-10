@@ -506,7 +506,7 @@ def test_rank_different_modes(mock_files):
         result = runner.invoke(app, ["test query", "--mode", "fast"])
         assert result.exit_code == 0
 
-        # Test thorough mode
+        # Test Thorough mode
         result = runner.invoke(app, ["test query", "--mode", "thorough"])
         assert result.exit_code == 0
 

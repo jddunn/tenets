@@ -206,10 +206,10 @@ class FastRankingStrategy(RankingStrategy):
         self._pattern_cache = {}
         self._variation_cache = {}
         self.config = config
-        
+
         # Get content scan limit from config, default to unlimited (-1)
-        if config and hasattr(config, 'ranking'):
-            self.content_scan_limit = getattr(config.ranking, 'ranking_content_scan_limit_fast', -1)
+        if config and hasattr(config, "ranking"):
+            self.content_scan_limit = getattr(config.ranking, "ranking_content_scan_limit_fast", -1)
         else:
             self.content_scan_limit = -1  # Unlimited by default
 
@@ -293,7 +293,7 @@ class FastRankingStrategy(RankingStrategy):
         # Use configurable content limit (-1 means unlimited)
         filename_lower = Path(file.path).name.lower()
         if self.content_scan_limit > 0 and len(file.content) > self.content_scan_limit:
-            content_sample = file.content[:self.content_scan_limit].lower()
+            content_sample = file.content[: self.content_scan_limit].lower()
         else:
             content_sample = file.content.lower()
 
@@ -607,10 +607,12 @@ class BalancedRankingStrategy(FastRankingStrategy):
         self.tfidf_calculator = None
         self._abbreviation_cache = {}
         self._compound_cache = {}
-        
+
         # Get content scan limit from config, default to unlimited (-1)
-        if config and hasattr(config, 'ranking'):
-            self.content_scan_limit = getattr(config.ranking, 'ranking_content_scan_limit_balanced', -1)
+        if config and hasattr(config, "ranking"):
+            self.content_scan_limit = getattr(
+                config.ranking, "ranking_content_scan_limit_balanced", -1
+            )
         else:
             self.content_scan_limit = -1  # Unlimited by default
 
@@ -731,7 +733,7 @@ class BalancedRankingStrategy(FastRankingStrategy):
 
         # Use configurable content limit (-1 means unlimited)
         if self.content_scan_limit > 0 and len(file.content) > self.content_scan_limit:
-            content_sample = file.content[:self.content_scan_limit]
+            content_sample = file.content[: self.content_scan_limit]
         else:
             content_sample = file.content
         content_lower = content_sample.lower()
@@ -1207,6 +1209,16 @@ class ThoroughRankingStrategy(BalancedRankingStrategy):
     def __init__(self, config=None):
         """Initialize thorough ranking strategy."""
         super().__init__(config)
+        
+        # Override content scan limit for thorough mode
+        # Thorough mode should scan full content by default for best accuracy
+        if config and hasattr(config, "ranking"):
+            self.content_scan_limit = getattr(
+                config.ranking, "ranking_content_scan_limit_thorough", -1
+            )
+        else:
+            self.content_scan_limit = -1  # Unlimited by default for thorough mode
+        
         self._embedding_model = None
         self._pattern_matcher = None
         self._semantic_cache = {}
@@ -1214,7 +1226,7 @@ class ThoroughRankingStrategy(BalancedRankingStrategy):
         self._dependency_cache = {}
         self._embedding_batch_cache = {}  # Cache for batch embeddings
         self._query_embedding_cache = {}  # Cache query embeddings
-        self._enable_ml = True  # Enable ML for thorough mode
+        self._enable_ml = True  # Enable ML for Thorough mode
         self._batch_size = 10  # Process files in batches
 
         # Check if we're in test environment
@@ -1235,7 +1247,7 @@ class ThoroughRankingStrategy(BalancedRankingStrategy):
             self.logger.debug("Test environment detected - skipping ML initialization")
 
     def _init_ml_components(self):
-        """Initialize ML components for thorough mode."""
+        """Initialize ML components for Thorough mode."""
         # Check if we're in test environment
         import os
         import sys

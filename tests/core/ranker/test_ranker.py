@@ -877,7 +877,7 @@ class TestCorpusAnalysis:
         assert stats["avg_file_size"] == 1500
         assert "import_graph" in stats
 
-        # TF-IDF is only built for balanced/thorough modes
+        # TF-IDF is only built for balanced/Thorough modes
         # Check for BM25 instead which is more common
         assert (
             "bm25_calculator" in stats or "tfidf_calculator" in stats or stats["total_files"] == 3

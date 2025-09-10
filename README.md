@@ -61,7 +61,7 @@ Tenets offers three modes that balance speed vs. thoroughness for both `distill`
 - **Uses word boundaries** - Regex matching for precise results
 - **Processes text** - Handles abbreviations, compound words, plurals
 
-**Thorough mode*
+**Thorough mode**
 - **ML embeddings** - Semantic similarity (requires `tenets[ml]`)
 - **Dual algorithms** - Uses both BM25 AND TF-IDF
 - **Pattern recognition** - Detects code patterns and dependencies

@@ -237,7 +237,7 @@ class ContextAggregator:
                     break  # Stop if we're out of tokens
                 continue  # Skip ALL other processing for this file
 
-            # Regular logic for balanced/thorough modes
+            # Regular logic for balanced/Thorough modes
             if (
                 i < strat.max_full_files
                 and file.relevance_score >= strat.summarize_threshold
@@ -260,7 +260,7 @@ class ContextAggregator:
                 if mode == "fast":
                     continue  # Should never reach here, but be safe
 
-                # Regular summarization for balanced/thorough modes
+                # Regular summarization for balanced/Thorough modes
                 remaining_tokens = available_tokens - total_tokens
                 summary_tokens = min(
                     file_tokens // 3,  # Aim for 33% of original
@@ -271,7 +271,7 @@ class ContextAggregator:
                     # Calculate target ratio based on desired token reduction
                     target_ratio = min(0.5, summary_tokens / file_tokens)
 
-                    # Enable ML strategies for thorough mode
+                    # Enable ML strategies for Thorough mode
                     original_ml_enabled = self.config.summarizer.enable_ml_strategies
                     if mode == "thorough":
                         self.config.summarizer.enable_ml_strategies = True

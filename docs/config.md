@@ -96,7 +96,7 @@ ranking:
   workers: 2                     # Parallel ranking workers
   parallel_mode: auto            # thread | process | auto
   batch_size: 100               # Files per batch
-  
+
   # Content scanning limits for ranking (characters, -1 for unlimited)
   # This controls how much content is analyzed when ranking files
   # The full content is still included in the output if the file ranks high
@@ -247,7 +247,7 @@ nlp:
   max_keywords: 30                # Max keywords to extract
   ngram_size: 3                  # N-gram size
   yake_dedup_threshold: 0.7      # YAKE deduplication
-  
+
   # Intent keyword filtering - filters common action words from keyword matching
   filter_intent_keywords: true    # Filter intent action words from file matching
   custom_intent_keywords: {}      # Custom intent-specific keywords to filter
@@ -809,7 +809,7 @@ Tenets can intelligently filter common action words (like "fix", "debug", "imple
 nlp:
   # Enable/disable intent keyword filtering
   filter_intent_keywords: true  # Default: true
-  
+
   # Custom intent-specific keywords to filter
   custom_intent_keywords:
     debug:

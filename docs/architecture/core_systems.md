@@ -49,7 +49,7 @@ Tenets employs **three distinct matching strategies** optimized for different us
      - Common abbreviation expansion (config → configuration)
      - Plural/singular normalization
    
-   Thorough Mode (extends Balanced, includes all its features plus):
+   Thorough mode (extends Balanced, includes all its features plus):
      - Semantic similarity (auth → authentication, login)
      - ML-based embeddings (requires tenets[ml])
      - Both BM25 AND TF-IDF scoring
@@ -889,7 +889,7 @@ Keywords match files using different strategies based on the mode:
 - Simple substring search: if keyword is contained in file content, it matches
 - Example: searching for "token" will find all files containing that substring
 
-**Balanced/Thorough Mode** (word boundary matching):
+**Balanced/Thorough mode** (word boundary matching):
 - More precise matching with word boundaries
 - Still matches variations (plural forms, different word forms)
 - Example: "token" matches "tokens" but not "atoken" or "tokenx"
@@ -1069,7 +1069,7 @@ class TenetsPlugin:
 
 ### Performance Breakdown by Phase
 
-| Phase | Fast Mode | Balanced Mode | Thorough Mode |
+| Phase | Fast Mode | Balanced Mode | Thorough mode |
 |-------|-----------|---------------|---------------|
 | **File Scanning** | ~1s (same) | ~1s (same) | ~1s (same) |
 | **Analysis** | Lightweight (0.2s) | Full AST (2-3s) | Full AST (2-3s) |
@@ -1092,7 +1092,7 @@ class TenetsPlugin:
 - Balanced mode adds only 50% overhead while providing significantly better accuracy
 - Thorough mode's 4x slowdown is justified by ML-powered semantic understanding
 - All modes benefit from aggressive caching (cache hits < 500ms)
-- First-run ML model loading in thorough mode adds one-time 10s overhead
+- First-run ML model loading in Thorough mode adds one-time 10s overhead
 
 ### Memory Usage
 

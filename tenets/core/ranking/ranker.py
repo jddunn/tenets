@@ -177,7 +177,7 @@ class RelevanceRanker:
             use_stopwords if use_stopwords is not None else config.ranking.use_stopwords
         )
 
-        # ML configuration - skip for fast mode, force enable for thorough mode
+        # ML configuration - skip for fast mode, force enable for Thorough mode
         if algo_str == "fast":
             self.use_ml = False  # Fast mode never uses ML
         elif algo_str == "thorough":
@@ -710,9 +710,15 @@ class RelevanceRanker:
                     # Limit document size for performance based on mode
                     if actual_algo == "balanced":
                         # Balanced: respect configured content limit for corpus building
-                        limit = getattr(self.config.ranking, 'ranking_content_scan_limit_balanced', -1) if self.config else -1
+                        limit = (
+                            getattr(self.config.ranking, "ranking_content_scan_limit_balanced", -1)
+                            if self.config
+                            else -1
+                        )
                         content = (
-                            file.content[:limit] if limit > 0 and len(file.content) > limit else file.content
+                            file.content[:limit]
+                            if limit > 0 and len(file.content) > limit
+                            else file.content
                         )
                     else:
                         # Thorough: use full content

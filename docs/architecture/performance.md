@@ -76,7 +76,7 @@ graph TD
 - **Use Cases**: General development, feature building, most common scenarios
 - **Trade-offs**: Full analysis provides better accuracy at minor speed cost
 
-### Thorough Mode
+### Thorough mode
 - **Relative Speed**: 400% (4x slower than fast)
 - **Accuracy**: Best possible with ML-powered understanding
 - **Methods**: 
@@ -142,7 +142,7 @@ def _tokenize_for_matching(text: str) -> Set[str]:
 - O(1) lookup for expansion
 - Lazy loading to reduce startup time
 
-### Thorough Mode Intelligence
+### Thorough mode Intelligence
 
 Thorough mode adds semantic understanding:
 
@@ -272,7 +272,7 @@ Note: These times exclude corpus building overhead. Total time depends on codeba
 
 ### Performance by File Count (Total Time Including Corpus Building)
 
-| Scenario | Files | Fast Mode | Balanced Mode | Thorough Mode (no ML) |
+| Scenario | Files | Fast Mode | Balanced Mode | Thorough mode (no ML) |
 |----------|-------|-----------|---------------|----------------------|
 | **Small** | 10 files | ~0.5s | ~0.5s | ~0.5s |
 | **Medium** | 100 files | ~5s | ~2-3s | ~2-3s |
@@ -288,7 +288,7 @@ The counterintuitive performance results occur because:
 
 ### Algorithm Capabilities
 
-| Feature | Fast Mode | Balanced Mode | Thorough Mode |
+| Feature | Fast Mode | Balanced Mode | Thorough mode |
 |---------|-----------|---------------|---------------|
 | **Keyword Matching** | ✅ Basic | ✅ Enhanced | ✅ Advanced |
 | **Path Analysis** | ✅ Simple | ✅ Full | ✅ Full |
@@ -314,7 +314,7 @@ The counterintuitive performance results occur because:
 
 ### Scalability Characteristics
 
-| Codebase Type | Fast Mode | Balanced Mode | Thorough Mode |
+| Codebase Type | Fast Mode | Balanced Mode | Thorough mode |
 |---------------|-----------|---------------|---------------|
 | **Small Projects** (<1K files) | ✅ Instant | ✅ Quick | ⚠️ Overkill |
 | **Medium Projects** (1-10K) | ✅ Very Fast | ✅ Optimal | ✅ Detailed |

@@ -198,7 +198,7 @@ Inspect current config:
 tenets config show --key ranking
 ```
 
-See also: docs/CONFIG.md for full configuration details.
+See also: docs/config.md for full configuration details.
 
 
 

@@ -232,7 +232,7 @@ class Distiller:
                 )
 
         else:
-            # Traditional approach for balanced/thorough modes
+            # Traditional approach for balanced/Thorough modes
             # Full analysis before ranking for better accuracy
             analyzed_files = self._analyze_files(
                 files=files, mode=mode, prompt_context=prompt_context
