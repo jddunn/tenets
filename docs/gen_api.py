@@ -1,229 +1,301 @@
 """
-Generate per-module API documentation pages for mkdocs using mkdocstrings.
-Creates files under docs/api/ mirroring the tenets package structure so the
-sidebar shows a nested tree.
+Optimized API documentation generator with full auto-discovery and lazy loading.
+Discovers all Python modules with docstrings and generates individual pages.
 """
 
 from __future__ import annotations
 
-import importlib
+import ast
 import logging
-import pkgutil
-import sys
 from pathlib import Path
-from typing import Iterator, Tuple
-
+from typing import Dict, List, Optional, Tuple
 import mkdocs_gen_files
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Constants
-ROOT = Path(__file__).parent
-API_DIR = Path("api")
-PACKAGE_NAME = "tenets"
 
-# Modules to skip (add any modules you want to exclude)
-SKIP_MODULES = {
-    "tenets.tests",
-    "tenets.test",
-    "tenets._internal",
-    "tenets.examples",
-}
+class ModuleDiscovery:
+    """Discovers Python modules with documentation."""
 
-# Private module/package prefixes to skip
-PRIVATE_PREFIXES = ("_", "test_", "tests")
+    def __init__(self, package_root: str = "tenets"):
+        self.package_root = Path(package_root)
+        self.modules: List[Tuple[str, bool, str, int]] = []
 
+    def has_docstring(self, filepath: Path) -> bool:
+        """Check if a Python file has meaningful docstrings."""
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
 
-def should_document_module(module_name: str) -> bool:
-    """Determine if a module should be documented."""
-    # Skip if in skip list
-    if module_name in SKIP_MODULES:
-        return False
+            # Quick check for any docstrings
+            if '"""' not in content and "'''" not in content:
+                return False
 
-    # Skip if any part of the module path starts with private prefix
-    parts = module_name.split(".")
-    for part in parts:
-        if any(part.startswith(prefix) for prefix in PRIVATE_PREFIXES):
+            tree = ast.parse(content, filename=str(filepath))
+
+            # Check for module docstring
+            if ast.get_docstring(tree):
+                return True
+
+            # Check for documented classes or functions
+            doc_count = 0
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                    if ast.get_docstring(node) and not node.name.startswith("_"):
+                        doc_count += 1
+                        if doc_count >= 2:  # At least 2 documented items
+                            return True
+
+            return doc_count > 0
+        except Exception as e:
+            logger.debug(f"Error checking {filepath}: {e}")
             return False
 
-    # Skip if it's a test module
-    if any(x in module_name for x in ["test", "tests", "testing"]):
-        return False
+    def get_module_priority(self, module_name: str) -> int:
+        """Assign priority for navigation ordering."""
+        # Higher priority = appears first
+        priority_map = {
+            "tenets": 100,
+            "tenets.api": 95,
+            "tenets.config": 90,
+            "tenets.core": 85,
+            "tenets.core.distiller": 80,
+            "tenets.core.analysis": 75,
+            "tenets.core.ranking": 70,
+            "tenets.core.instiller": 68,
+            "tenets.core.git": 66,
+            "tenets.cli": 65,
+            "tenets.cli.commands": 60,
+            "tenets.models": 55,
+            "tenets.storage": 50,
+            "tenets.utils": 45,
+            "tenets.viz": 40,
+        }
 
-    return True
+        # Check exact match first
+        if module_name in priority_map:
+            return priority_map[module_name]
+
+        # Check prefix match for sub-modules
+        for prefix, priority in sorted(priority_map.items(), key=lambda x: -len(x[0])):
+            if module_name.startswith(prefix + "."):
+                # Sub-modules get slightly lower priority than parent
+                depth = module_name[len(prefix) :].count(".")
+                return priority - (depth * 2) - 1
+
+        return 0
+
+    def discover(self) -> List[Tuple[str, bool, str, int]]:
+        """Discover all modules with documentation."""
+        if not self.package_root.exists():
+            logger.error(f"Package root {self.package_root} not found")
+            return []
+
+        discovered = {}
+
+        # Walk through all Python files
+        for py_file in sorted(self.package_root.rglob("*.py")):
+            # Skip test files and private modules
+            if any(part.startswith(("test", "_test", "test_")) for part in py_file.parts):
+                continue
+            if "__pycache__" in str(py_file):
+                continue
+            if py_file.name.startswith("_") and py_file.name != "__init__.py":
+                continue
+
+            # Convert path to module name
+            rel_path = py_file.relative_to(self.package_root.parent)
+            parts = list(rel_path.parts[:-1])  # Remove filename
+
+            if py_file.stem == "__init__":
+                # Package module
+                if len(parts) <= 1:  # Skip root __init__
+                    continue
+                module_name = ".".join(parts)
+                is_package = True
+            else:
+                # Regular module
+                parts.append(py_file.stem)
+                module_name = ".".join(parts)
+                is_package = False
+
+            # Skip if no docstrings
+            if not self.has_docstring(py_file):
+                logger.debug(f"Skipping {module_name} - no significant docstrings")
+                continue
+
+            # Generate human-readable title
+            title = self.create_title(module_name, is_package)
+            priority = self.get_module_priority(module_name)
+
+            discovered[module_name] = (module_name, is_package, title, priority)
+            logger.info(f"Discovered: {module_name} (priority: {priority})")
+
+        # Sort by priority then name
+        self.modules = sorted(
+            discovered.values(),
+            key=lambda x: (-x[3], x[0]),  # Negative priority for descending order
+        )
+
+        return self.modules
+
+    def create_title(self, module_name: str, is_package: bool) -> str:
+        """Create a human-readable title from module name."""
+        parts = module_name.split(".")
+
+        # Special cases for better titles
+        title_map = {
+            "tenets": "Tenets Main Package",
+            "tenets.api": "Public API",
+            "tenets.config": "Configuration",
+            "tenets.core": "Core Components",
+            "tenets.core.analysis": "Code Analysis",
+            "tenets.core.distiller": "Context Distiller",
+            "tenets.core.ranking": "Ranking System",
+            "tenets.core.instiller": "Tenet Instiller",
+            "tenets.core.git": "Git Integration",
+            "tenets.cli": "Command Line Interface",
+            "tenets.cli.commands": "CLI Commands",
+            "tenets.cli.app": "CLI Application",
+            "tenets.models": "Data Models",
+            "tenets.storage": "Storage & Caching",
+            "tenets.utils": "Utilities",
+            "tenets.viz": "Visualization",
+        }
+
+        if module_name in title_map:
+            return title_map[module_name]
+
+        # Generate title from last part
+        last_part = parts[-1]
+
+        # Handle special suffixes
+        if last_part.endswith("_analyzer"):
+            lang = last_part[:-9].title()
+            return f"{lang} Analyzer"
+        elif last_part.endswith("_parser"):
+            return last_part[:-7].replace("_", " ").title() + " Parser"
+        elif last_part.endswith("_formatter"):
+            return last_part[:-10].replace("_", " ").title() + " Formatter"
+
+        # Standard title generation
+        title = last_part.replace("_", " ").title()
+
+        if is_package:
+            if title not in ["Index", "Init"]:
+                title += " Package"
+
+        return title
 
 
-def iter_modules(package_name: str) -> Iterator[Tuple[str, bool]]:
-    """
-    Iterate through all modules in a package.
+class APIDocGenerator:
+    """Generates optimized API documentation pages."""
 
-    Yields:
-        Tuple of (module_name, is_package)
-    """
-    try:
-        pkg = importlib.import_module(package_name)
-    except ImportError as e:
-        logger.warning(f"Could not import {package_name}: {e}")
-        return
-    except Exception as e:
-        logger.error(f"Unexpected error importing {package_name}: {e}")
-        return
+    def __init__(self, modules: List[Tuple[str, bool, str, int]]):
+        self.modules = modules
+        self.module_tree = self._build_tree()
 
-    if not hasattr(pkg, "__path__"):
-        logger.debug(f"{package_name} is not a package (no __path__)")
-        return
+    def _build_tree(self) -> Dict:
+        """Build hierarchical tree of modules."""
+        tree = {}
 
-    prefix = pkg.__name__ + "."
+        for mod_name, is_pkg, title, priority in self.modules:
+            parts = mod_name.split(".")
+            current = tree
 
-    # Walk through the package
-    for finder, mod_name, ispkg in pkgutil.walk_packages(
-        pkg.__path__, prefix, onerror=lambda x: None
-    ):
-        if should_document_module(mod_name):
-            yield mod_name, ispkg
+            for i, part in enumerate(parts):
+                if part not in current:
+                    current[part] = {
+                        "_children": {},
+                        "_info": None,
+                        "_path": ".".join(parts[: i + 1]),
+                    }
 
+                if i == len(parts) - 1:
+                    current[part]["_info"] = (mod_name, is_pkg, title, priority)
 
-def get_module_doc_path(mod_name: str, is_pkg: bool) -> Path:
-    """Get the documentation file path for a module."""
-    # Convert module name to path: tenets.core.ranking -> api/tenets/core/ranking
-    rel_dir = API_DIR / Path(*mod_name.split("."))
+                current = current[part]["_children"]
 
-    # Packages get index.md, modules get module_name.md
-    if is_pkg:
-        return rel_dir / "index.md"
-    else:
-        return rel_dir.with_suffix(".md")
+        return tree
 
+    def generate_module_page(self, mod_name: str, is_pkg: bool, title: str) -> None:
+        """Generate a single module documentation page."""
+        # Determine output path
+        parts = mod_name.split(".")
+        if is_pkg:
+            doc_path = Path("api") / Path(*parts) / "index.md"
+        else:
+            doc_path = Path("api") / Path(*parts).with_suffix(".md")
 
-def write_module_page(mod_name: str, is_pkg: bool) -> None:
-    """Write the documentation page for a module."""
-    out_path = get_module_doc_path(mod_name, is_pkg)
-
-    # Create a nice title (last part of module name, capitalized)
-    parts = mod_name.split(".")
-    title = parts[-1].replace("_", " ").title()
-    full_title = f"{title} {'Package' if is_pkg else 'Module'}"
-
-    # Build the page content
-    content = f"""---
-title: {title}
----
-
-# {full_title}
+        # Generate page content with optimized mkdocstrings options
+        content = f"""# {title}
 
 `{mod_name}`
 
 ::: {mod_name}
     options:
-        show_source: false  # Performance: Don't show source
-        show_root_heading: false
-        show_root_toc_entry: false
-        show_object_full_path: false
-        show_category_heading: true
-        show_symbol_type_heading: true
-        show_symbol_type_toc: false  # Performance: Reduce TOC entries
-        members_order: source
-        group_by_category: true
-        docstring_style: google
-        docstring_section_style: table
-        merge_init_into_class: true
-        separate_signature: true
-        line_length: 80
-        show_signature_annotations: true
-        signature_crossrefs: false  # Performance: Disable cross-refs
-        summary: true
-        show_if_no_docstring: false
-        inherited_members: false  # Performance: Don't show inherited
-        show_submodules: false  # CRITICAL: Don't render submodules inline
+      # Display options
+      show_source: false
+      show_root_heading: false
+      show_root_toc_entry: false
+      show_object_full_path: false
+      show_category_heading: true
+      show_symbol_type_heading: true
+      show_symbol_type_toc: false
+      
+      # Member options
+      members_order: source
+      group_by_category: true
+      show_submodules: false
+      inherited_members: false
+      
+      # Docstring options
+      docstring_style: google
+      docstring_section_style: table
+      merge_init_into_class: true
+      show_if_no_docstring: false
+      
+      # Signature options
+      show_signature: true
+      show_signature_annotations: true
+      separate_signature: true
+      unwrap_annotated: true
+      signature_crossrefs: false
+      
+      # Filtering
+      filters:
+        - "!^_"
+        - "!^test"
+        - "!Test"
+        - "!Mock"
+      
+      # Performance
+      preload_modules: []
+      load_external_modules: false
+      heading_level: 2
 """
 
-    # Add filters for non-package modules to hide private members
-    if not is_pkg:
-        content += """        filters:
-          - "!^_"
-          - "!^test"
-"""
+        logger.debug(f"Writing {doc_path}")
+        with mkdocs_gen_files.open(doc_path.as_posix(), "w") as fd:
+            fd.write(content)
 
-    logger.info(f"Writing {out_path}")
+        # Set edit path for GitHub edit button
+        if is_pkg:
+            src_path = Path("tenets") / Path(*parts[1:]) / "__init__.py"
+        else:
+            src_path = Path("tenets") / Path(*parts[1:]).with_suffix(".py")
 
-    with mkdocs_gen_files.open(out_path.as_posix(), "w") as fd:
-        fd.write(content)
+        mkdocs_gen_files.set_edit_path(doc_path, src_path)
 
-    # Set edit path for the generated file
-    # This allows "Edit" button to point to the source file
-    if is_pkg:
-        src_path = Path(PACKAGE_NAME) / Path(*parts[1:]) / "__init__.py"
-    else:
-        src_path = Path(PACKAGE_NAME) / Path(*parts[1:]).with_suffix(".py")
+    def generate_index_page(self) -> None:
+        """Generate the main API index page."""
+        content = """# API Reference
 
-    if src_path.exists():
-        mkdocs_gen_files.set_edit_path(out_path, src_path)
+Welcome to the Tenets API documentation. This reference covers all public modules, classes, and functions.
 
-
-def write_pages_files() -> None:
-    """Write .pages files for awesome-pages plugin (if using it)."""
-    # Root .pages file for API section
-    pages_yaml = """title: API Reference
-arrange:
-  - index.md
-  - tenets
-collapse_single_pages: false
-"""
-
-    with mkdocs_gen_files.open((API_DIR / ".pages").as_posix(), "w") as fd:
-        fd.write(pages_yaml)
-
-    # Package-level .pages file for better organization
-    tenets_pages = """title: Tenets Package
-arrange:
-  - index.md
-  - core
-  - models
-  - utils
-  - parsers
-  - cli
-  - ...
-"""
-
-    with mkdocs_gen_files.open((API_DIR / "tenets" / ".pages").as_posix(), "w") as fd:
-        fd.write(tenets_pages)
-
-
-def write_root_index() -> None:
-    """Write the root API index page."""
-    index_content = """---
-title: API Reference
-description: Complete API documentation for the Tenets package
----
-
-# API Reference
-
-Welcome to the Tenets API reference documentation. This section contains detailed information about all modules, classes, functions, and other components of the Tenets package.
-
-## Package Overview
-
-The Tenets package provides intelligent code exploration and AI pair programming capabilities. It's organized into several key modules:
-
-### Core Modules
-
-- **[tenets](tenets/index.md)** - Main package initialization and exports
-- **[tenets.core](tenets/core/index.md)** - Core functionality and main classes
-- **[tenets.models](tenets/models/index.md)** - Data models and structures
-- **[tenets.utils](tenets/utils/index.md)** - Utility functions and helpers
-- **[tenets.parsers](tenets/parsers/index.md)** - Language parsers and analyzers
-- **[tenets.cli](tenets/cli/index.md)** - Command-line interface
-
-## Quick Start
-
-### Installation
-
-```bash
-pip install tenets
-```
-
-### Basic Usage
+## 🚀 Quick Start
 
 ```python
 from tenets import Tenets
@@ -231,106 +303,195 @@ from tenets import Tenets
 # Initialize Tenets
 t = Tenets()
 
-# Analyze a project
-context = t.analyze('path/to/project')
+# Distill context from your codebase
+result = t.distill("implement user authentication")
+print(f"Found {len(result.files)} relevant files")
+print(result.content)
 
-# Get code context
-code_context = context.get_context()
+# Rank files without reading content
+ranked = t.rank("fix payment bug", top=20)
+for file in ranked:
+    print(f"{file.path}: {file.relevance_score:.2f}")
 ```
 
-### Advanced Usage
+## 📦 Package Structure
+
+### Core Components
+
+- **[Tenets](tenets/index.md)** - Main package interface and public API
+- **[Config](tenets/config.md)** - Configuration management and settings
+- **[Core](tenets/core/index.md)** - Core functionality and engines
+
+### Analysis & Processing
+
+- **[Analysis](tenets/core/analysis/index.md)** - Language-specific code analyzers
+- **[Distiller](tenets/core/distiller/index.md)** - Context extraction and aggregation
+- **[Ranking](tenets/core/ranking/index.md)** - Relevance ranking algorithms
+
+### Command Line
+
+- **[CLI](tenets/cli/index.md)** - Command-line interface framework
+- **[Commands](tenets/cli/commands/index.md)** - Available CLI commands
+
+### Data & Storage
+
+- **[Models](tenets/models/index.md)** - Data models and structures
+- **[Storage](tenets/storage/index.md)** - Caching and persistence layer
+
+### Utilities
+
+- **[Utils](tenets/utils/index.md)** - Helper functions and utilities
+- **[Viz](tenets/viz/index.md)** - Visualization and diagram generation
+
+## 📚 Common Tasks
+
+### Context Extraction
 
 ```python
-from tenets import Tenets, Config
-from tenets.parsers import PythonParser
+from tenets import Tenets
 
-# Custom configuration
-config = Config(
-    max_depth=5,
-    include_tests=False,
-    parsers=[PythonParser()]
-)
+t = Tenets()
 
-# Initialize with config
-t = Tenets(config=config)
+# Basic distillation
+result = t.distill("implement OAuth2")
 
-# Analyze with options
-context = t.analyze(
-    'path/to/project',
-    include_patterns=['*.py', '*.js'],
-    exclude_patterns=['*_test.py']
+# With options
+result = t.distill(
+    "fix authentication bug",
+    paths=["src/auth"],
+    max_tokens=50000,
+    include_tests=True
 )
 ```
 
-## Navigation
+### File Ranking
 
-Use the sidebar to browse through the package structure. Each module and class has its own page with detailed documentation generated from docstrings.
+```python
+from tenets.core.ranking import RelevanceRanker
 
-## Contributing
+ranker = RelevanceRanker(algorithm="balanced")
+files = ranker.rank(
+    files=project_files,
+    prompt_context=context,
+    threshold=0.1
+)
+```
 
-For information on contributing to Tenets, please see the [Contributing Guide](../resources/contributing.md).
+### Session Management
 
-## Support
+```python
+from tenets import Tenets
 
-- [GitHub Issues](https://github.com/jddunn/tenets/issues)
-- [Discord Community](https://discord.gg/DzNgXdYm)
-- [Documentation](https://tenets.dev)
+t = Tenets()
+
+# Create session
+t.session_create("feature-xyz")
+
+# Pin files
+t.instill(
+    session="feature-xyz",
+    add_files=["src/core.py", "src/api.py"]
+)
+
+# Use session
+result = t.distill("add validation", session="feature-xyz")
+```
+
+---
+
+!!! tip "Performance Optimization"
+    API documentation is generated with lazy loading enabled. Pages are loaded
+    on-demand as you navigate, ensuring fast initial page loads.
+
+!!! info "Documentation Coverage"
+    This reference includes all public modules with docstrings. Private modules
+    and those without documentation are excluded.
 """
 
-    with mkdocs_gen_files.open((API_DIR / "index.md").as_posix(), "w") as fd:
-        fd.write(index_content)
+        with mkdocs_gen_files.open("api/index.md", "w") as fd:
+            fd.write(content)
 
+    def generate_navigation(self) -> None:
+        """Generate SUMMARY.md for literate-nav plugin."""
+        nav_lines = []
+        
+        # Add header and overview
+        nav_lines.append("# API Reference")
+        nav_lines.append("")
+        nav_lines.append("* [Overview](index.md)")
+        
+        # Simply iterate through all modules in order
+        # Group by top-level package for better organization
+        current_top = None
+        
+        for mod_name, is_pkg, title, priority in self.modules:
+            parts = mod_name.split(".")
+            top_level = parts[1] if len(parts) > 1 else parts[0]
+            
+            # Add spacing between top-level packages
+            if current_top != top_level:
+                if current_top is not None:
+                    nav_lines.append("")
+                current_top = top_level
+            
+            # Calculate indentation based on depth
+            depth = len(parts) - 1
+            indent = "  " * depth
+            
+            # Generate the path
+            if is_pkg:
+                path = "/".join(parts) + "/index.md"
+            else:
+                path = "/".join(parts) + ".md"
+            
+            # Add the navigation entry
+            nav_lines.append(f"{indent}* [{title}]({path})")
+        
+        content = "\n".join(nav_lines)
+        
+        with mkdocs_gen_files.open("api/SUMMARY.md", "w") as fd:
+            fd.write(content)
 
-def write_nav_file() -> None:
-    """Write SUMMARY.md for literate-nav plugin."""
-    nav_content = """# API Reference
+    def generate_all(self) -> None:
+        """Generate all API documentation."""
+        # Generate index
+        self.generate_index_page()
 
-* [Overview](index.md)
-* [tenets package](tenets/index.md)
-    * [core](tenets/core/index.md)
-    * [models](tenets/models/index.md)
-    * [utils](tenets/utils/index.md)
-    * [parsers](tenets/parsers/index.md)
-    * [cli](tenets/cli/index.md)
-"""
+        # Generate navigation
+        self.generate_navigation()
 
-    with mkdocs_gen_files.open((API_DIR / "SUMMARY.md").as_posix(), "w") as fd:
-        fd.write(nav_content)
+        # Generate module pages
+        for mod_name, is_pkg, title, _ in self.modules:
+            try:
+                self.generate_module_page(mod_name, is_pkg, title)
+            except Exception as e:
+                logger.error(f"Failed to generate {mod_name}: {e}")
 
 
 def main():
-    """Main entry point for the API documentation generator."""
-    # Ensure the package root is in the Python path
-    package_root = ROOT.parent
-    if str(package_root) not in sys.path:
-        sys.path.insert(0, str(package_root))
+    """Main entry point for API documentation generation."""
+    logger.info("=" * 60)
+    logger.info("Starting optimized API documentation generation")
+    logger.info("=" * 60)
 
-    logger.info(f"Generating API documentation for {PACKAGE_NAME}")
-    logger.info(f"Package root: {package_root}")
+    # Discover modules
+    discovery = ModuleDiscovery("tenets")
+    modules = discovery.discover()
 
-    # Write root files
-    write_root_index()
-    write_nav_file()
+    logger.info(f"Discovered {len(modules)} modules with documentation")
 
-    # Check if using awesome-pages plugin
-    try:
-        import mkdocs_awesome_pages_plugin
+    if not modules:
+        logger.warning("No modules found with documentation")
+        return
 
-        write_pages_files()
-        logger.info("Writing .pages files for awesome-pages plugin")
-    except ImportError:
-        logger.info("awesome-pages plugin not found, skipping .pages files")
+    # Generate documentation
+    generator = APIDocGenerator(modules)
+    generator.generate_all()
 
-    # Document the main package
-    write_module_page(PACKAGE_NAME, True)
-
-    # Document all submodules and subpackages
-    documented_count = 0
-    for name, is_pkg in iter_modules(PACKAGE_NAME):
-        write_module_page(name, is_pkg)
-        documented_count += 1
-
-    logger.info(f"Generated documentation for {documented_count} modules/packages")
+    logger.info("=" * 60)
+    logger.info(f"API documentation generation complete!")
+    logger.info(f"Generated {len(modules)} module pages")
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":
