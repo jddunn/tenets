@@ -628,6 +628,13 @@ class RankingConfig:
     workers: int = 2
     parallel_mode: str = "auto"
     batch_size: int = 100  # Batch size for ML operations
+    
+    # Content scanning limits for ranking (characters, -1 for unlimited)
+    # This only affects how much content is scanned when ranking files,
+    # not how much content is included in the final output
+    ranking_content_scan_limit_fast: int = -1  # Unlimited by default
+    ranking_content_scan_limit_balanced: int = -1  # Unlimited by default  
+    ranking_content_scan_limit_thorough: int = -1  # Unlimited by default
 
 
 @dataclass

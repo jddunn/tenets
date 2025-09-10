@@ -298,7 +298,6 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 #### Fast Algorithm (`FastRankingStrategy`)
 - **Use Case**: Quick exploration, CI/CD, initial discovery
 - **Relative Performance**: Baseline (100%)
-- **Actual Time**: ~17s on medium codebase
 - **Implementation**: 
   - Lightweight file analysis (8KB samples)
   - No corpus building (saves significant time)
@@ -318,8 +317,7 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 
 #### Balanced Algorithm (`BalancedRankingStrategy`) - **Default**
 - **Use Case**: Daily development, general context building
-- **Relative Performance**: 135% (1.3x slower than fast)
-- **Actual Time**: ~23s on medium codebase
+- **Relative Performance**: 150% (1.5x slower than fast)
 - **Implementation**: 
   - Full AST analysis for all files
   - BM25 corpus building for accurate ranking
@@ -338,8 +336,7 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 
 #### Thorough Algorithm (`ThoroughRankingStrategy`)
 - **Use Case**: Complex refactoring, architecture reviews, semantic search
-- **Relative Performance**: 536% (5.4x slower than fast)
-- **Actual Time**: ~91s on medium codebase
+- **Relative Performance**: 400% (4x slower than fast)
 - **Implementation**: 
   - ML model loading (all-MiniLM-L6-v2, ~10s first run)
   - Builds both BM25 and TF-IDF corpus (~5s)
@@ -1064,11 +1061,11 @@ class TenetsPlugin:
 
 ### Benchmarked Performance (Real-World Codebase)
 
-| Mode | Relative Performance | Typical Time | Key Optimizations |
-|------|---------------------|--------------|-------------------|
-| **Fast** | 100% (baseline) | ~17s | Lightweight analysis, no corpus, minimal processing |
-| **Balanced** | 135% (1.3x slower) | ~23s | BM25 corpus, word boundaries, intelligent summarization |
-| **Thorough** | 536% (5.4x slower) | ~91s | ML embeddings, dual algorithms, comprehensive analysis |
+| Mode | Relative Performance | Key Optimizations |
+|------|---------------------|-------------------|
+| **Fast** | 100% (baseline) | Lightweight analysis, no corpus, minimal processing |
+| **Balanced** | 150% (1.5x slower) | BM25 corpus, word boundaries, intelligent summarization |
+| **Thorough** | 400% (4x slower) | ML embeddings, dual algorithms, comprehensive analysis |
 
 ### Performance Breakdown by Phase
 
@@ -1092,8 +1089,8 @@ class TenetsPlugin:
 ### Performance Notes
 
 - Fast mode achieves baseline performance through lightweight analysis
-- Balanced mode adds only 35% overhead while providing significantly better accuracy
-- Thorough mode's 5.4x slowdown is justified by ML-powered semantic understanding
+- Balanced mode adds only 50% overhead while providing significantly better accuracy
+- Thorough mode's 4x slowdown is justified by ML-powered semantic understanding
 - All modes benefit from aggressive caching (cache hits < 500ms)
 - First-run ML model loading in thorough mode adds one-time 10s overhead
 

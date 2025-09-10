@@ -192,7 +192,7 @@ class FastRankingStrategy(RankingStrategy):
     word boundaries for maximum speed. Skips corpus building entirely
     to minimize processing time.
 
-    Performance: ~0.5ms per file
+    Performance: Baseline (100%)
     Accuracy: Good for quick exploration
     Use Cases: Large codebases, CI/CD pipelines, initial discovery
     """
@@ -200,11 +200,18 @@ class FastRankingStrategy(RankingStrategy):
     name = "fast"
     description = "Quick substring-based ranking without corpus building"
 
-    def __init__(self):
+    def __init__(self, config=None):
         """Initialize fast ranking strategy."""
         self.logger = get_logger(__name__)
         self._pattern_cache = {}
         self._variation_cache = {}
+        self.config = config
+        
+        # Get content scan limit from config, default to unlimited (-1)
+        if config and hasattr(config, 'ranking'):
+            self.content_scan_limit = getattr(config.ranking, 'ranking_content_scan_limit_fast', -1)
+        else:
+            self.content_scan_limit = -1  # Unlimited by default
 
     def rank_file(
         self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
@@ -283,11 +290,12 @@ class FastRankingStrategy(RankingStrategy):
         if not keywords or not file.content:
             return 0.0
 
-        # OPTIMIZATION: Sample more content (5KB) for better accuracy while staying fast
+        # Use configurable content limit (-1 means unlimited)
         filename_lower = Path(file.path).name.lower()
-        content_sample = (
-            file.content[:5000].lower() if len(file.content) > 5000 else file.content.lower()
-        )
+        if self.content_scan_limit > 0 and len(file.content) > self.content_scan_limit:
+            content_sample = file.content[:self.content_scan_limit].lower()
+        else:
+            content_sample = file.content.lower()
 
         total_score = 0.0
         max_possible = len(keywords) * 3.0  # Adjusted for new scoring scale
@@ -303,7 +311,7 @@ class FastRankingStrategy(RankingStrategy):
             # Check early content (first 1KB = 2 points)
             if keyword_lower in content_sample[:1000]:
                 total_score += 2.0
-            # Check rest of sample (1KB-5KB = 1 point)
+            # Check rest of sample (remaining content = 1 point)
             elif keyword_lower in content_sample:
                 total_score += 1.0
 
@@ -583,7 +591,7 @@ class BalancedRankingStrategy(FastRankingStrategy):
     Extends Fast mode with sophisticated text analysis including BM25 ranking,
     compound word splitting, abbreviation expansion, and plural normalization.
 
-    Performance: ~2ms per file
+    Performance: 150% (1.5x slower than fast)
     Accuracy: Excellent for general development
     Use Cases: Feature building, bug investigation, code reviews
     """
@@ -592,13 +600,19 @@ class BalancedRankingStrategy(FastRankingStrategy):
     description = "BM25-based ranking with text processing enhancements"
     parent_strategy = FastRankingStrategy  # Class attribute for inheritance chain
 
-    def __init__(self):
+    def __init__(self, config=None):
         """Initialize balanced ranking strategy."""
-        super().__init__()
+        super().__init__(config)
         self.bm25_calculator = None
         self.tfidf_calculator = None
         self._abbreviation_cache = {}
         self._compound_cache = {}
+        
+        # Get content scan limit from config, default to unlimited (-1)
+        if config and hasattr(config, 'ranking'):
+            self.content_scan_limit = getattr(config.ranking, 'ranking_content_scan_limit_balanced', -1)
+        else:
+            self.content_scan_limit = -1  # Unlimited by default
 
     def rank_file(
         self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
@@ -715,8 +729,11 @@ class BalancedRankingStrategy(FastRankingStrategy):
         if not keywords or not file.content:
             return 0.0
 
-        # OPTIMIZATION: Limit content scanning to first 10KB for balanced mode
-        content_sample = file.content[:10000] if len(file.content) > 10000 else file.content
+        # Use configurable content limit (-1 means unlimited)
+        if self.content_scan_limit > 0 and len(file.content) > self.content_scan_limit:
+            content_sample = file.content[:self.content_scan_limit]
+        else:
+            content_sample = file.content
         content_lower = content_sample.lower()
         filename_lower = Path(file.path).name.lower()
 
@@ -1178,7 +1195,7 @@ class ThoroughRankingStrategy(BalancedRankingStrategy):
     Extends Balanced mode with machine learning capabilities including
     semantic embeddings, pattern recognition, and dependency analysis.
 
-    Performance: ~10-50ms per file (with optimizations)
+    Performance: 400% (4x slower than fast)
     Accuracy: Best possible with semantic understanding
     Use Cases: Complex refactoring, architectural analysis, semantic search
     """
@@ -1187,9 +1204,9 @@ class ThoroughRankingStrategy(BalancedRankingStrategy):
     description = "ML-based semantic ranking with dependency analysis"
     parent_strategy = BalancedRankingStrategy  # Class attribute for inheritance chain
 
-    def __init__(self):
+    def __init__(self, config=None):
         """Initialize thorough ranking strategy."""
-        super().__init__()
+        super().__init__(config)
         self._embedding_model = None
         self._pattern_matcher = None
         self._semantic_cache = {}

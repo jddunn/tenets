@@ -52,11 +52,11 @@ graph TD
 
 ### Mode Comparison (Benchmarked on Real Codebase)
 
-| Mode | Relative Performance | Typical Time | Files Analyzed | Token Output |
-|------|---------------------|--------------|----------------|--------------|
-| **Fast** | 100% (baseline) | ~17s | 10-20 files | ~7K tokens |
-| **Balanced** | 135% (1.3x slower) | ~23s | 50-75 files | ~90K tokens |
-| **Thorough** | 536% (5.4x slower) | ~91s | 75-100 files | ~90K tokens |
+| Mode | Relative Performance | Files Analyzed | Token Output |
+|------|---------------------|----------------|--------------|
+| **Fast** | 100% (baseline) | 10-20 files | ~7K tokens |
+| **Balanced** | 150% (1.5x slower) | 50-170 files | ~70K tokens |
+| **Thorough** | 400% (4x slower) | 75-200 files | ~85K tokens |
 
 ### Fast Mode
 - **Relative Speed**: Baseline (100%)
@@ -70,14 +70,14 @@ graph TD
   - Deep analysis only on top 20 ranked files
 
 ### Balanced Mode (Default)
-- **Relative Speed**: ~1.3x slower than Fast (135%)
+- **Relative Speed**: 150% (1.5x slower than fast)
 - **Accuracy**: Excellent for most use cases
 - **Methods**: BM25 scoring with corpus, word boundaries, intelligent summarization
 - **Use Cases**: General development, feature building, most common scenarios
 - **Trade-offs**: Full analysis provides better accuracy at minor speed cost
 
 ### Thorough Mode
-- **Relative Speed**: ~5.4x slower than Fast (536%)
+- **Relative Speed**: 400% (4x slower than fast)
 - **Accuracy**: Best possible with ML-powered understanding
 - **Methods**: 
   - ML embeddings (all-MiniLM-L6-v2 model)
@@ -86,10 +86,10 @@ graph TD
   - Comprehensive dependency analysis
 - **Use Cases**: Complex refactoring, architectural changes, deep code understanding
 - **Performance Breakdown**:
-  - ~10s for ML model loading (first run)
-  - ~23s for comprehensive ranking
-  - ~5s for dual corpus building
-  - Remaining time for analysis and aggregation
+  - ML model loading (first run, then cached)
+  - Comprehensive semantic ranking
+  - Dual corpus building (BM25 + TF-IDF)
+  - Deep analysis and aggregation
 
 ## Enhanced Text Matching Implementation
 

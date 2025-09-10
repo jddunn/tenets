@@ -11,9 +11,9 @@
 [![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/jddunn/tenets)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
-**tenets** automatically finds and builds the most relevant context from your codebase. Instead of manually copying files or searching for documentation, tenets intelligently aggregates exactly what you need for debugging, building features, or coding with AI assistants. Works with any codebase but best with Git repos.
+**tenets** automatically finds and builds the most relevant context from your codebase. Instead of manually copying files or grepping with complex regex, tenets intelligently aggregates exactly what you need for debugging, building features, or coding with AI assistants. Works with any directory of files but best with Git repos.
 
-## What is tenets?
+## Core Features
 
 Intelligent context aggregation that:
 
@@ -46,39 +46,32 @@ pip install tenets[all]    # Everything
 
 Tenets offers three modes that balance speed vs. thoroughness for both `distill` and `rank` commands:
 
-| Mode         | Speed | Accuracy | Primary Algorithm | Use Case                 |
+| Mode         | Speed | Thoroughness | Primary Algorithm | Use Case                 |
 | ------------ | ----- | -------- | ---------------- | ------------------------ |
-| **fast**     | ⚡⚡⚡ | Good     | Substring match   | Quick exploration, CI/CD |
-| **balanced** | ⚡⚡  | Better   | BM25 ranking      | Most development (default) |
-| **thorough** | ⚡   | Best     | BM25 + ML embeddings | Complex refactoring, semantic search |
+| **fast**     | ⚡⚡⚡ (100%) | Good     | Substring match   | Quick exploration, CI/CD |
+| **balanced** | ⚡⚡ (150% - 1.5x slower) | Better   | BM25 ranking      | Most development (default) |
+| **thorough** | ⚡ (400% - 4x slower) | Best     | BM25 + ML embeddings | Complex refactoring, semantic search |
 
-#### Why is Fast faster than Balanced?
-
-**Fast mode** achieves speed by:
-- **No corpus building** - Skips expensive BM25/TF-IDF index creation entirely
+**Fast mode**
 - **Simple substring matching** - No regex or word boundary checking
-- **Limited content scanning** - Samples only first 5KB per file
 - **No text processing** - No tokenization, abbreviation expansion, or stemming
 
-**Balanced mode** is more accurate but slower because it:
+**Balanced mode**
 - **Builds BM25 corpus** - Creates inverted index for all files (one-time cost)
 - **Uses word boundaries** - Regex matching for precise results
-- **Scans more content** - Samples first 10KB per file
 - **Processes text** - Handles abbreviations, compound words, plurals
 
-**Thorough mode** adds semantic understanding:
-- **All Balanced features** PLUS
+**Thorough mode*
 - **ML embeddings** - Semantic similarity (requires `tenets[ml]`)
 - **Dual algorithms** - Uses both BM25 AND TF-IDF
-- **Full content analysis** - No sampling limits
 - **Pattern recognition** - Detects code patterns and dependencies
 
 ⚠️ **Note**: Thorough mode finds semantically similar code, not just exact matches. Use Fast or Balanced if you need literal keyword matching.
 
 **When to use each mode:**
-- **Fast**: Quick searches, CI/CD pipelines, large codebases (1000+ files)
-- **Balanced**: Day-to-day development, bug fixing, feature building (default)
-- **Thorough**: Major refactoring, finding similar implementations, architectural analysis
+- **Fast**: Most likely for programmatic tools, that would replace grepping
+- **Balanced**: Day-to-day development / general usage (default, only 50% slower)
+- **Thorough**: Major refactoring, in-depth reviews, architectural analysis
 
 ### Core Commands
 
@@ -120,9 +113,11 @@ tenets rank "user database migration" --format json | jq '.files[].path'
 
 **Tips**
 
+- **Learn one to learn both**: Rank and distill commands are designed to be interchangeable, with the only difference between file context instead of just filepaths.
+
 - **Be brutally curt**: Intentions and concepts are mapped (specifically in programming context), so the more you list the more matches (crossover you'll get; e.g. "fix, analyze, and debug this issue" is worse than "fix..").
 
-- **Don't use many synonyms**: Sometimes in LLM interactions you mention multiple variations of a term, hoping to expand its context and connections. This is a static tool; more words in the prompt = lower processing speed. Let the tool decide what relationships exist between concepts, not you, unless it's to maximize search by design.
+- **Don't use many synonyms**: Sometimes in LLM interactions you mention multiple variations of a term, hoping to expand its context and connections. This is a static tool; more words in the prompt = lower processing speed, more crossover. Let tenets decide relationships, not you.
 
 - **Planning**: Identify key functions, lines, variables, before making changes helps greatly. If you specify method names in the prompt, it will search for and aggregate all files that call it and smartly summarize the file's context around mentioned matches.
 
@@ -185,7 +180,9 @@ ignore:
 - **[Full Documentation](https://tenets.dev/docs)** - Complete guide and API reference
 - **[CLI Reference](docs/cli.md)** - All commands and options
 - **[Configuration Guide](docs/config.md)** - Detailed configuration options
-- **[Architecture Overview](docs/architecture.md)** - How tenets works internally
+- **[Architecture Overview](docs/architecture/index.md)** - How tenets works internally
+
+## Advanced Features
 
 ### Smart Summarization
 
@@ -198,8 +195,6 @@ When files exceed token budgets, tenets intelligently preserves:
 - Recent changes
 
 For more details on the summarization system, see [Architecture Documentation](docs/architecture/index.md).
-
-## Advanced Features
 
 ### Test File Handling
 
@@ -257,7 +252,7 @@ for file in ranked_files[:10]:
 
 ## Supported Languages
 
-Specialized analyzers for Python, JavaScript/TypeScript, Go, Java, C/C++, Ruby, PHP, Rust, and more. Configuration and documentation files are analyzed with smart heuristics for YAML, TOML, JSON, Markdown, etc.
+Specialized analyzers for Python, JavaScript/TypeScript, Go, Java, C/C++, Ruby, PHP, Rust, and more. Configuration and documentation files are analyzed with smart heuristics for YAML, TOML, JSON, Markdown, etc. See [supported languages](./docs/supported_languages.md) for the full list.
 
 ## Contributing
 
@@ -268,7 +263,3 @@ See [CONTRIBUTING.md](contributing.md) for guidelines.
 MIT License - see [LICENSE](LICENSE) for details.
 
 ---
-
-## Credits
-
-- Johnny Dunn

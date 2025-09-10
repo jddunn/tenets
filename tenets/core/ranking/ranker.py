@@ -260,9 +260,9 @@ class RelevanceRanker:
         Pre-populates the strategies cache with lightweight strategy instances.
         These don't load heavy ML models until actually used.
         """
-        # Only initialize lightweight strategies at startup
-        self._strategies_cache[RankingAlgorithm.FAST] = FastRankingStrategy()
-        self._strategies_cache[RankingAlgorithm.BALANCED] = BalancedRankingStrategy()
+        # Only initialize lightweight strategies at startup, pass config
+        self._strategies_cache[RankingAlgorithm.FAST] = FastRankingStrategy(self.config)
+        self._strategies_cache[RankingAlgorithm.BALANCED] = BalancedRankingStrategy(self.config)
         # DON'T initialize THOROUGH here - it will be created lazily when needed
         # to avoid loading ML models unnecessarily
 
@@ -457,14 +457,14 @@ class RelevanceRanker:
             # Otherwise fall back to the instance algorithm
             algo_enum = self.algorithm
 
-        # Lazy creation of strategies
+        # Lazy creation of strategies with config
         if algo_enum not in self._strategies_cache:
             if algo_enum == RankingAlgorithm.FAST:
-                self._strategies_cache[algo_enum] = FastRankingStrategy()
+                self._strategies_cache[algo_enum] = FastRankingStrategy(self.config)
             elif algo_enum == RankingAlgorithm.BALANCED:
-                self._strategies_cache[algo_enum] = BalancedRankingStrategy()
+                self._strategies_cache[algo_enum] = BalancedRankingStrategy(self.config)
             elif algo_enum == RankingAlgorithm.THOROUGH or algo_enum == RankingAlgorithm.ML:
-                self._strategies_cache[algo_enum] = ThoroughRankingStrategy()
+                self._strategies_cache[algo_enum] = ThoroughRankingStrategy(self.config)
 
         return self._strategies_cache.get(algo_enum)
 
@@ -709,9 +709,10 @@ class RelevanceRanker:
                 if file.content:
                     # Limit document size for performance based on mode
                     if actual_algo == "balanced":
-                        # Balanced: use first 10KB of each file
+                        # Balanced: respect configured content limit for corpus building
+                        limit = getattr(self.config.ranking, 'ranking_content_scan_limit_balanced', -1) if self.config else -1
                         content = (
-                            file.content[:10000] if len(file.content) > 10000 else file.content
+                            file.content[:limit] if limit > 0 and len(file.content) > limit else file.content
                         )
                     else:
                         # Thorough: use full content

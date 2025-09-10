@@ -176,6 +176,13 @@ ranking:
   # Embedding model for ML mode (uses NLP config)
   embedding_model: all-MiniLM-L6-v2
   
+  # Content scanning limits for ranking (characters, -1 for unlimited)
+  # Controls how much content is analyzed during ranking (not output)
+  # Set to a positive number to limit scanning for very large files
+  ranking_content_scan_limit_fast: -1      # Unlimited (scans full file)
+  ranking_content_scan_limit_balanced: -1  # Unlimited (scans full file)
+  ranking_content_scan_limit_thorough: -1  # Unlimited (scans full file)
+  
   # Custom weights for ranking factors (advanced)
   custom_weights:
     keyword_match: 0.25      # Uses NLP keyword extraction

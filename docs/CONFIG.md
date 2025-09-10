@@ -96,6 +96,13 @@ ranking:
   workers: 2                     # Parallel ranking workers
   parallel_mode: auto            # thread | process | auto
   batch_size: 100               # Files per batch
+  
+  # Content scanning limits for ranking (characters, -1 for unlimited)
+  # This controls how much content is analyzed when ranking files
+  # The full content is still included in the output if the file ranks high
+  ranking_content_scan_limit_fast: -1      # Unlimited (default)
+  ranking_content_scan_limit_balanced: -1  # Unlimited (default)
+  ranking_content_scan_limit_thorough: -1  # Unlimited (default)
 
   # Custom factor weights (0.0-1.0)
   custom_weights:
