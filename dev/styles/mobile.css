@@ -335,16 +335,14 @@
 
   /* Navigation items */
   .md-nav--primary > .md-nav__list > .md-nav__item,
-  .md-sidebar--primary .md-nav__list > .md-nav__item {
+  .md-sidebar--primary > .md-nav__list > .md-nav__item {
     border-bottom: 1px solid rgba(245, 158, 11, 0.06);
     margin: 0 !important;
     display: block !important;
   }
 
-  /* All navigation links - ensure consistent styling */
   .md-nav--primary .md-nav__link,
-  .md-sidebar--primary .md-nav__link,
-  .md-sidebar--primary .md-nav--primary .md-nav__link {
+  .md-sidebar--primary .md-nav__link {
     padding: 0.9rem 1.25rem !important;
     font-size: 0.95rem !important;
     font-weight: 600 !important;
@@ -354,8 +352,6 @@
     text-decoration: none !important;
     position: relative !important;
     background: transparent !important;
-    pointer-events: auto !important;
-    cursor: pointer !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link,

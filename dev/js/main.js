@@ -729,24 +729,226 @@
         }
 
     setupGlobalHandlers() {
-            // Only essential handlers - let Material Design handle search normally
-
-            // Set search placeholder
+            // Ensure search input always has placeholder
             const ensureSearchPlaceholder = () => {
                 const searchInputs = document.querySelectorAll('.md-search__input');
                 searchInputs.forEach(input => {
-                    if (!input.hasAttribute('placeholder')) {
-                        input.setAttribute('placeholder', 'Search...');
-                    }
+                    input.setAttribute('placeholder', 'Search...');
                 });
             };
+
+            // Set placeholder initially
             ensureSearchPlaceholder();
+
+            // Re-set after any navigation or dynamic content loading
             document.addEventListener('DOMContentLoaded', ensureSearchPlaceholder);
+            window.addEventListener('load', ensureSearchPlaceholder);
 
-            // Search fixes are now handled by search-fix.js
-            // Just ensure placeholder is set
+            // Create and inject close button for search
+            const createSearchCloseButton = () => {
+                const searchForm = document.querySelector('.md-search__form');
+                if (!searchForm || document.querySelector('.search-close-btn')) return;
 
-            // Keyboard handling moved to search-fix.js for better control
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'search-close-btn';
+                closeBtn.innerHTML = '✕';
+                closeBtn.style.cssText = `
+                    position: absolute;
+                    right: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: #f59e0b;
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 24px;
+                    height: 24px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    display: none !important;
+                    z-index: 1000;
+                    line-height: 1;
+                    padding: 0;
+                    transition: all 0.2s ease;
+                `;
+
+                closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeSearch();
+                });
+
+                closeBtn.addEventListener('mouseenter', () => {
+                    closeBtn.style.background = '#dc2626';
+                    closeBtn.style.transform = 'translateY(-50%) scale(1.1)';
+                });
+
+                closeBtn.addEventListener('mouseleave', () => {
+                    closeBtn.style.background = '#f59e0b';
+                    closeBtn.style.transform = 'translateY(-50%)';
+                });
+
+                searchForm.style.position = 'relative';
+                searchForm.appendChild(closeBtn);
+            };
+
+            // Show/hide close button based on search state
+            const updateSearchCloseButton = () => {
+                const searchContainer = document.querySelector('.md-search');
+                const searchInput = document.querySelector('.md-search__input');
+                const searchOutput = document.querySelector('.md-search__output');
+                const searchResults = document.querySelector('.md-search-result__list');
+                const closeBtn = document.querySelector('.search-close-btn');
+
+                if (!closeBtn || !searchContainer) return;
+
+                // Check if we have actual search results visible
+                const hasResults = searchResults &&
+                                 searchResults.children.length > 0 &&
+                                 !searchResults.hasAttribute('hidden');
+
+                // Check if search output is visible with content
+                const hasVisibleOutput = searchOutput &&
+                                       searchOutput.offsetParent !== null &&
+                                       hasResults;
+
+                // Check if input has text
+                const hasText = searchInput && searchInput.value.trim() !== '';
+
+                // Only show when we have actual results or text being searched
+                const shouldShow = hasVisibleOutput && hasText;
+
+                // Use setProperty to override with !important
+                if (shouldShow) {
+                    closeBtn.style.setProperty('display', 'block', 'important');
+                } else {
+                    closeBtn.style.setProperty('display', 'none', 'important');
+                }
+            };
+
+            // Force close search
+            const closeSearch = () => {
+                const searchContainer = document.querySelector('.md-search');
+                const searchInput = document.querySelector('.md-search__input');
+                const searchOutput = document.querySelector('.md-search__output');
+
+                if (!searchContainer || !searchInput) return;
+
+                // Clear and blur input
+                searchInput.blur();
+                searchInput.value = '';
+
+                // Hide output
+                if (searchOutput) {
+                    searchOutput.style.opacity = '0';
+                    setTimeout(() => {
+                        searchOutput.style.opacity = '';
+                    }, 300);
+                }
+
+                // Remove ALL active states
+                searchContainer.removeAttribute('aria-expanded');
+                searchContainer.removeAttribute('data-md-state');
+                searchContainer.setAttribute('aria-expanded', 'false');
+                searchContainer.classList.remove('md-search--active');
+
+                // Clear body states
+                document.body.removeAttribute('data-md-state');
+                document.body.classList.remove('md-search--active');
+
+                // Trigger reset
+                const resetBtn = searchContainer.querySelector('[type="reset"]');
+                if (resetBtn) {
+                    resetBtn.click();
+                }
+
+                // Hide close button
+                updateSearchCloseButton();
+            };
+
+            // Initialize close button
+            setTimeout(createSearchCloseButton, 100);
+
+            // Monitor search state changes
+            const searchObserver = new MutationObserver(updateSearchCloseButton);
+            const searchContainer = document.querySelector('.md-search');
+            if (searchContainer) {
+                searchObserver.observe(searchContainer, {
+                    attributes: true,
+                    attributeFilter: ['aria-expanded', 'data-md-state']
+                });
+            }
+
+            // Monitor search input and output changes
+            const searchInput = document.querySelector('.md-search__input');
+            if (searchInput) {
+                searchInput.addEventListener('input', updateSearchCloseButton);
+                searchInput.addEventListener('focus', () => setTimeout(updateSearchCloseButton, 100));
+                searchInput.addEventListener('blur', () => setTimeout(updateSearchCloseButton, 100));
+            }
+
+            // Monitor search output for changes
+            const searchOutput = document.querySelector('.md-search__output');
+            if (searchOutput) {
+                const outputObserver = new MutationObserver(updateSearchCloseButton);
+                outputObserver.observe(searchOutput, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+
+            // Handle clicks anywhere on page
+            document.addEventListener('mousedown', (e) => {
+                const searchContainer = document.querySelector('.md-search');
+                const searchOutput = document.querySelector('.md-search__output');
+
+                if (!searchContainer) return;
+
+                // Check if search is actually active
+                const isActive = (searchContainer.hasAttribute('aria-expanded') &&
+                                 searchContainer.getAttribute('aria-expanded') !== 'false') ||
+                                searchContainer.hasAttribute('data-md-state');
+
+                const hasVisibleOutput = searchOutput &&
+                                        searchOutput.offsetParent !== null &&
+                                        searchOutput.querySelector('.md-search-result');
+
+                // If active and click is outside
+                if ((isActive || hasVisibleOutput) &&
+                    !searchContainer.contains(e.target) &&
+                    !e.target.closest('.md-search')) {
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeSearch();
+                }
+            }, true);
+
+            // Also handle overlay if it exists
+            const searchOverlay = document.querySelector('.md-search__overlay');
+            if (searchOverlay) {
+                searchOverlay.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeSearch();
+                });
+            }
+
+            // Prevent search from staying active on ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const searchInput = document.querySelector('.md-search__input');
+                    if (searchInput && document.activeElement === searchInput) {
+                        searchInput.blur();
+
+                        const searchContainer = document.querySelector('.md-search');
+                        if (searchContainer) {
+                            searchContainer.removeAttribute('aria-expanded');
+                            searchContainer.removeAttribute('data-md-state');
+                        }
+                    }
+                }
+            });
 
             // Handle resize events
             let resizeTimer;
