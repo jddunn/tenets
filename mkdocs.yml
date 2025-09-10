@@ -386,7 +386,26 @@ nav:
       - Supported Languages: supported-languages.md
       - Best Practices: best-practices.md
       - Examples: examples.md
-  - Architecture: ARCHITECTURE.md
+  - Architecture:
+      - Overview: ARCHITECTURE.md
+      - System Overview: architecture/system-overview.md
+      - Core Architecture: architecture/core-architecture.md
+      - NLP/ML Pipeline: architecture/nlp-pipeline.md
+      - File Scanning: architecture/file-scanning.md
+      - Code Analysis: architecture/code-analysis.md
+      - Ranking System: architecture/ranking-system.md
+      - Git Integration: architecture/git-integration.md
+      - Context Management: architecture/context-management.md
+      - Session Management: architecture/session-management.md
+      - Storage & Caching: architecture/storage-caching.md
+      - Performance: architecture/performance.md
+      - Configuration: architecture/configuration.md
+      - CLI & API: architecture/cli-api.md
+      - Security: architecture/security.md
+      - Testing: architecture/testing.md
+      - Guiding Principles: architecture/guiding-principles.md
+      - Output & Visualization: architecture/output-visualization.md
+      - Roadmap: architecture/roadmap.md
   - API Docs: api/index.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
