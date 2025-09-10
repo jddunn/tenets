@@ -414,41 +414,41 @@ result = t.distill("add validation", session="feature-xyz")
     def generate_navigation(self) -> None:
         """Generate SUMMARY.md for literate-nav plugin."""
         nav_lines = []
-        
+
         # Add header and overview
         nav_lines.append("# API Reference")
         nav_lines.append("")
         nav_lines.append("* [Overview](index.md)")
-        
+
         # Simply iterate through all modules in order
         # Group by top-level package for better organization
         current_top = None
-        
+
         for mod_name, is_pkg, title, priority in self.modules:
             parts = mod_name.split(".")
             top_level = parts[1] if len(parts) > 1 else parts[0]
-            
+
             # Add spacing between top-level packages
             if current_top != top_level:
                 if current_top is not None:
                     nav_lines.append("")
                 current_top = top_level
-            
+
             # Calculate indentation based on depth
             depth = len(parts) - 1
             indent = "  " * depth
-            
+
             # Generate the path
             if is_pkg:
                 path = "/".join(parts) + "/index.md"
             else:
                 path = "/".join(parts) + ".md"
-            
+
             # Add the navigation entry
             nav_lines.append(f"{indent}* [{title}]({path})")
-        
+
         content = "\n".join(nav_lines)
-        
+
         with mkdocs_gen_files.open("api/SUMMARY.md", "w") as fd:
             fd.write(content)
 
