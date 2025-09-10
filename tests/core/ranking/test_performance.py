@@ -110,28 +110,28 @@ class TestPerformanceHierarchy:
             times[algorithm] = elapsed * 1000  # Convert to ms
 
         # Verify hierarchy
-        assert times["fast"] < times["balanced"], (
-            f"Fast ({times['fast']:.2f}ms) should be faster than Balanced ({times['balanced']:.2f}ms)"
-        )
+        assert (
+            times["fast"] < times["balanced"]
+        ), f"Fast ({times['fast']:.2f}ms) should be faster than Balanced ({times['balanced']:.2f}ms)"
 
-        assert times["balanced"] < times["thorough"] * 2, (
-            f"Balanced ({times['balanced']:.2f}ms) should not be much slower than Thorough ({times['thorough']:.2f}ms)"
-        )
+        assert (
+            times["balanced"] < times["thorough"] * 2
+        ), f"Balanced ({times['balanced']:.2f}ms) should not be much slower than Thorough ({times['thorough']:.2f}ms)"
 
         # Check relative performance is within expected bounds
         fast_time = times["fast"]
 
         # Balanced should be 2-6x slower than Fast (allowing some variance)
         balanced_ratio = times["balanced"] / fast_time
-        assert 2 <= balanced_ratio <= 6, (
-            f"Balanced is {balanced_ratio:.1f}x slower than Fast (expected 2-6x)"
-        )
+        assert (
+            2 <= balanced_ratio <= 6
+        ), f"Balanced is {balanced_ratio:.1f}x slower than Fast (expected 2-6x)"
 
         # Thorough (no ML) should be 3-7x slower than Fast
         thorough_ratio = times["thorough"] / fast_time
-        assert 3 <= thorough_ratio <= 10, (
-            f"Thorough is {thorough_ratio:.1f}x slower than Fast (expected 3-10x)"
-        )
+        assert (
+            3 <= thorough_ratio <= 10
+        ), f"Thorough is {thorough_ratio:.1f}x slower than Fast (expected 3-10x)"
 
     def test_no_quadratic_complexity(self, prompt_context):
         """
@@ -185,9 +185,9 @@ class TestPerformanceHierarchy:
 
         # Ratios should be relatively consistent for O(n)
         ratio_variance = statistics.stdev([ratio_20_10, ratio_40_20, ratio_80_40])
-        assert ratio_variance < 0.5, (
-            f"High variance {ratio_variance:.2f} suggests non-linear complexity"
-        )
+        assert (
+            ratio_variance < 0.5
+        ), f"High variance {ratio_variance:.2f} suggests non-linear complexity"
 
 
 class TestMLPerformance:
@@ -330,9 +330,9 @@ class TestPerformanceMonitoring:
 
         # Check for performance warning - should be logged since threshold is very low
         warnings = [record.message for record in caplog.records if record.levelname == "WARNING"]
-        assert any("Performance warning" in msg for msg in warnings), (
-            f"Expected performance warning, got: {warnings}"
-        )
+        assert any(
+            "Performance warning" in msg for msg in warnings
+        ), f"Expected performance warning, got: {warnings}"
 
     def test_performance_report(self):
         """Test performance report generation."""
@@ -458,9 +458,9 @@ class TestPerformanceRegression:
         avg_per_file = avg_time / len(files)
 
         # Fast mode should be < 1ms per file
-        assert avg_per_file < 1.0, (
-            f"Fast mode too slow: {avg_per_file:.2f}ms per file (target < 1ms)"
-        )
+        assert (
+            avg_per_file < 1.0
+        ), f"Fast mode too slow: {avg_per_file:.2f}ms per file (target < 1ms)"
 
     def test_balanced_mode_performance_target(self):
         """Test that Balanced mode meets performance targets."""
@@ -495,9 +495,9 @@ class TestPerformanceRegression:
         avg_per_file = (elapsed * 1000) / len(files)
 
         # Balanced mode should be < 5ms per file with optimization
-        assert avg_per_file < 5.0, (
-            f"Balanced mode too slow: {avg_per_file:.2f}ms per file (target < 5ms)"
-        )
+        assert (
+            avg_per_file < 5.0
+        ), f"Balanced mode too slow: {avg_per_file:.2f}ms per file (target < 5ms)"
 
 
 @pytest.mark.benchmark

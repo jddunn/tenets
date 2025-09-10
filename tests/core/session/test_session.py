@@ -230,9 +230,9 @@ class TestSessionManager:
             print(f"Kwargs: {call_kwargs}")
 
             # The first argument should be session name (positional)
-            assert len(call_args) >= 1, (
-                f"Expected at least 1 positional arg, got {len(call_args)}: {call_args}"
-            )
+            assert (
+                len(call_args) >= 1
+            ), f"Expected at least 1 positional arg, got {len(call_args)}: {call_args}"
             assert call_args[0] == "test_session"
 
             # Check if kind and content are passed as keyword arguments
