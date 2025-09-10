@@ -80,7 +80,7 @@ graph TB
             STOPWORDS[Stopwords]
             RAKE[RAKE Keywords]
             YAKE[YAKE Fallback]
-            TFIDF[TF-IDF Analysis]
+            TFIDF[BM25/TF-IDF Analysis]
             BM25[BM25 Ranking]
         end
     end
@@ -118,7 +118,7 @@ graph TB
         subgraph "Ranking Factors"
             SEMANTIC[Semantic Similarity<br/>25%]
             KEYWORD_MATCH[Keyword Matching<br/>15%]
-            TFIDF_SIM[TF-IDF Similarity<br/>15%]
+            BM25_SIM[BM25 Similarity<br/>15%]
             IMPORT_CENT[Import Centrality<br/>10%]
             PATH_REL[Path Relevance<br/>10%]
             GIT_SIG[Git Signals<br/>15%]
@@ -189,7 +189,7 @@ graph TB
 
     FAST --> SEMANTIC
     BALANCED --> KEYWORD_MATCH
-    THOROUGH --> TFIDF_SIM
+    THOROUGH --> BM25_SIM
     ML --> IMPORT_CENT
 
     SEMANTIC --> EMBEDDINGS
@@ -198,7 +198,7 @@ graph TB
 
     SIMILARITY --> CONTEXT_BUILDER
     KEYWORD_MATCH --> CONTEXT_BUILDER
-    TFIDF_SIM --> CONTEXT_BUILDER
+    BM25_SIM --> CONTEXT_BUILDER
 
     CONTEXT_BUILDER --> TOKEN_COUNTER
     CONTEXT_BUILDER --> SUMMARIZER
@@ -264,7 +264,7 @@ tenets/core/nlp/
 ├── embeddings.py       # Embedding generation (ML optional)
 ├── ml_utils.py         # ML utility functions
 ├── bm25.py            # BM25 ranking algorithm (primary)
-└── tfidf.py           # TF-IDF calculations (fallback)
+└── tfidf.py           # TF-IDF calculations (optional alternative to BM25)
 ```
 
 #### Similarity Computation Consolidation
@@ -284,7 +284,7 @@ from tenets.core.nlp import (
 
 **Key Features:**
 - **Automatic Detection**: `cosine_similarity()` auto-detects sparse (dict) vs dense (list/array) vectors
-- **Sparse Vector Support**: Efficient similarity for high-dimensional sparse vectors (TF-IDF)
+- **Sparse Vector Support**: Efficient similarity for high-dimensional sparse vectors (BM25/TF-IDF)
 - **No Duplication**: All modules import from central `similarity.py`
 - **Graceful Fallback**: Works without NumPy using pure Python implementations
 
@@ -293,7 +293,7 @@ from tenets.core.nlp import (
 # Dense vectors
 sim = cosine_similarity([1, 0, 0], [0, 1, 0])  # → 0.0
 
-# Sparse vectors (TF-IDF)
+# Sparse vectors (BM25/TF-IDF)
 vec1 = {"python": 0.8, "code": 0.6}
 vec2 = {"python": 0.7, "test": 0.5}
 sim = sparse_cosine_similarity(vec1, vec2)  # → 0.76
@@ -321,7 +321,7 @@ graph TD
     subgraph "Keyword Extraction"
         RAKE_EXT[RAKE Extractor<br/>Primary - Fast & Python 3.13 Compatible]
         YAKE_EXT[YAKE Extractor<br/>Secondary - Python < 3.13 Only]
-        TFIDF_EXT[TF-IDF Extractor<br/>Frequency-based Fallback]
+        TFIDF_EXT[BM25/TF-IDF Extractor<br/>Frequency-based Fallback]
         FREQ_EXT[Frequency Extractor<br/>Final Fallback]
     end
 
@@ -333,7 +333,7 @@ graph TD
     subgraph "Embedding Generation"
         LOCAL_EMB[Local Embeddings<br/>sentence-transformers]
         MODEL_SEL[Model Selection<br/>MiniLM, MPNet]
-        FALLBACK[TF-IDF Fallback<br/>No ML required]
+        FALLBACK[BM25 Fallback<br/>No ML required]
     end
 
     subgraph "Similarity Computing"
@@ -383,7 +383,7 @@ graph TD
 | **SimpleRAKE** | Fast | Good | Minimal | ✅ Yes | • No NLTK dependencies<br/>• Built-in implementation<br/>• Fast processing | • No advanced NLP features<br/>• Basic tokenization only |
 | **YAKE** | Moderate | Very Good | Low | ❌ No | • Statistical analysis<br/>• Language independent<br/>• Capital letter aware | • Python 3.13 bug<br/>• Can produce duplicates<br/>• No deep semantics |
 | **BM25** | Fast | Excellent | High<br/>(handles length variation) | ✅ Yes | • Primary ranking algorithm<br/>• Better for code search<br/>• Handles file size variation | • Needs document corpus<br/>• Statistical only<br/>• No semantic understanding |
-| **TF-IDF** | Fast | Good | Medium<br/>(corpus-dependent) | ✅ Yes | • Optional fallback<br/>• Document uniqueness<br/>• Simpler algorithm | • Less effective for varying lengths<br/>• No term saturation<br/>• Statistical only |
+| **TF-IDF** | Fast | Good | Medium<br/>(corpus-dependent) | ✅ Yes | • Optional alternative to BM25<br/>• Document uniqueness<br/>• Simpler algorithm | • Less effective for varying lengths<br/>• No term saturation<br/>• Statistical only |
 | **Frequency** | Very Fast | Basic | Minimal | ✅ Yes | • Fallback option<br/>• Simple analysis<br/>• Guaranteed to work | • Very basic<br/>• No context awareness<br/>• Misses importance |
 
 #### Detailed Algorithm Analysis
@@ -455,7 +455,7 @@ Primary text similarity algorithm - default for ranking
 - Probabilistic ranking function with term saturation (k1=1.2)
 - Document length normalization (b=0.75) handles varying file sizes
 - Prevents over-weighting of repeated terms
-- Better ranking quality than TF-IDF for code search
+- Default ranking algorithm (better than TF-IDF for code search)
 
 **Pros:**
 - ✅ Superior ranking for varying document lengths
@@ -466,7 +466,7 @@ Primary text similarity algorithm - default for ranking
 
 **Cons:**
 - ❌ Requires a corpus of documents
-- ❌ More complex than TF-IDF
+- ❌ More complex than basic keyword matching
 - ❌ Still statistical, no semantic understanding
 - ❌ Memory usage grows with corpus size
 
@@ -475,7 +475,7 @@ Primary text similarity algorithm - default for ranking
 - Code search across files of varying sizes
 - Finding relevant files for prompts
 
-##### **TF-IDF (Term Frequency-Inverse Document Frequency)**
+##### **TF-IDF (Optional Alternative to BM25)**
 ```
 Optional fallback method - configurable via text_similarity_algorithm
 ```
@@ -541,14 +541,14 @@ if python_version >= 3.13:
     if rake_available:
         use_rake()  # Primary choice
     else:
-        use_tfidf()  # Fallback
+        use_bm25()  # Default (or use_tfidf() if configured)
 else:  # Python < 3.13
     if rake_available:
         use_rake()  # Still preferred for speed
     elif yake_available:
         use_yake()  # Good alternative
     else:
-        use_tfidf()  # Fallback
+        use_bm25()  # Default (or use_tfidf() if configured)
 
 # Final fallback is always frequency-based
 if all_methods_fail:
@@ -942,14 +942,14 @@ graph LR
 graph TD
     subgraph "Ranking Strategies"
         FAST[Fast Strategy<br/>Fastest<br/>Keyword + Path Only]
-        BALANCED[Balanced Strategy<br/>1.5x slower<br/>TF-IDF + BM25 + Structure]
+        BALANCED[Balanced Strategy<br/>1.5x slower<br/>BM25 + Structure]
         THOROUGH[Thorough Strategy<br/>4x slower<br/>Full Analysis + ML]
         ML_STRAT[ML Strategy<br/>5x slower<br/>Semantic Embeddings]
     end
 
     subgraph "Text Analysis (40% in Balanced)"
         KEY_MATCH[Keyword Matching<br/>20%<br/>Direct term hits]
-        TFIDF_SIM[TF-IDF Similarity<br/>20%<br/>Statistical relevance]
+        BM25_SIM[BM25 Similarity<br/>20%<br/>Statistical relevance]
         BM25_SCORE[BM25 Score<br/>15%<br/>Probabilistic ranking]
     end
 
@@ -983,7 +983,7 @@ graph TD
     end
 
     FAST --> KEY_MATCH
-    BALANCED --> TFIDF_SIM
+    BALANCED --> BM25_SIM
     BALANCED --> BM25_SCORE
     THOROUGH --> IMP_CENT
     ML_STRAT --> SEM_SIM
@@ -993,7 +993,7 @@ graph TD
     RANKING --> AGGREGATION
 
     KEY_MATCH --> RANKING
-    TFIDF_SIM --> RANKING
+    BM25_SIM --> RANKING
     BM25_SCORE --> RANKING
     PATH_REL --> RANKING
     IMP_CENT --> RANKING
@@ -1013,7 +1013,7 @@ graph TD
 | Strategy | Speed | Accuracy | Use Cases | Factors Used |
 |----------|-------|----------|-----------|--------------|
 | **Fast** | Fastest | Basic | • Quick file discovery<br/>• Keyword-based search<br/>• Interactive exploration | • Keyword matching (60%)<br/>• Path relevance (30%)<br/>• File type (10%) |
-| **Balanced** | 1.5x slower | Good | • **DEFAULT for both rank and distill**<br/>• Production usage<br/>• Most common scenarios | • Keyword (20%), TF-IDF (20%), BM25 (15%)<br/>• Path (15%), Import centrality (10%)<br/>• Complexity (5%), File type (5%), Git (10%) |
+| **Balanced** | 1.5x slower | Good | • **DEFAULT for both rank and distill**<br/>• Production usage<br/>• Most common scenarios | • Keyword (20%), BM25 (35%)<br/>• Path (15%), Import centrality (10%)<br/>• Complexity (5%), File type (5%), Git (10%) |
 | **Thorough** | 4x slower | High | • Complex codebases<br/>• Deep analysis needed<br/>• Research and investigation | • All balanced factors<br/>• Enhanced git analysis<br/>• Deeper structural analysis |
 | **ML** | 5x slower | Highest | • Semantic understanding needed<br/>• Natural language queries<br/>• Advanced AI workflows | • All factors + semantic similarity (25%)<br/>• Local embedding models<br/>• Context-aware ranking |
 
@@ -1680,7 +1680,7 @@ ranking:
   weights:
     semantic_similarity: 0.25
     keyword_match: 0.15
-    tfidf_similarity: 0.15
+    bm25_similarity: 0.15
     import_centrality: 0.10
     path_relevance: 0.10
     git_recency: 0.05
@@ -1698,7 +1698,7 @@ nlp:
   use_stopwords: true
   stopword_set: minimal  # minimal|aggressive|custom
   tokenizer: code        # code|text
-  keyword_extractor: rake # rake|yake|tfidf|frequency (rake is default for Python 3.13+)
+  keyword_extractor: rake # rake|yake|bm25|tfidf|frequency (rake is default for Python 3.13+)
 
 # ML configuration
 ml:

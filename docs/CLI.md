@@ -281,7 +281,7 @@ tenets rank "security audit" --format html -o security_files.html --tree
 The ranking uses the same intelligent multi-factor analysis as `distill`:
 - Semantic similarity (ML-based when available)
 - Keyword matching
-- TF-IDF statistical relevance
+- BM25/TF-IDF statistical relevance
 - Import/dependency centrality
 - Path relevance
 - Git signals (recent changes, frequency)

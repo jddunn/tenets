@@ -30,7 +30,7 @@ pytest -n auto
 
 Optional feature extras (install before running related tests):
 ```bash
-pip install -e '.[light]'   # TF-IDF / YAKE ranking tests
+pip install -e '.[light]'   # BM25 / TF-IDF / YAKE ranking tests
 pip install -e '.[viz]'     # Visualization tests
 pip install -e '.[ml]'      # Embedding / semantic tests (heavy)
 ```

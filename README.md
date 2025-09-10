@@ -32,7 +32,7 @@ Intelligent context aggregation that:
 pip install tenets
 
 # Add specific features
-pip install tenets[light]  # Adds keyword extraction & TF-IDF ranking
+pip install tenets[light]  # Adds keyword extraction & BM25/TF-IDF ranking
 pip install tenets[viz]    # Adds visualization capabilities
 pip install tenets[ml]     # Adds deep learning models (2GB+)
 pip install tenets[all]    # Everything
@@ -49,7 +49,7 @@ Tenets offers three modes that balance speed vs. accuracy for both `distill` and
 | Mode         | Speed       | Accuracy | Use Case                 | What It Does                                                 |
 | ------------ | ----------- | -------- | ------------------------ | ------------------------------------------------------------ |
 | **fast**     | Fastest     | Good     | Quick exploration        | Keyword & path matching, basic relevance                     |
-| **balanced** | 1.5x slower | Better   | Most use cases (default) | TF-IDF analysis, BM25 scoring, structure analysis            |
+| **balanced** | 1.5x slower | Better   | Most use cases (default) | BM25 scoring, keyword extraction, structure analysis         |
 | **thorough** | 4x slower   | Best     | Complex refactoring      | ML semantic similarity, pattern detection, dependency graphs |
 
 ### Core Commands
