@@ -457,20 +457,20 @@ class TestPerformanceCharacteristics:
         # Check relative performance without hardcoded expectations
         # Performance varies by system, just verify ordering
         # Fast should be fastest, thorough should be slowest
-        assert times["fast"] <= times["balanced"] * 2, (
-            "Fast should generally be faster than balanced"
-        )
-        assert times["balanced"] <= times["thorough"] * 2, (
-            "Balanced should generally be faster than thorough"
-        )
+        assert (
+            times["fast"] <= times["balanced"] * 2
+        ), "Fast should generally be faster than balanced"
+        assert (
+            times["balanced"] <= times["thorough"] * 2
+        ), "Balanced should generally be faster than thorough"
 
         # Just log the ratio for informational purposes
         thorough_ratio = times["thorough"] / times["fast"]
         # Performance varies by system - ML loading alone can add significant time
         # Just ensure it's not completely broken (e.g., 100x slower)
-        assert thorough_ratio < 100, (
-            f"Thorough seems broken: {thorough_ratio:.1f}x slower than fast"
-        )
+        assert (
+            thorough_ratio < 100
+        ), f"Thorough seems broken: {thorough_ratio:.1f}x slower than fast"
 
 
 class TestEdgeCases:
@@ -554,9 +554,9 @@ class TestDesignDecisions:
 
         for content, keyword, should_match in test_cases:
             result = strategy._match_with_word_boundaries(keyword, content)
-            assert result.matched == should_match, (
-                f"'{keyword}' in '{content}' should{'' if should_match else ' not'} match"
-            )
+            assert (
+                result.matched == should_match
+            ), f"'{keyword}' in '{content}' should{'' if should_match else ' not'} match"
 
     def test_no_typo_tolerance_by_design(self):
         """Verify typos are not tolerated as per design."""
@@ -593,6 +593,6 @@ class TestDesignDecisions:
             for content_word, search_word in test_cases:
                 content = f"The {content_word} system"
                 result = strategy._match_with_word_boundaries(search_word, content)
-                assert result.matched, (
-                    f"'{search_word}' should match '{content_word}' (case-insensitive)"
-                )
+                assert (
+                    result.matched
+                ), f"'{search_word}' should match '{content_word}' (case-insensitive)"
