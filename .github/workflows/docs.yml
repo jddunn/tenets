@@ -1,0 +1,70 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'tenets/**/*.py'  # Rebuild when code changes (for API docs)
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'tenets/**/*.py'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git-revision-date-localized
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'  # Use 3.11 for better compatibility
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .[dev]  # Install tenets with dev dependencies (includes docs)
+
+      - name: Build documentation
+        run: |
+          mkdocs build --strict --verbose
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

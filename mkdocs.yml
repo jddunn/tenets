@@ -126,7 +126,7 @@ plugins:
   # Auto-generated API docs
   - gen-files:
       scripts:
-        - docs/gen_api.py
+        - docs/gen_ref_pages.py
 
   - literate-nav:
       nav_file: SUMMARY.md
@@ -406,7 +406,7 @@ nav:
       - Guiding Principles: architecture/guiding-principles.md
       - Output & Visualization: architecture/output-visualization.md
       - Roadmap: architecture/roadmap.md
-  - API Docs: api/index.md
+  - API Reference: api.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
 
