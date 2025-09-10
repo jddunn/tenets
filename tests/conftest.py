@@ -239,6 +239,7 @@ def mock_external_dependencies(monkeypatch, request):
     # Mock network requests (only if requests is available)
     try:
         import requests
+
         mock_requests = Mock()
         mock_requests.get.return_value.status_code = 200
         mock_requests.get.return_value.json.return_value = {"data": "test"}
@@ -252,6 +253,7 @@ def mock_external_dependencies(monkeypatch, request):
     if "tests/core/git" not in test_path:
         try:
             import git
+
             mock_git = Mock()
             mock_git.Repo.return_value = Mock()
             monkeypatch.setattr("git.Repo", mock_git.Repo)

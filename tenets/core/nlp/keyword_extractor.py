@@ -174,7 +174,7 @@ class KeywordExtractor:
         infinite loop bug. RAKE is used as the primary extractor instead,
         providing similar quality with better performance.
     """
-    
+
     # Class-level flag to track if we've already shown the YAKE warning
     _yake_warning_shown = False
 

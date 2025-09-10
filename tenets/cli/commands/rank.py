@@ -229,10 +229,10 @@ def rank(
         )
 
         ranked_files: List[FileAnalysis] = result.files
-        
+
         # Extract keywords and final query from result if available
-        keywords_excluded = getattr(result, 'keywords_excluded', None)
-        final_query = getattr(result, 'final_query', None)
+        keywords_excluded = getattr(result, "keywords_excluded", None)
+        final_query = getattr(result, "final_query", None)
 
         # Apply threshold filtering if min_score is set
         if min_score:
@@ -258,7 +258,7 @@ def rank(
             stats=None,  # Stats not available from rank_files yet
             start_time=start_time,
             keywords_excluded=keywords_excluded,
-            final_query=final_query
+            final_query=final_query,
         )
 
         # Output results
@@ -417,7 +417,16 @@ def _format_ranked_files(
     elif format == "xml":
         return _format_xml(files, show_scores, show_factors, prompt)
     elif format == "html":
-        return _format_html(files, show_scores, show_factors, prompt, tree_view, start_time, keywords_excluded, final_query)
+        return _format_html(
+            files,
+            show_scores,
+            show_factors,
+            prompt,
+            tree_view,
+            start_time,
+            keywords_excluded,
+            final_query,
+        )
     elif tree_view or format == "tree":
         return _format_tree(files, show_scores, show_factors, show_path)
     else:  # markdown
@@ -636,14 +645,14 @@ def _format_xml(
 
 
 def _format_html(
-    files: List[FileAnalysis], 
-    show_scores: bool, 
-    show_factors: bool, 
-    prompt: str, 
+    files: List[FileAnalysis],
+    show_scores: bool,
+    show_factors: bool,
+    prompt: str,
     tree_view: bool,
     start_time: Optional[Any] = None,
     keywords_excluded: Optional[List[str]] = None,
-    final_query: Optional[str] = None
+    final_query: Optional[str] = None,
 ) -> str:
     """Format ranked files as interactive HTML with charts and controls.
 
@@ -671,7 +680,7 @@ def _format_html(
     """
     # Import datetime for use in this function
     from datetime import datetime as dt_now
-    
+
     # Prepare data for JavaScript
     files_data: List[Dict[str, Any]] = []
     for file in files:
@@ -1160,17 +1169,19 @@ def _format_html(
     execution_time_str = ""
     if start_time:
         execution_time = dt_now.now() - start_time
-        execution_time_str = f"<p>Execution time: <strong>{execution_time.total_seconds():.2f} seconds</strong></p>"
-    
+        execution_time_str = (
+            f"<p>Execution time: <strong>{execution_time.total_seconds():.2f} seconds</strong></p>"
+        )
+
     # Format excluded keywords and final query if provided
     keywords_str = ""
     if keywords_excluded:
         keywords_str = f"<p>Keywords excluded: <strong>{', '.join(keywords_excluded)}</strong></p>"
-    
+
     query_str = ""
     if final_query and final_query != prompt:
         query_str = f"<p>Final query: <strong>{final_query}</strong></p>"
-    
+
     # Build the HTML content sections
     header_html: str = f"""
     <div class="rank-header">

@@ -294,14 +294,18 @@ class TestRelevanceRankerInitialization:
 
             assert RankingAlgorithm.FAST in ranker.strategies
             assert RankingAlgorithm.BALANCED in ranker.strategies
-            
+
             # Thorough is lazily initialized to avoid loading ML models
             # Mock ML initialization to avoid timeout in tests
-            with patch("tenets.core.ranking.strategies.ThoroughRankingStrategy._init_ml_components"):
+            with patch(
+                "tenets.core.ranking.strategies.ThoroughRankingStrategy._init_ml_components"
+            ):
                 thorough_strategy = ranker._get_strategy("thorough")
                 assert thorough_strategy is not None
                 assert RankingAlgorithm.THOROUGH in ranker.strategies
-                assert isinstance(ranker.strategies[RankingAlgorithm.THOROUGH], ThoroughRankingStrategy)
+                assert isinstance(
+                    ranker.strategies[RankingAlgorithm.THOROUGH], ThoroughRankingStrategy
+                )
 
             assert isinstance(ranker.strategies[RankingAlgorithm.FAST], FastRankingStrategy)
             assert isinstance(ranker.strategies[RankingAlgorithm.BALANCED], BalancedRankingStrategy)
@@ -603,6 +607,7 @@ class TestThoroughRankingStrategy:
         # rather than directly using SentenceTransformer
         # This test needs to be rewritten to match the new implementation
         import pytest
+
         pytest.skip("Test needs to be updated for new ML loading implementation")
 
     def test_semantic_similarity_calculation(self):
@@ -874,7 +879,9 @@ class TestCorpusAnalysis:
 
         # TF-IDF is only built for balanced/thorough modes
         # Check for BM25 instead which is more common
-        assert "bm25_calculator" in stats or "tfidf_calculator" in stats or stats["total_files"] == 3
+        assert (
+            "bm25_calculator" in stats or "tfidf_calculator" in stats or stats["total_files"] == 3
+        )
         # Check whichever calculator is present
         calc = stats.get("tfidf_calculator") or stats.get("bm25_calculator")
         if calc:
@@ -883,6 +890,7 @@ class TestCorpusAnalysis:
                 assert stats["tfidf_calculator"].document_count == 3
             elif "bm25_calculator" in stats:
                 from tenets.core.nlp.bm25 import BM25Calculator
+
                 assert isinstance(stats["bm25_calculator"], BM25Calculator)
 
     def test_analyze_corpus_with_tfidf_stopwords(self, ranker, test_config):

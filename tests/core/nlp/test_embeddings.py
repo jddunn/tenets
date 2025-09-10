@@ -43,10 +43,11 @@ class TestEmbeddingModel:
 )
 class TestLocalEmbeddings:
     """Test suite for LocalEmbeddings."""
-    
+
     def setup_method(self):
         """Clear model cache before each test."""
         from tenets.core.nlp.embeddings import clear_model_cache
+
         clear_model_cache()
 
     @patch("tenets.core.nlp.embeddings.SentenceTransformer")
@@ -147,19 +148,20 @@ class TestLocalEmbeddings:
 
         # Clear the global cache to ensure fresh initialization
         from tenets.core.nlp.embeddings import clear_model_cache
+
         clear_model_cache()
 
         # Test direct device specification
         embeddings = LocalEmbeddings(device="cuda")
         assert embeddings.device == "cuda"
-        
+
         clear_model_cache()
-        
+
         embeddings = LocalEmbeddings(device="cpu")
         assert embeddings.device == "cpu"
-        
+
         clear_model_cache()
-        
+
         # Test auto-detection (will default to cpu in test environment)
         embeddings = LocalEmbeddings()
         assert embeddings.device in ["cpu", "cuda"]  # Accept either

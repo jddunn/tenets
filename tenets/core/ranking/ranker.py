@@ -29,7 +29,6 @@ from .strategies import (
     FastRankingStrategy,
     RankingStrategy,
     ThoroughRankingStrategy,
-    create_ranking_strategy,
 )
 
 # Optional symbol for tests to patch ML model class - lazy loaded when needed
@@ -179,9 +178,9 @@ class RelevanceRanker:
         )
 
         # ML configuration - skip for fast mode, force enable for thorough mode
-        if algo_str == 'fast':
+        if algo_str == "fast":
             self.use_ml = False  # Fast mode never uses ML
-        elif algo_str == 'thorough':
+        elif algo_str == "thorough":
             self.use_ml = True  # Thorough ALWAYS uses ML regardless of config
             self.logger.info("Thorough mode selected - force enabling ML features")
         else:
@@ -223,9 +222,9 @@ class RelevanceRanker:
 
         # Log worker configuration
         log_worker_info(self.logger, "RelevanceRanker", max_workers)
-        
+
         # Log initialization details (skip ML status for fast mode)
-        if algo_str == 'fast':
+        if algo_str == "fast":
             self.logger.info(
                 f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
                 f"use_stopwords={self.use_stopwords}"
@@ -309,9 +308,7 @@ class RelevanceRanker:
 
         # Try to initialize executor if parallel is requested
         if parallel and self.executor is None:
-            self.logger.info(
-                "Parallel processing not available, using sequential ranking"
-            )
+            self.logger.info("Parallel processing not available, using sequential ranking")
             parallel = False
 
         # Log the actual algorithm being used (not the default)
@@ -324,7 +321,7 @@ class RelevanceRanker:
         # Select strategy
         actual_algorithm = algorithm if algorithm else self.algorithm.value
         self.logger.info(f"Selecting strategy for algorithm: {actual_algorithm}")
-        
+
         if algorithm:
             try:
                 strategy = self._get_strategy(algorithm)
@@ -333,7 +330,9 @@ class RelevanceRanker:
                 raise ValueError(f"Unknown ranking algorithm: {algorithm}")
         else:
             strategy = self._get_strategy(self.algorithm.value)
-            self.logger.info(f"Using default {strategy.__class__.__name__} for {self.algorithm.value} mode")
+            self.logger.info(
+                f"Using default {strategy.__class__.__name__} for {self.algorithm.value} mode"
+            )
 
         if not strategy:
             raise ValueError(f"No strategy for algorithm: {self.algorithm}")
@@ -352,12 +351,12 @@ class RelevanceRanker:
             else:
                 # Thorough mode: process all files
                 limit = len(files)
-                
+
             if limit < len(files):
                 priority_files = []
                 other_files = []
                 keywords_lower = [kw.lower() for kw in prompt_context.keywords]
-                
+
                 for f in files:
                     file_path_lower = f.path.lower()
                     # Check if any keyword appears in the file path
@@ -365,10 +364,12 @@ class RelevanceRanker:
                         priority_files.append(f)
                     else:
                         other_files.append(f)
-                
+
                 # Take priority files plus others up to limit
-                files_to_rank = priority_files + other_files[:max(limit - len(priority_files), 0)]
-                self.logger.info(f"Reduced to {len(files_to_rank)} files ({len(priority_files)} priority)")
+                files_to_rank = priority_files + other_files[: max(limit - len(priority_files), 0)]
+                self.logger.info(
+                    f"Reduced to {len(files_to_rank)} files ({len(priority_files)} priority)"
+                )
 
         # Analyze corpus - pass the actual algorithm being used
         corpus_stats = self._analyze_corpus(files_to_rank, prompt_context, actual_algorithm)
@@ -462,9 +463,7 @@ class RelevanceRanker:
                 self._strategies_cache[algo_enum] = FastRankingStrategy()
             elif algo_enum == RankingAlgorithm.BALANCED:
                 self._strategies_cache[algo_enum] = BalancedRankingStrategy()
-            elif algo_enum == RankingAlgorithm.THOROUGH:
-                self._strategies_cache[algo_enum] = ThoroughRankingStrategy()
-            elif algo_enum == RankingAlgorithm.ML:
+            elif algo_enum == RankingAlgorithm.THOROUGH or algo_enum == RankingAlgorithm.ML:
                 self._strategies_cache[algo_enum] = ThoroughRankingStrategy()
 
         return self._strategies_cache.get(algo_enum)
@@ -631,7 +630,10 @@ class RelevanceRanker:
         return RankedFile(analysis=file, score=score, factors=factors, explanation=explanation)
 
     def _analyze_corpus(
-        self, files: List[FileAnalysis], prompt_context: PromptContext, algorithm: Optional[str] = None
+        self,
+        files: List[FileAnalysis],
+        prompt_context: PromptContext,
+        algorithm: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Analyze the corpus for statistics.
 
@@ -679,7 +681,9 @@ class RelevanceRanker:
             # Initialize the calculators we need
             if actual_algo == "thorough":
                 # Thorough mode needs BOTH for comprehensive analysis
-                self.logger.info("Thorough mode: Building both BM25 and TF-IDF for comprehensive analysis")
+                self.logger.info(
+                    "Thorough mode: Building both BM25 and TF-IDF for comprehensive analysis"
+                )
                 bm25_calc = BM25Calculator(use_stopwords=use_sw)
                 tfidf_calc = TFIDFCalculator(use_stopwords=use_sw)
             elif text_sim_algo == "tfidf":
@@ -706,7 +710,9 @@ class RelevanceRanker:
                     # Limit document size for performance based on mode
                     if actual_algo == "balanced":
                         # Balanced: use first 10KB of each file
-                        content = file.content[:10000] if len(file.content) > 10000 else file.content
+                        content = (
+                            file.content[:10000] if len(file.content) > 10000 else file.content
+                        )
                     else:
                         # Thorough: use full content
                         content = file.content
@@ -730,13 +736,15 @@ class RelevanceRanker:
                 if bm25_calc:
                     bm25_calc.build_corpus(documents)
                     stats["bm25_calculator"] = bm25_calc
-                    
+
                     # Pre-compute BM25 scores for all documents to avoid O(n²) complexity
-                    query_terms = ' '.join(prompt_context.keywords)
+                    query_terms = " ".join(prompt_context.keywords)
                     all_scores = bm25_calc.get_scores(query_terms)
                     # Store as dict for O(1) lookup
                     stats["bm25_scores"] = {doc_id: score for doc_id, score in all_scores}
-                    self.logger.debug(f"Pre-computed BM25 scores for {len(stats['bm25_scores'])} documents")
+                    self.logger.debug(
+                        f"Pre-computed BM25 scores for {len(stats['bm25_scores'])} documents"
+                    )
 
         # Calculate additional statistics
         if stats["file_sizes"]:

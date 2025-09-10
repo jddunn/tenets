@@ -94,7 +94,9 @@ class ContextAggregator:
         """
         # Adjust strategy based on mode for better performance
         actual_strategy = mode if mode else strategy
-        self.logger.info(f"Aggregating {len(files)} files with {actual_strategy} strategy (mode={mode})")
+        self.logger.info(
+            f"Aggregating {len(files)} files with {actual_strategy} strategy (mode={mode})"
+        )
 
         if mode == "fast":
             # Fast mode: Better balance of speed and coverage
@@ -103,7 +105,7 @@ class ContextAggregator:
                 max_full_files=10,  # Include top 10 files (up from 5)
                 summarize_threshold=1.0,  # NEVER summarize in fast mode (always truncate)
                 min_relevance=0.10,  # Use same as ranking threshold to avoid dropping ranked files
-                preserve_structure=False  # Skip structure preservation for speed
+                preserve_structure=False,  # Skip structure preservation for speed
             )
         elif mode == "balanced":
             # Balanced mode: good coverage with reasonable performance
@@ -112,7 +114,7 @@ class ContextAggregator:
                 max_full_files=10,  # Include top files in full
                 summarize_threshold=0.70,  # Summarize medium relevance files
                 min_relevance=0.20,  # More selective to focus on relevant files
-                preserve_structure=True
+                preserve_structure=True,
             )
         elif mode == "thorough":
             # Thorough mode: maximum comprehensiveness
@@ -121,7 +123,7 @@ class ContextAggregator:
                 max_full_files=20,  # Many full files
                 summarize_threshold=0.4,  # Include more files in full
                 min_relevance=0.10,  # Same as ranking threshold
-                preserve_structure=True  # Preserve structure
+                preserve_structure=True,  # Preserve structure
             )
         else:
             # Default to the named strategy
@@ -202,7 +204,7 @@ class ContextAggregator:
                 # Include up to 10 files with smarter content limits
                 if i >= 10:
                     break  # Stop after 10 files
-                    
+
                 # Graduated content limits based on relevance
                 if i == 0:  # Top file gets most content
                     content_limit = min(8000, len(file.content))
@@ -212,11 +214,13 @@ class ContextAggregator:
                     content_limit = min(3000, len(file.content))
                 else:  # Files 7-10 get minimal content
                     content_limit = min(1500, len(file.content))
-                    
+
                 truncated_content = file.content[:content_limit]
                 if len(truncated_content) < len(file.content):
-                    truncated_content += f"\n... (truncated from {len(file.content)} to {content_limit} chars)"
-                    
+                    truncated_content += (
+                        f"\n... (truncated from {len(file.content)} to {content_limit} chars)"
+                    )
+
                 truncated_tokens = count_tokens(truncated_content, model)
                 if total_tokens + truncated_tokens <= available_tokens:
                     included_files.append(
@@ -255,7 +259,7 @@ class ContextAggregator:
                 # Fast mode already handled above, skip this entire block
                 if mode == "fast":
                     continue  # Should never reach here, but be safe
-                
+
                 # Regular summarization for balanced/thorough modes
                 remaining_tokens = available_tokens - total_tokens
                 summary_tokens = min(
@@ -266,7 +270,7 @@ class ContextAggregator:
                 if summary_tokens > 100:  # Worth summarizing
                     # Calculate target ratio based on desired token reduction
                     target_ratio = min(0.5, summary_tokens / file_tokens)
-                    
+
                     # Enable ML strategies for thorough mode
                     original_ml_enabled = self.config.summarizer.enable_ml_strategies
                     if mode == "thorough":
@@ -302,7 +306,7 @@ class ContextAggregator:
                             preserve_structure=True,
                             prompt_keywords=prompt_context.keywords if prompt_context else None,
                         )
-                    
+
                     # Restore ML setting after summarization
                     if mode == "thorough":
                         self.config.summarizer.enable_ml_strategies = original_ml_enabled

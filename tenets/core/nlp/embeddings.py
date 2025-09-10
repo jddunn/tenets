@@ -31,13 +31,15 @@ SentenceTransformer = None  # Will be imported lazily when needed
 # Global model cache to avoid reloading
 _GLOBAL_MODEL_CACHE = {}
 
+
 def clear_model_cache():
     """Clear the global model cache to free memory."""
     global _GLOBAL_MODEL_CACHE
     _GLOBAL_MODEL_CACHE.clear()
-    
+
     # Force garbage collection
     import gc
+
     gc.collect()
 
 
@@ -105,26 +107,28 @@ class LocalEmbeddings(EmbeddingModel):
 
         # Set environment for minimal memory usage
         import os
-        os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-        os.environ['OMP_NUM_THREADS'] = '1'
-        
+
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"
+        os.environ["OMP_NUM_THREADS"] = "1"
+
         try:
             # Check global cache first
             global _GLOBAL_MODEL_CACHE
             cache_key = f"{model_name}_{device or 'auto'}"
-            
+
             if cache_key in _GLOBAL_MODEL_CACHE:
                 self.logger.info(f"Using cached model for {model_name}")
                 cached_model = _GLOBAL_MODEL_CACHE[cache_key]
-                self.model = cached_model['model']
-                self.device = cached_model['device']
-                self.embedding_dim = cached_model['embedding_dim']
+                self.model = cached_model["model"]
+                self.device = cached_model["device"]
+                self.embedding_dim = cached_model["embedding_dim"]
                 return
-            
+
             # Force garbage collection before loading new model
             import gc
+
             gc.collect()
-            
+
             # Lazy import SentenceTransformer when actually needed
             global SentenceTransformer
             if SentenceTransformer is None:
@@ -138,8 +142,9 @@ class LocalEmbeddings(EmbeddingModel):
                 try:
                     # Import torch dynamically
                     import torch
+
                     # Store as module-level for test patching
-                    globals()['torch'] = torch
+                    globals()["torch"] = torch
                     if torch.cuda.is_available():
                         self.device = "cuda"
                     else:
@@ -150,11 +155,9 @@ class LocalEmbeddings(EmbeddingModel):
             # Load model with minimal memory
             self.logger.info(f"Loading {model_name} for the first time (will be cached)...")
             self.model = SentenceTransformer(
-                model_name, 
-                device=self.device, 
-                cache_folder=str(cache_dir) if cache_dir else None
+                model_name, device=self.device, cache_folder=str(cache_dir) if cache_dir else None
             )
-            
+
             # Put in eval mode to save memory
             self.model.eval()
 
@@ -163,9 +166,9 @@ class LocalEmbeddings(EmbeddingModel):
 
             # Cache the model for future use
             _GLOBAL_MODEL_CACHE[cache_key] = {
-                'model': self.model,
-                'device': self.device,
-                'embedding_dim': self.embedding_dim
+                "model": self.model,
+                "device": self.device,
+                "embedding_dim": self.embedding_dim,
             }
 
             self.logger.info(

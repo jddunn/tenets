@@ -46,12 +46,12 @@ class Distiller:
         cpu_count = os.cpu_count() or 1
         scanner_workers = get_scanner_workers(config)
         ranking_workers = get_ranking_workers(config)
-        
+
         # Only mention ML status if not in fast mode
         ml_info = ""
         if config.ranking.algorithm != "fast":
             ml_info = f", ML enabled: {config.ranking.use_ml}"
-        
+
         self.logger.info(
             f"Distiller initialized (CPU cores: {cpu_count}, "
             f"scanner workers: {scanner_workers}, "
@@ -62,42 +62,42 @@ class Distiller:
         self.scanner = FileScanner(config)
         self.parser = PromptParser(config)
         self.formatter = ContextFormatter(config)
-        
+
         # Lazy-load heavy components to improve startup time
         self._analyzer = None
         self._ranker = None
         self._git = None
         self._aggregator = None
         self._optimizer = None
-        
+
     @property
     def analyzer(self):
         """Lazy load analyzer when needed."""
         if self._analyzer is None:
             self._analyzer = CodeAnalyzer(self.config)
         return self._analyzer
-    
+
     @property
     def ranker(self):
         """Lazy load ranker when needed."""
         if self._ranker is None:
             self._ranker = RelevanceRanker(self.config)
         return self._ranker
-    
+
     @property
     def git(self):
         """Lazy load git analyzer when needed."""
         if self._git is None:
             self._git = GitAnalyzer(self.config)
         return self._git
-    
+
     @property
     def aggregator(self):
         """Lazy load aggregator when needed."""
         if self._aggregator is None:
             self._aggregator = ContextAggregator(self.config)
         return self._aggregator
-    
+
     @property
     def optimizer(self):
         """Lazy load optimizer when needed."""
@@ -211,28 +211,32 @@ class Distiller:
         # Two-phase analysis for optimal performance
         if mode == "fast" and self.config.ranking.use_lightweight_analysis:
             # Phase 1: Lightweight analysis for all files
-            analyzed_files = self._analyze_files(files=files, mode=mode, prompt_context=prompt_context)
-            
+            analyzed_files = self._analyze_files(
+                files=files, mode=mode, prompt_context=prompt_context
+            )
+
             # Phase 2: Rank with lightweight data
             rank_start = time.time()
             ranked_files = self._rank_files(
                 files=analyzed_files, prompt_context=prompt_context, mode=mode
             )
             self.logger.debug(f"File ranking took {time.time() - rank_start:.2f}s")
-            
+
             # Phase 3: Optional deep analysis for top files
             # This can be enabled for better accuracy with minimal performance impact
             if self.config.ranking.deep_analysis_top_n > 0:
                 ranked_files = self._deep_analyze_selected_files(
-                    ranked_files, 
+                    ranked_files,
                     top_n=self.config.ranking.deep_analysis_top_n,
-                    prompt_context=prompt_context
+                    prompt_context=prompt_context,
                 )
-            
+
         else:
             # Traditional approach for balanced/thorough modes
             # Full analysis before ranking for better accuracy
-            analyzed_files = self._analyze_files(files=files, mode=mode, prompt_context=prompt_context)
+            analyzed_files = self._analyze_files(
+                files=files, mode=mode, prompt_context=prompt_context
+            )
 
             # Rank files by relevance
             rank_start = time.time()
@@ -250,10 +254,10 @@ class Distiller:
 
         # 7. Aggregate files within token budget
         aggregate_start = time.time()
-        
+
         # Calculate elapsed time before aggregation so it's available for formatter
         elapsed_time = time.time() - start_time
-        
+
         aggregated = self._aggregate_files(
             files=ranked_files,
             prompt_context=prompt_context,
@@ -268,7 +272,7 @@ class Distiller:
             mode=mode,
         )
         self.logger.debug(f"File aggregation took {time.time() - aggregate_start:.2f}s")
-        
+
         # Add timing to aggregated metadata for formatter
         if "metadata" not in aggregated:
             aggregated["metadata"] = {}
@@ -281,7 +285,7 @@ class Distiller:
             prompt_context=prompt_context,
             session_name=session_name,
         )
-        
+
         # Calculate final elapsed time after formatting
         final_elapsed = time.time() - start_time
 
@@ -426,26 +430,26 @@ class Distiller:
         self, files: List[Path], mode: str, prompt_context: PromptContext
     ) -> List[FileAnalysis]:
         """Analyze files for content and structure.
-        
+
         This method implements a two-phase analysis strategy:
         - Fast mode: Lightweight analysis only
         - Other modes: Full deep analysis
-        
+
         This dramatically improves performance for fast mode by avoiding
         expensive AST parsing and language-specific analysis.
-        
+
         Args:
             files: List of file paths to analyze
             mode: Analysis mode ('fast', 'balanced', or 'thorough')
             prompt_context: Context from prompt parsing
-            
+
         Returns:
             List of FileAnalysis objects
         """
         # Fast mode: Use lightweight analysis for speed
         if mode == "fast":
             return self._lightweight_analyze_files(files)
-        
+
         # Other modes: Full deep analysis
         deep_analysis = mode in ["balanced", "thorough"]
 
@@ -462,107 +466,103 @@ class Distiller:
                 self.logger.warning(f"Failed to analyze {file}: {e}")
 
         return analyzed
-    
+
     def _lightweight_analyze_files(self, files: List[Path]) -> List[FileAnalysis]:
         """Perform lightweight analysis for fast mode.
-        
+
         Uses the LightweightAnalyzer to quickly extract minimal information
         needed for ranking. This is 10-100x faster than full analysis.
-        
+
         Args:
             files: List of file paths to analyze
-            
+
         Returns:
             List of FileAnalysis objects (with minimal fields populated)
         """
         from tenets.core.analysis.lightweight import LightweightAnalyzer
-        
+
         # Create lightweight analyzer if not exists
-        if not hasattr(self, '_lightweight_analyzer'):
+        if not hasattr(self, "_lightweight_analyzer"):
             self._lightweight_analyzer = LightweightAnalyzer()
-        
+
         self.logger.info(f"Using lightweight analysis for {len(files)} files")
-        
+
         # Analyze files with lightweight analyzer
         lightweight_results = self._lightweight_analyzer.analyze_files(files)
-        
+
         # Convert to FileAnalysis objects for compatibility
         analyzed = []
         for result in lightweight_results:
             analyzed.append(result.to_file_analysis())
-        
+
         self.logger.info(f"Lightweight analysis complete: {len(analyzed)} files processed")
         return analyzed
-    
+
     def _deep_analyze_selected_files(
-        self, 
-        ranked_files: List[FileAnalysis], 
+        self,
+        ranked_files: List[FileAnalysis],
         top_n: int = 20,
-        prompt_context: Optional[PromptContext] = None
+        prompt_context: Optional[PromptContext] = None,
     ) -> List[FileAnalysis]:
         """Perform deep analysis only on top-ranked files.
-        
+
         This method enables a hybrid approach where we can:
         1. Quickly rank all files with lightweight analysis
         2. Then deeply analyze only the most relevant files
-        
+
         This gives us the best of both worlds: fast initial processing
         with accurate analysis of important files.
-        
+
         Args:
             ranked_files: Files already ranked (with lightweight analysis)
             top_n: Number of top files to deeply analyze
             prompt_context: Optional context for guided analysis
-            
+
         Returns:
             List with top N files replaced with deep analysis versions
-            
+
         Note:
             Files beyond top_n retain their lightweight analysis.
             This is usually fine since they won't be included in output.
         """
         if not ranked_files:
             return ranked_files
-        
+
         # Separate top files for deep analysis
         files_to_analyze = ranked_files[:top_n]
         remaining_files = ranked_files[top_n:]
-        
+
         self.logger.info(f"Performing deep analysis on top {len(files_to_analyze)} files")
-        
+
         deeply_analyzed = []
         for file_analysis in files_to_analyze:
             try:
                 # Get the original path
                 file_path = Path(file_analysis.path)
-                
+
                 # Perform deep analysis
                 deep_analysis = self.analyzer.analyze_file(
-                    file_path, 
-                    deep=True, 
-                    extract_keywords=True
+                    file_path, deep=True, extract_keywords=True
                 )
-                
+
                 # Preserve the ranking score from lightweight analysis
-                if hasattr(file_analysis, 'relevance_score'):
+                if hasattr(file_analysis, "relevance_score"):
                     deep_analysis.relevance_score = file_analysis.relevance_score
-                
+
                 deeply_analyzed.append(deep_analysis)
-                
+
             except Exception as e:
                 self.logger.warning(
                     f"Deep analysis failed for {file_analysis.path}, "
                     f"keeping lightweight version: {e}"
                 )
                 deeply_analyzed.append(file_analysis)
-        
+
         # Combine deep-analyzed top files with remaining lightweight files
         result = deeply_analyzed + remaining_files
-        
-        self.logger.info(
-            f"Deep analysis complete: {len(deeply_analyzed)} files enhanced"
-        )
-        
+
+        self.logger.info(f"Deep analysis complete: {len(deeply_analyzed)} files enhanced")
+
         return result
 
     def _rank_files(

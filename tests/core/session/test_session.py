@@ -1,10 +1,9 @@
 """Tests for session management."""
 
-import sys
 import json
+import sys
 import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -231,9 +230,9 @@ class TestSessionManager:
             print(f"Kwargs: {call_kwargs}")
 
             # The first argument should be session name (positional)
-            assert (
-                len(call_args) >= 1
-            ), f"Expected at least 1 positional arg, got {len(call_args)}: {call_args}"
+            assert len(call_args) >= 1, (
+                f"Expected at least 1 positional arg, got {len(call_args)}: {call_args}"
+            )
             assert call_args[0] == "test_session"
 
             # Check if kind and content are passed as keyword arguments
@@ -297,8 +296,8 @@ class TestSessionContext:
         assert context.updated_at is not None
 
     @pytest.mark.skipif(
-        'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
-        reason="Timestamp tests incompatible with freezegun"
+        "freezegun" in sys.modules or any("freeze" in m for m in sys.modules),
+        reason="Timestamp tests incompatible with freezegun",
     )
     def test_add_context_to_session_context(self):
         """Test adding context to SessionContext."""

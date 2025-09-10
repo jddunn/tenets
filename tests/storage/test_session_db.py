@@ -1,8 +1,8 @@
 """Tests for SessionDB SQLite storage."""
 
-import sys
 import json
 import sqlite3
+import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -328,8 +328,8 @@ class TestSessionDB:
         assert session is not None
 
     @pytest.mark.skipif(
-        'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
-        reason="Timestamp tests incompatible with freezegun"
+        "freezegun" in sys.modules or any("freeze" in m for m in sys.modules),
+        reason="Timestamp tests incompatible with freezegun",
     )
     def test_timestamps(self, session_db):
         """Test timestamp handling."""

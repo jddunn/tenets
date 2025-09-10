@@ -1,7 +1,7 @@
 """Tests for main Distiller orchestrator."""
 
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 import pytest
 
@@ -278,22 +278,20 @@ class TestDistiller:
             Path("a.py"),
             Path("c.py"),
         ]
-        
+
         # Analyzer returns file analysis for each
         def analyze_side_effect(path, **kwargs):
             return FileAnalysis(
-                path=str(path),
-                content=f"content of {path.name}",
-                language="python",
-                lines=10
+                path=str(path), content=f"content of {path.name}", language="python", lines=10
             )
+
         MockAnalyzer.return_value.analyze_file.side_effect = analyze_side_effect
-        
+
         MockParser.return_value.parse.return_value = PromptContext(
             text="test", keywords=[], task_type="feature", file_patterns=[]
         )
         MockGit.return_value.is_git_repo.return_value = False
-        
+
         # Configure aggregator to show the order files were received
         def aggregate_side_effect(files, **kwargs):
             return {
@@ -302,26 +300,27 @@ class TestDistiller:
                 "available_tokens": 900,
                 "statistics": {"files_analyzed": len(files)},
             }
+
         MockAggregator.return_value.aggregate.side_effect = aggregate_side_effect
         MockFormatter.return_value.format.return_value = "output"
 
         from tenets.core.distiller.distiller import Distiller
 
         distiller = Distiller(config)
-        
+
         # Set pinned files
         distiller._pinned_files = ["a.py", "c.py"]
-        
+
         # Analyze files should be called with pinned files first
         result = distiller.distill("test")
-        
+
         # Verify analyze was called
         assert MockAnalyzer.return_value.analyze_file.call_count >= 3
-        
+
         # Check that the calls were made in the expected order (pinned first)
         calls = MockAnalyzer.return_value.analyze_file.call_args_list
         analyzed_paths = [str(call[0][0]) for call in calls]
-        
+
         # Just verify analyze was called with our files
         assert len(analyzed_paths) == 3
         assert "a.py" in analyzed_paths

@@ -122,7 +122,7 @@ class FileScanner:
 
         # Build ignore patterns
         self.ignore_patterns = set(self.DEFAULT_IGNORE_PATTERNS)
-        
+
         # Check for additional_ignore_patterns in scanner config first, then root config
         additional_patterns = []
         if config:
@@ -130,13 +130,13 @@ class FileScanner:
                 additional_patterns = config.scanner.additional_ignore_patterns
             elif hasattr(config, "additional_ignore_patterns"):
                 additional_patterns = config.additional_ignore_patterns
-                
+
         if additional_patterns:
             # Process additional patterns, removing trailing slashes from directories
             for pattern in additional_patterns:
                 # Remove trailing slash for directory matching
-                if pattern.endswith('/'):
-                    self.ignore_patterns.add(pattern.rstrip('/'))
+                if pattern.endswith("/"):
+                    self.ignore_patterns.add(pattern.rstrip("/"))
                 else:
                     self.ignore_patterns.add(pattern)
 
@@ -145,7 +145,7 @@ class FileScanner:
             self.exclude_minified = getattr(config.scanner, "exclude_minified", True)
         else:
             self.exclude_minified = getattr(config, "exclude_minified", True) if config else True
-            
+
         if self.exclude_minified:
             # Add minified patterns (check scanner config first, then root)
             minified_patterns = []
@@ -181,7 +181,9 @@ class FileScanner:
             # Add build directory patterns
             build_dirs = []
             if config:
-                if hasattr(config, "scanner") and hasattr(config.scanner, "build_directory_patterns"):
+                if hasattr(config, "scanner") and hasattr(
+                    config.scanner, "build_directory_patterns"
+                ):
                     build_dirs = config.scanner.build_directory_patterns
                 elif hasattr(config, "build_directory_patterns"):
                     build_dirs = config.build_directory_patterns

@@ -920,7 +920,7 @@ class ContextFormatter:
                     });
                 }
             }
-            
+
             // Copy to clipboard with button feedback
             function copyToClipboard(text, buttonId) {
                 navigator.clipboard.writeText(text).then(function() {
@@ -936,7 +936,7 @@ class ContextFormatter:
                     console.error('Copy failed:', err);
                 });
             }
-            
+
             // Copy all file paths
             function copyAllPaths() {
                 const paths = [];
@@ -1101,50 +1101,56 @@ class ContextFormatter:
         # Load and encode logo for embedding
         import base64
         from pathlib import Path
-        
+
         # Try to find the logo file
         logo_base64 = ""
         favicon_base64 = ""
-        
+
         # Check multiple possible logo locations
         logo_paths = [
-            Path(__file__).parent.parent.parent.parent / "docs" / "logos" / "tenets_light_icon_transparent_cropped.png",
+            Path(__file__).parent.parent.parent.parent
+            / "docs"
+            / "logos"
+            / "tenets_light_icon_transparent_cropped.png",
             Path.cwd() / "docs" / "logos" / "tenets_light_icon_transparent_cropped.png",
         ]
-        
+
         favicon_paths = [
-            Path(__file__).parent.parent.parent.parent / "docs" / "logos" / "tenets_dark_icon_transparent_cropped.png",
+            Path(__file__).parent.parent.parent.parent
+            / "docs"
+            / "logos"
+            / "tenets_dark_icon_transparent_cropped.png",
             Path.cwd() / "docs" / "logos" / "tenets_dark_icon_transparent_cropped.png",
         ]
-        
+
         # Try to load the logo
         for logo_path in logo_paths:
             if logo_path.exists():
                 try:
                     with open(logo_path, "rb") as f:
-                        logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                        logo_base64 = base64.b64encode(f.read()).decode("utf-8")
                     break
                 except Exception:
                     pass
-        
+
         # Try to load the favicon
         for favicon_path in favicon_paths:
             if favicon_path.exists():
                 try:
                     with open(favicon_path, "rb") as f:
-                        favicon_base64 = base64.b64encode(f.read()).decode('utf-8')
+                        favicon_base64 = base64.b64encode(f.read()).decode("utf-8")
                     break
                 except Exception:
                     pass
-        
+
         # Build header with metadata
         metadata = aggregated.get("metadata", {})
-        
+
         # Add logo to header if available
         header_logo = ""
         if logo_base64:
             header_logo = f'<img src="data:image/png;base64,{logo_base64}" alt="Tenets" style="height: 40px; width: auto; margin-right: 1rem; vertical-align: middle; filter: brightness(0) invert(1);">'
-        
+
         # Calculate execution time if available
         execution_time_str = ""
         if metadata.get("start_time"):
@@ -1156,7 +1162,7 @@ class ContextFormatter:
                 pass
         elif metadata.get("time_elapsed"):
             execution_time_str = f"<p>Execution time: {metadata['time_elapsed']}</p>"
-        
+
         header = f"""
         <div class="distill-header">
             <h1>{header_logo}Context Distillation Report</h1>
@@ -1200,17 +1206,17 @@ class ContextFormatter:
         """
 
         # Build prompt section with keywords excluded and final query
-        keywords_excluded = getattr(prompt_context, 'keywords_excluded', [])
-        final_query = getattr(prompt_context, 'final_query', prompt_context.text)
-        
+        keywords_excluded = getattr(prompt_context, "keywords_excluded", [])
+        final_query = getattr(prompt_context, "final_query", prompt_context.text)
+
         keywords_excluded_html = ""
         if keywords_excluded:
-            keywords_excluded_html = f'<p><em>Keywords excluded:</em> {self._escape_html(", ".join(keywords_excluded))}</p>'
-        
+            keywords_excluded_html = f"<p><em>Keywords excluded:</em> {self._escape_html(', '.join(keywords_excluded))}</p>"
+
         final_query_html = ""
         if final_query and final_query != prompt_context.text:
-            final_query_html = f'<p><em>Final query:</em> {self._escape_html(final_query)}</p>'
-        
+            final_query_html = f"<p><em>Final query:</em> {self._escape_html(final_query)}</p>"
+
         prompt_section = f"""
         <section class="prompt-box">
             <h2>📝 Original Prompt</h2>
@@ -1420,23 +1426,25 @@ class ContextFormatter:
         # Create favicon link tag
         favicon_tag = ""
         if favicon_base64:
-            favicon_tag = f'<link rel="icon" type="image/png" href="data:image/png;base64,{favicon_base64}">'
-        
+            favicon_tag = (
+                f'<link rel="icon" type="image/png" href="data:image/png;base64,{favicon_base64}">'
+            )
+
         # Create footer with logo
         footer_content = '<footer style="text-align: center; padding: 3rem 2rem; background: linear-gradient(to bottom, transparent, #f8fafc); margin-top: 4rem;">'
         if logo_base64:
-            footer_content += f'''
+            footer_content += f"""
                 <div style="margin-bottom: 1rem;">
                     <img src="data:image/png;base64,{logo_base64}" alt="Tenets Logo" style="height: 48px; width: auto; opacity: 0.8;">
                 </div>
-            '''
-        footer_content += '''
+            """
+        footer_content += """
             <div style="color: #64748b; font-size: 0.875rem;">
                 <p style="margin: 0.5rem 0;">Generated by <strong>Tenets</strong></p>
                 <p style="margin: 0.5rem 0; font-size: 0.75rem; opacity: 0.8;">Intelligent Context Distillation for LLMs</p>
             </div>
-        </footer>'''
-        
+        </footer>"""
+
         # Build final HTML
         html = base.format(
             title="Tenets Context Distillation Report",
