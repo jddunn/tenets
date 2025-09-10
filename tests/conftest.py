@@ -274,11 +274,15 @@ def mock_external_dependencies(monkeypatch, request):
                 try:
                     # Try to import the module first to see if it's available
                     __import__(module_name)
-                except (ImportError, ModuleNotFoundError, RuntimeError) as e:
+                except (ImportError, ModuleNotFoundError, RuntimeError, FileNotFoundError) as e:
                     # RuntimeError can occur with torch/triton registration conflicts
-                    if "TORCH_LIBRARY" in str(e):
-                        # Torch is already imported, skip
+                    if "TORCH_LIBRARY" in str(e) or "triton" in str(e):
+                        # Torch/triton registration issue, skip importing
                         continue
+                    # FileNotFoundError with WinError 206 means path too long on Windows
+                    if isinstance(e, FileNotFoundError) and "WinError 206" in str(e):
+                        # Path too long error on Windows, create stub
+                        pass
                     # Only create stub if module doesn't exist
                     stub = types.ModuleType(module_name)
                     stub.__file__ = "stub"

@@ -55,6 +55,8 @@ class NLPConfig:
         code_stopword_set: Stopword set for code search (minimal)
         prompt_stopword_set: Stopword set for prompt parsing (aggressive)
         custom_stopword_files: Additional custom stopword files
+        filter_intent_keywords: Filter common intent action words from keyword matching
+        custom_intent_keywords: Custom intent keywords to filter per intent type
         tokenization_mode: Tokenization mode ('code', 'text', 'auto')
         preserve_original_tokens: Keep original tokens for exact matching
         split_camelcase: Split camelCase and PascalCase
@@ -92,6 +94,10 @@ class NLPConfig:
     code_stopword_set: str = "minimal"  # Minimal for code search
     prompt_stopword_set: str = "aggressive"  # Aggressive for prompt parsing
     custom_stopword_files: List[str] = field(default_factory=list)
+    
+    # Intent action word filtering - filters common action words from keyword matching
+    filter_intent_keywords: bool = True  # Filter intent action words from file matching
+    custom_intent_keywords: Dict[str, List[str]] = field(default_factory=dict)  # Override defaults
 
     # Tokenization configuration
     tokenization_mode: str = "auto"  # 'code', 'text', or 'auto'
@@ -477,6 +483,11 @@ class ScannerConfig:
         default_factory=lambda: [
             "*.min.js",
             "*.min.css",
+            "*.min.js.map",  # Source maps for minified JS
+            "*.min.css.map",  # Source maps for minified CSS
+            "*.js.map",  # All JavaScript source maps
+            "*.css.map",  # All CSS source maps
+            "*.map",  # All source map files
             "bundle.js",
             "*.bundle.js",
             "*.bundle.css",
@@ -496,6 +507,7 @@ class ScannerConfig:
             "out/",
             "output/",
             "public/",
+            "site/",  # Documentation site builds (e.g., MkDocs)
             "static/generated/",
             ".next/",
             "_next/",
@@ -600,6 +612,8 @@ class RankingConfig:
     use_embeddings: bool = False
     use_git: bool = True
     use_ml: bool = False  # Enable ML features (uses NLP package)
+    use_lightweight_analysis: bool = True  # Use lightweight analysis for fast mode
+    deep_analysis_top_n: int = 20  # Number of top files to deeply analyze after ranking
     embedding_model: str = "all-MiniLM-L6-v2"
     custom_weights: Dict[str, float] = field(
         default_factory=lambda: {

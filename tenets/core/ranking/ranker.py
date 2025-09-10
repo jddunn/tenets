@@ -178,8 +178,10 @@ class RelevanceRanker:
             use_stopwords if use_stopwords is not None else config.ranking.use_stopwords
         )
 
-        # ML configuration - force enable for thorough mode
-        if algo_str == 'thorough':
+        # ML configuration - skip for fast mode, force enable for thorough mode
+        if algo_str == 'fast':
+            self.use_ml = False  # Fast mode never uses ML
+        elif algo_str == 'thorough':
             self.use_ml = True  # Thorough ALWAYS uses ML regardless of config
             self.logger.info("Thorough mode selected - force enabling ML features")
         else:
@@ -221,10 +223,18 @@ class RelevanceRanker:
 
         # Log worker configuration
         log_worker_info(self.logger, "RelevanceRanker", max_workers)
-        self.logger.info(
-            f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
-            f"use_stopwords={self.use_stopwords}, use_ml={self.use_ml}"
-        )
+        
+        # Log initialization details (skip ML status for fast mode)
+        if algo_str == 'fast':
+            self.logger.info(
+                f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
+                f"use_stopwords={self.use_stopwords}"
+            )
+        else:
+            self.logger.info(
+                f"RelevanceRanker initialized: algorithm={self.algorithm.value}, "
+                f"use_stopwords={self.use_stopwords}, use_ml={self.use_ml}"
+            )
 
     @property
     def executor(self):
@@ -332,8 +342,8 @@ class RelevanceRanker:
         files_to_rank = files
         if len(files) > 100:
             if actual_algorithm == "fast":
-                # Fast mode: very aggressive pre-filtering
-                limit = 50
+                # Fast mode: moderate pre-filtering for better coverage
+                limit = 100
                 self.logger.info(f"Fast mode: Pre-filtering {len(files)} files for speed")
             elif actual_algorithm == "balanced":
                 # Balanced mode: moderate pre-filtering

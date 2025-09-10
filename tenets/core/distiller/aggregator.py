@@ -97,10 +97,10 @@ class ContextAggregator:
         self.logger.info(f"Aggregating {len(files)} files with {actual_strategy} strategy (mode={mode})")
 
         if mode == "fast":
-            # Fast mode: AGGRESSIVE optimization for speed - take only TOP files
+            # Fast mode: Better balance of speed and coverage
             strat = AggregationStrategy(
                 name="fast",
-                max_full_files=5,  # Only top 5 files total
+                max_full_files=10,  # Include top 10 files (up from 5)
                 summarize_threshold=1.0,  # NEVER summarize in fast mode (always truncate)
                 min_relevance=0.10,  # Use same as ranking threshold to avoid dropping ranked files
                 preserve_structure=False  # Skip structure preservation for speed
@@ -197,19 +197,21 @@ class ContextAggregator:
                     rejection_reasons["token_budget_exceeded"] += 1
                 continue
 
-            # Fast mode: ULTRA aggressive truncation - limit files and content
+            # Fast mode: Better truncation strategy for more files
             if mode == "fast":
-                # Hard limit: only include top 5 files maximum
-                if i >= 5:
-                    break  # Stop after 5 files for speed
+                # Include up to 10 files with smarter content limits
+                if i >= 10:
+                    break  # Stop after 10 files
                     
-                # More generous truncation for better context
+                # Graduated content limits based on relevance
                 if i == 0:  # Top file gets most content
                     content_limit = min(8000, len(file.content))
-                elif i < 3:  # Next 2 files get moderate content
-                    content_limit = min(4000, len(file.content))
-                else:  # Files 4-5 get minimal content
-                    content_limit = min(2000, len(file.content))
+                elif i < 3:  # Files 2-3 get good content
+                    content_limit = min(5000, len(file.content))
+                elif i < 6:  # Files 4-6 get moderate content
+                    content_limit = min(3000, len(file.content))
+                else:  # Files 7-10 get minimal content
+                    content_limit = min(1500, len(file.content))
                     
                 truncated_content = file.content[:content_limit]
                 if len(truncated_content) < len(file.content):

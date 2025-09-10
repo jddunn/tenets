@@ -122,18 +122,38 @@ class FileScanner:
 
         # Build ignore patterns
         self.ignore_patterns = set(self.DEFAULT_IGNORE_PATTERNS)
-        if (
-            config
-            and hasattr(config, "additional_ignore_patterns")
-            and config.additional_ignore_patterns
-        ):
-            self.ignore_patterns.update(config.additional_ignore_patterns)
+        
+        # Check for additional_ignore_patterns in scanner config first, then root config
+        additional_patterns = []
+        if config:
+            if hasattr(config, "scanner") and hasattr(config.scanner, "additional_ignore_patterns"):
+                additional_patterns = config.scanner.additional_ignore_patterns
+            elif hasattr(config, "additional_ignore_patterns"):
+                additional_patterns = config.additional_ignore_patterns
+                
+        if additional_patterns:
+            # Process additional patterns, removing trailing slashes from directories
+            for pattern in additional_patterns:
+                # Remove trailing slash for directory matching
+                if pattern.endswith('/'):
+                    self.ignore_patterns.add(pattern.rstrip('/'))
+                else:
+                    self.ignore_patterns.add(pattern)
 
         # Add minified file patterns if exclude_minified is True (default)
-        self.exclude_minified = getattr(config, "exclude_minified", True) if config else True
+        if config and hasattr(config, "scanner"):
+            self.exclude_minified = getattr(config.scanner, "exclude_minified", True)
+        else:
+            self.exclude_minified = getattr(config, "exclude_minified", True) if config else True
+            
         if self.exclude_minified:
-            # Add minified patterns
-            minified_patterns = getattr(config, "minified_patterns", []) if config else []
+            # Add minified patterns (check scanner config first, then root)
+            minified_patterns = []
+            if config:
+                if hasattr(config, "scanner") and hasattr(config.scanner, "minified_patterns"):
+                    minified_patterns = config.scanner.minified_patterns
+                elif hasattr(config, "minified_patterns"):
+                    minified_patterns = config.minified_patterns
             if minified_patterns:
                 self.ignore_patterns.update(minified_patterns)
             else:
@@ -142,6 +162,11 @@ class FileScanner:
                     [
                         "*.min.js",
                         "*.min.css",
+                        "*.min.js.map",  # Source maps for minified JS
+                        "*.min.css.map",  # Source maps for minified CSS
+                        "*.js.map",  # All JavaScript source maps
+                        "*.css.map",  # All CSS source maps
+                        "*.map",  # All source map files
                         "bundle.js",
                         "*.bundle.js",
                         "*.bundle.css",
@@ -154,7 +179,12 @@ class FileScanner:
                 )
 
             # Add build directory patterns
-            build_dirs = getattr(config, "build_directory_patterns", []) if config else []
+            build_dirs = []
+            if config:
+                if hasattr(config, "scanner") and hasattr(config.scanner, "build_directory_patterns"):
+                    build_dirs = config.scanner.build_directory_patterns
+                elif hasattr(config, "build_directory_patterns"):
+                    build_dirs = config.build_directory_patterns
             if build_dirs:
                 # Remove trailing slashes for directory name matching
                 self.ignore_patterns.update(d.rstrip("/") for d in build_dirs)

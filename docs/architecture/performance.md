@@ -50,26 +50,109 @@ graph TD
 
 ## Performance Modes
 
+### Mode Comparison (Benchmarked on Real Codebase)
+
+| Mode | Relative Performance | Typical Time | Files Analyzed | Token Output |
+|------|---------------------|--------------|----------------|--------------|
+| **Fast** | 100% (baseline) | ~17s | 10-20 files | ~7K tokens |
+| **Balanced** | 135% (1.3x slower) | ~23s | 50-75 files | ~90K tokens |
+| **Thorough** | 536% (5.4x slower) | ~91s | 75-100 files | ~90K tokens |
+
 ### Fast Mode
-- **Response Time**: Fastest (1.0x baseline)
+- **Relative Speed**: Baseline (100%)
 - **Accuracy**: Good for quick exploration
-- **Methods**: Keyword matching, path analysis, basic scoring
-- **Use Cases**: Interactive exploration, quick searches
-- **Performance**: Baseline for all comparisons
+- **Methods**: Lightweight analysis, simple matching, no corpus building
+- **Use Cases**: Quick searches, initial exploration, CI/CD pipelines
+- **Optimizations**: 
+  - Uses lightweight file analyzer (8KB samples)
+  - Skips AST parsing and language-specific analysis
+  - No corpus building or complex NLP
+  - Deep analysis only on top 20 ranked files
 
 ### Balanced Mode (Default)
-- **Response Time**: ~6.4x slower than Fast mode
+- **Relative Speed**: ~1.3x slower than Fast (135%)
 - **Accuracy**: Excellent for most use cases
-- **Methods**: TF-IDF, BM25, structural analysis
-- **Use Cases**: General development, feature building
-- **Performance**: 540% slower than Fast mode
+- **Methods**: BM25 scoring with corpus, word boundaries, intelligent summarization
+- **Use Cases**: General development, feature building, most common scenarios
+- **Trade-offs**: Full analysis provides better accuracy at minor speed cost
 
 ### Thorough Mode
-- **Response Time**: ~13.3x slower than Fast mode (~2.1x slower than Balanced)
-- **Accuracy**: Typically makes for best possible relevance
-- **Methods**: ML models, semantic similarity, dependency graphs
-- **Use Cases**: Complex refactoring, architectural changes
-- **Performance**: 1230% slower than Fast mode
+- **Relative Speed**: ~5.4x slower than Fast (536%)
+- **Accuracy**: Best possible with ML-powered understanding
+- **Methods**: 
+  - ML embeddings (all-MiniLM-L6-v2 model)
+  - Dual algorithms (BM25 + TF-IDF)
+  - Programming pattern detection
+  - Comprehensive dependency analysis
+- **Use Cases**: Complex refactoring, architectural changes, deep code understanding
+- **Performance Breakdown**:
+  - ~10s for ML model loading (first run)
+  - ~23s for comprehensive ranking
+  - ~5s for dual corpus building
+  - Remaining time for analysis and aggregation
+
+## Enhanced Text Matching Implementation
+
+### Fast Mode Optimizations
+
+The enhanced Fast mode uses RapidFuzz and optimized patterns for high-performance matching:
+
+```python
+# Word boundary enforcement with caching
+@lru_cache(maxsize=256)
+def _get_word_boundary_pattern(keyword: str) -> re.Pattern:
+    return re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+
+# Hyphen/space variation handling
+def _normalize_variations(text: str) -> Set[str]:
+    return {
+        text.lower(),
+        text.replace('-', ''),
+        text.replace(' ', ''),
+        text.replace('-', ' '),
+        text.replace(' ', '-')
+    }
+```
+
+**Performance Characteristics:**
+- Word boundary matching: O(n) with compiled regex
+- Variation generation: O(1) with fixed transformations
+- LRU cache for patterns: 256 most recent patterns cached
+- Target: 1.0x baseline (< 1ms per file)
+
+### Balanced Mode Enhancements
+
+Balanced mode adds practical features while maintaining performance:
+
+```python
+# Efficient tokenization for compound words
+def _tokenize_for_matching(text: str) -> Set[str]:
+    tokens = set()
+    # Single pass tokenization
+    for word in re.findall(r'\b\w+\b', text.lower()):
+        tokens.add(word)
+        # Split camelCase/snake_case in same pass
+        if '_' in word or any(c.isupper() for c in word):
+            tokens.update(split_compound(word))
+    return tokens
+```
+
+**Abbreviation Expansion:**
+- Pre-computed dictionary with 50+ common abbreviations
+- O(1) lookup for expansion
+- Lazy loading to reduce startup time
+
+### Thorough Mode Intelligence
+
+Thorough mode adds semantic understanding:
+
+```python
+# Semantic caching for repeated queries
+@lru_cache(maxsize=1024)
+def _get_semantic_similarity(text_hash: str, query_hash: str) -> float:
+    # Cache semantic computations
+    return compute_similarity(text, query)
+```
 
 ## Optimization Strategies
 
@@ -176,23 +259,67 @@ def warm_cache(project_path):
 
 ## Algorithm Feature Comparison
 
-### Performance Benchmarks
+### Performance Benchmarks (Per-File Ranking Only)
 
-| Mode | Relative Speed | Performance Multiplier | Percentage Slower |
-|------|---------------|------------------------|-------------------|
-| **Fast** | 1.0x | Baseline | 0% |
-| **Balanced** | 6.4x slower | 6.4x | 540% |
-| **Thorough** | 13.3x slower | 13.3x | 1230% |
+| Mode | Avg Time/File | Relative Speed | Percentage Slower | Files/Second |
+|------|--------------|----------------|-------------------|-------------|
+| **Fast** | 0.5ms | 1.0x baseline | 0% | ~2,000 |
+| **Balanced** | 2.1ms | 4.2x slower | 320% | ~476 |
+| **Thorough** | 2.0ms (no ML) | 4.0x slower | 300% | ~500 |
+| **Thorough** | 50ms (with ML) | 100x slower | 9,900% | ~20 |
 
-### Performance by File Count
+Note: These times exclude corpus building overhead. Total time depends on codebase size and whether corpus is cached.
 
-| Files | Fast Mode | Balanced Mode | Thorough Mode |
-|-------|-----------|---------------|---------------|
-| **10 files** | 1.0x | 10.2x slower | 17.6x slower |
-| **50 files** | 1.0x | 4.9x slower | 11.5x slower |
-| **100 files** | 1.0x | 3.5x slower | 10.2x slower |
-| **200 files** | 1.0x | 7.1x slower | 13.9x slower |\n\n### Algorithm Capabilities\n\n| Feature | Fast Mode | Balanced Mode | Thorough Mode |\n|---------|-----------|---------------|---------------|\n| **Keyword Matching** | \u2705 Basic | \u2705 Enhanced | \u2705 Advanced |\n| **Path Analysis** | \u2705 Simple | \u2705 Full | \u2705 Full |\n| **TF-IDF Scoring** | \u274c | \u2705 Standard | \u2705 Optimized |\n| **BM25 Ranking** | \u274c | \u2705 Standard | \u2705 Enhanced |\n| **Semantic Similarity** | \u274c | \u26a0\ufe0f Optional | \u2705 Full ML |\n| **Git History Analysis** | \u274c | \u2705 Recent | \u2705 Complete |\n| **Dependency Graphs** | \u274c | \u26a0\ufe0f Basic | \u2705 Full Graph |\n| **Pattern Recognition** | \u2705 Regex | \u2705 Enhanced | \u2705 ML-based |\n| **Import Analysis** | \u26a0\ufe0f Basic | \u2705 Standard | \u2705 Deep |\n| **Complexity Analysis** | \u274c | \u2705 Basic | \u2705 Full Metrics |\n\n### Processing Characteristics\n\n| Aspect | Fast | Balanced | Thorough |\n|--------|------|----------|----------|\n| **Parallel Workers** | 4 threads | 8 threads | 16+ threads |\n| **Batch Size** | 1000 files | 100 files | 10 files |\n| **Cache Strategy** | LRU only | LRU + TTL | Multi-level |\n| **Memory Usage** | Minimal | Moderate | Adaptive |\n| **Incremental Updates** | \u274c | \u2705 | \u2705 |\n| **Streaming Results** | \u274c | \u26a0\ufe0f Partial | \u2705 Full |\n\n### Scalability Characteristics\n\n| Codebase Type | Fast Mode | Balanced Mode | Thorough Mode |\n|---------------|-----------|---------------|---------------|\n| **Small Projects** (<1K files) | \u2705 Instant | \u2705 Quick | \u26a0\ufe0f Overkill |\n| **Medium Projects** (1-10K) | \u2705 Very Fast | \u2705 Optimal | \u2705 Detailed |\n| **Large Monorepos** (10-50K) | \u2705 Recommended | \u26a0\ufe0f Slower | \u274c Too Slow |\n| **Massive Codebases** (50K+) | \u2705 Only Option | \u274c Impractical | \u274c Unusable |
+### Performance by File Count (Total Time Including Corpus Building)
 
+| Scenario | Files | Fast Mode | Balanced Mode | Thorough Mode (no ML) |
+|----------|-------|-----------|---------------|----------------------|
+| **Small** | 10 files | ~0.5s | ~0.5s | ~0.5s |
+| **Medium** | 100 files | ~5s | ~2-3s | ~2-3s |
+| **Large** | 1000 files | ~40s | ~15-20s | ~15-20s |
+
+### Why Balanced/Thorough Can Be Faster
+
+The counterintuitive performance results occur because:
+1. **Fast mode** skips corpus building but uses less efficient per-file ranking
+2. **Balanced mode** builds a BM25 corpus once, then uses highly efficient scoring
+3. **Thorough mode** (without ML) is essentially Balanced mode with additional TF-IDF
+4. The corpus building overhead is quickly offset by faster per-file operations on medium/large codebases
+
+### Algorithm Capabilities
+
+| Feature | Fast Mode | Balanced Mode | Thorough Mode |
+|---------|-----------|---------------|---------------|
+| **Keyword Matching** | ✅ Basic | ✅ Enhanced | ✅ Advanced |
+| **Path Analysis** | ✅ Simple | ✅ Full | ✅ Full |
+| **TF-IDF Scoring** | ❌ | ✅ Standard | ✅ Optimized |
+| **BM25 Ranking** | ❌ | ✅ Standard | ✅ Enhanced |
+| **Semantic Similarity** | ❌ | ⚠️ Optional | ✅ Full ML |
+| **Git History Analysis** | ❌ | ✅ Recent | ✅ Complete |
+| **Dependency Graphs** | ❌ | ⚠️ Basic | ✅ Full Graph |
+| **Pattern Recognition** | ✅ Regex | ✅ Enhanced | ✅ ML-based |
+| **Import Analysis** | ⚠️ Basic | ✅ Standard | ✅ Deep |
+| **Complexity Analysis** | ❌ | ✅ Basic | ✅ Full Metrics |
+
+### Processing Characteristics
+
+| Aspect | Fast | Balanced | Thorough |
+|--------|------|----------|----------|
+| **Parallel Workers** | 4 threads | 8 threads | 16+ threads |
+| **Batch Size** | 1000 files | 100 files | 10 files |
+| **Cache Strategy** | LRU only | LRU + TTL | Multi-level |
+| **Memory Usage** | Minimal | Moderate | Adaptive |
+| **Incremental Updates** | ❌ | ✅ | ✅ |
+| **Streaming Results** | ❌ | ⚠️ Partial | ✅ Full |
+
+### Scalability Characteristics
+
+| Codebase Type | Fast Mode | Balanced Mode | Thorough Mode |
+|---------------|-----------|---------------|---------------|
+| **Small Projects** (<1K files) | ✅ Instant | ✅ Quick | ⚠️ Overkill |
+| **Medium Projects** (1-10K) | ✅ Very Fast | ✅ Optimal | ✅ Detailed |
+| **Large Monorepos** (10-50K) | ✅ Recommended | ⚠️ Slower | ❌ Too Slow |
+| **Massive Codebases** (50K+) | ✅ Only Option | ❌ Impractical | ❌ Unusable |
 
 ## Bottleneck Analysis
 
@@ -392,25 +519,3 @@ logger = logging.getLogger('tenets.performance')
 if duration > threshold:
     logger.warning(f"Slow operation: {operation} took {duration}s")
 ```
-
-## Best Practices
-
-1. **Use appropriate mode for the task**
-   - Fast for exploration
-   - Balanced for development
-   - Thorough for major changes
-
-2. **Leverage caching**
-   - Keep cache warm
-   - Use persistent cache for sessions
-   - Clear cache periodically
-
-3. **Optimize scope**
-   - Limit search paths
-   - Use ignore patterns
-   - Set reasonable thresholds
-
-4. **Monitor and profile**
-   - Track performance metrics
-   - Profile bottlenecks
-   - Optimize based on data

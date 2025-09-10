@@ -707,6 +707,93 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
   </div>
 </section>
 
+<!-- Ranking Modes Section -->
+<section class="modes-section" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.02) 0%, rgba(251, 191, 36, 0.02) 100%); padding: 4rem 0;">
+  <div class="section-container">
+    <h2 class="section-title">Three Ranking Modes</h2>
+    <p style="text-align: center; max-width: 800px; margin: 0 auto 3rem; color: var(--md-default-fg-color--light);">
+      Choose the right balance of speed vs. accuracy for your use case
+    </p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+      <!-- Fast Mode -->
+      <div style="background: var(--md-code-bg-color); border-radius: 12px; padding: 2rem; border: 1px solid rgba(245, 158, 11, 0.2);">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+          <span style="font-size: 1.5rem;">⚡⚡⚡</span> Fast Mode
+        </h3>
+        <p style="margin-bottom: 1.5rem; color: var(--md-default-fg-color--light);">
+          Maximum speed through minimal processing
+        </p>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="margin-bottom: 0.75rem;">✓ <strong>No corpus building</strong> - Skips BM25/TF-IDF indexing</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Simple substring match</strong> - No regex overhead</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>5KB content scan</strong> - Limited but effective</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Best for:</strong> CI/CD, large codebases, quick searches</li>
+        </ul>
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.1);">
+          <code style="background: rgba(245, 158, 11, 0.1); padding: 0.5rem 1rem; border-radius: 6px; display: block;">
+            tenets distill "fix bug" --mode fast
+          </code>
+        </div>
+      </div>
+      
+      <!-- Balanced Mode -->
+      <div style="background: var(--md-code-bg-color); border-radius: 12px; padding: 2rem; border: 2px solid rgba(245, 158, 11, 0.4); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+          <span style="font-size: 1.5rem;">⚡⚡</span> Balanced Mode
+          <span style="background: rgba(245, 158, 11, 0.2); color: var(--md-accent-fg-color); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: auto;">DEFAULT</span>
+        </h3>
+        <p style="margin-bottom: 1.5rem; color: var(--md-default-fg-color--light);">
+          Accurate results with BM25 ranking
+        </p>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="margin-bottom: 0.75rem;">✓ <strong>BM25 scoring</strong> - Industry-standard ranking</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Word boundaries</strong> - Precise matching</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Text processing</strong> - Abbreviations, plurals</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Best for:</strong> Daily development, bug fixes</li>
+        </ul>
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.1);">
+          <code style="background: rgba(245, 158, 11, 0.1); padding: 0.5rem 1rem; border-radius: 6px; display: block;">
+            tenets distill "implement feature"
+          </code>
+        </div>
+      </div>
+      
+      <!-- Thorough Mode -->
+      <div style="background: var(--md-code-bg-color); border-radius: 12px; padding: 2rem; border: 1px solid rgba(245, 158, 11, 0.2);">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+          <span style="font-size: 1.5rem;">⚡</span> Thorough Mode
+        </h3>
+        <p style="margin-bottom: 1.5rem; color: var(--md-default-fg-color--light);">
+          Semantic understanding with ML
+        </p>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="margin-bottom: 0.75rem;">✓ <strong>All Balanced features</strong> - Plus ML</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Semantic search</strong> - Find similar code</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Dual algorithms</strong> - BM25 + TF-IDF</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Best for:</strong> Refactoring, architecture analysis</li>
+        </ul>
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.1);">
+          <code style="background: rgba(245, 158, 11, 0.1); padding: 0.5rem 1rem; border-radius: 6px; display: block;">
+            tenets distill "refactor auth" --mode thorough
+          </code>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Performance comparison -->
+    <div style="background: var(--md-admonition-bg-color); border-radius: 8px; padding: 1.5rem; border-left: 4px solid rgba(245, 158, 11, 0.6);">
+      <strong>Performance Notes:</strong>
+      <ul style="margin: 0.5rem 0 0 1.5rem;">
+        <li>Fast mode is ~1.3x faster than Balanced (no corpus building)</li>
+        <li>Thorough mode is ~5x slower than Fast (ML processing)</li>
+        <li>All modes benefit from caching after first run</li>
+        <li>Thorough mode requires <code>pip install tenets[ml]</code> for full features</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <!-- Removed duplicate early script; logic lives below and runs after DOM ready -->
 
 <!-- How It Works Architecture -->

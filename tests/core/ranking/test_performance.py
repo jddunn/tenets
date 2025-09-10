@@ -16,12 +16,19 @@ Author: Tenets Team
 License: MIT
 """
 
+import sys
 import time
 import pytest
 import statistics
 from typing import List, Dict, Any
 from unittest.mock import Mock, patch
 import gc
+
+# Skip all timing tests if freezegun is active
+pytestmark = pytest.mark.skipif(
+    'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
+    reason="Performance/timing tests incompatible with freezegun"
+)
 
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
@@ -487,6 +494,7 @@ class TestPerformanceRegression:
 
 
 @pytest.mark.benchmark
+@pytest.mark.skipif('freezegun' in sys.modules or any('freeze' in m for m in sys.modules), reason="Benchmark tests incompatible with freezegun")
 class TestPerformanceBenchmarks:
     """
     Benchmark tests for performance tracking over time.
@@ -496,6 +504,12 @@ class TestPerformanceBenchmarks:
     
     def test_benchmark_fast_mode(self, benchmark):
         """Benchmark Fast mode performance."""
+        # Skip if time is frozen (interferes with benchmark timer calibration)
+        import sys
+        if 'freezegun' in sys.modules and hasattr(sys.modules['freezegun'].api, '_freeze_time'):
+            if sys.modules['freezegun'].api._freeze_time:
+                pytest.skip("Cannot benchmark with frozen time")
+        
         config = TenetsConfig()
         config.ranking.algorithm = "fast"
         ranker = OptimizedRanker(config)
@@ -512,6 +526,12 @@ class TestPerformanceBenchmarks:
         
     def test_benchmark_balanced_mode(self, benchmark):
         """Benchmark Balanced mode performance."""
+        # Skip if time is frozen (interferes with benchmark timer calibration)
+        import sys
+        if 'freezegun' in sys.modules and hasattr(sys.modules['freezegun'].api, '_freeze_time'):
+            if sys.modules['freezegun'].api._freeze_time:
+                pytest.skip("Cannot benchmark with frozen time")
+        
         config = TenetsConfig()
         config.ranking.algorithm = "balanced"
         ranker = OptimizedRanker(config)

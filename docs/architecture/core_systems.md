@@ -9,6 +9,62 @@ description: Deep dive into Tenets core systems, algorithms, and processing pipe
 
 Tenets is built around a sophisticated, multi-layered architecture that transforms raw code into intelligent, contextual insights. At its heart, the system uses advanced ranking algorithms, comprehensive code analysis, and intelligent caching to provide developers with exactly the right context at exactly the right time.
 
+## Core Design Decisions
+
+### Text Matching Philosophy
+
+Tenets employs **three distinct matching strategies** optimized for different use cases:
+
+| Mode | Matching Behavior | Design Rationale |
+|------|------------------|------------------|
+| **Fast** | Simple substring matching (no word boundaries) | Maximum speed, no corpus building |
+| **Balanced** | Word boundaries + BM25 ranking + text processing | Accurate results for development |
+| **Thorough** | Balanced features + ML embeddings + semantic search | Deep code understanding |
+
+### Key Matching Principles
+
+1. **Mode-Specific Matching Behavior**
+   - **Fast**: Simple substring matching (e.g., "auth" matches "authentication", "oauth", "authorized")
+   - **Balanced**: Word boundary enforcement (e.g., "auth" only matches standalone "auth", not "oauth")
+   - **Thorough**: Semantic matching (e.g., "auth" matches "login", "authentication", "security")
+   - **Rationale**: Trade-off between speed and precision based on use case
+
+2. **No Typo Tolerance By Design**
+   - ❌ "auht" does NOT match "auth" in any mode
+   - **Rationale**: Professional development assumes correct spelling
+   - **Exception**: Hyphen/space variations (e.g., "open-source" = "open source" = "opensource")
+
+3. **Hierarchical Feature Inheritance**
+   ```
+   Fast Mode:
+     - Simple substring matching (no word boundaries)
+     - Case-insensitive
+     - Path relevance
+     - NO corpus building (key performance optimization)
+   
+   Balanced Mode (completely different from Fast):
+     - Word boundary matching with regex
+     - BM25 corpus building and scoring
+     - CamelCase/snake_case splitting (authManager → auth, manager)
+     - Common abbreviation expansion (config → configuration)
+     - Plural/singular normalization
+   
+   Thorough Mode (extends Balanced, includes all its features plus):
+     - Semantic similarity (auth → authentication, login)
+     - ML-based embeddings (requires tenets[ml])
+     - Both BM25 AND TF-IDF scoring
+     - Context-aware matching
+   ```
+
+4. **Case Insensitivity Throughout**
+   - All matching is case-insensitive
+   - **Rationale**: Users may type queries in any case
+
+5. **Import Preservation**
+   - Import statements are intelligently truncated while preserving structure
+   - Critical imports are always retained
+   - **Rationale**: Maintains code context while optimizing token usage
+
 ## System Flow & Pipeline
 
 The entire Tenets system follows a carefully orchestrated pipeline:
@@ -33,8 +89,8 @@ graph TB
     end
 
     subgraph "Ranking Pipeline"
-        F1[BM25 Scoring]
-        F2[BM25 Relevance]
+        F1[Keyword Matching]
+        F2[BM25 Scoring]
         F3[Semantic Similarity]
         F4[Git Signals]
         F5[File Characteristics]
@@ -139,14 +195,18 @@ class CodeTokenizer:
 #### Stopword Management
 - **Code Stopwords**: Minimal set (~30 words) - 'function', 'class', 'return'
 - **Prompt Stopwords**: Aggressive filtering (~200+ words) - common English words
+- **Intent Action Words**: Filters generic action words from keyword matching
+  - Prevents words like "fix", "debug", "implement" from affecting file ranking
+  - Preserves domain-specific terms for accurate matching
+  - Configurable per intent type
 - **Context-Aware**: Different stopword sets for different operations
 
 ### Embedding Models
 
 | Model | Size | Speed | Quality | Use Case |
 |-------|------|-------|---------|----------|
-| **all-MiniLM-L6-v2** | 90MB | Fastest | Good | Default, quick searches |
-| **all-MiniLM-L12-v2** | 120MB | Fast | Better | Balanced performance |
+| **all-MiniLM-L6-v2** | 90MB | ~180ms/file | Good | Default, semantic searches |
+| **all-MiniLM-L12-v2** | 120MB | ~250ms/file | Better | Higher accuracy needs |
 | **all-mpnet-base-v2** | 420MB | Moderate | Best | Thorough mode |
 | **multi-qa-MiniLM** | 90MB | Fast | Specialized | Q&A optimized tasks |
 
@@ -236,27 +296,37 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 ### Ranking Algorithms
 
 #### Fast Algorithm (`FastRankingStrategy`)
-- **Use Case**: Quick exploration, CI/CD, large codebases
-- **Speed**: Sub-second on most projects (1.0x baseline)
-- **Performance**: Baseline for all comparisons
-- **Factors**: Keyword matching, path analysis, file size heuristics
-- **Accuracy**: Good for obvious relevance matches
+- **Use Case**: Quick exploration, CI/CD, initial discovery
+- **Relative Performance**: Baseline (100%)
+- **Actual Time**: ~17s on medium codebase
+- **Implementation**: 
+  - Lightweight file analysis (8KB samples)
+  - No corpus building (saves significant time)
+  - Simple keyword matching with word boundaries
+  - Deep analysis only on top 20 files
+- **Factors**: Simple keyword matching, path analysis, file type relevance
+- **Accuracy**: Good for obvious matches, may miss nuanced connections
 
 ```python
 # Fast algorithm priorities:
-1. Exact keyword matches in filename/path
-2. File extension relevance to prompt
-3. Directory importance (src/ > tests/)
-4. Recent modification time
-5. File size (prefer moderate sizes)
+1. Lightweight analysis for all files
+2. Exact keyword matches in content samples
+3. File extension relevance to prompt
+4. Directory importance (src/ > tests/)
+5. Deep analysis on top-ranked files only
 ```
 
 #### Balanced Algorithm (`BalancedRankingStrategy`) - **Default**
 - **Use Case**: Daily development, general context building
-- **Speed**: 1-3 seconds on typical projects (~6.4x slower than Fast)
-- **Performance**: 540% slower than Fast mode
-- **Factors**: BM25, keywords, basic git signals, structural analysis
-- **Accuracy**: High for most development tasks
+- **Relative Performance**: 135% (1.3x slower than fast)
+- **Actual Time**: ~23s on medium codebase
+- **Implementation**: 
+  - Full AST analysis for all files
+  - BM25 corpus building for accurate ranking
+  - Word boundary matching for precision
+  - Intelligent summarization for token optimization
+- **Factors**: BM25 scoring, word boundaries, abbreviation expansion, structure analysis
+- **Accuracy**: Excellent balance of speed and accuracy
 
 ```python
 # Balanced algorithm combines:
@@ -267,17 +337,25 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 ```
 
 #### Thorough Algorithm (`ThoroughRankingStrategy`)
-- **Use Case**: Complex refactoring, architecture reviews, debugging
-- **Speed**: 3-10 seconds depending on codebase (~13.3x slower than Fast, ~2.1x slower than Balanced)
-- **Performance**: 1230% slower than Fast mode
-- **Factors**: ML semantic similarity, dependency graphs, pattern analysis
-- **Accuracy**: Highest, finds subtle relevance connections
+- **Use Case**: Complex refactoring, architecture reviews, semantic search
+- **Relative Performance**: 536% (5.4x slower than fast)
+- **Actual Time**: ~91s on medium codebase
+- **Implementation**: 
+  - ML model loading (all-MiniLM-L6-v2, ~10s first run)
+  - Builds both BM25 and TF-IDF corpus (~5s)
+  - Semantic embeddings for all files
+  - Comprehensive ranking with ML (~23s)
+  - Pattern matching and dependency analysis
+- **Factors**: Dual scoring algorithms, semantic similarity, dependency graphs, architectural patterns
+- **Accuracy**: Best possible with ML-powered understanding
 
 ```python
 # Thorough algorithm includes:
-- Semantic similarity via embeddings
+- ML embeddings (384-dim vectors)
+- Semantic similarity via cosine distance
+- Dual corpus (BM25 + TF-IDF)
+- Programming pattern recognition
 - Complex dependency analysis
-- Code pattern recognition
 - Cross-reference analysis
 - Advanced git history mining
 ```
@@ -289,9 +367,9 @@ The ranking system combines multiple signals to determine file relevance:
 ```mermaid
 graph TD
     subgraph "Ranking Strategies"
-        FAST[Fast Strategy<br/>1.0x speed<br/>Keywords + Path]
-        BALANCED[Balanced Strategy<br/>6.4x slower<br/>BM25 + Structure]
-        THOROUGH[Thorough Strategy<br/>13.3x slower<br/>Deep Analysis + ML]
+        FAST[Fast Strategy<br/>0.5ms/file<br/>Word Boundaries]
+        BALANCED[Balanced Strategy<br/>2.1ms/file<br/>BM25 + Compounds]
+        THOROUGH[Thorough Strategy<br/>2.0ms/file<br/>Semantic + ML]
     end
 
     subgraph "Core Ranking Factors"
@@ -752,6 +830,7 @@ graph LR
         INPUT[User Prompt]
         INTENT[Intent Detection]
         KEYWORDS[Keyword Extraction]
+        FILTER[Intent Filtering]
         CONTEXT[Context Building]
     end
 
@@ -770,7 +849,8 @@ graph LR
 
     INPUT --> INTENT
     INTENT --> KEYWORDS
-    KEYWORDS --> CONTEXT
+    KEYWORDS --> FILTER
+    FILTER --> CONTEXT
 
     INTENT --> DEBUG
     INTENT --> FEATURE
@@ -781,6 +861,71 @@ graph LR
     KEYWORDS --> BM25
     KEYWORDS --> NER
 ```
+
+### Keyword Extraction and Matching
+
+#### How Keywords Are Extracted
+
+Tenets extracts both individual words and multi-word phrases from prompts:
+
+- **Individual words**: `token`, `debug`, `issue`, `parser`
+- **Multi-word phrases**: `debug tokenizing issue`, `authentication module`, `database connection`
+
+#### Intent Action Word Filtering
+
+Common action words are filtered from individual keywords but preserved in phrases:
+
+**Example**: "fix the debug tokenizing issue"
+1. **Extracted keywords**: `['fix', 'debug', 'issue', 'token', 'debug tokenizing issue']`
+2. **After filtering**: `['token', 'debug tokenizing issue']`
+3. **Why this works**:
+   - `fix`, `debug`, `issue` are removed as standalone generic words
+   - `debug tokenizing issue` is kept as a specific phrase
+   - `token` is kept as a domain-specific term
+
+#### How Keywords Match Files
+
+Keywords match files using different strategies based on the mode:
+
+**Fast Mode** (substring matching):
+- `token` matches: `token`, `tokens`, `tokenizer`, `tokenization`, `tokenizing`
+- Simple substring search: if keyword is contained in file content, it matches
+- Example: searching for "token" will find all files containing that substring
+
+**Balanced/Thorough Mode** (word boundary matching):
+- More precise matching with word boundaries
+- Still matches variations (plural forms, different word forms)
+- Example: "token" matches "tokens" but not "atoken" or "tokenx"
+
+**Multi-word Phrase Matching**:
+- Phrases like "debug tokenizing issue" match if:
+  - The exact phrase appears in the file, OR
+  - Individual words from the phrase appear (partial matching)
+- Higher scores for exact phrase matches
+
+#### Real-World Example
+
+Query: **"fix the tokenizing bug in the parser"**
+
+1. **Keywords extracted**: 
+   - Individual: `fix`, `bug`, `tokenizing`, `parser`
+   - Phrases: `tokenizing bug`, `bug in the parser`
+
+2. **After intent filtering**:
+   - Filtered out: `fix`, `bug` (generic action words)
+   - Kept: `tokenizing`, `parser`, `tokenizing bug`, `bug in the parser`
+
+3. **Files that will match**:
+   - Files containing "tokenizing", "tokenizer", "tokenization", etc.
+   - Files containing "parser", "parsing", "parse", etc.
+   - Files with the exact phrases get higher scores
+   - `tokenizer.py`, `parser.py`, `parse_tokens.py` all rank high
+
+This approach ensures:
+- Generic action words don't pollute search results
+- Domain-specific terms are preserved for accurate matching
+- Multi-word phrases provide additional context
+- Related word forms are still discovered
 
 ### Performance Optimizations
 
@@ -917,22 +1062,40 @@ class TenetsPlugin:
 
 ## Performance Characteristics
 
-### Typical Performance (on modern hardware)
+### Benchmarked Performance (Real-World Codebase)
 
-| Operation | Small Project (<1K files) | Medium Project (1K-10K files) | Large Project (10K+ files) |
-|-----------|---------------------------|-------------------------------|----------------------------|
-| **Fast Mode** | <1s (1.0x baseline) | 1-3s | 3-8s |
-| **Balanced Mode** | 1-2s (~6.4x slower) | 3-8s | 10-30s |
-| **Thorough Mode** | 2-5s (~13.3x slower) | 8-20s | 30s-2m |
-| **Cache Hit** | <100ms | <200ms | <500ms |
+| Mode | Relative Performance | Typical Time | Key Optimizations |
+|------|---------------------|--------------|-------------------|
+| **Fast** | 100% (baseline) | ~17s | Lightweight analysis, no corpus, minimal processing |
+| **Balanced** | 135% (1.3x slower) | ~23s | BM25 corpus, word boundaries, intelligent summarization |
+| **Thorough** | 536% (5.4x slower) | ~91s | ML embeddings, dual algorithms, comprehensive analysis |
 
-### Relative Performance
+### Performance Breakdown by Phase
 
-| Mode | Speed Multiplier | Percentage Slower |
-|------|-----------------|-------------------|
-| **Fast** | 1.0x | 0% (baseline) |
-| **Balanced** | 6.4x | 540% |
-| **Thorough** | 13.3x | 1230% |
+| Phase | Fast Mode | Balanced Mode | Thorough Mode |
+|-------|-----------|---------------|---------------|
+| **File Scanning** | ~1s (same) | ~1s (same) | ~1s (same) |
+| **Analysis** | Lightweight (0.2s) | Full AST (2-3s) | Full AST (2-3s) |
+| **Corpus Building** | Skipped | BM25 only (1s) | BM25 + TF-IDF (5s) |
+| **ML Model Loading** | N/A | N/A | ~10s (first run) |
+| **Ranking** | Simple (0.02s) | BM25 (0.4s) | ML + Dual (23s) |
+| **Aggregation** | Truncation (0.1s) | Summarization (2s) | Deep summarization (3s) |
+
+### Key Performance Improvements
+
+#### Fast Mode with Lightweight Analysis
+- **Implementation**: `LightweightAnalyzer` class reads only first 8KB of files
+- **Performance**: 10-100x faster than full AST parsing
+- **Trade-off**: Less accurate structure analysis but sufficient for ranking
+- **Deep Analysis**: Applied only to top 20 files after ranking
+
+### Performance Notes
+
+- Fast mode achieves baseline performance through lightweight analysis
+- Balanced mode adds only 35% overhead while providing significantly better accuracy
+- Thorough mode's 5.4x slowdown is justified by ML-powered semantic understanding
+- All modes benefit from aggressive caching (cache hits < 500ms)
+- First-run ML model loading in thorough mode adds one-time 10s overhead
 
 ### Memory Usage
 

@@ -56,6 +56,18 @@ nlp:
   # Additional custom stopword files
   custom_stopword_files: []
   
+  # ---- INTENT ACTION WORD FILTERING ----
+  # Filter common intent action words from keyword matching to prevent
+  # generic words like "fix", "debug", "implement" from affecting file ranking
+  filter_intent_keywords: true  # Enable/disable filtering (default: true)
+  
+  # Custom intent keywords to filter per intent type (overrides defaults)
+  # Uncomment and modify to customize which words are filtered
+  # custom_intent_keywords:
+  #   debug: ["fix", "debug", "bug", "issue", "problem", "error"]
+  #   implement: ["implement", "add", "create", "build", "feature", "new"]
+  #   refactor: ["refactor", "restructure", "improve", "clean", "optimize"]
+  
   # ---- TOKENIZATION CONFIGURATION ----
   # How text is broken into tokens
   tokenization_mode: auto  # code|text|auto

@@ -174,6 +174,9 @@ class KeywordExtractor:
         infinite loop bug. RAKE is used as the primary extractor instead,
         providing similar quality with better performance.
     """
+    
+    # Class-level flag to track if we've already shown the YAKE warning
+    _yake_warning_shown = False
 
     def __init__(
         self,
@@ -218,15 +221,16 @@ class KeywordExtractor:
         self.use_stopwords = use_stopwords
         self.stopword_set = stopword_set
 
-        # Log info about extraction methods
+        # Log info about extraction methods (only once for YAKE warning)
         if sys.version_info[:2] >= (3, 13):
             if not self.use_rake and RAKE_AVAILABLE:
                 self.logger.info("RAKE keyword extraction available but disabled")
-            if use_yake and not YAKE_AVAILABLE:
+            if use_yake and not YAKE_AVAILABLE and not KeywordExtractor._yake_warning_shown:
                 self.logger.warning(
                     "YAKE keyword extraction disabled on Python 3.13+ due to compatibility issues. "
                     "Using RAKE as primary extraction method."
                 )
+                KeywordExtractor._yake_warning_shown = True
 
         # Initialize RAKE if available (primary method)
         if self.use_rake and Rake is not None:

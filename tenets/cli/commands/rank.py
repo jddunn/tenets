@@ -202,6 +202,7 @@ def rank(
     timer: CommandTimer = CommandTimer(console, is_json_quiet)
 
     try:
+        start_time = datetime.now()
         timer.start("Initializing ranking...")
 
         # Initialize tenets with same distiller pipeline
@@ -228,6 +229,10 @@ def rank(
         )
 
         ranked_files: List[FileAnalysis] = result.files
+        
+        # Extract keywords and final query from result if available
+        keywords_excluded = getattr(result, 'keywords_excluded', None)
+        final_query = getattr(result, 'final_query', None)
 
         # Apply threshold filtering if min_score is set
         if min_score:
@@ -251,6 +256,9 @@ def rank(
             show_path=show_path,
             prompt=prompt,
             stats=None,  # Stats not available from rank_files yet
+            start_time=start_time,
+            keywords_excluded=keywords_excluded,
+            final_query=final_query
         )
 
         # Output results
@@ -269,7 +277,6 @@ def rank(
             # For HTML/XML/JSON, auto-save to a default file like distill does
             if sys.stdin.isatty():  # Interactive mode
                 import re
-                from datetime import datetime
 
                 # Create filename from prompt
                 safe_prompt: str = re.sub(r"[^\w\s-]", "", prompt[:30]).strip()
@@ -383,6 +390,9 @@ def _format_ranked_files(
     show_path: str,
     prompt: str,
     stats: Optional[Dict[str, Any]] = None,
+    start_time: Optional[Any] = None,
+    keywords_excluded: Optional[List[str]] = None,
+    final_query: Optional[str] = None,
 ) -> str:
     """Format ranked files for output based on specified format.
 
@@ -407,7 +417,7 @@ def _format_ranked_files(
     elif format == "xml":
         return _format_xml(files, show_scores, show_factors, prompt)
     elif format == "html":
-        return _format_html(files, show_scores, show_factors, prompt, tree_view)
+        return _format_html(files, show_scores, show_factors, prompt, tree_view, start_time, keywords_excluded, final_query)
     elif tree_view or format == "tree":
         return _format_tree(files, show_scores, show_factors, show_path)
     else:  # markdown
@@ -626,7 +636,14 @@ def _format_xml(
 
 
 def _format_html(
-    files: List[FileAnalysis], show_scores: bool, show_factors: bool, prompt: str, tree_view: bool
+    files: List[FileAnalysis], 
+    show_scores: bool, 
+    show_factors: bool, 
+    prompt: str, 
+    tree_view: bool,
+    start_time: Optional[Any] = None,
+    keywords_excluded: Optional[List[str]] = None,
+    final_query: Optional[str] = None
 ) -> str:
     """Format ranked files as interactive HTML with charts and controls.
 
@@ -636,6 +653,9 @@ def _format_html(
         show_factors: Whether to include ranking factors.
         prompt: Original query prompt for display.
         tree_view: Whether to generate tree view tab.
+        start_time: Optional start time of the ranking operation.
+        keywords_excluded: Optional list of excluded keywords.
+        final_query: Optional final processed query.
 
     Returns:
         Complete HTML document string with interactive features including:
@@ -649,6 +669,9 @@ def _format_html(
         Uses Chart.js for visualizations and includes responsive design.
         Avoids f-string backslash issues by using chr() for special characters.
     """
+    # Import datetime for use in this function
+    from datetime import datetime as dt_now
+    
     # Prepare data for JavaScript
     files_data: List[Dict[str, Any]] = []
     for file in files:
@@ -994,7 +1017,7 @@ def _format_html(
                     max_score: {max_score:.3f},
                     avg_score: {avg_score:.3f}
                 }},
-                generated_at: "{datetime.now().isoformat()}"
+                generated_at: "{dt_now.now().isoformat()}"
             }};
             const blob = new Blob([JSON.stringify(data, null, 2)], {{type: 'application/json'}});
             const url = URL.createObjectURL(blob);
@@ -1133,12 +1156,30 @@ def _format_html(
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     """
 
+    # Calculate execution time if start_time provided
+    execution_time_str = ""
+    if start_time:
+        execution_time = dt_now.now() - start_time
+        execution_time_str = f"<p>Execution time: <strong>{execution_time.total_seconds():.2f} seconds</strong></p>"
+    
+    # Format excluded keywords and final query if provided
+    keywords_str = ""
+    if keywords_excluded:
+        keywords_str = f"<p>Keywords excluded: <strong>{', '.join(keywords_excluded)}</strong></p>"
+    
+    query_str = ""
+    if final_query and final_query != prompt:
+        query_str = f"<p>Final query: <strong>{final_query}</strong></p>"
+    
     # Build the HTML content sections
     header_html: str = f"""
     <div class="rank-header">
         <h1>🎯 Ranked Files</h1>
-        <p>Query: <strong>{prompt}</strong></p>
-        <p>Generated at {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+        <p>Original prompt: <strong>{prompt}</strong></p>
+        {query_str}
+        {keywords_str}
+        <p>Generated at: <strong>{dt_now.now().strftime("%Y-%m-%d %H:%M:%S")}</strong></p>
+        {execution_time_str}
     </div>
     """
 

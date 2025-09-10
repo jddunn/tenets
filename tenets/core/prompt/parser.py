@@ -3,6 +3,14 @@
 This module analyzes user prompts to extract intent, keywords, entities,
 temporal context, and external references using a comprehensive set of
 specialized components and NLP techniques.
+
+Key Features:
+- Intent detection with action word filtering
+- Keyword extraction with intent-aware filtering to prevent generic action words
+  (like "fix", "debug", "implement") from affecting file ranking
+- Entity recognition for code elements
+- Temporal context extraction
+- External source integration
 """
 
 import re
@@ -13,7 +21,7 @@ from tenets.config import TenetsConfig
 # Import centralized NLP components
 from tenets.core.nlp.keyword_extractor import KeywordExtractor
 from tenets.core.nlp.programming_patterns import get_programming_patterns
-from tenets.core.nlp.stopwords import StopwordManager
+from tenets.core.nlp.stopwords import StopwordManager, StopwordSet
 from tenets.core.nlp.tokenizer import CodeTokenizer, TextTokenizer
 from tenets.core.prompt.cache import PromptCache
 from tenets.core.prompt.entity_recognizer import Entity, HybridEntityRecognizer
@@ -839,9 +847,16 @@ class PromptParser:
         # Add documentation-specific keywords for better context-aware summarization
         doc_keywords = self._extract_documentation_keywords(prompt_text)
         keywords = list(set(keywords + doc_keywords))[: self.config.nlp.max_keywords]
+        
+        self.logger.info(f"Keywords extracted (before filtering): {keywords}")
+        
+        # Filter intent action words if configured
+        if self.config.nlp.filter_intent_keywords:
+            keywords = self._filter_intent_keywords(keywords, intent)
 
         # Normalize keywords and collect normalization metadata
         normalized_keywords, keyword_norm_meta = normalize_list(keywords)
+        self.logger.info(f"Final keywords for matching (after normalization): {normalized_keywords}")
         keywords = normalized_keywords
 
         # 4. Recognize entities (classes, functions, files, etc.)
@@ -1311,6 +1326,57 @@ class PromptParser:
 
         self.logger.info("Cache pre-warming complete")
 
+    def _filter_intent_keywords(self, keywords: List[str], intent: str) -> List[str]:
+        """Filter out common intent action words from keywords.
+        
+        This prevents generic action words (like "fix", "debug", "implement") from
+        affecting file ranking while preserving domain-specific terms that are
+        important for accurate matching.
+        
+        Args:
+            keywords: List of keywords to filter
+            intent: Detected intent type
+            
+        Returns:
+            Filtered list of keywords with intent action words removed
+        """
+        # Get the intent action words stopword set
+        intent_stopwords = self.stopword_manager.get_set("intent_actions")
+        
+        if not intent_stopwords:
+            # If no intent stopwords loaded, return keywords unchanged
+            return keywords
+            
+        # Check for custom intent keywords in config
+        if self.config.nlp.custom_intent_keywords and intent in self.config.nlp.custom_intent_keywords:
+            # Add custom keywords for this intent
+            custom_words = set(word.lower() for word in self.config.nlp.custom_intent_keywords[intent])
+            combined_stopwords = intent_stopwords.words | custom_words
+            intent_stopwords = StopwordSet(
+                name=f"intent_actions+custom_{intent}",
+                words=combined_stopwords,
+                description=f"Intent action words plus custom for {intent}"
+            )
+        
+        # Filter the keywords
+        filtered = intent_stopwords.filter(keywords)
+        
+        # Log filtering for debugging
+        removed = set(keywords) - set(filtered)
+        if removed:
+            self.logger.info(f"Filtered intent action words from keywords: {list(removed)}")
+            
+        # Ensure we keep at least some keywords
+        if not filtered and keywords:
+            # If all keywords were filtered, keep the most specific ones
+            # (usually longer words are more specific)
+            sorted_keywords = sorted(keywords, key=len, reverse=True)
+            filtered = sorted_keywords[:3]  # Keep top 3 longest keywords
+            self.logger.info(f"All keywords filtered, keeping longest: {filtered}")
+            
+        self.logger.info(f"Keywords after intent filtering: {filtered}")
+        return filtered
+    
     def _extract_documentation_keywords(self, text: str) -> List[str]:
         """Extract documentation-specific keywords for context-aware summarization.
 

@@ -8,6 +8,7 @@ Tests verify:
 - Performance characteristics
 """
 
+import sys
 import time
 from pathlib import Path
 from typing import Dict, List
@@ -457,6 +458,10 @@ class TestPerformanceCharacteristics:
             size=len(content)
         )
     
+    @pytest.mark.skipif(
+        'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
+        reason="Performance tests incompatible with freezegun"
+    )
     def test_relative_performance(self):
         """Test relative performance matches design targets."""
         file = self.create_large_file(10)  # 10KB file

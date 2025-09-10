@@ -1,5 +1,6 @@
 """Tests for the caching system."""
 
+import sys
 import json
 import sqlite3
 import tempfile
@@ -155,6 +156,10 @@ class TestDiskCache:
         assert cache.get("list_key") == [1, 2, 3, "four"]
         assert cache.get("nonexistent") is None
 
+    @pytest.mark.skipif(
+        'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
+        reason="TTL tests incompatible with freezegun"
+    )
     def test_ttl_expiration(self, temp_cache_dir):
         """Test TTL expiration."""
         cache = DiskCache(temp_cache_dir, name="test")
@@ -214,6 +219,10 @@ class TestDiskCache:
         assert cache.get("key2") is None
         assert cache.get("key3") is None
 
+    @pytest.mark.skipif(
+        'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
+        reason="Time-based cleanup tests incompatible with freezegun"
+    )
     def test_cleanup_by_age(self, temp_cache_dir):
         """Test cleanup by age."""
         cache = DiskCache(temp_cache_dir, name="test")
@@ -235,6 +244,10 @@ class TestDiskCache:
         assert cache.get("old_key") is None
         assert cache.get("new_key") == "new_value"
 
+    @pytest.mark.skipif(
+        'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
+        reason="Access time tests incompatible with freezegun"
+    )
     def test_access_time_update(self, temp_cache_dir):
         """Test that access time is updated on get."""
         cache = DiskCache(temp_cache_dir, name="test")

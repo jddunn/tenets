@@ -186,11 +186,11 @@ class RankingStrategy(ABC):
 
 
 class FastRankingStrategy(RankingStrategy):
-    """Fast keyword-based ranking with word boundaries and variations.
+    """Fast keyword-based ranking with simple substring matching.
     
-    Provides quick, predictable ranking using exact keyword matching with
-    word boundary enforcement. Handles common variations like hyphens/spaces
-    and path analysis.
+    Provides quick ranking using simple substring matching without
+    word boundaries for maximum speed. Skips corpus building entirely
+    to minimize processing time.
     
     Performance: ~0.5ms per file
     Accuracy: Good for quick exploration
@@ -198,7 +198,7 @@ class FastRankingStrategy(RankingStrategy):
     """
     
     name = "fast"
-    description = "Quick keyword and path-based ranking with word boundaries"
+    description = "Quick substring-based ranking without corpus building"
     
     def __init__(self):
         """Initialize fast ranking strategy."""
@@ -214,9 +214,9 @@ class FastRankingStrategy(RankingStrategy):
     ) -> RankingFactors:
         """Calculate fast ranking factors for a file.
         
-        Uses exact word matching with boundaries to ensure predictable,
-        high-speed relevance scoring. Handles hyphen/space variations
-        and analyzes file paths for additional context.
+        Uses simple substring matching for maximum speed. Does not
+        build or use corpus statistics (BM25/TF-IDF) to minimize
+        processing time.
         
         Args:
             file: File to analyze.
@@ -286,8 +286,8 @@ class FastRankingStrategy(RankingStrategy):
     ) -> float:
         """Calculate keyword matching score for FAST mode.
         
-        Fast mode uses optimized matching on limited content for speed.
-        Only checks filename and first 2000 chars of content.
+        Fast mode uses position-based scoring with more content sampling.
+        Prioritizes matches in filename and early content.
         
         Args:
             file: File to analyze.
@@ -299,24 +299,26 @@ class FastRankingStrategy(RankingStrategy):
         if not keywords or not file.content:
             return 0.0
             
-        # OPTIMIZATION: Only check filename and first 2000 chars for speed
+        # OPTIMIZATION: Sample more content (5KB) for better accuracy while staying fast
         filename_lower = Path(file.path).name.lower()
-        # Limit content scan to first 2000 chars for fast mode
-        content_sample = file.content[:2000].lower() if len(file.content) > 2000 else file.content.lower()
+        content_sample = file.content[:5000].lower() if len(file.content) > 5000 else file.content.lower()
         
         total_score = 0.0
-        max_possible = len(keywords) * 2.0
+        max_possible = len(keywords) * 3.0  # Adjusted for new scoring scale
         
         for keyword in keywords:
             keyword_lower = keyword.lower()
             
-            # Check filename first (highest priority)
+            # Check filename first (highest priority = 3 points)
             if keyword_lower in filename_lower:
-                total_score += 2.0
+                total_score += 3.0
                 continue
                 
-            # Check limited content sample
-            if keyword_lower in content_sample:
+            # Check early content (first 1KB = 2 points)
+            if keyword_lower in content_sample[:1000]:
+                total_score += 2.0
+            # Check rest of sample (1KB-5KB = 1 point)
+            elif keyword_lower in content_sample:
                 total_score += 1.0
                 
         # Normalize score

@@ -240,6 +240,10 @@ nlp:
   max_keywords: 30                # Max keywords to extract
   ngram_size: 3                  # N-gram size
   yake_dedup_threshold: 0.7      # YAKE deduplication
+  
+  # Intent keyword filtering - filters common action words from keyword matching
+  filter_intent_keywords: true    # Filter intent action words from file matching
+  custom_intent_keywords: {}      # Custom intent-specific keywords to filter
 
   # BM25 settings
   bm25_k1: 1.2                   # Term frequency saturation parameter
@@ -782,6 +786,44 @@ TENETS_DEBUG=true tenets distill "query" 2>debug.log
 ```
 
 ## Advanced Topics
+
+### Intent Keyword Filtering
+
+Tenets can intelligently filter common action words (like "fix", "debug", "implement") from keyword matching while preserving them for intent detection. This prevents generic action words from affecting file ranking while maintaining accurate intent classification.
+
+**How it works:**
+- Action words are detected from intent patterns
+- These words are filtered from keyword matching for file ranking
+- Domain-specific terms are always preserved
+- Configurable per-intent with custom keywords
+
+**Configuration:**
+```yaml
+nlp:
+  # Enable/disable intent keyword filtering
+  filter_intent_keywords: true  # Default: true
+  
+  # Custom intent-specific keywords to filter
+  custom_intent_keywords:
+    debug:
+      - custom_debug_word
+      - another_debug_term
+    implement:
+      - custom_impl_word
+```
+
+**Example scenario:**
+- Query: "debug the tokenizing issue in the parser"
+- Intent detected: "debug"
+- Keywords before filtering: ["debug", "tokenizing", "issue", "parser"]
+- Keywords after filtering: ["tokenizing", "parser"]
+- Result: Files are ranked based on "tokenizing" and "parser", not generic "debug" or "issue"
+
+**Benefits:**
+- More accurate file ranking
+- Reduces noise from common action words
+- Preserves domain-specific terminology
+- Maintains intent detection accuracy
 
 ### Custom Ranking Strategies
 

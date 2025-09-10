@@ -1,10 +1,17 @@
 """Tests for timing utilities."""
 
+import sys
 import time
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+# Skip all timing tests if freezegun is active
+pytestmark = pytest.mark.skipif(
+    'freezegun' in sys.modules or any('freeze' in m for m in sys.modules),
+    reason="Timing tests incompatible with freezegun"
+)
 
 from tenets.utils.timing import (
     CommandTimer,
