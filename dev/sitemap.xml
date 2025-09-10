@@ -17,10 +17,6 @@
          <lastmod>2025-09-10</lastmod>
     </url>
     <url>
-         <loc>https://tenets.dev/dev/CONFIG/</loc>
-         <lastmod>2025-09-10</lastmod>
-    </url>
-    <url>
          <loc>https://tenets.dev/dev/CONTRIBUTING/</loc>
          <lastmod>2025-09-10</lastmod>
     </url>
@@ -49,11 +45,11 @@
          <lastmod>2025-09-10</lastmod>
     </url>
     <url>
-         <loc>https://tenets.dev/dev/docs/</loc>
+         <loc>https://tenets.dev/dev/config/</loc>
          <lastmod>2025-09-10</lastmod>
     </url>
     <url>
-         <loc>https://tenets.dev/dev/examples/</loc>
+         <loc>https://tenets.dev/dev/docs/</loc>
          <lastmod>2025-09-10</lastmod>
     </url>
     <url>

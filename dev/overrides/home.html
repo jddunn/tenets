@@ -727,7 +727,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
         <ul style="list-style: none; padding: 0; margin: 0;">
           <li style="margin-bottom: 0.75rem;">✓ <strong>No corpus building</strong> - Skips BM25/TF-IDF indexing</li>
           <li style="margin-bottom: 0.75rem;">✓ <strong>Simple substring match</strong> - No regex overhead</li>
-          <li style="margin-bottom: 0.75rem;">✓ <strong>5KB content scan</strong> - Limited but effective</li>
+          <li style="margin-bottom: 0.75rem;">✓ <strong>Configurable content scan</strong> - Defaults to full file</li>
           <li style="margin-bottom: 0.75rem;">✓ <strong>Best for:</strong> CI/CD, large codebases, quick searches</li>
         </ul>
         <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.1);">
@@ -759,10 +759,10 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
         </div>
       </div>
       
-      <!-- Thorough Mode -->
+      <!-- Thorough mode -->
       <div style="background: var(--md-code-bg-color); border-radius: 12px; padding: 2rem; border: 1px solid rgba(245, 158, 11, 0.2);">
         <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-          <span style="font-size: 1.5rem;">⚡</span> Thorough Mode
+          <span style="font-size: 1.5rem;">⚡</span> Thorough mode
         </h3>
         <p style="margin-bottom: 1.5rem; color: var(--md-default-fg-color--light);">
           Semantic understanding with ML
