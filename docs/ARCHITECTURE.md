@@ -2150,8 +2150,6 @@ When using the `distill` command, guiding principles are automatically injected 
 
 ## Future Roadmap & Vision
 
-### Near Term (Q1 2025)
-
 ```mermaid
 graph TB
     subgraph "Core Improvements"
@@ -2176,7 +2174,7 @@ graph TB
     CROSS_REPO --> CODE_TRANSFORMERS
 ```
 
-### Medium Term (Q2-Q3 2025)
+### Medium Term
 
 ```mermaid
 graph TB
@@ -2202,7 +2200,7 @@ graph TB
     AI_AGENTS --> CUSTOM_ML
 ```
 
-### Long Term (2026+)
+### Long Term
 
 ```mermaid
 graph TB
@@ -2226,38 +2224,6 @@ graph TB
     UNIVERSAL --> FEW_SHOT
     INDUSTRY_STANDARD --> EXPLAINABLE
     INDUSTRY_STANDARD --> FEDERATED
-```
-
-### Technology Evolution
-
-```mermaid
-timeline
-    title Tenets Technology Roadmap
-
-    2025 Q1 : Core ML Pipeline
-            : Local Embeddings
-            : Multi-language Support
-            : IDE Integrations
-
-    2025 Q2 : Web Collaboration
-            : Team Features
-            : Enterprise Security
-            : Performance Optimization
-
-    2025 Q3 : Knowledge Graphs
-            : AI Agent Integration
-            : Custom Models
-            : Advanced Analytics
-
-    2026    : Autonomous Understanding
-            : Predictive Intelligence
-            : Graph Neural Networks
-            : Industry Adoption
-
-    2027+   : Universal Code Intelligence
-            : Federated Learning
-            : Next-gen AI Integration
-            : Market Leadership
 ```
 
 ## Output Generation & Visualization
@@ -2426,15 +2392,6 @@ Three levels of dependency aggregation:
 - **Layout Algorithms**: Hierarchical, circular, shell, force-directed
 - **Node Limiting**: Handle large graphs with --max-nodes option
 
-### Integration with Report Generator
-
-The distill command now fully integrates with the report generation infrastructure:
-
-1. **Shared Templates**: Uses the same HTML templates as the examine command
-2. **Consistent Styling**: Unified visual design across all report types
-3. **Reusable Components**: Shared visualization libraries and chart generators
-4. **Export Options**: Support for PDF export via HTML rendering
-
 ### Usage Examples
 
 ```bash
@@ -2476,7 +2433,7 @@ tenets viz deps --format json --output data.json  # Raw JSON for custom tools
 
 ## Conclusion
 
-Tenets represents a fundamental shift in how developers interact with their codebases when working with AI. By combining sophisticated NLP/ML techniques with traditional code analysis, git mining, and intelligent caching, we've created a system that truly understands code in context.
+By combining sophisticated NLP/ML techniques with traditional code analysis, git mining, and intelligent caching, we've created a system that truly understands code in context.
 
 The architecture is designed to be:
 
