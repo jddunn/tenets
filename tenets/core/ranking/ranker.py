@@ -679,21 +679,16 @@ class RelevanceRanker:
             text_sim_algo = getattr(self.config.ranking, "text_similarity_algorithm", "bm25")
 
             # Initialize the calculators we need
-            if actual_algo == "thorough":
-                # Thorough mode needs BOTH for comprehensive analysis
-                self.logger.info(
-                    "Thorough mode: Building both BM25 and TF-IDF for comprehensive analysis"
-                )
-                bm25_calc = BM25Calculator(use_stopwords=use_sw)
-                tfidf_calc = TFIDFCalculator(use_stopwords=use_sw)
-            elif text_sim_algo == "tfidf":
-                # Use TF-IDF only
+            if text_sim_algo == "tfidf":
+                # Use TF-IDF only if explicitly configured
                 tfidf_calc = TFIDFCalculator(use_stopwords=use_sw)
                 bm25_calc = None
+                self.logger.info(f"Using TF-IDF for text similarity ({actual_algo} mode)")
             else:
-                # Use BM25 only (default for balanced)
+                # Use BM25 (default for all modes including thorough)
                 bm25_calc = BM25Calculator(use_stopwords=use_sw)
                 tfidf_calc = None  # Don't build TF-IDF corpus when not needed
+                self.logger.info(f"Using BM25 for text similarity ({actual_algo} mode)")
 
             # Build corpus and collect statistics
             documents = []

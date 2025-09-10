@@ -41,18 +41,18 @@ Tenets employs **three distinct matching strategies** optimized for different us
      - Case-insensitive
      - Path relevance
      - NO corpus building (key performance optimization)
-   
+
    Balanced Mode (completely different from Fast):
      - Word boundary matching with regex
      - BM25 corpus building and scoring
      - CamelCase/snake_case splitting (authManager → auth, manager)
      - Common abbreviation expansion (config → configuration)
      - Plural/singular normalization
-   
+
    Thorough mode (extends Balanced, includes all its features plus):
      - Semantic similarity (auth → authentication, login)
      - ML-based embeddings (requires tenets[ml])
-     - Both BM25 AND TF-IDF scoring
+     - BM25 scoring with ML enhancements
      - Context-aware matching
    ```
 
@@ -298,7 +298,7 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 #### Fast Algorithm (`FastRankingStrategy`)
 - **Use Case**: Quick exploration, CI/CD, initial discovery
 - **Relative Performance**: Baseline (100%)
-- **Implementation**: 
+- **Implementation**:
   - Lightweight file analysis (8KB samples)
   - No corpus building (saves significant time)
   - Simple keyword matching with word boundaries
@@ -318,7 +318,7 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 #### Balanced Algorithm (`BalancedRankingStrategy`) - **Default**
 - **Use Case**: Daily development, general context building
 - **Relative Performance**: 150% (1.5x slower than fast)
-- **Implementation**: 
+- **Implementation**:
   - Full AST analysis for all files
   - BM25 corpus building for accurate ranking
   - Word boundary matching for precision
@@ -337,13 +337,13 @@ The ranking system (`tenets.core.ranking`) is the intelligence core of Tenets, u
 #### Thorough Algorithm (`ThoroughRankingStrategy`)
 - **Use Case**: Complex refactoring, architecture reviews, semantic search
 - **Relative Performance**: 400% (4x slower than fast)
-- **Implementation**: 
+- **Implementation**:
   - ML model loading (all-MiniLM-L6-v2, ~10s first run)
-  - Builds both BM25 and TF-IDF corpus (~5s)
+  - Builds BM25 corpus with ML embeddings (~5s)
   - Semantic embeddings for all files
   - Comprehensive ranking with ML (~23s)
   - Pattern matching and dependency analysis
-- **Factors**: Dual scoring algorithms, semantic similarity, dependency graphs, architectural patterns
+- **Factors**: BM25 algorithm with ML enhancements, semantic similarity, dependency graphs, architectural patterns
 - **Accuracy**: Best possible with ML-powered understanding
 
 ```python
@@ -904,7 +904,7 @@ Keywords match files using different strategies based on the mode:
 
 Query: **"fix the tokenizing bug in the parser"**
 
-1. **Keywords extracted**: 
+1. **Keywords extracted**:
    - Individual: `fix`, `bug`, `tokenizing`, `parser`
    - Phrases: `tokenizing bug`, `bug in the parser`
 
@@ -1065,7 +1065,7 @@ class TenetsPlugin:
 |------|---------------------|-------------------|
 | **Fast** | 100% (baseline) | Lightweight analysis, no corpus, minimal processing |
 | **Balanced** | 150% (1.5x slower) | BM25 corpus, word boundaries, intelligent summarization |
-| **Thorough** | 400% (4x slower) | ML embeddings, dual algorithms, comprehensive analysis |
+| **Thorough** | 400% (4x slower) | ML embeddings, BM25 algorithm, comprehensive analysis |
 
 ### Performance Breakdown by Phase
 

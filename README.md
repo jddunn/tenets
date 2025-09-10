@@ -8,7 +8,7 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/tenets.svg)](https://pypi.org/project/tenets/)
 [![CI](https://github.com/jddunn/tenets/actions/workflows/ci.yml/badge.svg)](https://github.com/jddunn/tenets/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/jddunn/tenets)
+[![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
 **tenets** automatically finds and builds the most relevant context from your codebase. Instead of manually copying files or grepping with complex regex, tenets intelligently aggregates exactly what you need for debugging, building features, or coding with AI assistants. Works with any directory of files but best with Git repos.
@@ -46,32 +46,27 @@ pip install tenets[all]    # Everything
 
 Tenets offers three modes that balance speed vs. thoroughness for both `distill` and `rank` commands:
 
-| Mode         | Speed | Thoroughness | Primary Algorithm | Use Case                 |
-| ------------ | ----- | -------- | ---------------- | ------------------------ |
-| **fast**     | ⚡⚡⚡ (100%) | Good     | Substring match   | Quick exploration, CI/CD |
-| **balanced** | ⚡⚡ (150% - 1.5x slower) | Better   | BM25 ranking      | Most development (default) |
-| **thorough** | ⚡ (400% - 4x slower) | Best     | BM25 + ML embeddings | Complex refactoring, semantic search |
+| Mode         | Speed                     | Thoroughness | Primary Algorithm    | Use Case                             |
+| ------------ | ------------------------- | ------------ | -------------------- | ------------------------------------ |
+| **fast**     | ⚡⚡⚡ (100%)             | Good         | Substring match      | Quick exploration, CI/CD             |
+| **balanced** | ⚡⚡ (150% - 1.5x slower) | Better       | BM25 ranking         | Most development (default)           |
+| **thorough** | ⚡ (400% - 4x slower)     | Best         | BM25 + ML embeddings | Complex refactoring, semantic search |
 
-**Fast mode**
-- **Simple substring matching** - No regex or word boundary checking
-- **No text processing** - No tokenization, abbreviation expansion, or stemming
+**Fast** (best-suited for programmatic tools, like replacing grep, or exact matches)
 
-**Balanced mode**
-- **Builds BM25 corpus** - Creates inverted index for all files (one-time cost)
-- **Uses word boundaries** - Regex matching for precise results
-- **Processes text** - Handles abbreviations, compound words, plurals
+- Substring matching only; no regex or word boundary checking, tokenization, abbreviation expansion, or stemming
 
-**Thorough mode**
-- **ML embeddings** - Semantic similarity (requires `tenets[ml]`)
-- **Dual algorithms** - Uses both BM25 AND TF-IDF
-- **Pattern recognition** - Detects code patterns and dependencies
+**Balanced mode** (day-to-day general usage)
+
+- Creates inverted index for all files (one-time cost) to build a BM25 corpus
+- Regex matching for precise results with word boundaries and text processing handling abbreviations, compound words, plurals
+
+**Thorough mode** (major refactors, in-depth reviews, architectural analyiss)
+
+- Semantic similarity (requires `tenets[ml]`) through embeddings, relationship matching for terms
+- Detects code patterns and dependencies and takes those into account
 
 ⚠️ **Note**: Thorough mode finds semantically similar code, not just exact matches. Use Fast or Balanced if you need literal keyword matching.
-
-**When to use each mode:**
-- **Fast**: Most likely for programmatic tools, that would replace grepping
-- **Balanced**: Day-to-day development / general usage (default, only 50% slower)
-- **Thorough**: Major refactoring, in-depth reviews, architectural analysis
 
 ### Core Commands
 
@@ -216,16 +211,12 @@ tenets distill "fix test_user.py" --exclude-tests
 ### Output Formats
 
 ```bash
-# Markdown (default, optimized for AI)
 tenets distill "implement OAuth2" --format markdown
 
-# Interactive HTML with search, charts, copy buttons
 tenets distill "review API" --format html -o report.html
 
-# JSON for programmatic use
 tenets distill "analyze" --format json | jq '.files[0]'
 
-# XML optimized for Claude
 tenets distill "debug issue" --format xml
 ```
 

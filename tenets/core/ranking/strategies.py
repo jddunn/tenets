@@ -1209,7 +1209,7 @@ class ThoroughRankingStrategy(BalancedRankingStrategy):
     def __init__(self, config=None):
         """Initialize thorough ranking strategy."""
         super().__init__(config)
-        
+
         # Override content scan limit for thorough mode
         # Thorough mode should scan full content by default for best accuracy
         if config and hasattr(config, "ranking"):
@@ -1218,7 +1218,7 @@ class ThoroughRankingStrategy(BalancedRankingStrategy):
             )
         else:
             self.content_scan_limit = -1  # Unlimited by default for thorough mode
-        
+
         self._embedding_model = None
         self._pattern_matcher = None
         self._semantic_cache = {}

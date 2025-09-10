@@ -63,7 +63,7 @@ graph TD
 - **Accuracy**: Good for quick exploration
 - **Methods**: Lightweight analysis, simple matching, no corpus building
 - **Use Cases**: Quick searches, initial exploration, CI/CD pipelines
-- **Optimizations**: 
+- **Optimizations**:
   - Uses lightweight file analyzer (8KB samples)
   - Skips AST parsing and language-specific analysis
   - No corpus building or complex NLP
@@ -79,9 +79,9 @@ graph TD
 ### Thorough mode
 - **Relative Speed**: 400% (4x slower than fast)
 - **Accuracy**: Best possible with ML-powered understanding
-- **Methods**: 
+- **Methods**:
   - ML embeddings (all-MiniLM-L6-v2 model)
-  - Dual algorithms (BM25 + TF-IDF)
+  - BM25 algorithm with ML enhancements
   - Programming pattern detection
   - Comprehensive dependency analysis
 - **Use Cases**: Complex refactoring, architectural changes, deep code understanding
