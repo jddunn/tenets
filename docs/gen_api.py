@@ -9,6 +9,7 @@ import ast
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
 import mkdocs_gen_files
 
 # Configure logging
