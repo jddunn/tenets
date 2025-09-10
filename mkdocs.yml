@@ -126,7 +126,7 @@ plugins:
   # Auto-generated API docs - OPTIMIZED FOR PERFORMANCE
   - gen-files:
       scripts:
-        - docs/gen_api_optimized.py
+        - docs/gen_api.py
 
   - literate-nav:
       nav_file: SUMMARY.md
