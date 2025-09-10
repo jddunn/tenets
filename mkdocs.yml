@@ -123,27 +123,48 @@ plugins:
       lang: en
       separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
 
-  # DISABLED: Auto-generated API docs - causing performance issues
-  # The API docs are now static in docs/api/index.md for better performance
-  # - gen-files:
-  #     scripts:
-  #       - docs/gen_api.py
-  #
-  # - literate-nav:
-  #     nav_file: SUMMARY.md
-  #     implicit_index: true
-  #
-  # - section-index
-  #
-  # - mkdocstrings:
-  #     enabled: true
-  #     default_handler: python
-  #     handlers:
-  #       python:
-  #         paths: ['.']
-  #         options:
-  #           show_source: false
-  #           docstring_style: google
+  # Auto-generated API docs
+  - gen-files:
+      scripts:
+        - docs/gen_api.py
+
+  - literate-nav:
+      nav_file: SUMMARY.md
+      implicit_index: true
+
+  - section-index
+
+  - mkdocstrings:
+      enabled: true
+      default_handler: python
+      handlers:
+        python:
+          paths: ['.']
+          import:
+            - https://docs.python.org/3/objects.inv
+          options:
+            # PERFORMANCE OPTIMIZATIONS
+            show_source: false # Don't load source by default
+            show_root_heading: true
+            show_root_toc_entry: false # Reduce TOC size
+            show_object_full_path: false
+            show_category_heading: true
+            show_symbol_type_heading: false # Reduce overhead
+            show_symbol_type_toc: false # Reduce TOC complexity
+            members_order: source
+            group_by_category: false # Faster rendering
+            show_submodules: false # Don't auto-expand submodules
+            docstring_style: google
+            docstring_section_style: spacy # Simpler rendering
+            merge_init_into_class: true
+            show_if_no_docstring: false
+            separate_signature: true
+            line_length: 80
+            show_signature_annotations: true
+            signature_crossrefs: false # Prevent cross-ref overhead
+            filters: ['!^_', '!^test']
+            inherited_members: false # Don't process inherited
+            preload_modules: [] # Don't preload anything
 
   # Git revision dates
   - git-revision-date-localized:
