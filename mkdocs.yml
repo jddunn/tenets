@@ -84,9 +84,9 @@ theme:
   # Features - NO HEADER AUTOHIDE
   features:
     # Navigation
-    - navigation.instant
-    - navigation.instant.prefetch
-    - navigation.instant.progress
+    # - navigation.instant  # DISABLED - can cause click issues
+    # - navigation.instant.prefetch  # DISABLED
+    # - navigation.instant.progress  # DISABLED
     - navigation.tracking
     - navigation.tabs
     - navigation.tabs.sticky
@@ -118,10 +118,9 @@ theme:
 # PLUGINS - PRODUCTION READY
 # ==============================================================================
 plugins:
-  # Search functionality (keep first)
+  # Search functionality
   - search:
       lang: en
-      separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
 
   # Auto-generated API docs
   - gen-files:
@@ -316,63 +315,47 @@ extra:
 # EXTRA CSS - ORGANIZED STRUCTURE
 # ==============================================================================
 extra_css:
-  # Base styles
+  # Minimal CSS to fix the clicking issue
+  # Only keeping essential styles
   - styles/variables.css
-  - styles/main.css
-
-  # Animations
-  - styles/animations.css
-
-  # Theme styles
-  - styles/victorian.css
-  - styles/neumorphic.css
-
-  # Component styles
-  - styles/header.css
-  - styles/footer.css
-  - styles/buttons.css
-  - styles/cards.css
-  - styles/hero.css
-  - styles/terminal.css
-  - styles/back-to-top.css
-  - styles/see-it-in-action.css
-  - styles/search.css
-  - styles/image-modal.css
-
-  # Responsive
-  - styles/mobile.css
-
-  # Final overrides (must be last)
-  - styles/overrides.css
+  # - styles/main.css  # DISABLED - might conflict
+  
+  # TEMPORARILY DISABLED to fix search box hijacking
+  # Re-enable these one by one after testing:
+  # - styles/animations.css
+  # - styles/victorian.css
+  # - styles/neumorphic.css
+  # - styles/header.css
+  # - styles/footer.css
+  # - styles/buttons.css
+  # - styles/cards.css
+  # - styles/hero.css
+  # - styles/terminal.css
+  # - styles/back-to-top.css
+  # - styles/see-it-in-action.css
+  # - styles/search.css  # LIKELY CULPRIT
+  # - styles/image-modal.css
+  # - styles/mobile.css
+  # - styles/overrides.css
 
 # ==============================================================================
 # EXTRA JAVASCRIPT - ORGANIZED STRUCTURE
 # ==============================================================================
 extra_javascript:
-  # MathJax support (optional - uncomment if needed)
-  # - javascripts/mathjax.js
-  # - https://polyfill.io/v3/polyfill.min.js?features=es6
-  # - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  # TEMPORARILY DISABLED - Causing search box click hijacking
+  # Uncomment these after fixing the conflicts
+  
+  # # Core functionality
+  # - js/main.js  # This might be causing the search issue
+  # - js/page-flags.js
 
-  # Core functionality
-  - js/main.js
-  - js/page-flags.js
-
-  # Components
-  - js/theme-toggle.js
-  - js/terminal.js
-  - js/mobile-menu.js
-  - js/copy-buttons.js
-  - js/back-to-top.js
-  - js/image-modal.js
-
-  # Homepage specific
-  - js/lantern.js
-  - js/architecture-diagram.js
-  - js/see-it-in-action.js
-
+  # # Components (these should be safe)
+  # - js/theme-toggle.js
+  # - js/copy-buttons.js
+  # - js/back-to-top.js
+  
   # External libraries
-  - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
+  # - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
 
 # ==============================================================================
 # NAVIGATION - COMPLETE STRUCTURE
