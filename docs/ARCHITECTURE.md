@@ -941,10 +941,10 @@ graph LR
 ```mermaid
 graph TD
     subgraph "Ranking Strategies"
-        FAST[Fast Strategy<br/>~10ms/file<br/>Keyword + Path Only]
-        BALANCED[Balanced Strategy<br/>~100ms/file<br/>TF-IDF + BM25 + Structure]
-        THOROUGH[Thorough Strategy<br/>~200ms/file<br/>Full Analysis + Git]
-        ML_STRAT[ML Strategy<br/>~500ms/file<br/>Semantic Embeddings]
+        FAST[Fast Strategy<br/>Fastest<br/>Keyword + Path Only]
+        BALANCED[Balanced Strategy<br/>1.5x slower<br/>TF-IDF + BM25 + Structure]
+        THOROUGH[Thorough Strategy<br/>4x slower<br/>Full Analysis + ML]
+        ML_STRAT[ML Strategy<br/>5x slower<br/>Semantic Embeddings]
     end
 
     subgraph "Text Analysis (40% in Balanced)"
@@ -1012,10 +1012,10 @@ graph TD
 
 | Strategy | Speed | Accuracy | Use Cases | Factors Used |
 |----------|-------|----------|-----------|--------------|
-| **Fast** | Very Fast<br/>(~10ms/file) | Basic | • Quick file discovery<br/>• Keyword-based search<br/>• Interactive exploration | • Keyword matching (60%)<br/>• Path relevance (30%)<br/>• File type (10%) |
-| **Balanced** | Moderate<br/>(~100ms/file) | Good | • **DEFAULT for both rank and distill**<br/>• Production usage<br/>• Most common scenarios | • Keyword (20%), TF-IDF (20%), BM25 (15%)<br/>• Path (15%), Import centrality (10%)<br/>• Complexity (5%), File type (5%), Git (10%) |
-| **Thorough** | Slower<br/>(~200ms/file) | High | • Complex codebases<br/>• Deep analysis needed<br/>• Research and investigation | • All balanced factors<br/>• Enhanced git analysis<br/>• Deeper structural analysis |
-| **ML** | Slowest<br/>(~500ms/file) | Highest | • Semantic understanding needed<br/>• Natural language queries<br/>• Advanced AI workflows | • All factors + semantic similarity (25%)<br/>• Local embedding models<br/>• Context-aware ranking |
+| **Fast** | Fastest | Basic | • Quick file discovery<br/>• Keyword-based search<br/>• Interactive exploration | • Keyword matching (60%)<br/>• Path relevance (30%)<br/>• File type (10%) |
+| **Balanced** | 1.5x slower | Good | • **DEFAULT for both rank and distill**<br/>• Production usage<br/>• Most common scenarios | • Keyword (20%), TF-IDF (20%), BM25 (15%)<br/>• Path (15%), Import centrality (10%)<br/>• Complexity (5%), File type (5%), Git (10%) |
+| **Thorough** | 4x slower | High | • Complex codebases<br/>• Deep analysis needed<br/>• Research and investigation | • All balanced factors<br/>• Enhanced git analysis<br/>• Deeper structural analysis |
+| **ML** | 5x slower | Highest | • Semantic understanding needed<br/>• Natural language queries<br/>• Advanced AI workflows | • All factors + semantic similarity (25%)<br/>• Local embedding models<br/>• Context-aware ranking |
 
 ### Modular Ranking Architecture
 
@@ -2089,23 +2089,23 @@ graph TD
         STRATEGY[Strategy Selector<br/>Top, distributed, contextual]
         INJECTOR[Smart Injector<br/>Natural break detection]
     end
-    
+
     subgraph "Priority System"
         CRITICAL[Critical Principles<br/>Security, data integrity]
         HIGH[High Priority<br/>Architecture, performance]
         MEDIUM[Medium Priority<br/>Style, conventions]
         LOW[Low Priority<br/>Preferences, suggestions]
     end
-    
+
     subgraph "Reinforcement"
         TOP_INJECTION[Top of Context<br/>Most visible]
         DISTRIBUTED[Throughout Content<br/>Natural sections]
         END_SUMMARY[End Reinforcement<br/>Key reminders]
     end
-    
+
     ANALYZER --> STRATEGY
     STRATEGY --> INJECTOR
-    
+
     CRITICAL --> TOP_INJECTION
     HIGH --> DISTRIBUTED
     MEDIUM --> DISTRIBUTED

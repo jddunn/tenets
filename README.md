@@ -46,11 +46,11 @@ pip install tenets[all]    # Everything
 
 Tenets offers three modes that balance speed vs. accuracy for both `distill` and `rank` commands:
 
-| Mode | Speed | Accuracy | Use Case | What It Does |
-|------|-------|----------|----------|--------------|
-| **fast** | Fastest | Good | Quick exploration | Keyword & path matching, basic relevance |
-| **balanced** | Fast | Better | Most use cases (default) | TF-IDF analysis, BM25 scoring, structure analysis |
-| **thorough** | Slower | Best | Complex refactoring | ML semantic similarity, pattern detection, dependency graphs |
+| Mode         | Speed       | Accuracy | Use Case                 | What It Does                                                 |
+| ------------ | ----------- | -------- | ------------------------ | ------------------------------------------------------------ |
+| **fast**     | Fastest     | Good     | Quick exploration        | Keyword & path matching, basic relevance                     |
+| **balanced** | 1.5x slower | Better   | Most use cases (default) | TF-IDF analysis, BM25 scoring, structure analysis            |
+| **thorough** | 4x slower   | Best     | Complex refactoring      | ML semantic similarity, pattern detection, dependency graphs |
 
 ### Core Commands
 
@@ -91,9 +91,10 @@ tenets rank "database migration" --format json | jq '.files[].path'
 ```
 
 **Why use `rank` instead of `distill`?**
+
 - **Preview**: See what files would be included before generating full context
 - **Performance**: Much faster - no file reading or content processing
-- **Automation**: Export file lists for CI/CD or custom scripts  
+- **Automation**: Export file lists for CI/CD or custom scripts
 - **Understanding**: See ranking factors to understand WHY files are relevant
 - **Planning**: Identify key files before making changes
 
@@ -135,16 +136,16 @@ Create `.tenets.yml` in your project:
 
 ```yaml
 ranking:
-  algorithm: balanced  # fast | balanced | thorough
+  algorithm: balanced # fast | balanced | thorough
   threshold: 0.1
-  use_git: true       # Use git signals for relevance
+  use_git: true # Use git signals for relevance
 
 context:
   max_tokens: 100000
 
 output:
   format: markdown
-  copy_on_distill: true  # Auto-copy to clipboard
+  copy_on_distill: true # Auto-copy to clipboard
 
 ignore:
   - vendor/
@@ -161,6 +162,7 @@ ignore:
 ### Smart Summarization
 
 When files exceed token budgets, tenets intelligently preserves:
+
 - Function/class signatures
 - Import statements
 - Complex logic blocks
