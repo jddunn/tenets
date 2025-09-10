@@ -117,13 +117,13 @@ title: {title}
 
 ::: {mod_name}
     options:
-        show_source: true
+        show_source: false  # Performance: Don't show source
         show_root_heading: false
         show_root_toc_entry: false
         show_object_full_path: false
         show_category_heading: true
         show_symbol_type_heading: true
-        show_symbol_type_toc: true
+        show_symbol_type_toc: false  # Performance: Reduce TOC entries
         members_order: source
         group_by_category: true
         docstring_style: google
@@ -132,8 +132,11 @@ title: {title}
         separate_signature: true
         line_length: 80
         show_signature_annotations: true
-        signature_crossrefs: true
+        signature_crossrefs: false  # Performance: Disable cross-refs
         summary: true
+        show_if_no_docstring: false
+        inherited_members: false  # Performance: Don't show inherited
+        show_submodules: false  # CRITICAL: Don't render submodules inline
 """
 
     # Add filters for non-package modules to hide private members
