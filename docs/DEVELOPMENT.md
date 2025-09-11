@@ -698,7 +698,7 @@ tenets --version
 ```
 Smoke test a core command:
 ```bash
-tenets distill "smoke" . --max-tokens 2000 --mode fast --stats || true
+tenets distill "smoke" --max-tokens 2000 --mode fast --stats || true
 ```
 
 ### Troubleshooting

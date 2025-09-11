@@ -66,14 +66,14 @@ tenets viz deps
 Generate optimized context for LLMs from your codebase.
 
 ```bash
-tenets distill <prompt> [path] [options]
+tenets distill [path] <prompt> [options]
 ```
 
 
 **Arguments:**
 
-- **prompt**: Your query or task description (can be text or URL)
-- **path**: Directory or files to analyze (default: current directory)
+- **path**: Directory or files to analyze (optional, defaults to current directory)
+- **prompt**: Your query or task description (can be text or URL, required)
 
 **Options:**
 
@@ -97,16 +97,18 @@ tenets distill <prompt> [path] [options]
 **Examples:**
 
 ```bash
-# Basic usage - finds all relevant files for implementing OAuth2
-tenets distill "implement OAuth2 authentication"
+# Basic usage - path is optional, defaults to current directory
+tenets distill . "implement OAuth2 authentication"  # Explicit current directory
+tenets distill ./src "implement OAuth2"             # Specific directory
+tenets distill "implement OAuth2 authentication"    # Path defaults to current directory
 
-# From a GitHub issue
+# From a GitHub issue (path optional)
 tenets distill https://github.com/org/repo/issues/123
 
 # Target specific model with cost estimation
 tenets distill "add caching layer" --model gpt-4o --estimate-cost
 
-# Filter by file types
+# Filter by file types (scans current directory by default)
 tenets distill "review API endpoints" --include "*.py,*.yaml" --exclude "test_*"
 
 # Save context to file
@@ -182,7 +184,7 @@ One-off overrides (environment, Git Bash):
 
 ```bash
 TENETS_RANKING_THRESHOLD=0.05 TENETS_RANKING_ALGORITHM=fast \
-  tenets distill "implement OAuth2" . --include "*.py,*.md" --max-tokens 50000
+  tenets distill "implement OAuth2" --include "*.py,*.md" --max-tokens 50000
 
 # Copy output to clipboard directly
 tenets distill "implement OAuth2" --copy
@@ -212,8 +214,8 @@ tenets rank <prompt> [path] [options]
 
 **Arguments:**
 
-- **prompt**: Your query or task to rank files against
-- **path**: Directory or files to analyze (default: current directory)
+- **prompt**: Your query or task to rank files against (required)
+- **path**: Directory or files to analyze (optional, defaults to current directory)
 
 **Options:**
 
@@ -240,13 +242,15 @@ tenets rank <prompt> [path] [options]
 **Examples:**
 
 ```bash
-# Show top 10 most relevant files for OAuth implementation
-tenets rank "implement OAuth2" --top 10
+# Basic usage - prompt first, path optional (defaults to current directory)
+tenets rank "implement OAuth2" --top 10         # Scans current directory by default
+tenets rank "implement OAuth2" . --top 10       # Explicit current directory
+tenets rank "implement OAuth2" ./src --top 10   # Specific directory
 
 # Show files above a relevance threshold
-tenets rank "fix authentication bug" --min-score 0.3
+tenets rank "fix authentication bug" . --min-score 0.3
 
-# Tree view with ranking factors breakdown
+# Tree view with ranking factors (path defaults to current dir if omitted)
 tenets rank "add caching layer" --tree --factors
 
 # Export ranking as JSON for automation
