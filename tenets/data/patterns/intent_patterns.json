@@ -24,7 +24,7 @@
     "weight": 1.0,
     "priority": "high"
   },
-  
+
   "debug": {
     "patterns": [
       "\\b(?:debug|fix|solve|resolve|troubleshoot|investigate|diagnose)\\b",
@@ -51,7 +51,7 @@
     "weight": 1.2,
     "priority": "critical"
   },
-  
+
   "understand": {
     "patterns": [
       "\\b(?:understand|explain|how|what|where|why|when|show|describe)\\b",
@@ -78,7 +78,7 @@
     "weight": 0.9,
     "priority": "medium"
   },
-  
+
   "refactor": {
     "patterns": [
       "\\b(?:refactor|restructure|reorganize|improve|clean|cleanup)\\b",
@@ -105,7 +105,7 @@
     "weight": 1.0,
     "priority": "medium"
   },
-  
+
   "test": {
     "patterns": [
       "\\b(?:test|testing|unit\\s+test|integration\\s+test|e2e|end-to-end)\\b",
@@ -132,7 +132,7 @@
     "weight": 1.0,
     "priority": "high"
   },
-  
+
   "document": {
     "patterns": [
       "\\b(?:document|documentation|docs|readme|comment|annotate)\\b",
@@ -159,7 +159,7 @@
     "weight": 0.8,
     "priority": "low"
   },
-  
+
   "review": {
     "patterns": [
       "\\b(?:review|check|audit|inspect|analyze|assess|evaluate)\\b",
@@ -186,7 +186,7 @@
     "weight": 0.9,
     "priority": "medium"
   },
-  
+
   "optimize": {
     "patterns": [
       "\\b(?:optimize|performance|speed|faster|slower|latency|throughput)\\b",
@@ -213,7 +213,7 @@
     "weight": 1.1,
     "priority": "high"
   },
-  
+
   "integrate": {
     "patterns": [
       "\\b(?:integrate|connect|interface|api|webhook|plugin|extension)\\b",
@@ -240,7 +240,7 @@
     "weight": 1.0,
     "priority": "medium"
   },
-  
+
   "migrate": {
     "patterns": [
       "\\b(?:migrate|upgrade|port|move|transfer|transition)\\b",
@@ -267,7 +267,7 @@
     "weight": 1.0,
     "priority": "high"
   },
-  
+
   "configure": {
     "patterns": [
       "\\b(?:configure|config|setup|settings|options|preferences)\\b",
@@ -294,7 +294,7 @@
     "weight": 0.9,
     "priority": "medium"
   },
-  
+
   "analyze": {
     "patterns": [
       "\\b(?:analyze|analysis|examine|investigate|explore|study)\\b",
@@ -321,7 +321,7 @@
     "weight": 0.9,
     "priority": "medium"
   },
-  
+
   "design": {
     "patterns": [
       "\\b(?:design|architect|plan|model|blueprint|schema)\\b",
@@ -348,7 +348,7 @@
     "weight": 1.0,
     "priority": "high"
   },
-  
+
   "secure": {
     "patterns": [
       "\\b(?:secure|security|protect|encrypt|decrypt|hash)\\b",

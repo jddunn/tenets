@@ -9,7 +9,7 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 
 from tenets.utils.logger import get_logger
 
@@ -39,7 +39,7 @@ class ProgrammingPatterns:
             patterns_file = (
                 Path(__file__).parent.parent.parent
                 / "data"
-                / "pattterns"  # Note: folder is misspelled in filesystem
+                / "patterns"
                 / "programming_patterns.json"
             )
 
