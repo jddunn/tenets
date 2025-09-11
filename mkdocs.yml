@@ -315,17 +315,30 @@ extra:
 # EXTRA CSS - ORGANIZED STRUCTURE
 # ==============================================================================
 extra_css:
-  # Minimal CSS to fix the clicking issue
-  # Only keeping essential styles
+  # Core styles (working properly)
   - styles/variables.css
-  # - styles/main.css  # DISABLED - might conflict
-  
-  # TEMPORARILY DISABLED to fix search box hijacking
-  # Re-enable these one by one after testing:
-  # - styles/animations.css
+  - styles/buttons.css
+  - styles/cards.css
+  - styles/footer.css
+  - styles/animations.css
+  - styles/hero.css
+  - styles/terminal.css
+  - styles/back-to-top.css
+  - styles/image-modal.css
+  - styles/mobile.css
+  # - styles/header.css  # DISABLED - causes search focus trap issue
+  # - styles/search.css  # DISABLED - may conflict with Material search
+  # - styles/main.css  # DISABLED - may have global overrides
+  # - styles/navigation.css  # DISABLED - may interfere with clicks
+
+  # LIKELY PROBLEMATIC - Test these carefully:
+  # - styles/main.css  # May have global overrides
+  # - styles/search.css  # May conflict with Material search
+  # - styles/navigation.css  # May interfere with clicks
+
+  # Theme styles to test:
   # - styles/victorian.css
   # - styles/neumorphic.css
-  # - styles/header.css
   # - styles/footer.css
   # - styles/buttons.css
   # - styles/cards.css
@@ -341,20 +354,21 @@ extra_css:
 # ==============================================================================
 # EXTRA JAVASCRIPT - ORGANIZED STRUCTURE
 # ==============================================================================
-extra_javascript:
+extra_javascript: []
   # TEMPORARILY DISABLED - Causing search box click hijacking
   # Uncomment these after fixing the conflicts
-  
-  # # Core functionality
+
   # - js/main.js  # This might be causing the search issue
   # - js/page-flags.js
-
-  # # Components (these should be safe)
   # - js/theme-toggle.js
   # - js/copy-buttons.js
   # - js/back-to-top.js
-  
-  # External libraries
+  # - js/terminal.js
+  # - js/mobile-menu.js
+  # - js/image-modal.js
+  # - js/lantern.js
+  # - js/architecture-diagram.js
+  # - js/see-it-in-action.js
   # - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
 
 # ==============================================================================
