@@ -17,7 +17,7 @@ copyright: >
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
-strict: false
+strict: false # Keep false to allow warnings
 
 # ==============================================================================
 # REPOSITORY
@@ -317,7 +317,7 @@ extra:
 extra_css:
   # Core styles (working properly)
   - styles/variables.css
-  - styles/header-fixed.css  # Fixed header with nav, animations, and duplicate fixes
+  - styles/header-fixed.css # Fixed header with nav, animations, and duplicate fixes
   - styles/buttons.css
   - styles/cards.css
   - styles/footer.css
@@ -367,7 +367,7 @@ extra_javascript:
   - js/terminal.js
   - js/mobile-menu.js
   - js/image-modal.js
-  - js/lantern.js  # Torch animation
+  - js/lantern.js # Torch animation
   - js/see-it-in-action.js
   # - js/main.js  # DISABLED - might cause search issues
   # - js/architecture-diagram.js
@@ -406,7 +406,7 @@ nav:
       - Guiding Principles: architecture/guiding-principles.md
       - Output & Visualization: architecture/output-visualization.md
       - Roadmap: architecture/roadmap.md
-  - API Reference: api.md
+  - API Reference: api/
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
 
