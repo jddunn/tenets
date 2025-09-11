@@ -34,8 +34,8 @@ theme:
   custom_dir: docs/overrides
   language: en
 
-  # Logo and Branding
-  logo: logos/tenets_dark_icon_transparent.png
+  # Logo and Branding - handled by custom partial in overrides/partials/logo.html
+  # logo: commented out - using custom partial for theme-aware logo switching
   favicon: favicon/favicon.ico
 
   # Typography
