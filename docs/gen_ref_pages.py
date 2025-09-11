@@ -90,19 +90,36 @@ def build_nav_tree(items):
         for i, part in enumerate(parts[:-1]):
             if part not in current:
                 current[part] = {}
+            elif not isinstance(current[part], dict):
+                # If there's a conflict (module and package with same name), convert to dict
+                current[part] = {"__module__": current[part]}
             current = current[part]
         # Last part is the file
-        current[parts[-1]] = path
+        if parts[-1] in current and isinstance(current[parts[-1]], dict):
+            # Package index file
+            current[parts[-1]]["__module__"] = path
+        else:
+            current[parts[-1]] = path
     return tree
 
 def write_nav_markdown(tree, indent=0):
     """Convert nav tree to markdown list."""
     lines = []
     for key, value in sorted(tree.items()):
+        if key == "__module__":
+            continue  # Skip special module marker
         if isinstance(value, dict):
             # It's a package
-            lines.append(f"{'    ' * indent}* **{key.replace('_', ' ').title()}**")
-            lines.extend(write_nav_markdown(value, indent + 1))
+            title = key.replace('_', ' ').title()
+            # Check if package has its own module
+            if "__module__" in value:
+                lines.append(f"{'    ' * indent}* [{title}]({value['__module__']})")
+            else:
+                lines.append(f"{'    ' * indent}* **{title}**")
+            # Add sub-items
+            sub_items = {k: v for k, v in value.items() if k != "__module__"}
+            if sub_items:
+                lines.extend(write_nav_markdown(sub_items, indent + 1))
         else:
             # It's a module
             title = key.replace('_', ' ').title()
