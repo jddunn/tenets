@@ -47,7 +47,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/jddunn/tenets"
-Documentation = "https://docs.tenets.dev"
+Documentation = "https://tenets.dev/docs"
 Repository = "https://github.com/jddunn/tenets"
 Issues = "https://github.com/jddunn/tenets/issues"
 Changelog = "https://github.com/jddunn/tenets/blob/main/CHANGELOG.md"

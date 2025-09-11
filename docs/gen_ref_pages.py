@@ -118,10 +118,10 @@ def write_nav_markdown(tree, indent=0):
             # Check if package has its own module
             if "__module__" in value:
                 # Package with index - make it a link
-                lines.append(f"{'  ' * indent}- [{title}]({value['__module__']})")
+                lines.append(f"{'    ' * indent}* [{title}]({value['__module__']})")
             else:
-                # Package without index - just bold text
-                lines.append(f"{'  ' * indent}- **{title}**")
+                # Package without index - just a header
+                lines.append(f"{'    ' * indent}* {title}")
 
             # Add sub-items
             sub_items = {k: v for k, v in value.items() if k != "__module__"}
@@ -129,7 +129,7 @@ def write_nav_markdown(tree, indent=0):
                 lines.extend(write_nav_markdown(sub_items, indent + 1))
         else:
             # It's a module - create a link
-            lines.append(f"{'  ' * indent}- [{title}]({value})")
+            lines.append(f"{'    ' * indent}* [{title}]({value})")
 
     return lines
 
@@ -138,6 +138,7 @@ def write_nav_markdown(tree, indent=0):
 nav_tree = build_nav_tree(nav_items)
 nav_lines = write_nav_markdown(nav_tree)
 
+# Write to the root SUMMARY.md for literate-nav to find
 with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
     nav_file.write("# API Reference\n\n")
     nav_file.write("\n".join(nav_lines))
