@@ -3,7 +3,7 @@
 [project]
 name = "tenets"
 version = "0.1.0"
-description = "AI-native code exploration and context management platform"
+description = "Context that feeds your prompts"
 authors = [{name = "Tenets Team", email = "team@tenets.dev"}]
 readme = "README.md"
 license = {text = "MIT"}
