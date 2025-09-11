@@ -66,17 +66,17 @@ for path in sorted(src.rglob("*.py")):
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         # Use safe title generation
         title = parts[-1].replace("_", " ").title()
-        print(f"# {title}\n", file=fd)
-        print(f"::: {identifier}", file=fd)
-        print("    options:", file=fd)
-        print("        show_source: false", file=fd)
-        print("        show_root_heading: true", file=fd)
-        print("        members_order: source", file=fd)
-        print("        show_if_no_docstring: false", file=fd)
-        print("        inherited_members: false", file=fd)
-        print("        filters:", file=fd)
-        print('          - "!^_"', file=fd)
-        print('          - "!^test"', file=fd)
+        fd.write(f"# {title}\n\n")
+        fd.write(f"::: {identifier}\n")
+        fd.write("    options:\n")
+        fd.write("        show_source: false\n")
+        fd.write("        show_root_heading: true\n")
+        fd.write("        members_order: source\n")
+        fd.write("        show_if_no_docstring: false\n")
+        fd.write("        inherited_members: false\n")
+        fd.write("        filters:\n")
+        fd.write('          - "!^_"\n')
+        fd.write('          - "!^test"\n')
 
     # Set edit path to the source file
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
@@ -88,7 +88,7 @@ def build_nav_tree(items):
     tree = {}
     for parts, path in items.items():
         current = tree
-        for i, part in enumerate(parts[:-1]):
+        for _i, part in enumerate(parts[:-1]):
             if part not in current:
                 current[part] = {}
             elif not isinstance(current[part], dict):
@@ -105,27 +105,32 @@ def build_nav_tree(items):
 
 
 def write_nav_markdown(tree, indent=0):
-    """Convert nav tree to markdown list."""
+    """Convert nav tree to clean markdown list without HTML."""
     lines = []
     for key, value in sorted(tree.items()):
         if key == "__module__":
             continue  # Skip special module marker
+
+        title = key.replace("_", " ").title()
+
         if isinstance(value, dict):
             # It's a package
-            title = key.replace("_", " ").title()
             # Check if package has its own module
             if "__module__" in value:
-                lines.append(f"{'    ' * indent}* [{title}]({value['__module__']})")
+                # Package with index - make it a link
+                lines.append(f"{'  ' * indent}- [{title}]({value['__module__']})")
             else:
-                lines.append(f"{'    ' * indent}* **{title}**")
+                # Package without index - just bold text
+                lines.append(f"{'  ' * indent}- **{title}**")
+
             # Add sub-items
             sub_items = {k: v for k, v in value.items() if k != "__module__"}
             if sub_items:
                 lines.extend(write_nav_markdown(sub_items, indent + 1))
         else:
-            # It's a module
-            title = key.replace("_", " ").title()
-            lines.append(f"{'    ' * indent}* [{title}]({value})")
+            # It's a module - create a link
+            lines.append(f"{'  ' * indent}- [{title}]({value})")
+
     return lines
 
 

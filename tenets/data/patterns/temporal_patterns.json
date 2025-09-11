@@ -29,7 +29,7 @@
     "\\b(Spring|Summer|Fall|Autumn|Winter)\\s+\\d{4}",
     "\\b\\d{1,2}\\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+'\\d{2}"
   ],
-  
+
   "relative_dates": {
     "now": 0,
     "today": 0,
@@ -118,7 +118,7 @@
     "just now": 0,
     "a moment ago": 0
   },
-  
+
   "relative_patterns": [
     "\\b(\\d+)\\s+(second|minute|hour|day|week|month|year|decade|century)s?\\s+ago",
     "\\b(\\d+)\\s+(second|minute|hour|day|week|month|year|decade|century)s?\\s+from\\s+now",
@@ -153,7 +153,7 @@
     "\\bhalf\\s+an?\\s+(hour|day|week|month|year)\\s+ago",
     "\\bhalf\\s+an?\\s+(hour|day|week|month|year)\\s+from\\s+now"
   ],
-  
+
   "time_patterns": [
     "\\b(\\d{1,2}):(\\d{2})(?::(\\d{2}))?\\s*(AM|PM|am|pm)",
     "\\b(\\d{1,2})\\s*(AM|PM|am|pm)",
@@ -179,7 +179,7 @@
     "\\bbetween\\s+(\\d{1,2})(?::(\\d{2}))?\\s*(?:AM|PM|am|pm)?\\s+and\\s+(\\d{1,2})(?::(\\d{2}))?\\s*(?:AM|PM|am|pm)?",
     "\\b(\\d{6})Z?"
   ],
-  
+
   "duration_patterns": [
     "\\bfor\\s+(?:the\\s+)?(?:past|last|next|coming)?\\s*(\\d+)\\s+(second|minute|hour|day|week|month|year)s?",
     "\\bduring\\s+(?:the\\s+)?(?:past|last|next|coming)?\\s*(\\d+)\\s+(second|minute|hour|day|week|month|year)s?",
@@ -215,7 +215,7 @@
     "\\b(\\d+):(\\d{2}):(\\d{2})\\s+elapsed",
     "\\b(\\d+)d\\s*(\\d+)h\\s*(\\d+)m\\s*(\\d+)s"
   ],
-  
+
   "range_patterns": [
     "\\bfrom\\s+(.+?)\\s+to\\s+(.+?)(?:\\b|$)",
     "\\bbetween\\s+(.+?)\\s+and\\s+(.+?)(?:\\b|$)",
@@ -243,7 +243,7 @@
     "\\b(.+?)\\s+plus\\s+or\\s+minus\\s+(\\d+)\\s*(second|minute|hour|day|week|month|year)s?",
     "\\b(.+?)\\s+give\\s+or\\s+take\\s+(\\d+)\\s*(second|minute|hour|day|week|month|year)s?"
   ],
-  
+
   "recurring_patterns": [
     "\\bevery\\s+(second|minute|hour|day|week|month|year|monday|tuesday|wednesday|thursday|friday|saturday|sunday)",
     "\\b(daily|weekly|monthly|yearly|annually|hourly|minutely|secondly)",
@@ -279,24 +279,20 @@
     "\\bas\\s+needed",
     "\\bwhen\\s+necessary"
   ],
-  
+
   "special_dates": {
     "new year": "01-01",
     "new years": "01-01",
-    "new year's day": "01-01",
-    "new year's eve": "12-31",
+    "new years day": "01-01",
+    "new years eve": "12-31",
     "martin luther king day": "01-third-monday",
     "mlk day": "01-third-monday",
     "groundhog day": "02-02",
-    "valentine's day": "02-14",
     "valentines day": "02-14",
-    "president's day": "02-third-monday",
     "presidents day": "02-third-monday",
     "leap day": "02-29",
-    "st patrick's day": "03-17",
     "st patricks day": "03-17",
     "april fools": "04-01",
-    "april fool's day": "04-01",
     "easter": "varies",
     "good friday": "varies",
     "palm sunday": "varies",
@@ -305,11 +301,9 @@
     "earth day": "04-22",
     "arbor day": "04-last-friday",
     "cinco de mayo": "05-05",
-    "mother's day": "05-second-sunday",
     "mothers day": "05-second-sunday",
     "memorial day": "05-last-monday",
     "flag day": "06-14",
-    "father's day": "06-third-sunday",
     "fathers day": "06-third-sunday",
     "juneteenth": "06-19",
     "independence day": "07-04",
@@ -334,7 +328,6 @@
     "christmas day": "12-25",
     "boxing day": "12-26",
     "kwanzaa": "12-26",
-    "new year's eve": "12-31",
     "chinese new year": "varies",
     "lunar new year": "varies",
     "ramadan": "varies",
@@ -365,7 +358,7 @@
     "remembrance day": "11-11",
     "armistice day": "11-11"
   },
-  
+
   "quarters": {
     "q1": [1, 3],
     "q2": [4, 6],
@@ -393,7 +386,7 @@
     "fy q3": [7, 9],
     "fy q4": [10, 12]
   },
-  
+
   "fiscal_periods": {
     "fiscal year": "fy",
     "financial year": "fy",
@@ -421,7 +414,7 @@
     "second trimester": [5, 8],
     "third trimester": [9, 12]
   },
-  
+
   "time_zones": {
     "UTC": 0,
     "GMT": 0,
@@ -497,7 +490,7 @@
     "PYST": -3,
     "BOT": -4
   },
-  
+
   "day_parts": {
     "dawn": [4, 6],
     "early morning": [5, 8],
@@ -531,7 +524,7 @@
     "daytime": [6, 18],
     "nighttime": [18, 6]
   },
-  
+
   "relative_days": {
     "monday": 1,
     "tuesday": 2,
@@ -583,7 +576,7 @@
     "following saturday": 6,
     "following sunday": 0
   },
-  
+
   "relative_months": {
     "january": 1,
     "february": 2,
@@ -646,7 +639,7 @@
     "last november": 11,
     "last december": 12
   },
-  
+
   "seasons": {
     "spring": [3, 5],
     "summer": [6, 8],
@@ -687,7 +680,7 @@
     "mid-autumn": [10, 10],
     "mid-winter": [1, 1]
   },
-  
+
   "approximate_times": {
     "immediately": 0,
     "instantly": 0,
