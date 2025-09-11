@@ -1,0 +1,30 @@
+/* Fix for duplicate logo issue */
+
+/* Hide all default Material theme logos */
+.md-header .md-logo img:not(.dark-logo):not(.light-logo) {
+  display: none !important;
+}
+
+/* Ensure only one logo shows at a time based on theme */
+.md-header__button.md-logo img.light-logo,
+.md-header__button.md-logo img.dark-logo {
+  display: none !important;
+}
+
+/* Show appropriate logo based on theme */
+[data-md-color-scheme="default"] .md-header__button.md-logo img.light-logo {
+  display: inline-block !important;
+}
+
+[data-md-color-scheme="slate"] .md-header__button.md-logo img.dark-logo {
+  display: inline-block !important;
+}
+
+/* Default to light logo if no scheme set */
+html:not([data-md-color-scheme]) .md-header__button.md-logo img.light-logo {
+  display: inline-block !important;
+}
+
+html:not([data-md-color-scheme]) .md-header__button.md-logo img.dark-logo {
+  display: none !important;
+}
