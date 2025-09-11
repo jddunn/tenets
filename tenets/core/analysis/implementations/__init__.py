@@ -24,24 +24,25 @@ Available analyzers:
 - GenericAnalyzer: Fallback for unsupported languages
 """
 
-# Import analyzers for easier access
-from .python_analyzer import PythonAnalyzer
-from .javascript_analyzer import JavaScriptAnalyzer
-from .java_analyzer import JavaAnalyzer
-from .go_analyzer import GoAnalyzer
-from .rust_analyzer import RustAnalyzer
 from .cpp_analyzer import CppAnalyzer
 from .csharp_analyzer import CSharpAnalyzer
-from .swift_analyzer import SwiftAnalyzer
-from .ruby_analyzer import RubyAnalyzer
-from .php_analyzer import PhpAnalyzer
-from .kotlin_analyzer import KotlinAnalyzer
-from .scala_analyzer import ScalaAnalyzer
+from .css_analyzer import CSSAnalyzer
 from .dart_analyzer import DartAnalyzer
 from .gdscript_analyzer import GDScriptAnalyzer
-from .html_analyzer import HTMLAnalyzer
-from .css_analyzer import CSSAnalyzer
 from .generic_analyzer import GenericAnalyzer
+from .go_analyzer import GoAnalyzer
+from .html_analyzer import HTMLAnalyzer
+from .java_analyzer import JavaAnalyzer
+from .javascript_analyzer import JavaScriptAnalyzer
+from .kotlin_analyzer import KotlinAnalyzer
+from .php_analyzer import PhpAnalyzer
+
+# Import analyzers for easier access
+from .python_analyzer import PythonAnalyzer
+from .ruby_analyzer import RubyAnalyzer
+from .rust_analyzer import RustAnalyzer
+from .scala_analyzer import ScalaAnalyzer
+from .swift_analyzer import SwiftAnalyzer
 
 __all__ = [
     "PythonAnalyzer",
