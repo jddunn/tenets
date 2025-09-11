@@ -53,10 +53,10 @@ hide:
       </div>
       <div class="terminal-body">
         <pre><code class="language-bash"><span class="prompt">$</span> pip install tenets
-<span class="prompt">$</span> tenets distill "implement OAuth2 authentication"
+<span class="prompt">$</span> tenets distill "add mistral api to summarizer"
 <span class="output">✨ Finding relevant files...
 📊 Ranking by importance...
-📦 Aggregating context (45,231 tokens)
+📦 Aggregating context (251,146 tokens)
 ✅ Context ready for your LLM!</span></code></pre>
       </div>
     </div>

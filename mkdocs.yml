@@ -17,7 +17,7 @@ copyright: >
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
-strict: false
+strict: false # Keep false to allow warnings
 
 # ==============================================================================
 # REPOSITORY
@@ -84,9 +84,9 @@ theme:
   # Features - NO HEADER AUTOHIDE
   features:
     # Navigation
-    - navigation.instant
-    - navigation.instant.prefetch
-    - navigation.instant.progress
+    # - navigation.instant  # DISABLED - can cause click issues
+    # - navigation.instant.prefetch  # DISABLED
+    # - navigation.instant.progress  # DISABLED
     - navigation.tracking
     - navigation.tabs
     - navigation.tabs.sticky
@@ -118,15 +118,14 @@ theme:
 # PLUGINS - PRODUCTION READY
 # ==============================================================================
 plugins:
-  # Search functionality (keep first)
+  # Search functionality
   - search:
       lang: en
-      separator: '[\s\u200b\-_,:!=\[\]()"/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
 
-  # Auto-generated API docs - OPTIMIZED FOR PERFORMANCE
+  # Auto-generated API docs
   - gen-files:
       scripts:
-        - docs/gen_api.py
+        - docs/gen_ref_pages.py
 
   - literate-nav:
       nav_file: SUMMARY.md
@@ -134,45 +133,37 @@ plugins:
 
   - section-index
 
-  # Optional: For better page organization (uncomment if needed)
-  # - awesome-pages:
-  #     collapse_single_pages: false
-  #     strict: false
-
   - mkdocstrings:
       enabled: true
       default_handler: python
       handlers:
         python:
           paths: ['.']
-          setup_commands:
-            - import os, sys
-            - sys.path.insert(0, os.path.abspath('.'))
+          import:
+            - https://docs.python.org/3/objects.inv
           options:
-            # Performance optimizations
-            show_source: false  # Don't show source code (huge performance boost)
+            # PERFORMANCE OPTIMIZATIONS
+            show_source: false # Don't load source by default
             show_root_heading: true
-            show_root_toc_entry: false  # Don't show root in TOC
-            show_root_full_path: false  # Don't show full module paths
+            show_root_toc_entry: false # Reduce TOC size
             show_object_full_path: false
             show_category_heading: true
-            show_symbol_type_heading: true
-            show_symbol_type_toc: false  # Don't duplicate in TOC
+            show_symbol_type_heading: false # Reduce overhead
+            show_symbol_type_toc: false # Reduce TOC complexity
             members_order: source
-            group_by_category: true
-            show_submodules: false  # CRITICAL: Don't render submodules inline
+            group_by_category: false # Faster rendering
+            show_submodules: false # Don't auto-expand submodules
             docstring_style: google
-            docstring_section_style: table
+            docstring_section_style: spacy # Simpler rendering
             merge_init_into_class: true
             show_if_no_docstring: false
-            inherited_members: false  # Don't show inherited members (performance)
             separate_signature: true
             line_length: 80
             show_signature_annotations: true
-            signature_crossrefs: false  # Disable cross-references (performance)
+            signature_crossrefs: false # Prevent cross-ref overhead
             filters: ['!^_', '!^test']
-            preload_modules: []  # Don't preload everything
-            load_external_modules: false  # Don't load external deps
+            inherited_members: false # Don't process inherited
+            preload_modules: [] # Don't preload anything
 
   # Git revision dates
   - git-revision-date-localized:
@@ -324,65 +315,64 @@ extra:
 # EXTRA CSS - ORGANIZED STRUCTURE
 # ==============================================================================
 extra_css:
-  # Base styles
+  # Core styles (working properly)
   - styles/variables.css
-  - styles/main.css
-
-  # Animations
-  - styles/animations.css
-
-  # Theme styles
-  - styles/victorian.css
-  - styles/neumorphic.css
-
-  # Component styles
-  - styles/header.css
-  - styles/footer.css
+  - styles/header-fixed.css # Fixed header with nav, animations, and duplicate fixes
   - styles/buttons.css
   - styles/cards.css
+  - styles/footer.css
+  - styles/animations.css
   - styles/hero.css
   - styles/terminal.css
   - styles/back-to-top.css
-  - styles/see-it-in-action.css
-  - styles/search.css
   - styles/image-modal.css
-  - styles/api-performance.css
-
-  # Responsive
   - styles/mobile.css
-
-  # Final overrides (must be last)
+  - styles/victorian.css
+  - styles/neumorphic.css
+  - styles/see-it-in-action.css
   - styles/overrides.css
+  # DISABLED - These cause issues:
+  # - styles/header.css  # Original has search focus trap issue
+  # - styles/search.css  # May conflict with Material search
+  # - styles/main.css  # May have global overrides
+
+  # LIKELY PROBLEMATIC - Test these carefully:
+  # - styles/main.css  # May have global overrides
+  # - styles/search.css  # May conflict with Material search
+  # - styles/navigation.css  # May interfere with clicks
+
+  # Theme styles to test:
+  # - styles/victorian.css
+  # - styles/neumorphic.css
+  # - styles/footer.css
+  # - styles/buttons.css
+  # - styles/cards.css
+  # - styles/hero.css
+  # - styles/terminal.css
+  # - styles/back-to-top.css
+  # - styles/see-it-in-action.css
+  # - styles/search.css  # LIKELY CULPRIT
+  # - styles/image-modal.css
+  # - styles/mobile.css
+  # - styles/overrides.css
 
 # ==============================================================================
 # EXTRA JAVASCRIPT - ORGANIZED STRUCTURE
 # ==============================================================================
 extra_javascript:
-  # MathJax support (optional - uncomment if needed)
-  # - javascripts/mathjax.js
-  # - https://polyfill.io/v3/polyfill.min.js?features=es6
-  # - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-
-  # Core functionality
-  - js/main.js
-  - js/page-flags.js
-
-  # Components
+  # Essential functionality (no search conflicts)
   - js/theme-toggle.js
-  - js/terminal.js
-  - js/mobile-menu.js
   - js/copy-buttons.js
   - js/back-to-top.js
+  - js/terminal.js
+  - js/mobile-menu.js
   - js/image-modal.js
-
-  # Homepage specific
-  - js/lantern.js
-  - js/architecture-diagram.js
+  - js/lantern.js # Torch animation
   - js/see-it-in-action.js
-  - js/api-lazy-load.js
-
-  # External libraries
-  - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
+  # - js/main.js  # DISABLED - might cause search issues
+  # - js/architecture-diagram.js
+  # - js/see-it-in-action.js
+  # - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
 
 # ==============================================================================
 # NAVIGATION - COMPLETE STRUCTURE
@@ -396,8 +386,27 @@ nav:
       - Supported Languages: supported-languages.md
       - Best Practices: best-practices.md
       - Examples: examples.md
-  - Architecture: ARCHITECTURE.md
-  - API Docs: api/index.md
+  - Architecture:
+      - Overview: ARCHITECTURE.md
+      - System Overview: architecture/system-overview.md
+      - Core Architecture: architecture/core-architecture.md
+      - NLP/ML Pipeline: architecture/nlp-pipeline.md
+      - File Scanning: architecture/file-scanning.md
+      - Code Analysis: architecture/code-analysis.md
+      - Ranking System: architecture/ranking-system.md
+      - Git Integration: architecture/git-integration.md
+      - Context Management: architecture/context-management.md
+      - Session Management: architecture/session-management.md
+      - Storage & Caching: architecture/storage-caching.md
+      - Performance: architecture/performance.md
+      - Configuration: architecture/configuration.md
+      - CLI & API: architecture/cli-api.md
+      - Security: architecture/security.md
+      - Testing: architecture/testing.md
+      - Guiding Principles: architecture/guiding-principles.md
+      - Output & Visualization: architecture/output-visualization.md
+      - Roadmap: architecture/roadmap.md
+  - API Reference: api/
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
 
