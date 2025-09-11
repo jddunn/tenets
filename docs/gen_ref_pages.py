@@ -12,8 +12,8 @@ import mkdocs_gen_files
 root = Path(__file__).parent.parent
 src = root / "tenets"
 
-# Track what we've generated for nav
-nav = mkdocs_gen_files.Nav()
+# Track what we've generated for nav (using dict for manual nav building)
+nav_items = {}
 
 # Skip these problematic modules
 SKIP_MODULES = {
@@ -56,15 +56,17 @@ for path in sorted(src.rglob("*.py")):
     if not parts:
         continue
 
-    # Add to navigation
-    nav[parts] = doc_path.as_posix()
+    # Add to navigation dict
+    nav_items[parts] = doc_path.as_posix()
 
     # Generate the page content
     identifier = ".".join(parts)
 
     # Generate mkdocstrings for all modules
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
-        print(f"# {parts[-1].replace('_', ' ').title()}\n", file=fd)
+        # Use safe title generation
+        title = parts[-1].replace('_', ' ').title()
+        print(f"# {title}\n", file=fd)
         print(f"::: {identifier}", file=fd)
         print("    options:", file=fd)
         print("        show_source: false", file=fd)
@@ -79,6 +81,38 @@ for path in sorted(src.rglob("*.py")):
     # Set edit path to the source file
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
 
+# Build navigation tree manually
+def build_nav_tree(items):
+    """Build a nested dict from flat module paths."""
+    tree = {}
+    for parts, path in items.items():
+        current = tree
+        for i, part in enumerate(parts[:-1]):
+            if part not in current:
+                current[part] = {}
+            current = current[part]
+        # Last part is the file
+        current[parts[-1]] = path
+    return tree
+
+def write_nav_markdown(tree, indent=0):
+    """Convert nav tree to markdown list."""
+    lines = []
+    for key, value in sorted(tree.items()):
+        if isinstance(value, dict):
+            # It's a package
+            lines.append(f"{'    ' * indent}* **{key.replace('_', ' ').title()}**")
+            lines.extend(write_nav_markdown(value, indent + 1))
+        else:
+            # It's a module
+            title = key.replace('_', ' ').title()
+            lines.append(f"{'    ' * indent}* [{title}]({value})")
+    return lines
+
 # Write the navigation file
+nav_tree = build_nav_tree(nav_items)
+nav_lines = write_nav_markdown(nav_tree)
+
 with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
-    nav_file.writelines(nav.build_literate_nav())
+    nav_file.write("# API Reference\n\n")
+    nav_file.write("\n".join(nav_lines))
