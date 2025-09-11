@@ -12,7 +12,7 @@ from collections import defaultdict
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 import click
 import typer
@@ -48,7 +48,7 @@ def _get_language_from_extension(file_path: Path) -> str:
     """
     ext: str = file_path.suffix.lower()
     # Common language mappings
-    lang_map: Dict[str, str] = {
+    lang_map: dict[str, str] = {
         ".py": "python",
         ".js": "javascript",
         ".ts": "typescript",
@@ -186,7 +186,7 @@ def rank(
         tenets rank "implement OAuth2" --top 10
 
         # Show files above a score threshold
-        tenets rank "fix bug" --min-score 0.3
+        tenets rank "fix bug" . --min-score 0.3
 
         # Tree view with ranking factors
         tenets rank "add caching" --tree --factors
@@ -382,7 +382,7 @@ def _format_ranked_files(
     show_factors: bool,
     show_path: str,
     prompt: str,
-    stats: Optional[Dict[str, Any]] = None,
+    stats: Optional[dict[str, Any]] = None,
 ) -> str:
     """Format ranked files for output based on specified format.
 
@@ -445,7 +445,7 @@ def _format_markdown(
             lines.append(f"{i}. **{path}**")
 
         if show_factors and hasattr(file, "relevance_factors"):
-            factors: Dict[str, float] = file.relevance_factors
+            factors: dict[str, float] = file.relevance_factors
             lines.append("   - Factors:")
             for factor, value in factors.items():
                 lines.append(f"     - {factor}: {value:.2%}")
@@ -482,7 +482,7 @@ def _format_tree(
         tree = Tree("📂 Ranked Files (sorted by relevance)")
 
     # Group by directory while preserving order
-    dirs: Dict[Path, List[FileAnalysis]] = defaultdict(list)
+    dirs: dict[Path, List[FileAnalysis]] = defaultdict(list)
 
     for file in files:
         dir_path: Path = Path(file.path).parent
@@ -523,7 +523,7 @@ def _format_tree(
             file_branch: Tree = dir_branch.add(file_text)
 
             if show_factors and hasattr(file, "relevance_factors"):
-                factors: Dict[str, float] = file.relevance_factors
+                factors: dict[str, float] = file.relevance_factors
                 for factor, value in factors.items():
                     file_branch.add(f"{factor}: {value:.2%}")
 
@@ -538,7 +538,7 @@ def _format_json(
     files: List[FileAnalysis],
     show_scores: bool,
     show_factors: bool,
-    stats: Optional[Dict[str, Any]],
+    stats: Optional[dict[str, Any]],
 ) -> str:
     """Format ranked files as JSON.
 
@@ -557,10 +557,10 @@ def _format_json(
         >>> json.loads(result)['total_files']
         1
     """
-    data: Dict[str, Any] = {"total_files": len(files), "files": []}
+    data: dict[str, Any] = {"total_files": len(files), "files": []}
 
     for file in files:
-        file_data: Dict[str, Any] = {
+        file_data: dict[str, Any] = {
             "path": str(file.path),
             "rank": getattr(file, "relevance_rank", 0),
         }
@@ -650,9 +650,9 @@ def _format_html(
         Avoids f-string backslash issues by using chr() for special characters.
     """
     # Prepare data for JavaScript
-    files_data: List[Dict[str, Any]] = []
+    files_data: List[dict[str, Any]] = []
     for file in files:
-        file_data: Dict[str, Any] = {
+        file_data: dict[str, Any] = {
             "path": str(file.path),
             "score": getattr(file, "relevance_score", 0.0),
             "rank": getattr(file, "relevance_rank", 0),
@@ -1212,7 +1212,7 @@ def _format_html(
     tree_html: str = '<div id="tree-tab" class="tab-content">'
     if tree_view:
         # Generate tree structure
-        dirs: Dict[Path, List[FileAnalysis]] = defaultdict(list)
+        dirs: dict[Path, List[FileAnalysis]] = defaultdict(list)
         for file in files:
             dir_path: Path = Path(file.path).parent
             dirs[dir_path].append(file)
@@ -1305,7 +1305,7 @@ def _get_display_path(path: Union[str, Path], style: str) -> str:
             return str(path)
 
 
-def _show_stats(stats: Union[Dict[str, Any], Any]) -> None:
+def _show_stats(stats: Union[dict[str, Any], Any]) -> None:
     """Show ranking statistics in a formatted table.
 
     Args:
@@ -1322,7 +1322,7 @@ def _show_stats(stats: Union[Dict[str, Any], Any]) -> None:
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
 
-    stats_dict: Dict[str, Any]
+    stats_dict: dict[str, Any]
     if hasattr(stats, "to_dict"):
         stats_dict = stats.to_dict()
     else:

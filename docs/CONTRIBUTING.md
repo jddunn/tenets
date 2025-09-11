@@ -27,7 +27,7 @@ Thanks for your interest in improving Tenets! Contributions of all kinds are wel
  black .
 
 # Run a sample command
- tenets distill "hello world" . --stats
+ tenets distill "hello world" --stats
 ```
 
 ## Project Philosophy
