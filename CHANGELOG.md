@@ -20,7 +20,7 @@ Versioning follows SemVer. Automated draft notes by Release Drafter; finalized e
 - Configurable system instructions for LLM outputs
 - Optional ML features for enhanced ranking (tenets[ml])
 - Optional visualization features for code graphs (tenets[viz])
-- Comprehensive test suite with 85%+ coverage
-- Full documentation at https://docs.tenets.dev
+- Comprehensive test suite with ~70% coverage
+- Full documentation at https://tenets.dev/docs
 - GitHub Actions CI/CD pipeline
 - PyPI package distribution
