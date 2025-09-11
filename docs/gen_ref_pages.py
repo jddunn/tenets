@@ -65,7 +65,7 @@ for path in sorted(src.rglob("*.py")):
     # Generate mkdocstrings for all modules
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         # Use safe title generation
-        title = parts[-1].replace('_', ' ').title()
+        title = parts[-1].replace("_", " ").title()
         print(f"# {title}\n", file=fd)
         print(f"::: {identifier}", file=fd)
         print("    options:", file=fd)
@@ -80,6 +80,7 @@ for path in sorted(src.rglob("*.py")):
 
     # Set edit path to the source file
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
+
 
 # Build navigation tree manually
 def build_nav_tree(items):
@@ -102,6 +103,7 @@ def build_nav_tree(items):
             current[parts[-1]] = path
     return tree
 
+
 def write_nav_markdown(tree, indent=0):
     """Convert nav tree to markdown list."""
     lines = []
@@ -110,7 +112,7 @@ def write_nav_markdown(tree, indent=0):
             continue  # Skip special module marker
         if isinstance(value, dict):
             # It's a package
-            title = key.replace('_', ' ').title()
+            title = key.replace("_", " ").title()
             # Check if package has its own module
             if "__module__" in value:
                 lines.append(f"{'    ' * indent}* [{title}]({value['__module__']})")
@@ -122,9 +124,10 @@ def write_nav_markdown(tree, indent=0):
                 lines.extend(write_nav_markdown(sub_items, indent + 1))
         else:
             # It's a module
-            title = key.replace('_', ' ').title()
+            title = key.replace("_", " ").title()
             lines.append(f"{'    ' * indent}* [{title}]({value})")
     return lines
+
 
 # Write the navigation file
 nav_tree = build_nav_tree(nav_items)
