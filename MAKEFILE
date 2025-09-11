@@ -179,7 +179,7 @@ docs-deploy:
 	@read -p "Continue? [y/N] " confirm; \
 	if [ "$$confirm" = "y" ]; then \
 		mkdocs gh-deploy --force --message "Deploy docs from Makefile"; \
-		echo "\n✓ Documentation deployed to https://docs.tenets.dev"; \
+		echo "\n✓ Documentation deployed to https://tenets.dev/docs"; \
 	else \
 		echo "Deployment cancelled"; \
 	fi
