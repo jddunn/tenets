@@ -20,7 +20,6 @@ SKIP_MODULES = {
     "tenets.core.analysis.implementations",  # Skip the implementations package itself
     "tenets.tests",
     "tenets.test",
-    "tenets.models.analysis",  # Import issues
 }
 
 for path in sorted(src.rglob("*.py")):
@@ -63,31 +62,19 @@ for path in sorted(src.rglob("*.py")):
     # Generate the page content
     identifier = ".".join(parts)
 
-    # Skip modules that might have import issues
-    if (
-        ("implementations" in identifier and identifier.count(".") > 3)
-        or ("models" in identifier)
-        or ("utils" in identifier)
-    ):
-        # Just create a simple page without mkdocstrings
-        with mkdocs_gen_files.open(full_doc_path, "w") as fd:
-            print(f"# {parts[-1].replace('_', ' ').title()}\n", file=fd)
-            print(f"Module: `{identifier}`\n", file=fd)
-            print("This module provides language-specific analysis implementation.\n", file=fd)
-    else:
-        # Normal mkdocstrings generation
-        with mkdocs_gen_files.open(full_doc_path, "w") as fd:
-            print(f"# {parts[-1].replace('_', ' ').title()}\n", file=fd)
-            print(f"::: {identifier}", file=fd)
-            print("    options:", file=fd)
-            print("        show_source: false", file=fd)
-            print("        show_root_heading: true", file=fd)
-            print("        members_order: source", file=fd)
-            print("        show_if_no_docstring: false", file=fd)
-            print("        inherited_members: false", file=fd)
-            print("        filters:", file=fd)
-            print('          - "!^_"', file=fd)
-            print('          - "!^test"', file=fd)
+    # Generate mkdocstrings for all modules - they should all work now
+    with mkdocs_gen_files.open(full_doc_path, "w") as fd:
+        print(f"# {parts[-1].replace('_', ' ').title()}\n", file=fd)
+        print(f"::: {identifier}", file=fd)
+        print("    options:", file=fd)
+        print("        show_source: false", file=fd)
+        print("        show_root_heading: true", file=fd)
+        print("        members_order: source", file=fd)
+        print("        show_if_no_docstring: false", file=fd)
+        print("        inherited_members: false", file=fd)
+        print("        filters:", file=fd)
+        print('          - "!^_"', file=fd)
+        print('          - "!^test"', file=fd)
 
     # Set edit path to the source file
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
