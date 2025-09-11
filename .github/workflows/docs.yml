@@ -51,6 +51,8 @@ jobs:
           mkdocs build --verbose  # Remove --strict to allow warnings
         env:
           PYTHONPATH: ${{ github.workspace }}
+          GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
+          CLARITY_PROJECT_ID: ${{ secrets.CLARITY_PROJECT_ID }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

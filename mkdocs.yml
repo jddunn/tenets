@@ -278,22 +278,25 @@ extra:
   #   provider: mike
   #   default: stable
 
-  # Analytics (add your tracking ID)
-  # analytics:
-  #   provider: google
-  #   property: G-XXXXXXXXXX
-  #   feedback:
-  #     title: Was this page helpful?
-  #     ratings:
-  #       - icon: material/emoticon-happy-outline
-  #         name: This page was helpful
-  #         data: 1
-  #         note: Thanks for your feedback!
-  #       - icon: material/emoticon-sad-outline
-  #         name: This page could be improved
-  #         data: 0
-  #         note: Thanks for your feedback!
+  # Analytics
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_ID
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: Thanks for your feedback!
 
+  # Microsoft Clarity
+  clarity: !ENV CLARITY_PROJECT_ID
+  
   # Social links
   social:
     - icon: fontawesome/brands/github
