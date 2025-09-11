@@ -1,0 +1,137 @@
+/* API Documentation Performance Optimizations */
+
+/* Lazy loading states */
+.lazy-load {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.lazy-load.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Collapsed docstrings */
+.doc-contents.collapsed {
+    max-height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.doc-contents.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(to bottom, transparent, var(--md-default-bg-color));
+}
+
+/* Expand button */
+.expand-docstring {
+    background: var(--md-primary-fg-color);
+    color: var(--md-primary-bg-color);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.2s;
+}
+
+.expand-docstring:hover {
+    opacity: 0.8;
+}
+
+/* Optimize rendering for API pages */
+.md-typeset .doc-object {
+    contain: layout style;
+    will-change: transform;
+}
+
+/* Reduce complexity of syntax highlighting on API pages */
+.md-typeset .highlight pre {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Virtual scrolling for long lists */
+.doc-children {
+    contain: strict;
+}
+
+/* Disable expensive effects on API pages */
+[data-md-component="content"] .api {
+    /* Disable text shadows */
+    text-shadow: none !important;
+    
+    /* Disable box shadows on code blocks */
+    .highlight {
+        box-shadow: none !important;
+    }
+    
+    /* Simpler borders */
+    .admonition {
+        box-shadow: none !important;
+        border: 1px solid var(--md-default-fg-color--lightest);
+    }
+}
+
+/* Performance: Don't render source code blocks */
+.doc-source {
+    display: none !important;
+}
+
+/* Optimize table rendering */
+.md-typeset table {
+    contain: layout;
+    table-layout: fixed;
+}
+
+/* Reduce reflows on API pages */
+.md-typeset .doc-object-name {
+    min-height: 1.5em;
+}
+
+/* API filter input */
+.api-filter {
+    position: sticky;
+    top: 64px;
+    z-index: 2;
+    background: var(--md-default-bg-color);
+}
+
+/* Loading skeleton for API content */
+.api-loading {
+    background: linear-gradient(90deg, 
+        var(--md-default-fg-color--lightest) 25%, 
+        var(--md-default-fg-color--lighter) 50%, 
+        var(--md-default-fg-color--lightest) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Optimize for mobile */
+@media screen and (max-width: 768px) {
+    /* Disable animations on mobile for performance */
+    .lazy-load,
+    .lazy-load.loaded {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+    
+    /* Simpler shadows on mobile */
+    .md-typeset .highlight,
+    .md-typeset .admonition {
+        box-shadow: none !important;
+    }
+}

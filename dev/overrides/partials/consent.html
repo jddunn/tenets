@@ -1,0 +1,50 @@
+<!-- GDPR Consent Banner -->
+<div id="consent-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e1e1e;color:#fff;padding:1rem;z-index:9999;font-size:14px;line-height:1.5">
+  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div style="flex:1">
+      We use cookies for analytics to improve your experience.
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button onclick="acceptCookies()" style="background:#FFD600;color:#000;border:none;padding:0.5rem 1rem;cursor:pointer;font-weight:500">Accept</button>
+      <button onclick="rejectCookies()" style="background:transparent;color:#fff;border:1px solid #666;padding:0.5rem 1rem;cursor:pointer">Reject</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Check if consent already given
+  if (!localStorage.getItem('cookieConsent')) {
+    document.getElementById('consent-banner').style.display = 'block';
+  }
+
+  function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    document.getElementById('consent-banner').style.display = 'none';
+    // Enable analytics
+    if (window.gtag) {
+      gtag('consent', 'update', {
+        'analytics_storage': 'granted'
+      });
+    }
+  }
+
+  function rejectCookies() {
+    localStorage.setItem('cookieConsent', 'rejected');
+    document.getElementById('consent-banner').style.display = 'none';
+    // Disable analytics
+    if (window.gtag) {
+      gtag('consent', 'update', {
+        'analytics_storage': 'denied'
+      });
+    }
+    // Disable Clarity
+    if (window.clarity) {
+      window.clarity('stop');
+    }
+  }
+
+  // Set default consent state
+  if (localStorage.getItem('cookieConsent') === 'rejected') {
+    window['ga-disable-{{ config.extra.analytics.property }}'] = true;
+  }
+</script>
