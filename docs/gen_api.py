@@ -41,19 +41,19 @@ for path in sorted(src.rglob("*.py")):
     # Skip test files and cache
     if any(part in str(path) for part in ["__pycache__", "test", "_test", ".pyc"]):
         continue
-    
+
     # Get module path relative to src
     module_path = path.relative_to(src).with_suffix("")
     doc_path = path.relative_to(src).with_suffix(".md")
     full_doc_path = Path("api", doc_path)
-    
+
     # Handle the module parts
     parts = tuple(module_path.parts)
-    
+
     # Skip __main__ modules
     if parts[-1] == "__main__":
         continue
-    
+
     # Handle __init__ files - they represent the package itself
     if parts[-1] == "__init__":
         if len(parts) == 1:
@@ -66,7 +66,7 @@ for path in sorted(src.rglob("*.py")):
             parts = parts[:-1]
             doc_path = doc_path.with_name("index.md")
             full_doc_path = full_doc_path.with_name("index.md")
-    
+
     # Build the identifier for mkdocstrings
     if parts == ("index",):
         # Main package
@@ -75,17 +75,17 @@ for path in sorted(src.rglob("*.py")):
     else:
         identifier = ".".join(["tenets"] + list(parts))
         nav_parts = ("tenets",) + parts
-    
+
     # Add to navigation
     nav[nav_parts] = doc_path.as_posix()
-    
+
     # Track for index page
     generated_modules.append((identifier, doc_path.as_posix(), parts))
-    
+
     # Generate the markdown content with mkdocstrings directive
     # Use different settings for main modules vs submodules
     is_main_module = identifier in MAIN_MODULES
-    
+
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         # Write page title with full module path for clarity
         if parts == ("index",):
@@ -95,54 +95,54 @@ for path in sorted(src.rglob("*.py")):
             title = " › ".join([p.replace("_", " ").title() for p in parts])
             print(f"# {title}\n", file=fd)
         print(f"`{identifier}`\n", file=fd)
-        
+
         # Write mkdocstrings directive with enhanced options for TOC
         print(f"::: {identifier}", file=fd)
         print("    options:", file=fd)
-        
+
         # Heading and TOC options
         print("        show_root_heading: true", file=fd)
         print("        show_root_toc_entry: true", file=fd)  # Show in TOC
         print("        show_object_full_path: false", file=fd)
         print("        show_symbol_type_heading: true", file=fd)  # Shows Class/Function
         print("        show_symbol_type_toc: true", file=fd)  # Include type in TOC
-        
+
         # Content display options
         print("        show_source: false", file=fd)  # Don't show source by default
         print("        show_bases: true", file=fd)  # Show inheritance
         print("        show_submodules: " + ("true" if is_main_module else "false"), file=fd)
-        
+
         # Member options
         print("        members: true", file=fd)  # Show all members
         print("        members_order: source", file=fd)
         print("        group_by_category: true", file=fd)
         print("        show_category_heading: true", file=fd)
-        
+
         # Docstring options
         print("        show_if_no_docstring: false", file=fd)
         print("        docstring_style: google", file=fd)
         print("        docstring_section_style: table", file=fd)
         print("        merge_init_into_class: true", file=fd)
-        
+
         # Signature options
         print("        separate_signature: true", file=fd)
         print("        show_signature_annotations: true", file=fd)
         print("        signature_crossrefs: true", file=fd)  # Enable cross-refs
-        
+
         # Summary options - show summaries for better navigation
         print("        summary: true", file=fd)  # Enable summaries
-        
+
         # Inheritance
         print("        inherited_members: false", file=fd)
-        
+
         # Filters
         print("        filters:", file=fd)
         print('          - "!^_"', file=fd)
         print('          - "!^test"', file=fd)
-        
+
         # Heading level - ensure we don't run out of levels
         print("        heading_level: 2", file=fd)
-    
+
     # Set edit path for "edit on GitHub" link
     if full_doc_path.name == "index.md" and path.name == "__init__.py":
         mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
