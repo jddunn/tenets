@@ -59,9 +59,14 @@ for path in sorted(src.rglob("*.py")):
     
     # Generate the markdown content with mkdocstrings directive
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
-        # Write page title
-        title = parts[-1].replace("_", " ").title() if parts != ("index",) else "Tenets Package"
-        print(f"# `{identifier}`\n", file=fd)
+        # Write page title with full module path for clarity
+        if parts == ("index",):
+            print(f"# Tenets Package\n", file=fd)
+        else:
+            # Include module path for context (e.g., "core.ranking.strategies")
+            title = " › ".join([p.replace("_", " ").title() for p in parts])
+            print(f"# {title}\n", file=fd)
+        print(f"`{identifier}`\n", file=fd)
         
         # Write mkdocstrings directive
         print(f"::: {identifier}", file=fd)
@@ -85,7 +90,13 @@ for path in sorted(src.rglob("*.py")):
         print('          - "!^test"', file=fd)
     
     # Set edit path for "edit on GitHub" link
-    mkdocs_gen_files.set_edit_path(full_doc_path, Path("tenets") / path.relative_to(src))
+    # Handle index.md pages that correspond to __init__.py files
+    if full_doc_path.name == "index.md" and path.name == "__init__.py":
+        # For index pages generated from __init__.py, use the __init__.py path
+        mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
+    else:
+        # For regular module files
+        mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
 
 # Write the literate-nav file
 with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
