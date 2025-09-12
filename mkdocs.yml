@@ -130,6 +130,7 @@ plugins:
   - literate-nav:
       implicit_index: true
       tab_length: 4
+      nav_file: SUMMARY.md
 
   # section-index disabled - conflicts with generated API docs
   # - section-index
