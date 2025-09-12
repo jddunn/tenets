@@ -334,6 +334,7 @@ extra_css:
   - styles/victorian.css
   - styles/neumorphic.css
   - styles/see-it-in-action.css
+  - styles/toast.css # Toast notifications for copy buttons
   - styles/overrides.css
   # DISABLED - These cause issues:
   # - styles/header.css  # Original has search focus trap issue

@@ -113,12 +113,20 @@
     flex: 1;
   }
 
-  /* Theme toggle */
+  /* Theme toggle - hide all first, then show only one */
   label.md-header__button[for^="__palette_"] {
-    display: flex !important;
+    display: none !important;
     order: 3;
     margin-right: 0.5rem;
     flex-shrink: 0;
+  }
+  
+  /* Show only the toggle for switching TO the other theme */
+  [data-md-color-scheme="default"] label.md-header__button[for="__palette_1"] {
+    display: flex !important;
+  }
+  [data-md-color-scheme="slate"] label.md-header__button[for="__palette_0"] {
+    display: flex !important;
   }
 
   /* GitHub source */
@@ -333,79 +341,125 @@
     display: none !important;
   }
 
-  /* Navigation items */
+  /* Navigation items - Enhanced mobile styling */
   .md-nav--primary > .md-nav__list > .md-nav__item,
   .md-sidebar--primary > .md-nav__list > .md-nav__item {
-    border-bottom: 1px solid rgba(245, 158, 11, 0.06);
-    margin: 0 !important;
+    margin: 0.25rem 0.75rem !important;
     display: block !important;
   }
 
   .md-nav--primary .md-nav__link,
   .md-sidebar--primary .md-nav__link {
-    padding: 0.9rem 1.25rem !important;
-    font-size: 0.95rem !important;
-    font-weight: 600 !important;
-    color: #3e342a !important;
+    padding: 1rem 1.25rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    color: #2a2723 !important;
     display: block !important;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none !important;
     position: relative !important;
-    background: transparent !important;
+    background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%) !important;
+    border-radius: 12px !important;
+    box-shadow: 
+      2px 2px 6px rgba(26, 35, 50, 0.05),
+      -2px -2px 6px rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(245, 158, 11, 0.08) !important;
+    overflow: hidden !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link {
     color: #f3f0e8 !important;
+    background: linear-gradient(135deg, #2a3542 0%, #263244 100%) !important;
+    box-shadow: 
+      2px 2px 6px rgba(0, 0, 0, 0.2),
+      -2px -2px 6px rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(251, 191, 36, 0.1) !important;
   }
 
   .md-nav--primary .md-nav__link:hover,
   .md-nav--primary .md-nav__link:active,
   .md-sidebar--primary .md-nav__link:hover,
   .md-sidebar--primary .md-nav__link:active {
-    background: rgba(245, 158, 11, 0.08);
+    background: linear-gradient(135deg, #fff5e6 0%, #ffedcc 100%) !important;
     color: #f59e0b !important;
-    padding-left: 1.75rem !important;
+    transform: translateX(4px);
+    box-shadow: 
+      4px 4px 10px rgba(245, 158, 11, 0.12),
+      -4px -4px 10px rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(245, 158, 11, 0.2) !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link:hover,
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link:active,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link:hover,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link:active {
-    background: rgba(251, 191, 36, 0.15) !important;
+    background: linear-gradient(135deg, #3a4554 0%, #334254 100%) !important;
     color: #fbbf24 !important;
+    border-color: rgba(251, 191, 36, 0.25) !important;
   }
 
   .md-nav--primary .md-nav__link--active,
   .md-sidebar--primary .md-nav__link--active {
-    background: rgba(245, 158, 11, 0.12);
-    color: #f59e0b !important;
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important;
+    color: #1a2332 !important;
     font-weight: 600;
-    border-left: 3px solid #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    box-shadow: 
+      0 3px 10px rgba(245, 158, 11, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link--active,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link--active {
-    background: rgba(251, 191, 36, 0.2) !important;
-    color: #fbbf24 !important;
-    border-left-color: #fbbf24 !important;
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important;
+    color: #0f1419 !important;
+    border: 1px solid rgba(251, 191, 36, 0.4) !important;
   }
 
-  /* Ornate decoration on hover */
+  /* Glow effect on active */
+  .md-nav--primary .md-nav__link--active::before,
+  .md-sidebar--primary .md-nav__link--active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: #f59e0b;
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+  }
+
+  /* Icon decoration */
   .md-nav--primary .md-nav__link::after,
   .md-sidebar--primary .md-nav__link::after {
-    content: '◆';
+    content: '→';
     position: absolute;
-    right: 1rem;
+    right: 1.25rem;
     opacity: 0;
     color: #f59e0b;
-    transition: all 0.3s ease;
+    font-size: 1.2rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .md-nav--primary .md-nav__link:hover::after,
   .md-sidebar--primary .md-nav__link:hover::after {
-    opacity: 0.5;
-    transform: rotate(45deg);
+    opacity: 0.7;
+    transform: translateX(3px);
+  }
+
+  .md-nav--primary .md-nav__link--active::after,
+  .md-sidebar--primary .md-nav__link--active::after {
+    content: '✓';
+    opacity: 0.8;
+    color: #1a2332;
+  }
+
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link--active::after,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link--active::after {
+    color: #0f1419;
   }
 
   /* Blog/Contact special styling */
@@ -622,6 +676,112 @@
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+  
+  /* Installation section mobile overrides */
+  .install-section {
+    width: 100vw;
+    max-width: 100%;
+    overflow-x: hidden;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 2rem 1rem;
+  }
+  
+  .install-section .section-container {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+  
+  .install-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+    margin: 1rem 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .install-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 0.5rem 0.4rem !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  
+  .install-card h3 {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.35rem !important;
+    line-height: 1.1 !important;
+    word-wrap: break-word !important;
+  }
+  
+  .install-card .code-block {
+    position: relative !important;
+    padding: 0.4rem !important;
+    padding-right: 2.2rem !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .install-card .code-block code {
+    font-size: 0.55rem !important;
+    white-space: nowrap !important;
+    overflow-x: auto !important;
+    display: block !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  .install-card .install-note {
+    font-size: 0.65rem !important;
+    line-height: 1.15 !important;
+    word-wrap: break-word !important;
+    padding: 0 0.2rem !important;
+  }
+  
+  .install-card .copy-btn {
+    position: absolute !important;
+    top: 0.3rem !important;
+    right: 0.3rem !important;
+    padding: 0.15rem 0.25rem !important;
+    font-size: 0.5rem !important;
+    z-index: 10 !important;
+  }
+  
+  /* Installation CTA buttons - mobile compact */
+  .install-cta {
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    margin-top: 1.5rem !important;
+    padding: 0 0.5rem !important;
+  }
+  
+  .install-cta .btn-primary.large,
+  .install-cta .btn-secondary.large {
+    min-width: auto !important;
+    padding: 0.6rem 0.8rem !important;
+    font-size: 0.75rem !important;
+    flex: 1 !important;
+    max-width: 150px !important;
+  }
+  
+  .install-cta .btn-primary.large svg,
+  .install-cta .btn-secondary.large svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  /* Hide text on very small screens, show only icons */
+  @media (max-width: 380px) {
+    .install-cta .btn-secondary.large span {
+      display: none !important;
+    }
+    .install-cta .btn-primary.large {
+      font-size: 0.7rem !important;
+    }
+  }
 
   /* Workflow on mobile */
   .workflow-diagram {
@@ -660,6 +820,32 @@
   .md-header__button[for="__drawer"] {
     width: 2rem;
     height: 2rem;
+  }
+  
+  /* Installation CTA buttons - ultra compact for small phones */
+  .install-cta {
+    gap: 0.4rem !important;
+    margin-top: 1rem !important;
+    padding: 0 0.25rem !important;
+  }
+  
+  .install-cta .btn-primary.large,
+  .install-cta .btn-secondary.large {
+    padding: 0.45rem 0.6rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 8px !important;
+    max-width: 140px !important;
+  }
+  
+  .install-cta .btn-primary.large svg,
+  .install-cta .btn-secondary.large svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  
+  /* Shorten button text on small screens */
+  .install-cta .btn-secondary.large span {
+    font-size: 0.65rem !important;
   }
 
   .md-nav--primary,
