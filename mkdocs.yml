@@ -125,7 +125,7 @@ plugins:
   # Auto-generated API docs
   - gen-files:
       scripts:
-        - docs/gen_ref_pages.py
+        - docs/gen_api.py
 
   - literate-nav:
       implicit_index: true
