@@ -1,176 +1,158 @@
-"""
-Optimized API documentation generator that creates separate pages per module
-for better performance and lazy loading.
+"""Generate API reference pages and navigation.
+
+This script uses mkdocs-gen-files and literate-nav for dynamic API documentation.
+Based on mkdocstrings best practices for 2024.
 """
 
-from __future__ import annotations
-
-import logging
 from pathlib import Path
 
 import mkdocs_gen_files
 
-logger = logging.getLogger(__name__)
+# Navigation builder for literate-nav
+nav = mkdocs_gen_files.Nav()
 
-# Core modules to document - explicitly list for control
-MODULES_TO_DOCUMENT = [
-    # Main entry points
-    ("tenets", True, "Main Package"),
-    ("tenets.api", False, "Public API"),
-    ("tenets.config", False, "Configuration"),
-    # Core functionality
-    ("tenets.core", True, "Core Package"),
-    ("tenets.core.analyzer", False, "Code Analyzer"),
-    ("tenets.core.distiller", False, "Content Distiller"),
-    ("tenets.core.ranking", True, "Ranking System"),
-    ("tenets.core.ranking.ranker", False, "File Ranker"),
-    ("tenets.core.ranking.strategies", False, "Ranking Strategies"),
-    # CLI
-    ("tenets.cli", True, "CLI Package"),
-    ("tenets.cli.commands", True, "CLI Commands"),
-    # Storage
-    ("tenets.storage", True, "Storage Package"),
-    ("tenets.storage.cache", False, "Cache System"),
-    # Utils
-    ("tenets.utils", True, "Utilities Package"),
-]
+# Root of the project
+root = Path(__file__).parent.parent
+src = root / "tenets"
 
+# Process all Python files in the tenets package
+for path in sorted(src.rglob("*.py")):
+    # Skip test files and cache
+    if any(part in str(path) for part in ["__pycache__", "test", "_test", ".pyc"]):
+        continue
 
-def write_module_page(mod_name: str, is_pkg: bool, title: str) -> None:
-    """Write a single module documentation page."""
-    # Convert module name to path
-    parts = mod_name.split(".")
-    if is_pkg:
-        doc_path = Path("api") / Path(*parts) / "index.md"
+    # Get module path relative to src
+    module_path = path.relative_to(src).with_suffix("")
+    doc_path = path.relative_to(src).with_suffix(".md")
+    full_doc_path = Path("api", doc_path)
+
+    # Handle the module parts
+    parts = tuple(module_path.parts)
+
+    # Skip __main__ modules
+    if parts[-1] == "__main__":
+        continue
+
+    # Handle __init__ files - they represent the package itself
+    if parts[-1] == "__init__":
+        if len(parts) == 1:
+            # Root __init__.py - document as main package
+            parts = ("index",)
+            doc_path = Path("index.md")
+            full_doc_path = Path("api", doc_path)
+        else:
+            # Package __init__.py - use parent name
+            parts = parts[:-1]
+            doc_path = doc_path.with_name("index.md")
+            full_doc_path = full_doc_path.with_name("index.md")
+
+    # Build the identifier for mkdocstrings
+    if parts == ("index",):
+        # Main package
+        identifier = "tenets"
+        nav_parts = ("tenets",)
     else:
-        doc_path = Path("api") / Path(*parts).with_suffix(".md")
+        identifier = ".".join(["tenets"] + list(parts))
+        nav_parts = ("tenets",) + parts
 
-    # Create minimal content for performance
-    content = f"""# {title}
+    # Add to navigation
+    nav[nav_parts] = doc_path.as_posix()
 
-`{mod_name}`
+    # Generate the markdown content with mkdocstrings directive
+    with mkdocs_gen_files.open(full_doc_path, "w") as fd:
+        # Write page title with full module path for clarity
+        if parts == ("index",):
+            print(f"# Tenets Package\n", file=fd)
+        else:
+            # Include module path for context (e.g., "core.ranking.strategies")
+            title = " › ".join([p.replace("_", " ").title() for p in parts])
+            print(f"# {title}\n", file=fd)
+        print(f"`{identifier}`\n", file=fd)
 
-::: {mod_name}
-    options:
-        show_source: false
-        show_root_heading: false
-        show_root_toc_entry: false
-        show_object_full_path: false
-        show_category_heading: true
-        members_order: source
-        group_by_category: true
-        docstring_style: google
-        merge_init_into_class: true
-        show_if_no_docstring: false
-        inherited_members: false
-        show_submodules: false
-        filters: ["!^_", "!^test"]
-        heading_level: 2
-        show_bases: false
-        show_signature: true
-        separate_signature: true
-        unwrap_annotated: true
-        signature_crossrefs: false
-"""
+        # Write mkdocstrings directive
+        print(f"::: {identifier}", file=fd)
+        print("    options:", file=fd)
+        print("        show_root_heading: true", file=fd)
+        print("        show_root_full_path: false", file=fd)
+        print("        show_source: true", file=fd)
+        print("        show_object_full_path: false", file=fd)
+        print("        show_category_heading: true", file=fd)
+        print("        show_if_no_docstring: false", file=fd)
+        print("        members_order: source", file=fd)
+        print("        group_by_category: true", file=fd)
+        print("        docstring_style: google", file=fd)
+        print("        docstring_section_style: table", file=fd)
+        print("        merge_init_into_class: true", file=fd)
+        print("        separate_signature: true", file=fd)
+        print("        show_signature_annotations: true", file=fd)
+        print("        inherited_members: false", file=fd)
+        print("        filters:", file=fd)
+        print('          - "!^_"', file=fd)
+        print('          - "!^test"', file=fd)
 
-    logger.info(f"Writing {doc_path}")
-    with mkdocs_gen_files.open(doc_path.as_posix(), "w") as fd:
-        fd.write(content)
-
-    # Set edit path
-    if is_pkg:
-        src_path = Path("tenets") / Path(*parts[1:]) / "__init__.py"
+    # Set edit path for "edit on GitHub" link
+    # Handle index.md pages that correspond to __init__.py files
+    if full_doc_path.name == "index.md" and path.name == "__init__.py":
+        # For index pages generated from __init__.py, use the __init__.py path
+        mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
     else:
-        src_path = Path("tenets") / Path(*parts[1:]).with_suffix(".py")
+        # For regular module files
+        mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
 
-    mkdocs_gen_files.set_edit_path(doc_path, src_path)
+# Write the literate-nav file
+with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
+    nav_file.writelines(nav.build_literate_nav())
 
+# Also create a nice index page for the API section
+index_content = """# API Reference
 
-def write_index() -> None:
-    """Write the main API index page."""
-    content = """# API Reference
+This section contains the complete API documentation for the Tenets package, automatically generated from source code docstrings.
 
-## Quick Navigation
-
-### Core Components
-- [**Tenets**](tenets/index.md) - Main package and API
-- [**Config**](tenets/config.md) - Configuration system
-- [**Core**](tenets/core/index.md) - Core functionality
-
-### Command Line Interface
-- [**CLI**](tenets/cli/index.md) - Command-line tools
-- [**Commands**](tenets/cli/commands/index.md) - Available commands
-
-### Subsystems
-- [**Ranking**](tenets/core/ranking/index.md) - File ranking system
-- [**Storage**](tenets/storage/index.md) - Caching and persistence
-- [**Utils**](tenets/utils/index.md) - Utility functions
-
-## Usage Example
+## Quick Start
 
 ```python
 from tenets import Tenets
 
 # Initialize
-t = Tenets()
+tenets = Tenets()
 
-# Distill context
-result = t.distill("implement OAuth")
+# Build context for your prompt
+result = tenets.distill("implement OAuth2 authentication")
 print(result.content)
 ```
 
----
+## Package Structure
 
-!!! tip "Performance Note"
-    API documentation pages are generated on-demand for better performance.
-    Click on specific modules in the navigation to view their documentation.
+The API documentation is organized to mirror the package structure:
+
+- **tenets** - Main package with public API
+- **tenets.core** - Core functionality and engines
+- **tenets.cli** - Command-line interface
+- **tenets.models** - Data models and structures
+- **tenets.storage** - Storage and caching
+- **tenets.utils** - Utility functions
+- **tenets.viz** - Visualization tools
+
+## Navigation
+
+Use the sidebar to browse through modules, classes, and functions. Each page includes:
+
+- Complete docstrings with descriptions
+- Type annotations and signatures
+- Parameter documentation
+- Return value descriptions
+- Usage examples where provided
+- Links to source code
+
+## Features
+
+This documentation is generated using:
+- **mkdocstrings** - Automatic documentation from docstrings
+- **mkdocs-gen-files** - Dynamic page generation at build time
+- **mkdocs-literate-nav** - Navigation structure from markdown
+
+The documentation is automatically updated whenever the source code changes.
 """
 
-    with mkdocs_gen_files.open("api/index.md", "w") as fd:
-        fd.write(content)
-
-
-def write_nav() -> None:
-    """Write navigation file for literate-nav."""
-    nav_parts = ["* [Overview](index.md)"]
-
-    # Group modules by package
-    current_package = None
-    for mod_name, is_pkg, title in MODULES_TO_DOCUMENT:
-        parts = mod_name.split(".")
-        indent = "  " * (len(parts) - 1)
-
-        if is_pkg:
-            nav_parts.append(f"{indent}* [{title}]({'/'.join(parts)}/index.md)")
-        else:
-            filename = parts[-1] + ".md"
-            nav_parts.append(f"{indent}* [{title}]({'/'.join(parts)}.md)")
-
-    content = "# API Reference\n\n" + "\n".join(nav_parts)
-
-    with mkdocs_gen_files.open("api/SUMMARY.md", "w") as fd:
-        fd.write(content)
-
-
-def main():
-    """Main entry point."""
-    logger.info("Generating optimized API documentation")
-
-    # Write index
-    write_index()
-
-    # Write nav
-    write_nav()
-
-    # Write module pages
-    for mod_name, is_pkg, title in MODULES_TO_DOCUMENT:
-        try:
-            write_module_page(mod_name, is_pkg, title)
-        except Exception as e:
-            logger.warning(f"Skipping {mod_name}: {e}")
-
-    logger.info("API documentation generation complete")
-
-
-if __name__ == "__main__":
-    main()
+with mkdocs_gen_files.open("api/index.md", "w") as index_file:
+    index_file.write(index_content)
