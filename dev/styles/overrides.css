@@ -50,3 +50,34 @@ label.md-header__button[for="__search"] svg,
 }
 
 /* Let MkDocs Material handle all search overlay, dialog, and result functionality */
+
+/* CRITICAL FIX: Ensure only one theme toggle shows on mobile */
+@media screen and (max-width: 1099px) {
+  /* First hide ALL theme toggles */
+  .md-header label.md-header__button[for^="__palette_"],
+  .md-header__inner label.md-header__button[for^="__palette_"],
+  label.md-header__button[for^="__palette_"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  /* Then show ONLY the one that switches to the opposite theme */
+  /* In light mode (default), show the button that switches to dark (palette_1) */
+  [data-md-color-scheme="default"] .md-header__inner label.md-header__button[for="__palette_1"],
+  html:not([data-md-color-scheme]) .md-header__inner label.md-header__button[for="__palette_1"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  
+  /* In dark mode (slate), show the button that switches to light (palette_0) */
+  [data-md-color-scheme="slate"] .md-header__inner label.md-header__button[for="__palette_0"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
