@@ -5,6 +5,7 @@ Configured to show classes, methods, and functions in the TOC sidebar.
 """
 
 from pathlib import Path
+
 import mkdocs_gen_files
 
 # Navigation builder for literate-nav
