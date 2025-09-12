@@ -27,6 +27,9 @@ for path in sorted(Path("tenets").rglob("*.py")):
         parts = parts[:-1]
         doc_path = Path(*parts[:-1], "index.md") if len(parts) > 1 else Path("index.md")
         full_doc_path = Path("api", doc_path)
+        # Don't generate content for package index files to avoid section-index conflicts
+        # The section-index plugin will handle these automatically
+        continue
 
     # Skip test files
     if "__pycache__" in str(path) or "test" in str(path):
