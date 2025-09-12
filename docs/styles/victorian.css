@@ -1061,6 +1061,8 @@ code, pre {
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2rem;
   margin: 3rem 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .install-card {
@@ -1324,8 +1326,62 @@ code, pre {
     grid-template-columns: 1fr;
   }
 
+  /* Installation grid - responsive 2 column */
+  .install-section {
+    overflow-x: hidden;
+    padding: 0 0.5rem;
+  }
+  
   .install-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1rem -0.25rem;
+    padding: 0 0.25rem;
+  }
+  
+  .install-card {
+    padding: 0.5rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .install-card h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+    word-break: break-word;
+  }
+  
+  .install-card .code-block {
+    padding: 0.4rem;
+    font-size: 0.6rem;
+    overflow-x: auto;
+    min-width: 0;
+    position: relative;
+    padding-right: 2.5rem;
+  }
+  
+  .install-card .code-block code {
+    font-size: 0.55rem;
+    display: block;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  
+  .install-card .install-note {
+    font-size: 0.7rem;
+    line-height: 1.2;
+    margin-top: 0.4rem;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  .install-card .copy-btn {
+    padding: 0.2rem 0.3rem;
+    font-size: 0.55rem;
+    top: 0.3rem;
+    right: 0.3rem;
+    position: absolute;
+    z-index: 10;
   }
 
   .tab-label {
@@ -1351,7 +1407,7 @@ code, pre {
   }
 
   .section-container {
-    padding: 0 1rem;
+    padding: 0 0.5rem;
   }
 
   .feature-card-large {
@@ -1361,6 +1417,95 @@ code, pre {
   .terminal-body {
     font-size: 0.8rem;
     padding: 1rem;
+  }
+  
+  /* Installation section - prevent overflow */
+  .install-section {
+    width: 100%;
+    overflow-x: hidden;
+    padding: 0 0.25rem;
+  }
+  
+  .install-section .section-container {
+    padding: 0 0.25rem;
+    max-width: 100%;
+  }
+  
+  /* Installation grid - ultra compact 2 columns */
+  .install-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin: 0.75rem 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .install-card {
+    padding: 0.4rem;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  
+  .install-card h3 {
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+    line-height: 1.1;
+    word-break: break-word;
+  }
+  
+  .install-card .code-block {
+    padding: 0.35rem;
+    padding-right: 2rem;
+    font-size: 0.5rem;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .install-card .code-block code {
+    font-size: 0.5rem;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  .install-card .install-note {
+    font-size: 0.6rem;
+    line-height: 1.15;
+    margin-top: 0.3rem;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  .install-card .copy-btn {
+    padding: 0.15rem 0.25rem;
+    font-size: 0.5rem;
+    top: 0.25rem;
+    right: 0.25rem;
+    border-radius: 3px;
+    position: absolute;
+    white-space: nowrap;
+  }
+  
+  /* Special handling for coming soon cards */
+  .install-card.coming-soon .coming-soon-badge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.3rem;
+    top: -4px;
+    right: 4px;
+  }
+  
+  /* Hide "Coming soon" text on very small screens to save space */
+  .install-card.coming-soon h3::before {
+    content: "Soon: ";
+    font-size: 0.65rem;
+    opacity: 0.7;
   }
 }
 
