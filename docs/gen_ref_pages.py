@@ -142,6 +142,8 @@ nav_lines = write_nav_markdown(nav_tree)
 # Write to the root SUMMARY.md for literate-nav to find
 with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
     nav_file.write("# API Reference\n\n")
-    nav_file.write("This section contains the complete API documentation for the tenets package.\n\n")
+    nav_file.write(
+        "This section contains the complete API documentation for the tenets package.\n\n"
+    )
     nav_file.write("## Modules\n\n")
     nav_file.write("\n".join(nav_lines))
