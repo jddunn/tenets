@@ -339,9 +339,21 @@ jobs:
       
       - name: Trigger release workflow
         if: steps.analyze_commit.outputs.should_skip != 'true' && steps.commit.outputs.no_changes != 'true'
-        run: |
-          echo "🚀 Version tag created: ${{ steps.tag.outputs.tag_name }}"
-          echo "The release workflow will be triggered automatically by the new tag."
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Trigger the release workflow via workflow_dispatch
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: 'master',
+              inputs: {
+                tag: '${{ steps.tag.outputs.tag_name }}'
+              }
+            });
+            console.log('🚀 Triggered release workflow for tag ${{ steps.tag.outputs.tag_name }}');
       
       - name: Job summary
         run: |
