@@ -5,6 +5,7 @@ Based on mkdocstrings best practices for 2024.
 """
 
 from pathlib import Path
+
 import mkdocs_gen_files
 
 # Navigation builder for literate-nav
