@@ -110,57 +110,57 @@ Complete API documentation for the Tenets package.
 ## Quick Navigation
 
 ### Core Components
-- **[Tenets](index.md)** - Main package and API
-- **[Config](tenets/config.md)** - Configuration system  
-- **[API](tenets/api.md)** - Public API interface
-- **[Core](tenets/core/index.md)** - Core functionality package
+- **[Tenets](.)** - Main package and API
+- **[Config](tenets/config)** - Configuration system  
+- **[API](tenets/api)** - Public API interface
+- **[Core](tenets/core/)** - Core functionality package
 
 ### Core Modules
-- **[Analysis](tenets/core/analysis/index.md)** - Code analysis package
-- **[Distiller](tenets/core/distiller/index.md)** - Context distillation package
-- **[Instiller](tenets/core/instiller/index.md)** - Session and file injection
-- **[Examiner](tenets/core/examiner/index.md)** - Code examination tools
-- **[Git](tenets/core/git/index.md)** - Git integration
-- **[Momentum](tenets/core/momentum/index.md)** - Development velocity tracking
-- **[NLP](tenets/core/nlp/index.md)** - Natural language processing
-- **[Prompt](tenets/core/prompt/index.md)** - Prompt management
-- **[Ranking](tenets/core/ranking/index.md)** - File ranking system
-  - **[Ranker](tenets/core/ranking/ranker.md)** - Main ranking engine
-  - **[Strategies](tenets/core/ranking/strategies.md)** - Ranking strategies
-  - **[Factors](tenets/core/ranking/factors.md)** - Ranking factors
-- **[Reporting](tenets/core/reporting/index.md)** - Report generation
-- **[Session](tenets/core/session/index.md)** - Session management
-- **[Summarizer](tenets/core/summarizer/index.md)** - Content summarization
+- **[Analysis](tenets/core/analysis/)** - Code analysis package
+- **[Distiller](tenets/core/distiller/)** - Context distillation package
+- **[Instiller](tenets/core/instiller/)** - Session and file injection
+- **[Examiner](tenets/core/examiner/)** - Code examination tools
+- **[Git](tenets/core/git/)** - Git integration
+- **[Momentum](tenets/core/momentum/)** - Development velocity tracking
+- **[NLP](tenets/core/nlp/)** - Natural language processing
+- **[Prompt](tenets/core/prompt/)** - Prompt management
+- **[Ranking](tenets/core/ranking/)** - File ranking system
+  - **[Ranker](tenets/core/ranking/ranker)** - Main ranking engine
+  - **[Strategies](tenets/core/ranking/strategies)** - Ranking strategies
+  - **[Factors](tenets/core/ranking/factors)** - Ranking factors
+- **[Reporting](tenets/core/reporting/)** - Report generation
+- **[Session](tenets/core/session/)** - Session management
+- **[Summarizer](tenets/core/summarizer/)** - Content summarization
 
 ### Command Line Interface
-- **[CLI Package](tenets/cli/index.md)** - Command-line tools
-- **[App](tenets/cli/app.md)** - CLI application
-- **[Commands Package](tenets/cli/commands/index.md)** - Available commands
+- **[CLI Package](tenets/cli/)** - Command-line tools
+- **[App](tenets/cli/app)** - CLI application
+- **[Commands Package](tenets/cli/commands/)** - Available commands
 
 ### Data Models
-- **[Models Package](tenets/models/index.md)** - Data models package
-- **[File Models](tenets/models/file.md)** - File representations
-- **[Context Models](tenets/models/context.md)** - Context structures
-- **[Session Models](tenets/models/session.md)** - Session management
-- **[Config Models](tenets/models/config.md)** - Configuration models
+- **[Models Package](tenets/models/)** - Data models package
+- **[File Models](tenets/models/file)** - File representations
+- **[Context Models](tenets/models/context)** - Context structures
+- **[Session Models](tenets/models/session)** - Session management
+- **[Config Models](tenets/models/config)** - Configuration models
 
 ### Storage & Utilities
-- **[Storage Package](tenets/storage/index.md)** - Caching and persistence
-- **[Cache](tenets/storage/cache.md)** - Cache system
-- **[Utils Package](tenets/utils/index.md)** - Utility functions
-- **[Viz Package](tenets/viz/index.md)** - Visualization tools
+- **[Storage Package](tenets/storage/)** - Caching and persistence
+- **[Cache](tenets/storage/cache)** - Cache system
+- **[Utils Package](tenets/utils/)** - Utility functions
+- **[Viz Package](tenets/viz/)** - Visualization tools
 
 ## Key Classes
 
 | Class | Module | Link |
 |-------|--------|------|
-| `Tenets` | tenets | **[View Documentation →](index.md)** |
-| `Distiller` | tenets.core.distiller | **[View Documentation →](tenets/core/distiller/index.md)** |
-| `Instiller` | tenets.core.instiller.instiller | **[View Documentation →](tenets/core/instiller/instiller.md)** |
-| `RelevanceRanker` | tenets.core.ranking.ranker | **[View Documentation →](tenets/core/ranking/ranker.md)** |
-| `FileContext` | tenets.models.file | **[View Documentation →](tenets/models/file.md)** |
-| `Session` | tenets.models.session | **[View Documentation →](tenets/models/session.md)** |
-| `Examiner` | tenets.core.examiner | **[View Documentation →](tenets/core/examiner/index.md)** |
+| `Tenets` | tenets | **[View Documentation →](.)** |
+| `Distiller` | tenets.core.distiller | **[View Documentation →](tenets/core/distiller/)** |
+| `Instiller` | tenets.core.instiller.instiller | **[View Documentation →](tenets/core/instiller/instiller)** |
+| `RelevanceRanker` | tenets.core.ranking.ranker | **[View Documentation →](tenets/core/ranking/ranker)** |
+| `FileContext` | tenets.models.file | **[View Documentation →](tenets/models/file)** |
+| `Session` | tenets.models.session | **[View Documentation →](tenets/models/session)** |
+| `Examiner` | tenets.core.examiner | **[View Documentation →](tenets/core/examiner/)** |
 
 ## Usage Example
 
