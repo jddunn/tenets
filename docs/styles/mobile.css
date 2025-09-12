@@ -711,10 +711,28 @@
   }
   
   .install-card h3 {
-    font-size: 0.8rem !important;
-    margin-bottom: 0.35rem !important;
+    font-size: 0.65rem !important;
+    margin-bottom: 0.3rem !important;
     line-height: 1.1 !important;
     word-wrap: break-word !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Shorter text for mobile */
+  @media (max-width: 600px) {
+    .install-card h3 span.full-text {
+      display: none !important;
+    }
+    .install-card h3 span.short-text {
+      display: inline !important;
+    }
+  }
+  
+  /* Default: show full text on larger screens */
+  .install-card h3 span.short-text {
+    display: none;
   }
   
   .install-card .code-block {
@@ -727,7 +745,7 @@
   }
   
   .install-card .code-block code {
-    font-size: 0.55rem !important;
+    font-size: 0.5rem !important;
     white-space: nowrap !important;
     overflow-x: auto !important;
     display: block !important;
@@ -735,7 +753,7 @@
   }
   
   .install-card .install-note {
-    font-size: 0.65rem !important;
+    font-size: 0.6rem !important;
     line-height: 1.15 !important;
     word-wrap: break-word !important;
     padding: 0 0.2rem !important;
@@ -746,7 +764,7 @@
     top: 0.3rem !important;
     right: 0.3rem !important;
     padding: 0.15rem 0.25rem !important;
-    font-size: 0.5rem !important;
+    font-size: 0.45rem !important;
     z-index: 10 !important;
   }
   
