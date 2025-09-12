@@ -57,10 +57,8 @@ jobs:
           COMMIT_MSG="${{ github.event.head_commit.message }}"
           echo "Analyzing commit: $COMMIT_MSG"
           
-          # Extract first line of commit message for title checks
+          # Extract first line of commit message
           COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -n 1)
-          # Store full message for changelog
-          COMMIT_FULL="$COMMIT_MSG"
           
           # Check if this is a version bump commit (to avoid loops)
           if [[ "$COMMIT_TITLE" =~ ^chore\(release\): ]]; then
@@ -92,9 +90,6 @@ jobs:
           
           echo "should_skip=false" >> $GITHUB_OUTPUT
           echo "commit_title=$COMMIT_TITLE" >> $GITHUB_OUTPUT
-          echo "commit_full<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_MSG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Determine version bump type
         id: determine_bump
@@ -204,10 +199,8 @@ jobs:
           # Get commit title (first line)
           COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -n 1)
           
-          # If CHANGELOG.md exists, move Unreleased content to new version
-          if [ -f "CHANGELOG.md" ]; then
-            # Create new version section with Unreleased content
-            python3 - << 'EOF'
+          # Update CHANGELOG using Python to handle the Unreleased section properly
+          python3 - << 'PYTHON_SCRIPT'
           import re
           from datetime import date
           
@@ -216,6 +209,8 @@ jobs:
           
           new_version = "${{ steps.new_version.outputs.new_version }}"
           today = date.today().strftime('%Y-%m-%d')
+          commit_title = """${COMMIT_TITLE}"""
+          commit_sha = "${COMMIT_SHA}"[:7]
           
           # Find the Unreleased section
           unreleased_pattern = r'## \[Unreleased\](.*?)(?=## \[|$)'
@@ -224,11 +219,7 @@ jobs:
           if match and match.group(1).strip():
               # There's content in Unreleased, move it to new version
               unreleased_content = match.group(1).strip()
-              
-              # Create new version section
               new_section = f"## [{new_version}] - {today}\n\n{unreleased_content}\n\n"
-              
-              # Replace Unreleased content with empty section and add new version
               new_content = re.sub(
                   unreleased_pattern,
                   '## [Unreleased]\n\n' + new_section,
@@ -237,20 +228,6 @@ jobs:
               )
           else:
               # No unreleased content, create new section from commit
-              commit_title = """${COMMIT_TITLE}"""
-              commit_full = """${{ steps.analyze_commit.outputs.commit_full }}"""
-              commit_sha = "${COMMIT_SHA}"[:7]
-              
-              # Check if there's additional context beyond the title
-              commit_lines = commit_full.strip().split('\n')
-              if len(commit_lines) > 1 and any(line.strip() for line in commit_lines[1:]):
-                  # Use full message if there's more context
-                  commit_entry = commit_full.strip()
-              else:
-                  # Use just the title if it's a single line
-                  commit_entry = commit_title
-              
-              # Determine section type based on commit
               if commit_title.startswith('feat'):
                   section = "### Added"
               elif commit_title.startswith('fix'):
@@ -262,12 +239,7 @@ jobs:
               else:
                   section = "### Changed"
               
-              new_section = f"""## [{new_version}] - {today}
-          
-          {section}
-          - {commit_entry} ({commit_sha})
-          
-          """
+              new_section = f"## [{new_version}] - {today}\n\n{section}\n- {commit_title} ({commit_sha})\n\n"
               
               # Insert after Unreleased
               if '## [Unreleased]' in content:
@@ -287,26 +259,7 @@ jobs:
           
           with open('CHANGELOG.md', 'w') as f:
               f.write(new_content)
-          EOF
-          else
-            # Create new CHANGELOG.md
-            cat > CHANGELOG.md << EOF
-          # Changelog
-          
-          All notable changes to this project will be documented in this file.
-          
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-          
-          ## [Unreleased]
-          
-          ## [$NEW_VERSION] - $TODAY
-          
-          ### Added
-          - Initial release
-          
-          EOF
-          fi
+          PYTHON_SCRIPT
           
           echo "📝 Updated CHANGELOG.md"
       
@@ -324,11 +277,13 @@ jobs:
             git add tenets/__init__.py
           fi
           
-          # Commit with [skip ci] to avoid triggering this workflow again
-          git commit -m "chore(release): bump version to v${NEW_VERSION} [skip ci]
-
-Automated version bump after commit ${COMMIT_SHA:0:7}
-Bump type: ${BUMP_TYPE}" || {
+          # Create commit message
+          COMMIT_MSG="chore(release): bump version to v${NEW_VERSION} [skip ci]"
+          COMMIT_MSG="${COMMIT_MSG}"$'\n\n'"Automated version bump after commit ${COMMIT_SHA:0:7}"
+          COMMIT_MSG="${COMMIT_MSG}"$'\n'"Bump type: ${BUMP_TYPE}"
+          
+          # Commit
+          git commit -m "$COMMIT_MSG" || {
             echo "No changes to commit"
             echo "no_changes=true" >> $GITHUB_OUTPUT
             exit 0
@@ -356,9 +311,8 @@ Bump type: ${BUMP_TYPE}" || {
           fi
           
           # Create annotated tag
-          git tag -a "$TAG_NAME" -m "Release v${NEW_VERSION}
-
-Automated release after commit ${COMMIT_SHA:0:7}"
+          TAG_MSG="Release v${NEW_VERSION}"$'\n\n'"Automated release after commit ${COMMIT_SHA:0:7}"
+          git tag -a "$TAG_NAME" -m "$TAG_MSG"
           
           # Push tag
           git push origin "$TAG_NAME"
