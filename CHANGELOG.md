@@ -2,11 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
-Versioning follows SemVer. Automated draft notes by Release Drafter; finalized entries added on tag.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-01-04
+### Added
+- Automated version bumping on direct push to master branch
+- Version bump workflow documentation
+
+### Fixed
+- Standardized CLI command syntax for rank/distill commands
+- Documentation links and PyPI badge references
+- Markdown navigation generation
+- Pattern key normalization and folder reference typos
+
+## [0.1.1] - 2025-01-11
+
+### Fixed
+- Normalized pattern keys and fixed misspelled folder references
+- Documentation navigation tree builder for module/package name conflicts
+- Formatting issues in navigation builder
+
+### Changed
+- Updated package description
+
+## [0.1.0] - 2025-01-11  [YANKED]
+
+### Note
+- Initial release was yanked from PyPI due to incorrect package metadata
+- Re-released as v0.1.1 with corrections
 
 ### Added
 - Initial public release of Tenets CLI and Python package
