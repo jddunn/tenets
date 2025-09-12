@@ -19,19 +19,19 @@ for path in sorted(src.rglob("*.py")):
     # Skip test files and cache
     if any(part in str(path) for part in ["__pycache__", "test", "_test", ".pyc"]):
         continue
-    
+
     # Get module path relative to src
     module_path = path.relative_to(src).with_suffix("")
     doc_path = path.relative_to(src).with_suffix(".md")
     full_doc_path = Path("api", doc_path)
-    
+
     # Handle the module parts
     parts = tuple(module_path.parts)
-    
+
     # Skip __main__ modules
     if parts[-1] == "__main__":
         continue
-    
+
     # Handle __init__ files - they represent the package itself
     if parts[-1] == "__init__":
         if len(parts) == 1:
@@ -44,7 +44,7 @@ for path in sorted(src.rglob("*.py")):
             parts = parts[:-1]
             doc_path = doc_path.with_name("index.md")
             full_doc_path = full_doc_path.with_name("index.md")
-    
+
     # Build the identifier for mkdocstrings
     if parts == ("index",):
         # Main package
@@ -53,10 +53,10 @@ for path in sorted(src.rglob("*.py")):
     else:
         identifier = ".".join(["tenets"] + list(parts))
         nav_parts = ("tenets",) + parts
-    
+
     # Add to navigation
     nav[nav_parts] = doc_path.as_posix()
-    
+
     # Generate the markdown content with mkdocstrings directive
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         # Write page title with full module path for clarity
@@ -67,7 +67,7 @@ for path in sorted(src.rglob("*.py")):
             title = " › ".join([p.replace("_", " ").title() for p in parts])
             print(f"# {title}\n", file=fd)
         print(f"`{identifier}`\n", file=fd)
-        
+
         # Write mkdocstrings directive
         print(f"::: {identifier}", file=fd)
         print("    options:", file=fd)
@@ -88,7 +88,7 @@ for path in sorted(src.rglob("*.py")):
         print("        filters:", file=fd)
         print('          - "!^_"', file=fd)
         print('          - "!^test"', file=fd)
-    
+
     # Set edit path for "edit on GitHub" link
     # Handle index.md pages that correspond to __init__.py files
     if full_doc_path.name == "index.md" and path.name == "__init__.py":
