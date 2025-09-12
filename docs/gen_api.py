@@ -110,46 +110,46 @@ Complete API documentation for the Tenets package.
 ## Quick Navigation
 
 ### Core Components
-- **[Tenets](./index/)** - Main package and API
-- **[Config](./tenets/config/)** - Configuration system  
-- **[API](./tenets/api/)** - Public API interface
-- **[Core](./tenets/core/)** - Core functionality
+- **[Tenets](tenets/)** - Main package and API
+- **[Config](tenets/config.md)** - Configuration system  
+- **[API](tenets/api.md)** - Public API interface
+- **[Core](tenets/core/)** - Core functionality
 
 ### Core Modules
-- **[Analyzer](./tenets/core/analyzer/)** - Code analysis engine
-- **[Distiller](./tenets/core/distiller/)** - Context distillation
-- **[Aggregator](./tenets/core/aggregator/)** - Content aggregation
-- **[Ranking](./tenets/core/ranking/)** - File ranking system
-- **[Ranker](./tenets/core/ranking/ranker/)** - Ranking engine
+- **[Analyzer](tenets/core/analyzer.md)** - Code analysis engine
+- **[Distiller](tenets/core/distiller.md)** - Context distillation
+- **[Aggregator](tenets/core/aggregator.md)** - Content aggregation
+- **[Ranking](tenets/core/ranking/)** - File ranking system
+- **[Ranker](tenets/core/ranking/ranker.md)** - Ranking engine
 
 ### Command Line Interface
-- **[CLI](./tenets/cli/)** - Command-line tools
-- **[App](./tenets/cli/app/)** - CLI application
-- **[Commands](./tenets/cli/commands/)** - Available commands
+- **[CLI](tenets/cli/)** - Command-line tools
+- **[App](tenets/cli/app.md)** - CLI application
+- **[Commands](tenets/cli/commands/)** - Available commands
 
 ### Data Models
-- **[Models](./tenets/models/)** - Data models package
-- **[File Models](./tenets/models/file/)** - File representations
-- **[Context Models](./tenets/models/context/)** - Context structures
-- **[Session Models](./tenets/models/session/)** - Session management
-- **[Config Models](./tenets/models/config/)** - Configuration models
+- **[Models](tenets/models/)** - Data models package
+- **[File Models](tenets/models/file.md)** - File representations
+- **[Context Models](tenets/models/context.md)** - Context structures
+- **[Session Models](tenets/models/session.md)** - Session management
+- **[Config Models](tenets/models/config.md)** - Configuration models
 
 ### Storage & Utilities
-- **[Storage](./tenets/storage/)** - Caching and persistence
-- **[Cache](./tenets/storage/cache/)** - Cache system
-- **[Utils](./tenets/utils/)** - Utility functions
-- **[Viz](./tenets/viz/)** - Visualization tools
+- **[Storage](tenets/storage/)** - Caching and persistence
+- **[Cache](tenets/storage/cache.md)** - Cache system
+- **[Utils](tenets/utils/)** - Utility functions
+- **[Viz](tenets/viz/)** - Visualization tools
 
 ## Key Classes
 
 | Class | Module | Link |
 |-------|--------|------|
-| `Tenets` | tenets | **[View Documentation →](./index/)** |
-| `Distiller` | tenets.core.distiller | **[View Documentation →](./tenets/core/distiller/)** |
-| `CodeAnalyzer` | tenets.core.analyzer | **[View Documentation →](./tenets/core/analyzer/)** |
-| `RelevanceRanker` | tenets.core.ranking.ranker | **[View Documentation →](./tenets/core/ranking/ranker/)** |
-| `FileContext` | tenets.models.file | **[View Documentation →](./tenets/models/file/)** |
-| `Session` | tenets.models.session | **[View Documentation →](./tenets/models/session/)** |
+| `Tenets` | tenets | **[View Documentation →](tenets/)** |
+| `Distiller` | tenets.core.distiller | **[View Documentation →](tenets/core/distiller.md)** |
+| `CodeAnalyzer` | tenets.core.analyzer | **[View Documentation →](tenets/core/analyzer.md)** |
+| `RelevanceRanker` | tenets.core.ranking.ranker | **[View Documentation →](tenets/core/ranking/ranker.md)** |
+| `FileContext` | tenets.models.file | **[View Documentation →](tenets/models/file.md)** |
+| `Session` | tenets.models.session | **[View Documentation →](tenets/models/session.md)** |
 
 ## Usage Example
 
