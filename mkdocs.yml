@@ -125,7 +125,7 @@ plugins:
   # Auto-generated API docs
   - gen-files:
       scripts:
-        - docs/gen_ref_pages.py
+        - docs/gen_api.py
 
   - literate-nav:
       implicit_index: true
@@ -139,19 +139,19 @@ plugins:
       handlers:
         python:
           paths: ['.']
-          import:
+          inventories:
             - https://docs.python.org/3/objects.inv
           options:
-            # PERFORMANCE OPTIMIZATIONS
+            # TOC and Navigation
             show_source: false # Don't load source by default
             show_root_heading: true
-            show_root_toc_entry: false # Reduce TOC size
+            show_root_toc_entry: true # Show in TOC
             show_object_full_path: false
             show_category_heading: true
-            show_symbol_type_heading: false # Reduce overhead
-            show_symbol_type_toc: false # Reduce TOC complexity
+            show_symbol_type_heading: true # Show Class/Function labels
+            show_symbol_type_toc: true # Include type in TOC
             members_order: source
-            group_by_category: false # Faster rendering
+            group_by_category: true # Group by type
             show_submodules: false # Don't auto-expand submodules
             docstring_style: google
             docstring_section_style: spacy # Simpler rendering
