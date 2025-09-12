@@ -57,8 +57,10 @@ jobs:
           COMMIT_MSG="${{ github.event.head_commit.message }}"
           echo "Analyzing commit: $COMMIT_MSG"
           
-          # Extract first line of commit message
+          # Extract first line of commit message for title checks
           COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -n 1)
+          # Store full message for changelog
+          COMMIT_FULL="$COMMIT_MSG"
           
           # Check if this is a version bump commit (to avoid loops)
           if [[ "$COMMIT_TITLE" =~ ^chore\(release\): ]]; then
@@ -90,6 +92,9 @@ jobs:
           
           echo "should_skip=false" >> $GITHUB_OUTPUT
           echo "commit_title=$COMMIT_TITLE" >> $GITHUB_OUTPUT
+          echo "commit_full<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Determine version bump type
         id: determine_bump
@@ -233,7 +238,17 @@ jobs:
           else:
               # No unreleased content, create new section from commit
               commit_title = """${COMMIT_TITLE}"""
+              commit_full = """${{ steps.analyze_commit.outputs.commit_full }}"""
               commit_sha = "${COMMIT_SHA}"[:7]
+              
+              # Check if there's additional context beyond the title
+              commit_lines = commit_full.strip().split('\n')
+              if len(commit_lines) > 1 and any(line.strip() for line in commit_lines[1:]):
+                  # Use full message if there's more context
+                  commit_entry = commit_full.strip()
+              else:
+                  # Use just the title if it's a single line
+                  commit_entry = commit_title
               
               # Determine section type based on commit
               if commit_title.startswith('feat'):
@@ -250,7 +265,7 @@ jobs:
               new_section = f"""## [{new_version}] - {today}
           
           {section}
-          - {commit_title} ({commit_sha})
+          - {commit_entry} ({commit_sha})
           
           """
               
@@ -330,17 +345,27 @@ Bump type: ${BUMP_TYPE}" || {
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
           COMMIT_SHA="${{ github.sha }}"
+          TAG_NAME="v${NEW_VERSION}"
+          
+          # Check if tag already exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "⚠️ Tag $TAG_NAME already exists, skipping tag creation"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           
           # Create annotated tag
-          git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}
+          git tag -a "$TAG_NAME" -m "Release v${NEW_VERSION}
 
 Automated release after commit ${COMMIT_SHA:0:7}"
           
           # Push tag
-          git push origin "v${NEW_VERSION}"
+          git push origin "$TAG_NAME"
           
-          echo "✅ Created and pushed tag v${NEW_VERSION}"
-          echo "tag_name=v${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "✅ Created and pushed tag $TAG_NAME"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "tag_exists=false" >> $GITHUB_OUTPUT
       
       - name: Output results
         id: bump
