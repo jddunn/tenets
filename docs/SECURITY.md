@@ -6,7 +6,7 @@ The project is pre-1.0; security fixes are applied to the latest released versio
 
 ## Reporting a Vulnerability
 
-Email: security@tenets.dev (or team@tenets.dev if unreachable)
+Email: team@tenets.dev (or team@manic.agency if unreachable)
 
 Please include:
 - Description of the issue
@@ -49,4 +49,4 @@ Out of scope:
 
 ## Contact
 
-security@tenets.dev
+team@tenets.dev // team@manic.agency
