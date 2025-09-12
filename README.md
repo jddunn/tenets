@@ -78,16 +78,16 @@ tenets distill "review code" --remove-comments --condense
 
 ```bash
 # See what files would be included (much faster than distill!)
-tenets rank "implement payments" --top 20
+tenets rank . "implement payments" --top 20
 
 # Understand WHY files are ranked
-tenets rank "fix auth" --factors
+tenets rank . "fix auth" --factors
 
 # Tree view for structure understanding
-tenets rank "add caching" --tree --scores
+tenets rank . "add caching" --tree --scores
 
 # Export for automation
-tenets rank "database migration" --format json | jq '.files[].path'
+tenets rank . "database migration" --format json | jq '.files[].path'
 ```
 
 **Why use `rank` instead of `distill`?**
@@ -240,3 +240,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 MIT License - see [LICENSE](LICENSE) for details.
 
 ---
+
+## Contact
+
+team@tenets.dev // team@manic.agency
