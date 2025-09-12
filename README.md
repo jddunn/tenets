@@ -90,14 +90,6 @@ tenets rank . "add caching" --tree --scores
 tenets rank . "database migration" --format json | jq '.files[].path'
 ```
 
-**Why use `rank` instead of `distill`?**
-
-- **Preview**: See what files would be included before generating full context
-- **Performance**: Much faster - no file reading or content processing
-- **Automation**: Export file lists for CI/CD or custom scripts
-- **Understanding**: See ranking factors to understand WHY files are relevant
-- **Planning**: Identify key files before making changes
-
 ### Sessions & Persistence
 
 ```bash
