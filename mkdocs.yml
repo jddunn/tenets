@@ -100,7 +100,7 @@ theme:
 
     # Table of Contents - RIGHT SIDEBAR
     - toc.follow # TOC follows scroll
-    # REMOVED toc.integrate - keeps TOC as right sidebar
+    # - toc.integrate # Uncomment to integrate TOC into left nav (not recommended for API docs)
 
     # Search
     - search.suggest
@@ -142,28 +142,43 @@ plugins:
           import:
             - https://docs.python.org/3/objects.inv
           options:
-            # PERFORMANCE OPTIMIZATIONS
-            show_source: false # Don't load source by default
+            # TOC and Navigation
             show_root_heading: true
-            show_root_toc_entry: false # Reduce TOC size
+            show_root_toc_entry: true # Show in TOC
+            show_symbol_type_heading: true # Show Class/Function/etc
+            show_symbol_type_toc: true # Include type in TOC
             show_object_full_path: false
             show_category_heading: true
-            show_symbol_type_heading: false # Reduce overhead
-            show_symbol_type_toc: false # Reduce TOC complexity
+            
+            # Members and content
             members_order: source
-            group_by_category: false # Faster rendering
-            show_submodules: false # Don't auto-expand submodules
-            docstring_style: google
-            docstring_section_style: spacy # Simpler rendering
-            merge_init_into_class: true
+            group_by_category: true # Group by type
+            show_submodules: false # Controlled per-page
             show_if_no_docstring: false
+            inherited_members: false
+            
+            # Docstrings
+            docstring_style: google
+            docstring_section_style: table
+            merge_init_into_class: true
+            
+            # Signatures
             separate_signature: true
-            line_length: 80
             show_signature_annotations: true
-            signature_crossrefs: false # Prevent cross-ref overhead
+            signature_crossrefs: true # Enable cross-references
+            line_length: 80
+            
+            # Source code
+            show_source: false # Don't show source by default
+            
+            # Filters
             filters: ['!^_', '!^test']
-            inherited_members: false # Don't process inherited
-            preload_modules: [] # Don't preload anything
+            
+            # Summary
+            summary: true # Enable summaries for navigation
+            
+            # Performance
+            preload_modules: [] # Don't preload
 
   # Git revision dates
   - git-revision-date-localized:
