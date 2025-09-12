@@ -138,7 +138,7 @@ plugins:
       default_handler: python
       handlers:
         python:
-          paths: ['.']
+          paths: ['.']  # Current directory
           inventories:
             - https://docs.python.org/3/objects.inv
           options:
