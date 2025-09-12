@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-01-11
+
 ### Added
 - Automated version bumping on direct push to master branch
 - Version bump workflow documentation
@@ -16,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation links and PyPI badge references
 - Markdown navigation generation
 - Pattern key normalization and folder reference typos
+- Release workflow automation with manual trigger support
 
 ## [0.1.1] - 2025-01-11
 
