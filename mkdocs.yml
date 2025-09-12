@@ -131,7 +131,8 @@ plugins:
       implicit_index: true
       tab_length: 4
 
-  - section-index
+  # section-index disabled - conflicts with generated API docs
+  # - section-index
 
   - mkdocstrings:
       enabled: true
