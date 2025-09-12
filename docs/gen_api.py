@@ -1,6 +1,7 @@
 """Generate API reference pages for mkdocs."""
 
 from pathlib import Path
+
 import mkdocs_gen_files
 
 # Define the navigation structure
