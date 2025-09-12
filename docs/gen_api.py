@@ -27,6 +27,9 @@ for path in sorted(Path("tenets").rglob("*.py")):
         parts = parts[:-1]
         doc_path = Path(*parts[:-1], "index.md") if len(parts) > 1 else Path("index.md")
         full_doc_path = Path("api", doc_path)
+        # Don't generate content for package index files to avoid section-index conflicts
+        # The section-index plugin will handle these automatically
+        continue
 
     # Skip test files
     if "__pycache__" in str(path) or "test" in str(path):
@@ -38,7 +41,7 @@ for path in sorted(Path("tenets").rglob("*.py")):
     # Generate the page with mkdocstrings
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         identifier = ".".join(parts)
-        print(f"::: {identifier}", file=fd)
+        fd.write(f"::: {identifier}\n")
 
     # Set edit path for GitHub
     mkdocs_gen_files.set_edit_path(full_doc_path, path)

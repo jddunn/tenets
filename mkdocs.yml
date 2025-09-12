@@ -138,7 +138,7 @@ plugins:
       default_handler: python
       handlers:
         python:
-          paths: ['.']  # Current directory
+          paths: ['.'] # Current directory
           inventories:
             - https://docs.python.org/3/objects.inv
           options:
@@ -295,7 +295,7 @@ extra:
 
   # Microsoft Clarity
   clarity: !ENV CLARITY_PROJECT_ID
-  
+
   # Social links
   social:
     - icon: fontawesome/brands/github
