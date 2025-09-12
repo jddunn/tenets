@@ -19,18 +19,18 @@ for path in src_paths:
     # Skip test files, cache, and __pycache__
     if any(skip in str(path) for skip in ["__pycache__", "test_", "_test.py", "/tests/"]):
         continue
-    
+
     module_path = path.relative_to(root_dir.parent).with_suffix("")
     parts = tuple(module_path.parts)
-    
+
     # Skip __main__ files
     if parts[-1] == "__main__":
         continue
-    
+
     # Store module info
     if parts[-1] != "__init__":
         all_modules.append((parts, path))
-        
+
         # Track which modules belong to which packages
         if len(parts) > 1:
             package = parts[:-1]
@@ -42,15 +42,15 @@ for path in src_paths:
 for parts, path in all_modules:
     doc_path = Path("api", *parts).with_suffix(".md")
     identifier = ".".join(parts)
-    
+
     # Add to navigation
     nav[parts] = doc_path.relative_to("api").as_posix()
-    
+
     # Generate the documentation page
     with mkdocs_gen_files.open(doc_path, "w") as fd:
         module_name = parts[-1]
         display_name = module_name.replace("_", " ").title()
-        
+
         fd.write(f"# `{module_name}`\n\n")
         fd.write(f"**Full name:** `{identifier}`\n\n")
         fd.write(f"::: {identifier}\n")
@@ -71,7 +71,7 @@ for parts, path in all_modules:
         fd.write("        show_docstring_modules: true\n")
         fd.write("        show_docstring_description: true\n")
         fd.write("        merge_init_into_class: true\n")
-    
+
     mkdocs_gen_files.set_edit_path(doc_path, path)
 
 # Generate package index pages
@@ -80,21 +80,21 @@ for path in src_paths:
     if "__init__.py" in str(path):
         module_path = path.relative_to(root_dir.parent).with_suffix("")
         parts = tuple(module_path.parts)[:-1]  # Remove __init__
-        
+
         if parts and parts not in processed_packages:
             processed_packages.add(parts)
-            
+
             doc_path = Path("api", *parts, "index.md")
             identifier = ".".join(parts)
-            
+
             # Add to navigation
             nav[(*parts, "index")] = doc_path.relative_to("api").as_posix()
-            
+
             with mkdocs_gen_files.open(doc_path, "w") as fd:
                 package_name = parts[-1]
-                
+
                 fd.write(f"# `{identifier}` Package\n\n")
-                
+
                 # Add package docstring
                 fd.write(f"::: {identifier}\n")
                 fd.write("    options:\n")
@@ -104,19 +104,22 @@ for path in src_paths:
                 fd.write("        show_submodules: false\n")
                 fd.write("        members_order: source\n")
                 fd.write("        show_if_no_docstring: true\n")
-                
+
                 # List direct subpackages
                 subpackages = []
                 for other_package in processed_packages:
-                    if len(other_package) == len(parts) + 1 and other_package[:len(parts)] == parts:
+                    if (
+                        len(other_package) == len(parts) + 1
+                        and other_package[: len(parts)] == parts
+                    ):
                         subpackages.append(other_package[-1])
-                
+
                 if subpackages:
                     fd.write("\n## Subpackages\n\n")
                     for subpkg in sorted(subpackages):
                         display = subpkg.replace("_", " ").title()
                         fd.write(f"- [`{subpkg}`]({subpkg}/index.md) - {display} package\n")
-                
+
                 # List direct modules
                 if parts in package_modules:
                     fd.write("\n## Modules\n\n")
@@ -124,12 +127,13 @@ for path in src_paths:
                         if module != "__init__":
                             display = module.replace("_", " ").title()
                             fd.write(f"- [`{module}`]({module}.md) - {display} module\n")
-            
+
             mkdocs_gen_files.set_edit_path(doc_path, path)
 
 # Create main tenets package index (special case)
 with mkdocs_gen_files.open("api/tenets/index.md", "w") as fd:
-    fd.write("""# `tenets` Package
+    fd.write(
+        """# `tenets` Package
 
 Main package for Tenets - Context that feeds your prompts.
 
@@ -152,11 +156,13 @@ Main package for Tenets - Context that feeds your prompts.
 ## Direct Modules
 
 - [`config`](config.md) - Configuration management
-""")
+"""
+    )
 
 # Create the core package index with all its subpackages
 with mkdocs_gen_files.open("api/tenets/core/index.md", "w") as fd:
-    fd.write("""# `tenets.core` Package
+    fd.write(
+        """# `tenets.core` Package
 
 Core functionality and algorithms for Tenets.
 
@@ -180,11 +186,13 @@ Core functionality and algorithms for Tenets.
 - [`reporting`](reporting/index.md) - Report generation
 - [`session`](session/index.md) - Session state management
 - [`summarizer`](summarizer/index.md) - Content summarization
-""")
+"""
+    )
 
 # Create CLI commands subpackage index
 with mkdocs_gen_files.open("api/tenets/cli/commands/index.md", "w") as fd:
-    fd.write("""# `tenets.cli.commands` Package
+    fd.write(
+        """# `tenets.cli.commands` Package
 
 CLI command implementations.
 
@@ -210,11 +218,13 @@ CLI command implementations.
 ## Utility Modules
 
 - [`_utils`](_utils.md) - Shared command utilities
-""")
+"""
+    )
 
 # Create the main API index
 with mkdocs_gen_files.open("api/index.md", "w") as fd:
-    fd.write("""# API Reference
+    fd.write(
+        """# API Reference
 
 Welcome to the Tenets API documentation. This section provides comprehensive documentation for all modules, classes, and functions in the Tenets package.
 
@@ -312,7 +322,8 @@ session.pin_file("auth.py")
     - Each module page shows all classes and functions
     - Look for "Examples" sections in docstrings
     - Check return types and parameters for usage hints
-""")
+"""
+    )
 
 # Write the navigation summary
 with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
