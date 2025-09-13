@@ -80,15 +80,110 @@
 }
 
 .hero-tagline {
-  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  font-size: clamp(0.95rem, 2vw, 1.25rem);
   color: #6b5d4f;
-  margin: 0.5rem 0 1rem; /* Tighter spacing */
-  font-style: italic;
-  font-weight: 300;
+  margin: 0.5rem auto 1.5rem;
+  font-weight: 400;
+  max-width: 800px;
+  line-height: 1.4;
 }
 
 [data-md-color-scheme="slate"] .hero-tagline {
+  color: #d4ccb8;
+}
+
+/* Hero Installation Command - Prominent at top */
+.hero-install {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem auto 2rem;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #1a1d24 0%, #0f1117 100%);
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.hero-install:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 32px rgba(245, 158, 11, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.hero-install code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: #fbbf24;
+  background: none;
+  padding: 0;
+  letter-spacing: 0.02em;
+}
+
+.hero-install .copy-btn.minimal {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 6px;
+  padding: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #fbbf24;
+}
+
+.hero-install .copy-btn.minimal:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: scale(1.05);
+}
+
+/* Hero Features - Elegant List */
+.hero-features {
+  max-width: 850px;
+  margin: 2rem auto;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.feature-line {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: clamp(0.925rem, 1.8vw, 1.05rem);
+  line-height: 1.5;
+  color: #3e342a;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(247, 245, 240, 0.3) 100%);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+[data-md-color-scheme="slate"] .feature-line {
+  color: #e8e6e3;
+  background: linear-gradient(135deg, rgba(42, 53, 66, 0.3) 0%, rgba(38, 50, 68, 0.2) 100%);
+}
+
+.feature-line:hover {
+  transform: translateX(8px);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+}
+
+.feature-icon {
+  color: #f59e0b;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
 .hero-description {
@@ -625,8 +720,41 @@
   }
 
   .hero-tagline {
+    font-size: 0.9rem;
+    margin: 0.25rem auto 1rem;
+    padding: 0 1rem;
+  }
+
+  /* Mobile Install Command */
+  .hero-install {
+    margin: 1rem auto 1.5rem;
+    padding: 0.75rem 1rem;
+    max-width: 90%;
+  }
+
+  .hero-install code {
     font-size: 1rem;
-    margin: 0.25rem 0 0.75rem;
+  }
+
+  /* Mobile Features - Center properly */
+  .hero-features {
+    margin: 1.5rem auto;
+    padding: 0 0.5rem;
+    gap: 0.625rem;
+    max-width: 100%;
+    text-align: center; /* Center text on mobile */
+  }
+
+  .feature-line {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    text-align: left; /* But keep feature lines left-aligned */
+    margin: 0 auto;
+    max-width: 400px; /* Constrain width for better centering */
+  }
+
+  .feature-icon {
+    font-size: 1rem;
   }
 
   .hero-description {
@@ -661,5 +789,31 @@
 
   .workflow-arrow {
     transform: rotate(90deg);
+  }
+}
+
+/* Very small screens - Extra mobile adjustments */
+@media screen and (max-width: 480px) {
+  .hero-features {
+    padding: 0 0.25rem;
+  }
+
+  .feature-line {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.625rem;
+    max-width: 350px;
+    gap: 0.625rem;
+  }
+
+  .feature-icon {
+    font-size: 0.9rem;
+  }
+
+  .hero-install {
+    padding: 0.625rem 0.875rem;
+  }
+
+  .hero-install code {
+    font-size: 0.9rem;
   }
 }
