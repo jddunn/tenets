@@ -15,10 +15,37 @@ hide:
   <h1 class="hero-title">
     <span class="typewriter" data-text="tenets"></span>
   </h1>
-  <p class="hero-tagline">Context that feeds your prompts</p>
-  <div class="hero-description">
-    <p>Illuminate your codebase. Surface relevant files. Build optimal context.</p>
-  <p>All without leaving your machine. <strong>20+ languages</strong> including Python, Go, Rust, Java, C#, Kotlin, Swift, Dart, GDScript & more.</p>
+  <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
+  
+  <!-- Installation command at the top -->
+  <div class="hero-install">
+    <code>pip install tenets</code>
+    <button class="copy-btn minimal" data-clipboard-text="pip install tenets" aria-label="Copy command">
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </svg>
+    </button>
+  </div>
+  
+  <!-- Elegant feature list -->
+  <div class="hero-features">
+    <div class="feature-line">
+      <span class="feature-icon">✦</span>
+      <span>Command-line tool and Python API for intelligent code aggregation and analysis</span>
+    </div>
+    <div class="feature-line">
+      <span class="feature-icon">✦</span>
+      <span>Surface relevant files • Build optimal context • Track velocity</span>
+    </div>
+    <div class="feature-line">
+      <span class="feature-icon">✦</span>
+      <span>Examine code quality metrics • Evaluate and improve your codebase</span>
+    </div>
+    <div class="feature-line">
+      <span class="feature-icon">✦</span>
+      <span>All processing stays local — your code never leaves your machine</span>
+    </div>
   </div>
   <div class="hero-actions">
     <a href="quickstart/" class="btn-primary">
