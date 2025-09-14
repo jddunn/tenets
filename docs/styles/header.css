@@ -622,13 +622,9 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 
 .md-source:hover::after { opacity: 1; }
 
-/* Ensure hamburger stays top-right whenever it's visible (desktop or mobile) */
+/* Hamburger menu button styling */
 .md-header__button[for="__drawer"] {
-  position: fixed;
-  top: 8px;
-  right: 8px;
-  left: auto;
-  z-index: 15000;
+  position: relative;
   color: #1a2332; /* ensure visible in light */
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
   cursor: pointer !important;
@@ -636,6 +632,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   display: flex !important;
   align-items: center;
   justify-content: center;
+  order: 5; /* last in header */
 }
 
 [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
@@ -649,15 +646,10 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   height: 24px;
 }
 
-/* On desktop, keep drawer button in normal flow so it doesn't overlay other controls */
-@media screen and (min-width: 601px) {
+/* On desktop, hide drawer button */
+@media screen and (min-width: 1100px) {
   .md-header__button[for="__drawer"] {
-    position: static;
-    top: auto;
-    right: auto;
-    left: auto;
-    z-index: auto;
-  filter: none;
+    display: none !important;
   }
 }
 
@@ -804,11 +796,11 @@ label.md-header__button[for^="__palette_"][data-tooltip]:hover::after {
   }
 }
 
-/* Desktop order: logo (0), nav (1), theme toggle (2), search (3), github (4), hamburger (5) */
-.md-header__button[for="__drawer"] { order: 5; }
-.md-search { order: 3; margin-left: auto; }
-label.md-header__button[for^="__palette_"] { order: 2; }
+/* Desktop order: logo (0), nav (1), search (auto-margin left), theme toggle (2), github (3) */
+.md-search { order: 2; margin-left: auto; }
+label.md-header__button[for^="__palette_"] { order: 3; }
 .md-source { order: 4; }
+.md-header__button[for="__drawer"] { order: 5; }
 
 /* AGGRESSIVELY hide ALL header search toggle buttons/labels that are NOT inside .md-search container */
 .md-header label.md-header__button[for="__search"],
@@ -846,49 +838,45 @@ header label[for="__search"]:not(.md-search__icon) {
   display: flex !important;
 }
 
-/* MOBILE - Responsive at 1100px */
+/* MOBILE - Responsive at 600px */
 @media screen and (max-width: 600px) {
   .md-header {
     height: 64px;
   }
 
   .md-header__inner {
-    padding: 0 0.75rem;
+    padding: 0 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  /* Mobile header contents: logo (left), theme toggle (right), hamburger (far right) */
+  /* Mobile header contents: logo (left), search, theme, github, hamburger (right) */
   .md-header__title { display: none !important; }
   /* Hide secondary long title that appears on scroll (if any) */
   .md-header__title[data-md-component="header-title"] { display:none !important; }
 
-  /* Reset any desktop ordering */
-  .md-header__button.md-logo { order: 0; }
-  label.md-header__button[for^="__palette_"] { order: 1; margin-left: auto; }
-  /* proxy removed */
-  .md-header__button[for="__drawer"] { order: 2; }
+  /* Mobile ordering */
+  .md-header__button.md-logo { order: 0; margin-right: 0.5rem; }
+  .md-search { order: 1; flex: 1; max-width: 140px; }
+  label.md-header__button[for^="__palette_"] { order: 2; margin: 0 0.25rem; }
+  .md-source { order: 3; margin: 0 0.25rem; }
+  .md-header__button[for="__drawer"] { order: 4; margin-left: 0.25rem; }
 
-  /* Theme toggle spacing on mobile */
-  label.md-header__button[for^="__palette_"] { margin-right: 0.4rem; }
-
-  /* Hamburger now at far right */
+  /* Hamburger styling on mobile */
   .md-header__button[for="__drawer"] {
     display: flex !important;
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
     align-items: center;
     justify-content: center;
     background: #fdfdf9;
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow:
-      3px 3px 8px rgba(26, 35, 50, 0.06),
-      -3px -3px 8px rgba(255, 255, 255, 0.8);
+      2px 2px 6px rgba(26, 35, 50, 0.06),
+      -2px -2px 6px rgba(255, 255, 255, 0.8);
     cursor: pointer;
-    z-index: 15000;
-      margin-left: 0;
-      position: fixed; /* ensure stays pinned */
-    top: 8px;
-    right: 8px;
-      left: auto;
+    position: relative;
   }
 
   [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
@@ -913,28 +901,49 @@ header label[for="__search"]:not(.md-search__icon) {
   }
 
   /* Keep search visible and functional on mobile */
-  .md-search { display: flex !important; order: 2; margin: 0 0.25rem; }
+  .md-search {
+    display: flex !important;
+  }
   .md-search .md-search__form {
-    width: auto !important;
-    min-width: 160px !important;
-    height: 26px !important;
+    width: 100% !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center;
+  }
+  .md-search .md-search__input {
+    display: block !important;
+    width: 100% !important;
+    height: 28px !important;
+    font-size: 0.7rem !important;
+    padding: 0 2rem 0 0.5rem !important;
   }
   .mobile-drawer-search-wrapper { margin-top: 0.25rem !important; }
 
-  /* Keep GitHub visible on mobile, after search */
-  .md-source { display: inline-flex !important; order: 3; }
+  /* Keep GitHub visible on mobile */
+  .md-source { display: inline-flex !important; }
 
-  /* Theme toggle on mobile */
-  .md-header__button[for="__palette_1"],
-  .md-header__button[for="__palette_2"] {
-    width: 36px;
-    height: 36px;
+  /* Theme toggle on mobile - ensure visibility */
+  label.md-header__button[for^="__palette_"] {
+    display: none !important;
   }
 
-  .md-header__button[for="__palette_1"] svg,
-  .md-header__button[for="__palette_2"] svg {
+  /* Show only the correct toggle for current scheme */
+  [data-md-color-scheme="default"] label.md-header__button[for="__palette_1"] {
+    display: flex !important;
+    width: 32px;
+    height: 32px;
+  }
+
+  [data-md-color-scheme="slate"] label.md-header__button[for="__palette_0"] {
+    display: flex !important;
+    width: 32px;
+    height: 32px;
+  }
+
+  label.md-header__button[for^="__palette_"] svg {
     width: 16px;
     height: 16px;
+    fill: #f59e0b !important;
   }
 }
 
