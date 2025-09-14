@@ -323,7 +323,7 @@ extra_css:
   # Core styles (working properly)
   - styles/variables.css
   - styles/logo-fix.css # Fix duplicate logo issue
-  - styles/header-fixed.css # Fixed header with nav, animations, and duplicate fixes
+  - styles/header.css # Consolidated header styles with nav, animations, and fixes
   - styles/buttons.css
   - styles/cards.css
   - styles/footer.css
