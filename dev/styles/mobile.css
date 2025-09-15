@@ -72,7 +72,7 @@
       2px 2px 6px rgba(26, 35, 50, 0.06),
       -2px -2px 6px rgba(255, 255, 255, 0.8);
     cursor: pointer;
-    order: 5;
+    order: 4;
     flex-shrink: 0;
     margin-left: 0.25rem;
   }
@@ -92,12 +92,12 @@
 
   /* Search container - always visible on mobile */
   .md-header__inner .md-search {
-    order: 2;
+    order: 1;
     display: flex !important;
     align-items: center;
-    flex: 1;
-    max-width: calc(100% - 200px); /* leave space for other elements */
-    min-width: 100px; /* ensure minimum width */
+    flex: 1 1 auto;
+    max-width: calc(100% - 160px); /* leave space for theme, github, hamburger */
+    min-width: 60px; /* ensure minimum width even on smallest screens */
     margin: 0 0.25rem;
   }
 
@@ -149,7 +149,7 @@
   /* Theme toggle - hide all first, then show only one */
   label.md-header__button[for^="__palette_"] {
     display: none !important;
-    order: 3;
+    order: 2;
     margin: 0 0.25rem;
     flex-shrink: 0;
     width: 2rem;
@@ -189,7 +189,7 @@
   /* GitHub source - positioned away from hamburger */
   .md-source {
     display: inline-flex !important;
-    order: 4;
+    order: 3;
     margin: 0 0.25rem;
     flex-shrink: 0;
     padding: 0.25rem 0.4rem;
@@ -247,7 +247,7 @@
   /* Hamburger menu - positioned far right in normal flow */
   .md-header__button[for="__drawer"] {
     position: relative !important;
-    order: 5;
+    order: 4;
     margin-left: 0.25rem;
     flex-shrink: 0;
   }
@@ -598,8 +598,9 @@
     /* Keep search form visible but make it more compact */
     .md-header__inner .md-search {
       display: flex !important;
-      min-width: 80px; /* smaller minimum for tiny screens */
-      max-width: calc(100% - 180px); /* leave space for logo + 3 buttons */
+      order: 1 !important;
+      min-width: 60px; /* smaller minimum for tiny screens */
+      max-width: calc(100% - 140px); /* leave space for logo + 3 buttons */
     }
     .md-header__inner .md-search__form {
       display: flex !important; /* keep form visible */
@@ -616,7 +617,7 @@
 
     /* Compact GitHub/source: icon only */
     .md-header__source,
-    .md-header .md-source { display: inline-flex !important; order: 4; }
+    .md-header .md-source { display: inline-flex !important; order: 3; }
     .md-header .md-source__repository { display: none !important; }
     .md-header .md-source__icon { margin: 0 !important; }
 
