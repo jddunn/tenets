@@ -1,4 +1,4 @@
-/* docs/styles/header.css - FIXED VICTORIAN NEUMORPHIC HEADER
+/* docs/styles/header-fixed.css - FIXED HEADER WITHOUT SEARCH TRAP
    ===================================================== */
 
 /* =====================================================
@@ -10,7 +10,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 12000; /* ensure on top of all other elements */
+  z-index: 12000;
   height: 76px;
   background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
   box-shadow:
@@ -19,25 +19,8 @@
     inset 0 -1px 0 rgba(245, 158, 11, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   border-bottom: 1px solid rgba(245, 158, 11, 0.08);
-  /* Reduce blur for better contrast of icons */
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-}
-
-/* When search is open, remove backdrop/filter to prevent creating a containing
-   block for fixed-position overlay inside the header (ensures full-screen modal) */
-.md-header:has(.md-search[aria-expanded="true"]),
-.md-header:has(.md-search[data-md-state="active"]) {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  filter: none !important;
-}
-
-/* When mobile drawer is open, remove header backdrop blur so drawer content isn't blurred beneath it */
-input[type="checkbox"]#__drawer:checked ~ .md-header,
-.md-toggle--drawer:checked ~ .md-header {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 
 [data-md-color-scheme="slate"] .md-header {
@@ -59,8 +42,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   margin: 0 auto;
 }
 
-/* Logo - Using non-cropped version with text */
-/* Logo button - always far left */
+/* Logo */
 .md-header__button.md-logo {
   height: 56px;
   padding: 0;
@@ -79,87 +61,26 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Provide two img tags (dark + light) and toggle per scheme */
-.md-header__button.md-logo img.light-logo,
-.md-header__button.md-logo img.dark-logo { display:none !important; }
-/* Default (light) scheme: show light logo */
-[data-md-color-scheme="default"] .md-header__button.md-logo img.light-logo { display:inline-block !important; }
-/* Dark (slate) scheme: show dark logo */
-[data-md-color-scheme="slate"] .md-header__button.md-logo img.dark-logo { display:inline-block !important; }
-/* If theme injects a default <img> without our classes and our dual logos exist, hide the default */
-.md-header__button.md-logo img.dark-logo ~ img:not(.dark-logo):not(.light-logo),
-.md-header__button.md-logo img.light-logo ~ img:not(.dark-logo):not(.light-logo),
-.md-header__button.md-logo > img:not(.dark-logo):not(.light-logo):not(:only-child) {
-  display: none !important;
-}
-
-/* If only one img present, fallback to content swap */
-.md-logo img:not(.dark-logo):not(.light-logo) { content: url('../logos/tenets_light_icon_transparent.png'); }
-[data-md-color-scheme="slate"] .md-logo img:not(.dark-logo):not(.light-logo) { content: url('../logos/tenets_dark_icon_transparent.png'); filter: drop-shadow(0 3px 12px rgba(251, 191, 36, 0.4)); }
-
-/* Fallback for prefers-color-scheme before JS attribute is applied */
-@media (prefers-color-scheme: dark) {
-  html:not([data-md-color-scheme]) .md-header__button.md-logo img,
-  html:not([data-md-color-scheme]) .md-logo img { content: url('../logos/tenets_dark_icon_transparent.png') !important; }
-}
-
 .md-header__button.md-logo:hover img {
   transform: scale(1.05);
   filter: drop-shadow(0 4px 16px rgba(245, 158, 11, 0.3));
 }
 
-/* Hide header title entirely to avoid duplicate titles on pages */
+/* Hide header title to avoid duplicates */
 .md-header__title { display: none !important; }
 
 /* Navigation Container */
-/* Navigation group - left aligned after logo */
 .md-header-nav {
   display: flex !important;
   align-items: center;
   gap: 0.25rem;
   flex: 1 1 auto;
-  min-width: 0; /* allow shrink */
+  min-width: 0;
   justify-content: flex-start;
   margin: 0 0.5rem 0 0.25rem;
   order: 1;
   visibility: visible !important;
   opacity: 1 !important;
-}
-/* Theme toggle: show only one label (opposite scheme) based on order (first = default, second = slate)
-  and keep it before search */
-.md-header__inner label.md-header__button[for^="__palette_"] { display:none !important; order: 2; }
-[data-md-color-scheme="default"] .md-header__inner label.md-header__button[for^="__palette_"]:last-of-type { display:flex !important; }
-[data-md-color-scheme="slate"] .md-header__inner label.md-header__button[for^="__palette_"]:first-of-type { display:flex !important; }
-
-/* Mobile fix: ensure only one toggle shows - more aggressive */
-@media screen and (max-width: 1099px) {
-  /* Hide ALL palette buttons first */
-  .md-header__inner label.md-header__button[for^="__palette_"],
-  .md-header label.md-header__button[for^="__palette_"],
-  label.md-header__button[for^="__palette_"] { 
-    display: none !important; 
-    visibility: hidden !important;
-  }
-  
-  /* Show only the correct one for current scheme */
-  [data-md-color-scheme="default"] .md-header__inner label.md-header__button[for="__palette_1"] { 
-    display: flex !important; 
-    visibility: visible !important;
-  }
-  [data-md-color-scheme="slate"] .md-header__inner label.md-header__button[for="__palette_0"] { 
-    display: flex !important; 
-    visibility: visible !important;
-  }
-  
-  /* Alternative: if IDs are different, try nth-of-type */
-  [data-md-color-scheme="default"] .md-header__inner label.md-header__button[for^="__palette_"]:nth-of-type(2) { 
-    display: flex !important; 
-    visibility: visible !important;
-  }
-  [data-md-color-scheme="slate"] .md-header__inner label.md-header__button[for^="__palette_"]:nth-of-type(1) { 
-    display: flex !important; 
-    visibility: visible !important;
-  }
 }
 
 /* Force nav links visible above mobile breakpoint */
@@ -180,10 +101,12 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   margin: 0;
   padding: 0.5rem 1rem;
 }
+
 .md-tabs__item {
   margin:0;
   display: inline-block !important;
 }
+
 .md-tabs__link {
   position:relative;
   padding:0.32rem 0.65rem !important;
@@ -196,22 +119,23 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   display: inline-flex !important;
   align-items: center;
 }
+
 .md-tabs__link:hover {
   transform:translateY(-2px);
   color:#f59e0b !important;
 }
+
 .md-tabs__link--active {
   color:#1a2332 !important;
 }
+
 [data-md-color-scheme="slate"] .md-tabs__link {
   color:#e6dcc6 !important;
 }
+
 [data-md-color-scheme="slate"] .md-tabs__link--active {
   color:#fbbf24 !important;
 }
-/* Safety: if both toggle labels end up visible, hide redundant one by scheme */
-[data-md-color-scheme="default"] .md-header__inner label.md-header__button[for^="__palette_"]:not(:last-of-type) { display:none !important; }
-[data-md-color-scheme="slate"] .md-header__inner label.md-header__button[for^="__palette_"]:not(:first-of-type) { display:none !important; }
 
 /* Ensure tabs area occupies same line and is visible on desktop */
 .md-header__inner { gap:0.4rem; }
@@ -221,7 +145,6 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 
 /* Desktop: ensure tabs are visible regardless of container */
 @media screen and (min-width:1100px){
-  /* Force tabs visible wherever they are */
   .md-tabs,
   .md-header + .md-tabs,
   .md-container > .md-tabs,
@@ -252,7 +175,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   .md-header__inner > .md-tabs { display:none !important; }
 }
 
-/* Navigation tabs positioning - let Material handle most of it */
+/* Navigation tabs positioning */
 @media screen and (min-width: 1100px) {
   .md-tabs {
     display: block !important;
@@ -273,14 +196,14 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   }
 }
 
-/* Navigation Links - Neumorphic Style with tighter spacing */
+/* Navigation Links - Neumorphic Style */
 .md-header-nav__link,
 .md-tabs__link {
   position: relative;
   padding: 0.28rem 0.5rem !important;
   font-size: 0.72rem !important;
   font-weight: 600;
-  color: #2a2723; /* stronger contrast */
+  color: #2a2723;
   text-decoration: none;
   border-radius: 18px;
   background: #fdfdf9;
@@ -294,13 +217,13 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   align-items: center;
 }
 
-/* Defensive: hide any empty tab links (prevents blank buttons) */
+/* Defensive: hide any empty tab links */
 .md-tabs__link:empty,
 .md-header-nav__link:empty { display: none !important; }
 
 [data-md-color-scheme="slate"] .md-header-nav__link,
 [data-md-color-scheme="slate"] .md-tabs__link {
-  color: #e6dcc6; /* brighten for dark */
+  color: #e6dcc6;
   background: #263244;
   box-shadow:
     2px 2px 6px rgba(0, 0, 0, 0.15),
@@ -349,27 +272,36 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 }
 
 /* Active Link */
-/* Active underline/glow */
 .md-header-nav__link--active,
 .md-tabs__link--active,
 .md-header-nav__link[aria-current],
-.md-tabs__link[aria-current] { font-weight:700; position:relative; }
+.md-tabs__link[aria-current] { 
+  font-weight:700; 
+  position:relative; 
+}
+
 .md-header-nav__link--active::after,
 .md-tabs__link--active::after,
 .md-header-nav__link[aria-current]::after,
 .md-tabs__link[aria-current]::after {
-  content:''; position:absolute; left:10%; right:10%; bottom:-2px; height:2px;
-  background: var(--md-accent-fg-color); border-radius:2px;
+  content:''; 
+  position:absolute; 
+  left:10%; 
+  right:10%; 
+  bottom:-2px; 
+  height:2px;
+  background: var(--md-accent-fg-color); 
+  border-radius:2px;
   box-shadow: 0 0 10px color-mix(in srgb, var(--md-accent-fg-color) 40%, transparent);
 }
 
-/* Light mode: make active link/tabs amber (torch) for strong visibility */
+/* Light mode: make active link amber */
 [data-md-color-scheme="default"] .md-header-nav__link--active,
 [data-md-color-scheme="default"] .md-tabs__link--active,
 [data-md-color-scheme="default"] .md-header-nav__link[aria-current],
 [data-md-color-scheme="default"] .md-tabs__link[aria-current] {
-  background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important; /* amber-300 -> amber-400 -> amber-500 */
-  color: #0b1220 !important; /* slightly darker navy for extra contrast */
+  background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important;
+  color: #0b1220 !important;
   border: 1px solid rgba(245, 158, 11, 0.6) !important;
   box-shadow: 0 3px 10px rgba(245, 158, 11, 0.22),
               inset 0 1px 0 rgba(255, 255, 255, 0.55),
@@ -392,12 +324,6 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   position: relative;
 }
 
-/* Ensure grouped nav headers match regular link weight in tabs if generated */
-.md-tabs__link[aria-haspopup="true"],
-.md-tabs__link[role="button"] {
-  font-weight: 600 !important;
-}
-
 .md-header-nav__link[href*="blog"]::after,
 .md-header-nav__link[href*="contact"]::after,
 .md-tabs__link[href*="blog"]::after,
@@ -409,145 +335,9 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   transition: all 0.3s ease;
 }
 
-/* Search - icon only (no input) when inactive */
-.md-search {
-  position: relative;
-  margin-left: auto; /* this pushes the search and everything after to the far right */
-  margin-right: 0.5rem;
-  flex: 0 0 auto; /* don't grow, don't shrink */
-  order: 4; /* search follows GitHub */
-}
-
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form {
-  background: #fdfdf9;
-  border-radius: 14px;
-  box-shadow:
-    inset 2px 2px 4px rgba(26, 35, 50, 0.05),
-    inset -2px -2px 4px rgba(255, 255, 255, 0.75);
-  transition: all 0.25s ease;
-  overflow: hidden;
-  height: 26px; /* much more compact */
-  width: 200px;  /* slightly narrower */
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0 0.4rem; /* tighter padding */
-  position: relative; /* anchor icons inside the form */
-}
-
-[data-md-color-scheme="slate"] .md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form {
-  background: #1a2332;
-  box-shadow:
-    inset 2px 2px 5px rgba(0, 0, 0, 0.3),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.02);
-}
-
-/* Ensure input is visible and styled properly */
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__input {
-  display: block !important;
-  width: 100% !important; /* Full width */
-  padding: 0 1.9rem 0 0.6rem !important; /* Normal left, space right for icon */
-  height: 26px !important; /* match container height */
-  background: transparent !important;
-  color: #2a2723 !important;
-  font-size: 0.7rem !important; /* smaller font */
-  line-height: 26px !important; /* vertically center text */
-  border: none !important;
-}
-
-/* Always show placeholder "Search..." */
-.md-search__input::placeholder {
-  content: "Search..." !important;
-  color: #6b5d4f !important;
-  opacity: 0.7 !important;
-  visibility: visible !important;
-}
-
-/* Force placeholder text via attribute if needed */
-.md-search__input:placeholder-shown {
-  color: #2a2723 !important;
-}
-
-.md-search__input {
-  placeholder: "Search..." !important;
-}
-
-[data-md-color-scheme="slate"] .md-search__input::placeholder {
-  color: #a09580 !important;
-  opacity: 0.7 !important;
-}
-
-[data-md-color-scheme="slate"] .md-header .md-search__input {
-  color: #fdfdf9 !important;
-}
-[data-md-color-scheme="slate"] .md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__input {
-  color: #fdfdf9 !important;
-}
-[data-md-color-scheme="slate"] .md-header .md-search__icon svg { fill:#fbbf24 !important; }
-
-/* Position the search icon on the RIGHT side of the input (compact state) */
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form > .md-search__icon:first-of-type {
-  position: absolute;
-  right: 0.45rem;  /* Changed from left to right */
-  transform: none;
-  color: #f59e0b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  width: 18px;
-  line-height: 0; /* prevent inline SVG extra leading from shifting vertically */
-  pointer-events: none; /* Icon is decorative, input handles clicks */
-}
-
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form > .md-search__icon:first-of-type svg {
-  width: 14px; height: 14px; fill: #f59e0b !important; stroke: none;
-}
-
-/* Hide the trailing icon in compact state to avoid duplication */
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__form > .md-search__icon:last-of-type {
-  display: none !important;
-}
-
-/* Adjust padding - left padding normal, right padding for icon */
-.md-header .md-search:not([aria-expanded="true"]):not([data-md-state="active"]) .md-search__input {
-  padding-left: 0.6rem !important;  /* Normal left padding */
-  padding-right: 1.9rem !important; /* Space for icon on right */
-}
-
-/* When active, allow Material defaults to lay out the form and icons */
-.md-header .md-search[aria-expanded="true"] .md-search__form,
-.md-header .md-search[data-md-state="active"] .md-search__form {
-  width: 100% !important;
-  height: auto !important;
-  padding: var(--md-text-spacing, 0.35rem 0.6rem) !important;
-  border-radius: 10px;
-  position: relative;
-}
-
-/* Space for close button in active search */
-.md-header .md-search[aria-expanded="true"] .md-search__input,
-.md-header .md-search[data-md-state="active"] .md-search__input {
-  padding-right: 40px !important;
-}
-
-/* Let the active search grow across the header row so typing isn't clipped */
-.md-header .md-search[aria-expanded="true"],
-.md-header .md-search[data-md-state="active"] {
-  flex: 1 1 auto !important;
-  min-width: 60%;
-}
-
-/* Ensure the input spans full width inside the active form */
-.md-header .md-search[aria-expanded="true"] .md-search__input,
-.md-header .md-search[data-md-state="active"] .md-search__input {
-  width: 100% !important;
-}
-
 /* GitHub Button - Neumorphic Card */
-/* GitHub icon compact */
 .md-source {
-  display: flex;
+  display: flex !important;
   align-items: center;
   padding: 0.3rem 0.45rem;
   background: linear-gradient(135deg, #fff5e6 0%, #ffedcc 100%);
@@ -563,7 +353,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   margin-right: 0.25rem;
   position: relative;
   overflow: hidden;
-  order: 3; /* immediately after theme toggle */
+  order: 3;
 }
 
 [data-md-color-scheme="slate"] .md-source {
@@ -580,18 +370,16 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   box-shadow:
     4px 4px 12px rgba(245, 158, 11, 0.08),
     -4px -4px 12px rgba(255, 255, 255, 0.85);
-  animation: githubLampFlicker 2.4s linear infinite;
 }
 
 /* Theme GitHub icon to match flame (amber) */
 .md-header .md-source__icon svg {
   width: 14px;
   height: 14px;
-  fill: #f59e0b !important; /* amber in light mode - force override */
+  fill: #f59e0b !important;
   transition: all 0.3s ease;
 }
 
-/* Explicit light mode override */
 [data-md-color-scheme="default"] .md-header .md-source__icon svg,
 [data-md-color-scheme="default"] .md-source__icon svg {
   fill: #f59e0b !important;
@@ -600,106 +388,6 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
 [data-md-color-scheme="slate"] .md-header .md-source__icon svg,
 [data-md-color-scheme="slate"] .md-source__icon svg {
   fill: #fbbf24 !important;
-}
-
-/* Subtle lamp glow ring */
-.md-source::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  background: radial-gradient(circle at 30% 30%, rgba(245,158,11,0.25), transparent 60%);
-  opacity: 0;
-  mix-blend-mode: screen;
-  pointer-events: none;
-  transition: opacity 0.6s ease;
-}
-
-[data-md-color-scheme="slate"] .md-source::after {
-  background: radial-gradient(circle at 30% 30%, rgba(251,191,36,0.28), transparent 65%);
-  mix-blend-mode: lighten;
-}
-
-.md-source:hover::after { opacity: 1; }
-
-/* Hamburger menu button styling */
-.md-header__button[for="__drawer"] {
-  position: relative;
-  color: #1a2332; /* ensure visible in light */
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
-  cursor: pointer !important;
-  pointer-events: auto !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  order: 5; /* last in header */
-}
-
-[data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
-  color: #fbbf24; /* amber for visibility on dark */
-}
-
-/* Ensure the hamburger icon is visible */
-.md-header__button[for="__drawer"] svg {
-  fill: currentColor !important;
-  width: 24px;
-  height: 24px;
-}
-
-/* On desktop, hide drawer button */
-@media screen and (min-width: 1100px) {
-  .md-header__button[for="__drawer"] {
-    display: none !important;
-  }
-}
-
-/* Lamp-style gentle irregular flicker */
-@keyframes githubLampFlicker {
-  0% { filter: drop-shadow(0 0 0px rgba(245,158,11,0.0)) brightness(1); }
-  8% { filter: drop-shadow(0 0 4px rgba(245,158,11,0.45)) brightness(1.15); }
-  15% { filter: drop-shadow(0 0 2px rgba(245,158,11,0.25)) brightness(1.05); }
-  22% { filter: drop-shadow(0 0 6px rgba(245,158,11,0.55)) brightness(1.2); }
-  30% { filter: drop-shadow(0 0 3px rgba(245,158,11,0.3)) brightness(1.1); }
-  38% { filter: drop-shadow(0 0 7px rgba(245,158,11,0.6)) brightness(1.22); }
-  46% { filter: drop-shadow(0 0 3px rgba(245,158,11,0.3)) brightness(1.08); }
-  54% { filter: drop-shadow(0 0 5px rgba(245,158,11,0.5)) brightness(1.16); }
-  62% { filter: drop-shadow(0 0 2px rgba(245,158,11,0.2)) brightness(1.05); }
-  70% { filter: drop-shadow(0 0 6px rgba(245,158,11,0.55)) brightness(1.18); }
-  78% { filter: drop-shadow(0 0 3px rgba(245,158,11,0.3)) brightness(1.1); }
-  86% { filter: drop-shadow(0 0 5px rgba(245,158,11,0.45)) brightness(1.15); }
-  94% { filter: drop-shadow(0 0 2px rgba(245,158,11,0.2)) brightness(1.02); }
-  100% { filter: drop-shadow(0 0 4px rgba(245,158,11,0.4)) brightness(1.12); }
-}
-
-@keyframes githubLampFlickerDark {
-  0% { filter: drop-shadow(0 0 0px rgba(251,191,36,0.0)) brightness(1); }
-  8% { filter: drop-shadow(0 0 4px rgba(251,191,36,0.5)) brightness(1.18); }
-  15% { filter: drop-shadow(0 0 2px rgba(251,191,36,0.3)) brightness(1.08); }
-  22% { filter: drop-shadow(0 0 7px rgba(251,191,36,0.65)) brightness(1.25); }
-  30% { filter: drop-shadow(0 0 3px rgba(251,191,36,0.35)) brightness(1.12); }
-  38% { filter: drop-shadow(0 0 8px rgba(251,191,36,0.7)) brightness(1.28); }
-  46% { filter: drop-shadow(0 0 3px rgba(251,191,36,0.35)) brightness(1.1); }
-  54% { filter: drop-shadow(0 0 5px rgba(251,191,36,0.55)) brightness(1.2); }
-  62% { filter: drop-shadow(0 0 2px rgba(251,191,36,0.25)) brightness(1.08); }
-  70% { filter: drop-shadow(0 0 7px rgba(251,191,36,0.65)) brightness(1.24); }
-  78% { filter: drop-shadow(0 0 3px rgba(251,191,36,0.35)) brightness(1.12); }
-  86% { filter: drop-shadow(0 0 6px rgba(251,191,36,0.55)) brightness(1.18); }
-  94% { filter: drop-shadow(0 0 2px rgba(251,191,36,0.25)) brightness(1.05); }
-  100% { filter: drop-shadow(0 0 4px rgba(251,191,36,0.5)) brightness(1.15); }
-}
-
-[data-md-color-scheme="slate"] .md-source:hover {
-  animation: githubLampFlickerDark 2.4s linear infinite;
-}
-
-/* Accessibility: respect reduced motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  .md-source:hover,
-  [data-md-color-scheme="slate"] .md-source:hover {
-    animation: none !important;
-    filter: none !important;
-  }
-  .md-source::after { transition: none; }
 }
 
 .md-source__repository {
@@ -713,8 +401,7 @@ input[type="checkbox"]#__drawer:checked ~ .md-header,
   color: #fbbf24;
 }
 
-/* Theme Toggle - Regular Sun/Moon Icons */
-/* Theme toggle labels hidden; we will style a single visible one (the not-checked) */
+/* Theme Toggle */
 label.md-header__button[for^="__palette_"] {
   width: 34px;
   height: 34px;
@@ -731,9 +418,9 @@ label.md-header__button[for^="__palette_"] {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  order: 4;
+  order: 2;
   margin-right: 0.35rem;
-  z-index: 13000; /* ensure above overlapping elements */
+  z-index: 13000;
   pointer-events: auto !important;
 }
 
@@ -745,16 +432,14 @@ label.md-header__button[for^="__palette_"] {
     -2px -2px 6px rgba(255, 255, 255, 0.02);
 }
 
-/* Make toggle icon visible regardless of generated ID (__palette_0/1/2...) */
 label.md-header__button[for^="__palette_"] .md-icon,
 label.md-header__button[for^="__palette_"] svg {
   width: 17px;
   height: 17px;
-  color: #f59e0b; /* for currentColor icons */
-  fill: #f59e0b;  /* for inline SVGs */
+  color: #f59e0b;
+  fill: #f59e0b;
 }
 
-/* Hover state */
 .md-header__button[for="__palette_1"]:hover,
 .md-header__button[for="__palette_2"]:hover {
   transform: translateY(-2px) scale(1.05);
@@ -763,119 +448,65 @@ label.md-header__button[for^="__palette_"] svg {
     -4px -4px 12px rgba(255, 255, 255, 0.85);
 }
 
-
-/* Remove duplicate older toggle styles; consolidated above */
-
-/* Ensure toggle clickable */
-label.md-header__button[for^="__palette_"] { pointer-events: auto; cursor: pointer; }
-/* Subtle border so the button isn’t invisible on light backgrounds */
-[data-md-color-scheme="default"] label.md-header__button[for^="__palette_"] { border: 1px solid rgba(245,158,11,0.35); }
-[data-md-color-scheme="slate"]   label.md-header__button[for^="__palette_"] { border: 1px solid rgba(251,191,36,0.35); }
-
-/* Simple tooltip using data-tooltip attribute (fallback) */
-label.md-header__button[for^="__palette_"][data-tooltip]:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: -34px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(26,35,50,0.9);
-  color: #fdfdf9;
-  padding: 4px 8px;
-  font-size: 11px;
-  border-radius: 6px;
-  white-space: nowrap;
-  z-index: 9999;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-  pointer-events: none;
-}
-@media (prefers-color-scheme: dark) {
-  [data-md-color-scheme="slate"] label.md-header__button[for^="__palette_"][data-tooltip]:hover::after {
-    background: rgba(255,255,255,0.08);
-    color: #fbbf24;
-  }
-}
-
-/* Desktop order: logo (0), nav (1), search (auto-margin left), theme toggle (2), github (3) */
-.md-search { order: 2; margin-left: auto; }
-label.md-header__button[for^="__palette_"] { order: 3; }
-.md-source { order: 4; }
-.md-header__button[for="__drawer"] { order: 5; }
-
-/* AGGRESSIVELY hide ALL header search toggle buttons/labels that are NOT inside .md-search container */
-.md-header label.md-header__button[for="__search"],
-.md-header .md-header__button.md-icon[for="__search"],
-.md-header__inner > label[for="__search"],
-.md-header__inner > .md-header__button[for="__search"],
-.md-header__option > label[for="__search"],
-.md-header__option label[for="__search"],
-label[for="__search"].md-header__button,
-label.md-icon[for="__search"]:not(.md-search__icon),
-.md-header > label[for="__search"],
-body > label[for="__search"],
-header label[for="__search"]:not(.md-search__icon) {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  left: -9999px !important;
-}
-
-/* Only allow the search icon INSIDE the .md-search container */
-.md-search label.md-search__icon[for="__search"] {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+/* Hamburger menu button */
+.md-header__button[for="__drawer"] {
+  color: #1a2332;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+  cursor: pointer !important;
   pointer-events: auto !important;
-  position: absolute !important;
-  left: auto !important;
-  right: 0.45rem !important;
-}
-
-/* Ensure the in-form search icon remains visible and positioned */
-.md-header .md-search .md-search__form .md-search__icon[for="__search"] {
   display: flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
-/* MOBILE - Responsive at 600px */
+[data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
+  color: #fbbf24;
+}
+
+.md-header__button[for="__drawer"] svg {
+  fill: currentColor !important;
+  width: 24px;
+  height: 24px;
+}
+
+/* MOBILE */
 @media screen and (max-width: 600px) {
   .md-header {
     height: 64px;
   }
 
   .md-header__inner {
-    padding: 0 0.5rem;
+    padding: 0 0.75rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.25rem;
   }
 
-  /* Mobile header contents: logo (left), search, theme, github, hamburger (right) */
   .md-header__title { display: none !important; }
-  /* Hide secondary long title that appears on scroll (if any) */
-  .md-header__title[data-md-component="header-title"] { display:none !important; }
 
-  /* Mobile ordering */
-  .md-header__button.md-logo { order: 0; margin-right: 0.5rem; }
-  .md-search { order: 1; flex: 1; max-width: 140px; }
-  label.md-header__button[for^="__palette_"] { order: 2; margin: 0 0.25rem; }
-  .md-source { order: 3; margin: 0 0.25rem; }
-  .md-header__button[for="__drawer"] { order: 4; margin-left: 0.25rem; }
+  /* Mobile element ordering: logo, search, theme, github, hamburger */
+  .md-header__button.md-logo { order: 0; flex-shrink: 0; }
+  .md-search { order: 1 !important; flex: 1 1 auto; display: flex !important; }
+  label.md-header__button[for^="__palette_"] { order: 2; flex-shrink: 0; }
+  .md-source { order: 3 !important; flex-shrink: 0; display: inline-flex !important; }
+  .md-header__button[for="__drawer"] { order: 4; flex-shrink: 0; }
 
-  /* Hamburger styling on mobile */
+  label.md-header__button[for^="__palette_"] { margin: 0 0.25rem; }
+
   .md-header__button[for="__drawer"] {
     display: flex !important;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     align-items: center;
     justify-content: center;
     background: #fdfdf9;
-    border-radius: 10px;
+    border-radius: 8px;
     box-shadow:
-      2px 2px 6px rgba(26, 35, 50, 0.06),
-      -2px -2px 6px rgba(255, 255, 255, 0.8);
+      2px 2px 5px rgba(26, 35, 50, 0.05),
+      -2px -2px 5px rgba(255, 255, 255, 0.7);
     cursor: pointer;
+    z-index: 1000;
+    margin-left: 0.25rem;
     position: relative;
   }
 
@@ -887,63 +518,27 @@ header label[for="__search"]:not(.md-search__icon) {
   }
 
   .md-header__button[for="__drawer"] svg { fill: #f59e0b; }
-  /* Mobile search icon theming */
-  .md-search__icon svg { fill:#f59e0b !important; }
 
-  /* Hide nav links on mobile */
   .md-header-nav {
     display: none !important;
   }
 
-  /* Logo on mobile - larger text variant */
   .md-header__button.md-logo img {
     height: 52px !important;
   }
 
-  /* Keep search visible and functional on mobile */
-  .md-search {
-    display: flex !important;
-  }
-  .md-search .md-search__form {
-    width: 100% !important;
-    height: 28px !important;
-    display: flex !important;
-    align-items: center;
-  }
-  .md-search .md-search__input {
-    display: block !important;
-    width: 100% !important;
-    height: 28px !important;
-    font-size: 0.7rem !important;
-    padding: 0 2rem 0 0.5rem !important;
-  }
-  .mobile-drawer-search-wrapper { margin-top: 0.25rem !important; }
+  /* Remove this line - already defined above */
 
-  /* Keep GitHub visible on mobile */
-  .md-source { display: inline-flex !important; }
-
-  /* Theme toggle on mobile - ensure visibility */
-  label.md-header__button[for^="__palette_"] {
-    display: none !important;
+  .md-header__button[for="__palette_1"],
+  .md-header__button[for="__palette_2"] {
+    width: 36px;
+    height: 36px;
   }
 
-  /* Show only the correct toggle for current scheme */
-  [data-md-color-scheme="default"] label.md-header__button[for="__palette_1"] {
-    display: flex !important;
-    width: 32px;
-    height: 32px;
-  }
-
-  [data-md-color-scheme="slate"] label.md-header__button[for="__palette_0"] {
-    display: flex !important;
-    width: 32px;
-    height: 32px;
-  }
-
-  label.md-header__button[for^="__palette_"] svg {
+  .md-header__button[for="__palette_1"] svg,
+  .md-header__button[for="__palette_2"] svg {
     width: 16px;
     height: 16px;
-    fill: #f59e0b !important;
   }
 }
 
@@ -952,11 +547,10 @@ header label[for="__search"]:not(.md-search__icon) {
   padding-top: 76px;
 }
 
-/* If tabs are below header, add more padding */
 @media screen and (min-width: 1100px) {
   .md-container:has(> .md-tabs),
   body:has(> .md-tabs) .md-container {
-    padding-top: 124px; /* header 76px + tabs 48px */
+    padding-top: 124px;
   }
 }
 
@@ -964,4 +558,129 @@ header label[for="__search"]:not(.md-search__icon) {
   .md-container {
     padding-top: 64px;
   }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .md-source:hover,
+  [data-md-color-scheme="slate"] .md-source:hover {
+    animation: none !important;
+    filter: none !important;
+  }
+  .md-source::after { transition: none; }
+}
+
+/* =====================================================
+   FIXES FOR DUPLICATE ELEMENTS & ANIMATIONS
+   ===================================================== */
+
+/* Fix duplicate theme toggle - hide all except the correct one */
+.md-header__button[for="__palette_0"],
+.md-header__button[for="__palette_1"],
+.md-header__button[for="__palette_2"] {
+  display: none !important;
+}
+
+/* Show only the correct toggle for each theme */
+[data-md-color-scheme="default"] .md-header__button[for="__palette_1"] {
+  display: flex !important;
+}
+
+[data-md-color-scheme="slate"] .md-header__button[for="__palette_0"] {
+  display: flex !important;
+}
+
+/* Fix duplicate search icon - hide the extra search toggle button */
+.md-header__button.md-icon[for="__search"]:not(.md-search__icon) {
+  display: none !important;
+}
+
+/* Hide any orphaned search labels outside the search container */
+label[for="__search"]:not(.md-search__icon) {
+  display: none !important;
+}
+
+/* Ensure only the search icon inside the search form is visible */
+.md-search .md-search__icon {
+  display: flex !important;
+}
+
+/* Fix search modal overlay to prevent click trap */
+.md-search__overlay {
+  pointer-events: auto !important;
+}
+
+/* When search is not active, ensure it doesn't capture clicks */
+.md-search:not([data-md-toggle]) .md-search__form {
+  pointer-events: auto !important;
+}
+
+.md-search:not([data-md-toggle]) .md-search__input {
+  pointer-events: auto !important;
+}
+
+/* Torch/flame animation for logo */
+@keyframes torchFlicker {
+  0%, 100% { 
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.8)) 
+            drop-shadow(0 0 20px rgba(245, 158, 11, 0.5))
+            drop-shadow(0 0 30px rgba(245, 158, 11, 0.3));
+    transform: scale(1);
+  }
+  25% { 
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.9)) 
+            drop-shadow(0 0 25px rgba(245, 158, 11, 0.6))
+            drop-shadow(0 0 35px rgba(245, 158, 11, 0.4));
+    transform: scale(1.02);
+  }
+  50% { 
+    filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.85)) 
+            drop-shadow(0 0 22px rgba(245, 158, 11, 0.55))
+            drop-shadow(0 0 32px rgba(245, 158, 11, 0.35));
+    transform: scale(1.01);
+  }
+  75% { 
+    filter: drop-shadow(0 0 18px rgba(245, 158, 11, 0.95)) 
+            drop-shadow(0 0 28px rgba(245, 158, 11, 0.65))
+            drop-shadow(0 0 38px rgba(245, 158, 11, 0.45));
+    transform: scale(1.03);
+  }
+}
+
+/* Apply torch animation to logo on hover */
+.md-header__button.md-logo:hover img {
+  animation: torchFlicker 1.5s ease-in-out infinite;
+}
+
+/* GitHub icon hover with torch effect */
+.md-source:hover {
+  animation: torchFlicker 2s ease-in-out infinite;
+}
+
+/* Fix for navigation links visibility */
+.md-tabs__link {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure proper z-index layering */
+.md-search {
+  z-index: 1000;
+}
+
+.md-header {
+  z-index: 999;
+}
+
+.md-search__overlay {
+  z-index: 998;
+}
+
+/* Fix image modal z-index */
+.modal {
+  z-index: 10000 !important;
+}
+
+.modal-backdrop {
+  z-index: 9999 !important;
 }
