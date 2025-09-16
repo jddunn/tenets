@@ -56,10 +56,11 @@
     padding: 0 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: space-between;
+    gap: 0.25rem;
   }
 
-  /* Style the hamburger button */
+  /* Hamburger button - order 4 (last) */
   .md-header__button[for="__drawer"] {
     display: flex !important;
     width: 2rem;
@@ -75,6 +76,7 @@
     order: 4;
     flex-shrink: 0;
     margin-left: 0.25rem;
+    margin-right: 0;
   }
 
   [data-md-color-scheme="slate"] .md-header__button[for="__drawer"] {
@@ -88,20 +90,28 @@
     fill: #f59e0b;
   }
 
-  /* Mobile header order: logo (left), search (center-left), theme (center-right), github (right), hamburger (far-right) */
+  /* Consistent header layout: Logo | Search | Theme | GitHub | Menu */
 
-  /* Search container - always visible on mobile */
+  /* Logo - always first (left) */
+  .md-header__button.md-logo {
+    order: 0;
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+  }
+
+  /* Search container - center space, prevent overlap */
   .md-header__inner .md-search {
     order: 1;
     display: flex !important;
     align-items: center;
     flex: 1 1 auto;
-    max-width: calc(100% - 160px); /* leave space for theme, github, hamburger */
-    min-width: 60px; /* ensure minimum width even on smallest screens */
+    max-width: 300px;
+    min-width: 0; /* Allow shrinking */
     margin: 0 0.25rem;
+    position: relative;
   }
 
-  /* Ensure search form is visible */
+  /* Search form - prevent icon/text overlap */
   .md-header__inner .md-search__form {
     display: flex !important;
     width: 100% !important;
@@ -109,14 +119,16 @@
     background: rgba(245, 158, 11, 0.08);
     border: 1px solid rgba(245, 158, 11, 0.15);
     border-radius: 14px;
+    position: relative;
+    align-items: center;
   }
 
-  /* Search input styling */
+  /* Search input - proper padding to avoid icon */
   .md-header__inner .md-search__input {
     display: block !important;
     width: 100% !important;
     height: 28px !important;
-    padding: 0 2rem 0 0.6rem !important;
+    padding: 0 2rem 0 2rem !important; /* Left padding for search icon */
     background: transparent !important;
     border: none !important;
     font-size: 0.7rem !important;
@@ -132,21 +144,24 @@
     color: #fdfdf9 !important;
   }
 
-  /* Search icon button - positioned within search container */
-  .md-header__inner .md-search .md-search__icon,
+  /* Search icons - position absolutely to prevent overlap */
+  .md-header__inner .md-search__icon {
+    position: absolute !important;
+    left: 0.5rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    z-index: 2 !important;
+    pointer-events: none !important;
+  }
+
+  /* Hide the search toggle button on mobile */
   .md-header__inner label.md-header__button[for="__search"] {
-    order: 1;
-    margin-right: 0.25rem;
-    flex-shrink: 0;
+    display: none !important;
   }
 
-  /* Search form - positioned after icon */
-  .md-header__inner .md-search .md-search__form {
-    order: 2;
-    flex: 1;
-  }
-
-  /* Theme toggle - hide all first, then show only one */
+  /* Theme toggle - order 2, always after search */
   label.md-header__button[for^="__palette_"] {
     display: none !important;
     order: 2;
@@ -186,7 +201,7 @@
     fill: #f59e0b !important;
   }
 
-  /* GitHub source - positioned away from hamburger */
+  /* GitHub source - order 3 */
   .md-source {
     display: inline-flex !important;
     order: 3;
@@ -244,25 +259,30 @@
     display: none !important;
   }
 
-  /* Hamburger menu - positioned far right in normal flow */
-  .md-header__button[for="__drawer"] {
-    position: relative !important;
-    order: 4;
-    margin-left: 0.25rem;
-    flex-shrink: 0;
-  }
 
-  /* Medium view (tablet): better spacing */
+  /* Medium view (tablet): consistent layout with more space */
   @media screen and (min-width: 601px) and (max-width: 1099px) {
-    .md-header .md-search {
-      display: flex !important;
-      max-width: 200px !important;
+    /* More spacing on tablets */
+    .md-header__inner {
+      gap: 0.5rem;
+      padding: 0 1rem;
     }
-    .md-header .md-source { margin: 0 0.5rem !important; }
-    /* Larger hamburger on tablet */
-    .md-header__button[for="__drawer"] {
-      width: 2.5rem;
-      height: 2.5rem;
+
+    /* Search - wider on tablet */
+    .md-header .md-search {
+      max-width: 280px !important;
+    }
+
+    /* Larger buttons on tablet */
+    .md-header__button[for="__drawer"],
+    label.md-header__button[for^="__palette_"] {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+
+    /* Better spacing */
+    .md-source {
+      padding: 0.3rem 0.5rem;
     }
   }
 
@@ -417,6 +437,7 @@
     opacity: 0 !important;
     font-size: 0 !important;
   }
+
 
   /* Navigation list container */
   .md-nav--primary .md-nav__list,
@@ -593,14 +614,19 @@
     .md-sidebar--secondary { display: none !important; }
   }
 
-  /* Very small screens: keep search visible but more compact */
+  /* Small screens: more compact layout */
   @media screen and (max-width: 600px) {
-    /* Keep search form visible but make it more compact */
+    /* Tighter spacing on phones */
+    .md-header__inner {
+      gap: 0.2rem;
+      padding: 0 0.4rem;
+    }
+
+    /* Compact search */
     .md-header__inner .md-search {
-      display: flex !important;
-      order: 1 !important;
-      min-width: 60px; /* smaller minimum for tiny screens */
-      max-width: calc(100% - 140px); /* leave space for logo + 3 buttons */
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 180px;
     }
     .md-header__inner .md-search__form {
       display: flex !important; /* keep form visible */
