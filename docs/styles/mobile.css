@@ -312,15 +312,35 @@
     height: 100% !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245, 158, 11, 0.3) transparent;
+  }
+
+  /* Custom scrollbar for webkit browsers */
+  .md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.3);
+    border-radius: 3px;
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 158, 11, 0.5);
   }
 
   .md-sidebar--primary .md-nav--primary {
-    background: linear-gradient(180deg, #fdfdf9 0%, #f7f5f0 100%) !important;
+    background: #fdfdf9 !important;
     height: 100% !important;
   }
 
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav--primary {
-    background: linear-gradient(180deg, #1a2332 0%, #263244 100%) !important;
+    background: #1a2332 !important;
   }
 
   /* Overlay styling */
@@ -456,149 +476,106 @@
     display: none !important;
   }
 
-  /* Navigation items - Enhanced mobile styling */
+  /* Navigation items - Minimal mobile styling */
   .md-nav--primary > .md-nav__list > .md-nav__item,
   .md-sidebar--primary > .md-nav__list > .md-nav__item {
-    margin: 0.25rem 0.75rem !important;
+    margin: 0 !important;
     display: block !important;
   }
 
   .md-nav--primary .md-nav__link,
   .md-sidebar--primary .md-nav__link {
-    padding: 1rem 1.25rem !important;
-    font-size: 1rem !important;
-    font-weight: 500 !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
     color: #2a2723 !important;
     display: block !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     text-decoration: none !important;
     position: relative !important;
-    background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%) !important;
-    border-radius: 12px !important;
-    box-shadow: 
-      2px 2px 6px rgba(26, 35, 50, 0.05),
-      -2px -2px 6px rgba(255, 255, 255, 0.8) !important;
-    border: 1px solid rgba(245, 158, 11, 0.08) !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-left: 3px solid transparent !important;
     overflow: hidden !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link {
     color: #f3f0e8 !important;
-    background: linear-gradient(135deg, #2a3542 0%, #263244 100%) !important;
-    box-shadow: 
-      2px 2px 6px rgba(0, 0, 0, 0.2),
-      -2px -2px 6px rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(251, 191, 36, 0.1) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-left: 3px solid transparent !important;
   }
 
   .md-nav--primary .md-nav__link:hover,
   .md-nav--primary .md-nav__link:active,
   .md-sidebar--primary .md-nav__link:hover,
   .md-sidebar--primary .md-nav__link:active {
-    background: linear-gradient(135deg, #fff5e6 0%, #ffedcc 100%) !important;
+    background: rgba(245, 158, 11, 0.05) !important;
     color: #f59e0b !important;
-    transform: translateX(4px);
-    box-shadow: 
-      4px 4px 10px rgba(245, 158, 11, 0.12),
-      -4px -4px 10px rgba(255, 255, 255, 0.9) !important;
-    border-color: rgba(245, 158, 11, 0.2) !important;
+    transform: none;
+    box-shadow: none !important;
+    border-left: 3px solid rgba(245, 158, 11, 0.3) !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link:hover,
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link:active,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link:hover,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link:active {
-    background: linear-gradient(135deg, #3a4554 0%, #334254 100%) !important;
+    background: rgba(251, 191, 36, 0.08) !important;
     color: #fbbf24 !important;
-    border-color: rgba(251, 191, 36, 0.25) !important;
+    border-left: 3px solid rgba(251, 191, 36, 0.4) !important;
   }
 
   .md-nav--primary .md-nav__link--active,
   .md-sidebar--primary .md-nav__link--active {
-    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important;
-    color: #1a2332 !important;
-    font-weight: 600;
-    border: 1px solid rgba(245, 158, 11, 0.3) !important;
-    box-shadow: 
-      0 3px 10px rgba(245, 158, 11, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #f59e0b !important;
+    font-weight: 500;
+    border: none !important;
+    border-left: 3px solid #f59e0b !important;
+    box-shadow: none !important;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link--active,
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link--active {
-    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 60%, #f59e0b 100%) !important;
-    color: #0f1419 !important;
-    border: 1px solid rgba(251, 191, 36, 0.4) !important;
+    background: rgba(251, 191, 36, 0.12) !important;
+    color: #fbbf24 !important;
+    border: none !important;
+    border-left: 3px solid #fbbf24 !important;
   }
 
-  /* Glow effect on active */
-  .md-nav--primary .md-nav__link--active::before,
-  .md-sidebar--primary .md-nav__link--active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 60%;
-    background: #f59e0b;
-    border-radius: 0 2px 2px 0;
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
-  }
+  /* Remove glow effect - using simpler border-left instead */
 
-  /* Icon decoration */
-  .md-nav--primary .md-nav__link::after,
-  .md-sidebar--primary .md-nav__link::after {
-    content: '→';
-    position: absolute;
-    right: 1.25rem;
-    opacity: 0;
-    color: #f59e0b;
-    font-size: 1.2rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
+  /* Remove icon decorations for cleaner look */
 
-  .md-nav--primary .md-nav__link:hover::after,
-  .md-sidebar--primary .md-nav__link:hover::after {
-    opacity: 0.7;
-    transform: translateX(3px);
-  }
-
-  .md-nav--primary .md-nav__link--active::after,
-  .md-sidebar--primary .md-nav__link--active::after {
-    content: '✓';
-    opacity: 0.8;
-    color: #1a2332;
-  }
-
-  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link--active::after,
-  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link--active::after {
-    color: #0f1419;
-  }
-
-  /* Blog/Contact special styling */
+  /* Blog/Contact special styling - minimal */
   .md-nav--primary .md-nav__link[href*="blog"],
   .md-nav--primary .md-nav__link[href*="contact"],
   .md-sidebar--primary .md-nav__link[href*="blog"],
   .md-sidebar--primary .md-nav__link[href*="contact"] {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
-    color: #1a2332 !important;
-    font-weight: 700;
-    margin: 0.5rem 1rem;
-    padding: 0.875rem 1.25rem !important;
-    border-radius: 12px;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #f59e0b !important;
+    font-weight: 500;
+    margin: 0.5rem 0;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0;
+    border: none;
+    border-left: 3px solid #f59e0b !important;
+    box-shadow: none;
   }
 
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link[href*="blog"],
   [data-md-color-scheme="slate"] .md-nav--primary .md-nav__link[href*="contact"],
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link[href*="blog"],
   [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__link[href*="contact"] {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
-    color: #0f1419 !important;
-    border: 1px solid rgba(251, 191, 36, 0.4);
+    background: rgba(251, 191, 36, 0.12) !important;
+    color: #fbbf24 !important;
+    border: none;
+    border-left: 3px solid #fbbf24 !important;
   }
 
   /* Let Material theme handle overlay, just style it */

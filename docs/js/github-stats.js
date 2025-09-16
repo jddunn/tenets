@@ -160,7 +160,7 @@
         
         async fetchCoverage() {
             // Try multiple coverage services
-            const codecovUrl = `https://codecov.io/gh/${CONFIG.owner}/${CONFIG.repo}/branch/main/graph/badge.svg`;
+            const codecovUrl = `https://codecov.io/gh/${CONFIG.owner}/${CONFIG.repo}/graph/badge.svg`;
             
             // For now, we'll just set the badge image
             // In production, you'd want to parse the actual coverage percentage
