@@ -278,7 +278,6 @@
     <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
 
     <p class="hero-description">
-      Command-line tool and Python API for intelligent code aggregation and analysis.<br>
       Surface relevant files. Build optimal context. Track velocity.<br>
       Examine code quality metrics. Evaluate and improve your codebase.<br>
       All processing stays local - your code never leaves your machine.
@@ -759,9 +758,19 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
 
       <div class="arch-arrow">→</div>
 
-  <div class="arch-stage" data-stage="6" data-target="summarize" role="button" tabindex="0">
+  <div class="arch-stage" data-stage="6" data-target="tenets-injection" role="button" tabindex="0">
         <div class="stage-icon">
           <span class="stage-number">6</span>
+        </div>
+        <h3>Tenets Injection</h3>
+        <p>Inject guiding principles<br>maintain consistency</p>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+  <div class="arch-stage" data-stage="7" data-target="summarize" role="button" tabindex="0">
+        <div class="stage-icon">
+          <span class="stage-number">7</span>
         </div>
         <h3>Summarize & Output</h3>
         <p>Token budgeting & summaries<br>LLMs optional via API keys</p>
@@ -813,6 +822,16 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
           <li>Enhanced ranking with transformers</li>
           <li>Configurable, disabled by default</li>
           <li>Install via extras: <code>tenets[ml]</code></li>
+        </ul>
+      </div>
+
+      <div class="detail-card" data-detail="tenets-injection" aria-hidden="true">
+        <h4>🎯 Tenets Injection</h4>
+        <ul>
+          <li>Injects guiding principles into context</li>
+          <li>Combats LLM context drift in long sessions</li>
+          <li>Maintains consistency across interactions</li>
+          <li>Configurable frequency: adaptive, periodic, or manual</li>
         </ul>
       </div>
 
