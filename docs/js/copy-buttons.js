@@ -19,7 +19,7 @@
       // Remove any existing toasts to prevent duplicates
       var existing = container.querySelectorAll('.tenets-toast');
       existing.forEach(function(t){ t.remove(); });
-      
+
       var toast = document.createElement('div');
       toast.className = 'tenets-toast' + (variant ? (' tenets-toast--'+variant) : '');
       toast.setAttribute('role','status');
@@ -99,16 +99,16 @@
   function onMaterialCopyClick(e){
     var btn = e.target.closest('button.md-clipboard');
     if(!btn) return;
-    
+
     // Hide Material's own toast notification if it exists
     var materialToast = document.querySelector('.md-clipboard__message');
     if(materialToast) {
       materialToast.style.display = 'none';
     }
-    
+
     // Show our custom toast
-    setTimeout(function(){ 
-      showToast('Copied to clipboard'); 
+    setTimeout(function(){
+      showToast('Copied to clipboard');
       // Keep Material's toast hidden
       var mt = document.querySelector('.md-clipboard__message');
       if(mt) mt.style.display = 'none';
