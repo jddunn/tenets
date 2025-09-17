@@ -777,7 +777,7 @@
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   /* Installation section mobile overrides */
   .install-section {
     width: 100vw;
@@ -787,12 +787,12 @@
     margin-right: -1rem;
     padding: 2rem 1rem;
   }
-  
+
   .install-section .section-container {
     max-width: 100%;
     padding: 0 0.5rem;
   }
-  
+
   .install-grid {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -802,7 +802,7 @@
     width: 100% !important;
     box-sizing: border-box !important;
   }
-  
+
   .install-card {
     min-width: 0 !important;
     max-width: 100% !important;
@@ -810,7 +810,7 @@
     box-sizing: border-box !important;
     overflow: hidden !important;
   }
-  
+
   .install-card h3 {
     font-size: 0.65rem !important;
     margin-bottom: 0.3rem !important;
@@ -820,7 +820,7 @@
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
-  
+
   /* Shorter text for mobile */
   @media (max-width: 600px) {
     .install-card h3 span.full-text {
@@ -830,12 +830,12 @@
       display: inline !important;
     }
   }
-  
+
   /* Default: show full text on larger screens */
   .install-card h3 span.short-text {
     display: none;
   }
-  
+
   .install-card .code-block {
     position: relative !important;
     padding: 0.4rem !important;
@@ -844,7 +844,7 @@
     width: 100% !important;
     box-sizing: border-box !important;
   }
-  
+
   .install-card .code-block code {
     font-size: 0.5rem !important;
     white-space: nowrap !important;
@@ -852,14 +852,14 @@
     display: block !important;
     -webkit-overflow-scrolling: touch !important;
   }
-  
+
   .install-card .install-note {
     font-size: 0.6rem !important;
     line-height: 1.15 !important;
     word-wrap: break-word !important;
     padding: 0 0.2rem !important;
   }
-  
+
   .install-card .copy-btn {
     position: absolute !important;
     top: 0.3rem !important;
@@ -868,7 +868,7 @@
     font-size: 0.45rem !important;
     z-index: 10 !important;
   }
-  
+
   /* Installation CTA buttons - mobile compact */
   .install-cta {
     flex-direction: row !important;
@@ -876,7 +876,7 @@
     margin-top: 1.5rem !important;
     padding: 0 0.5rem !important;
   }
-  
+
   .install-cta .btn-primary.large,
   .install-cta .btn-secondary.large {
     min-width: auto !important;
@@ -885,13 +885,13 @@
     flex: 1 !important;
     max-width: 150px !important;
   }
-  
+
   .install-cta .btn-primary.large svg,
   .install-cta .btn-secondary.large svg {
     width: 14px !important;
     height: 14px !important;
   }
-  
+
   /* Hide text on very small screens, show only icons */
   @media (max-width: 380px) {
     .install-cta .btn-secondary.large span {
@@ -940,14 +940,14 @@
     width: 2rem;
     height: 2rem;
   }
-  
+
   /* Installation CTA buttons - ultra compact for small phones */
   .install-cta {
     gap: 0.4rem !important;
     margin-top: 1rem !important;
     padding: 0 0.25rem !important;
   }
-  
+
   .install-cta .btn-primary.large,
   .install-cta .btn-secondary.large {
     padding: 0.45rem 0.6rem !important;
@@ -955,13 +955,13 @@
     border-radius: 8px !important;
     max-width: 140px !important;
   }
-  
+
   .install-cta .btn-primary.large svg,
   .install-cta .btn-secondary.large svg {
     width: 12px !important;
     height: 12px !important;
   }
-  
+
   /* Shorten button text on small screens */
   .install-cta .btn-secondary.large span {
     font-size: 0.65rem !important;
