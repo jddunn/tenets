@@ -77,11 +77,20 @@
   }
 
   function onCustomCopyClick(e){
-    var btn = e.target.closest('.copy-btn');
+    var btn = e.target.closest('.copy-btn, .copy-btn-mini');
     if(!btn) return;
     e.preventDefault();
     var text = extractNearbyText(btn);
     if(!text){ showToast('Nothing to copy', 'error'); return; }
+
+    // Add visual feedback for mini button
+    if(btn.classList.contains('copy-btn-mini')) {
+      btn.classList.add('copied');
+      setTimeout(function(){
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+
     writeClipboard(text)
       .then(function(){ showToast('Copied to clipboard'); })
       .catch(function(){ showToast('Copy failed', 'error'); });

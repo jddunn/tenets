@@ -993,4 +993,36 @@
   .md-container {
     padding-top: 3rem;
   }
+
+  /* Fix install command centering on mobile */
+  .hero-install,
+  .install-command {
+    width: auto !important;
+    max-width: fit-content !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: inline-flex !important;
+  }
+
+  /* Ensure CTA section centers properly */
+  .cta-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Fix install commands on very small screens */
+  @media screen and (max-width: 480px) {
+    .hero-install,
+    .install-command {
+      padding: 0.625rem 0.875rem !important;
+      font-size: 0.9rem !important;
+    }
+
+    .hero-install code,
+    .install-command code {
+      font-size: 0.85rem !important;
+    }
+  }
 }

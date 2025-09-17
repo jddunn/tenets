@@ -13,7 +13,7 @@
   min-height: calc(100vh - 10rem); /* Reduced from 100vh - 6.5rem */
   background: linear-gradient(135deg, #fdfdf9 0%, #f7f5f0 100%);
   padding: 2rem 2rem 1.5rem; /* Much less padding */
-  overflow: hidden;
+  overflow: visible; /* Changed to visible for absolute positioned elements */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,6 +65,107 @@
   50% { opacity: 0.8; }
 }
 
+/* Hero Quick Install - Elegant minimal at top right */
+.hero-quick-install {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 0.35rem 0.6rem;
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+[data-md-color-scheme="slate"] .hero-quick-install {
+  background: rgba(26, 35, 50, 0.95);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.hero-quick-install:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 12px rgba(245, 158, 11, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 1);
+}
+
+.hero-quick-install code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b5d4f;
+  background: none;
+  padding: 0;
+  letter-spacing: -0.01em;
+}
+
+[data-md-color-scheme="slate"] .hero-quick-install code {
+  color: #fbbf24;
+}
+
+.copy-btn-mini {
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  color: #f59e0b;
+  position: relative;
+}
+
+.copy-btn-mini:hover {
+  background: rgba(245, 158, 11, 0.1);
+  transform: scale(1.1);
+}
+
+.copy-btn-mini:active {
+  transform: scale(0.95);
+}
+
+/* Copy success state */
+.copy-btn-mini.copied {
+  color: #10b981;
+}
+
+.copy-btn-mini.copied::after {
+  content: 'Copied!';
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 185, 129, 0.95);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  animation: fadeInOut 2s ease;
+  pointer-events: none;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-5px); }
+}
+
 /* Hero Typography - Compressed */
 .hero-title {
   font-family: 'Playfair Display', serif;
@@ -96,15 +197,18 @@
 .hero-install {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
   margin: 1.5rem auto 2rem;
   padding: 0.875rem 1.5rem;
   background: linear-gradient(135deg, #1a1d24 0%, #0f1117 100%);
   border-radius: 12px;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
+  width: auto;
+  max-width: fit-content;
 }
 
 .hero-install:hover {
@@ -707,6 +811,14 @@
     margin-top: 64px;
   }
 
+  /* Hide or reposition quick install on mobile */
+  .hero-quick-install {
+    position: static;
+    margin: 0.5rem auto 1rem;
+    display: inline-flex;
+    opacity: 0.9;
+  }
+
   .lantern-container,
   .hero-logo {
     width: 70px;
@@ -725,12 +837,13 @@
     padding: 0 1rem;
   }
 
-  /* Mobile Install Command */
+  /* Mobile Install Command - Full width fix */
   .hero-install {
     margin: 1rem auto 1.5rem;
     padding: 0.75rem 1rem;
-    max-width: calc(100% - 2rem);
-    width: 100%;
+    width: auto;
+    max-width: none;
+    display: inline-flex;
   }
 
   .hero-install code {
@@ -812,9 +925,29 @@
 
   .hero-install {
     padding: 0.625rem 0.875rem;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .hero-install code {
     font-size: 0.9rem;
+  }
+}
+
+/* Ensure proper centering of hero install on all screens */
+@media screen and (max-width: 1024px) {
+  .victorian-hero,
+  .hero-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-install {
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+    display: inline-flex;
   }
 }

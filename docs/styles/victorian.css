@@ -264,11 +264,16 @@ code, pre {
 .install-command {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   background: var(--navy-900);
   padding: 0.75rem 1.5rem;
   border-radius: 25px;
   box-shadow: var(--shadow-md);
+  width: auto;
+  max-width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 [data-md-color-scheme="slate"] .install-command {
@@ -1215,8 +1220,9 @@ code, pre {
 
 .newsletter-content p {
   font-size: 1.1rem;
-  color: var(--navy-800);
+  color: var(--navy-900); /* Darkened from navy-800 for better contrast */
   margin-bottom: 1.5rem;
+  font-weight: 500; /* Added weight for better readability */
 }
 
 .newsletter-cta-button {
