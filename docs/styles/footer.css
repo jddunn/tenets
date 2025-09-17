@@ -73,16 +73,12 @@
   transition: all 0.3s ease;
 }
 
-/* Theme-aware footer logo swap (light: show light, dark: show dark) */
-.footer-logo.light-logo,
-.footer-logo.dark-logo { display: none; }
-[data-md-color-scheme="default"] .footer-logo.light-logo { display: inline-block; }
-[data-md-color-scheme="slate"] .footer-logo.dark-logo { display: inline-block; }
-
-/* Fallback for prefers-color-scheme before JS applies data attribute */
-@media (prefers-color-scheme: dark) {
-  html:not([data-md-color-scheme]) .footer-logo.light-logo { display: none; }
-  html:not([data-md-color-scheme]) .footer-logo.dark-logo { display: inline-block; }
+/* Always use light logo in footer since background is always dark */
+.footer-logo.dark-logo {
+  display: none !important;
+}
+.footer-logo.light-logo {
+  display: inline-block !important;
 }
 
 .footer-logo:hover {

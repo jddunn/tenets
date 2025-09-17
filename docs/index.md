@@ -16,7 +16,17 @@ hide:
     <span class="typewriter" data-text="tenets"></span>
   </h1>
   <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
-  
+
+  <!-- Elegant minimal install copy at top right -->
+  <div class="hero-quick-install">
+    <code>pip install tenets</code>
+    <button class="copy-btn-mini" data-clipboard-text="pip install tenets" aria-label="Copy">
+      <svg viewBox="0 0 16 16" width="14" height="14">
+        <path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
+      </svg>
+    </button>
+  </div>
+
   <!-- Installation command at the top -->
   <div class="hero-install">
     <code>pip install tenets</code>
@@ -289,29 +299,190 @@ hide:
     <h2>How It Works</h2>
     <div class="ornament right"></div>
   </div>
+
+  <!-- Enhanced Pipeline Visualization -->
+  <div class="pipeline-grid">
+    <div class="pipeline-card">
+      <div class="pipeline-header">
+        <span class="pipeline-icon">📝</span>
+        <h4>1. Input & Parsing</h4>
+      </div>
+      <ul class="pipeline-details">
+        <li><strong>Natural language processing</strong> extracts intent, keywords, and entities</li>
+        <li><strong>Temporal parsing</strong> identifies time-based queries ("last week", "since Monday")</li>
+        <li><strong>External reference detection</strong> automatically fetches GitHub issues, JIRA tickets, Linear tasks</li>
+        <li><strong>Intent detection</strong> classifies prompts (implement, debug, refactor, test, document)</li>
+        <li><strong>Test inclusion logic</strong> automatically includes/excludes test files based on context</li>
+      </ul>
+    </div>
+
+    <div class="pipeline-card">
+      <div class="pipeline-header">
+        <span class="pipeline-icon">🔍</span>
+        <h4>2. Scan & Discover</h4>
+      </div>
+      <ul class="pipeline-details">
+        <li><strong>Parallel file discovery</strong> respects .gitignore and custom filters</li>
+        <li><strong>Language detection</strong> with specialized analyzers for 15+ languages</li>
+        <li><strong>Incremental scanning</strong> caches unchanged files for speed</li>
+        <li><strong>Pattern matching</strong> identifies file types and purposes</li>
+      </ul>
+    </div>
+
+    <div class="pipeline-card">
+      <div class="pipeline-header">
+        <span class="pipeline-icon">🧠</span>
+        <h4>3. Analyze & Extract</h4>
+      </div>
+      <ul class="pipeline-details">
+        <li><strong>AST parsing</strong> extracts classes, functions, imports, symbols</li>
+        <li><strong>Dependency graph building</strong> maps import relationships</li>
+        <li><strong>Complexity metrics</strong> (cyclomatic, cognitive, Halstead)</li>
+        <li><strong>Git history mining</strong> for recency and change frequency</li>
+        <li><strong>Content tokenization</strong> for similarity calculations</li>
+      </ul>
+    </div>
+
+    <div class="pipeline-card">
+      <div class="pipeline-header">
+        <span class="pipeline-icon">📊</span>
+        <h4>4. Rank & Score</h4>
+      </div>
+      <ul class="pipeline-details">
+        <li><strong>Multi-factor scoring</strong> combines 8+ ranking signals:
+          <ul style="margin-top: 0.5em;">
+            <li>Keyword matching with position weighting</li>
+            <li>BM25/TF-IDF text similarity</li>
+            <li>Semantic similarity (ML mode)</li>
+            <li>Path and structure relevance</li>
+            <li>Import centrality in dependency graph</li>
+            <li>Git activity signals</li>
+            <li>Code pattern matching</li>
+            <li>Task-specific boosts</li>
+          </ul>
+        </li>
+        <li><strong>Adaptive weighting</strong> based on detected intent</li>
+        <li><strong>Three ranking modes:</strong>
+          <ul style="margin-top: 0.5em;">
+            <li><em>Fast:</em> Keyword & path matching (< 5s)</li>
+            <li><em>Balanced:</em> BM25 + structure analysis (default)</li>
+            <li><em>Thorough:</em> ML embeddings + patterns (4x slower)</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <div class="pipeline-card">
+      <div class="pipeline-header">
+        <span class="pipeline-icon">🎯</span>
+        <h4>5. Tenets Injection</h4>
+      </div>
+      <ul class="pipeline-details">
+        <li><strong>Guiding principles</strong> maintain consistency across sessions</li>
+        <li><strong>Context drift prevention</strong> in long AI conversations</li>
+        <li><strong>Adaptive injection frequency</strong> based on interaction patterns</li>
+        <li><strong>Session persistence</strong> for multi-turn workflows</li>
+      </ul>
+    </div>
+
+    <div class="pipeline-card">
+      <div class="pipeline-header">
+        <span class="pipeline-icon">📦</span>
+        <h4>6. Aggregate & Output</h4>
+      </div>
+      <ul class="pipeline-details">
+        <li><strong>Token-aware budgeting</strong> for different LLM models</li>
+        <li><strong>Intelligent summarization</strong> preserves critical code structure</li>
+        <li><strong>Multiple output formats:</strong> Markdown, XML (Claude), HTML, JSON</li>
+        <li><strong>Progressive enhancement</strong> - summaries only if needed</li>
+        <li><strong>Pinned files</strong> guarantee critical files are always included</li>
+      </ul>
+    </div>
+  </div>
+
+  <style>
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .pipeline-card {
+      background: var(--md-code-bg-color);
+      border: 1px solid var(--md-default-fg-color--lightest);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .pipeline-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .pipeline-icon {
+      font-size: 1.5rem;
+    }
+
+    .pipeline-header h4 {
+      margin: 0;
+      color: var(--md-primary-fg-color);
+    }
+
+    .pipeline-details {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .pipeline-details li {
+      margin: 0.5rem 0;
+    }
+
+    .pipeline-details ul {
+      padding-left: 1rem;
+      margin-top: 0.25rem;
+    }
+
+    .pipeline-details ul li {
+      margin: 0.25rem 0;
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+  </style>
+
   <div class="workflow-diagram">
     <div class="workflow-step">
       <div class="step-number">1</div>
-      <h4>Scan</h4>
-      <p>Discovers files respecting .gitignore</p>
+      <h4>Parse</h4>
+      <p>Understands intent & extracts context</p>
     </div>
     <div class="workflow-arrow">→</div>
     <div class="workflow-step">
       <div class="step-number">2</div>
-      <h4>Analyze</h4>
-      <p>Extracts structure and dependencies</p>
+      <h4>Scan</h4>
+      <p>Discovers files in parallel</p>
     </div>
     <div class="workflow-arrow">→</div>
     <div class="workflow-step">
       <div class="step-number">3</div>
-      <h4>Rank</h4>
-      <p>Scores by relevance to your prompt</p>
+      <h4>Analyze</h4>
+      <p>Extracts AST & metrics</p>
     </div>
     <div class="workflow-arrow">→</div>
     <div class="workflow-step">
       <div class="step-number">4</div>
-      <h4>Aggregate</h4>
-      <p>Optimizes within token limits</p>
+      <h4>Rank</h4>
+      <p>Multi-factor scoring</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step">
+      <div class="step-number">5</div>
+      <h4>Output</h4>
+      <p>Token-aware aggregation</p>
     </div>
   </div>
 </div>
