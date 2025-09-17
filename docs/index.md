@@ -37,7 +37,7 @@ hide:
       </svg>
     </button>
   </div>
-  
+
   <!-- Elegant feature list -->
   <div class="hero-features">
     <div class="feature-line">
@@ -558,7 +558,7 @@ $ tenets rank "fix authentication bug" --top 10 --factors
    - semantic_similarity: 85%
    - keyword_match: 92%
    - import_centrality: 78%
-   
+
 2. src/auth/middleware.py - Score: 0.834
    - semantic_similarity: 79%
    - keyword_match: 88%

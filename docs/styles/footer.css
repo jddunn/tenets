@@ -331,7 +331,7 @@
   .footer-grid {
     grid-template-columns: 2fr 1fr 1fr;
   }
-  
+
   .footer-column:nth-child(4),
   .footer-column:nth-child(5) {
     grid-column: span 1;
@@ -345,29 +345,29 @@
     text-align: center;
     gap: 2rem;
   }
-  
+
   .footer-column h5::after {
     left: 50%;
     transform: translateX(-50%);
   }
-  
+
   .social-links {
     justify-content: center;
   }
-  
+
   .footer-bottom-content {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .badge-showcase {
     align-items: center;
   }
-  
+
   .footer-logo-container {
     justify-content: center;
   }
-  
+
   .manic-branding {
     margin: 1rem auto;
   }
@@ -378,7 +378,7 @@
     width: 50px;
     height: 50px;
   }
-  
+
   .footer-brand-text h4 {
     font-size: 1.25rem;
   }
