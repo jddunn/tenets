@@ -778,13 +778,13 @@
     gap: 1rem;
   }
 
-  /* Installation section mobile overrides */
+  /* Installation section mobile overrides - FIXED CENTERING */
   .install-section {
-    width: 100vw;
+    width: 100%;
     max-width: 100%;
     overflow-x: hidden;
-    margin-left: -1rem;
-    margin-right: -1rem;
+    margin-left: 0;
+    margin-right: 0;
     padding: 2rem 1rem;
   }
 
