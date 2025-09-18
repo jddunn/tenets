@@ -17,6 +17,16 @@ hide:
   </h1>
   <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
 
+  <!-- Small pip install right below tagline -->
+  <div class="hero-quick-copy">
+    <code>pip install tenets</code>
+    <button class="copy-btn-inline" data-clipboard-text="pip install tenets" aria-label="Copy">
+      <svg viewBox="0 0 16 16" width="12" height="12">
+        <path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
+      </svg>
+    </button>
+  </div>
+
   <!-- Elegant minimal install copy at top right -->
   <div class="hero-quick-install">
     <code>pip install tenets</code>
@@ -458,7 +468,7 @@ hide:
     <div class="workflow-step">
       <div class="step-number">1</div>
       <h4>Parse</h4>
-      <p>Understands intent & extracts context</p>
+      <p>NLP extracts intent, temporal refs, fetches GitHub/JIRA issues</p>
     </div>
     <div class="workflow-arrow">→</div>
     <div class="workflow-step">

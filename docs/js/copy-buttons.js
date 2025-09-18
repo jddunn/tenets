@@ -77,7 +77,7 @@
   }
 
   function onCustomCopyClick(e){
-    var btn = e.target.closest('.copy-btn, .copy-btn-mini');
+    var btn = e.target.closest('.copy-btn, .copy-btn-mini, .copy-btn-inline');
     if(!btn) return;
     e.preventDefault();
     var text = extractNearbyText(btn);
