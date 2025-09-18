@@ -277,6 +277,16 @@
     </div><!-- /torch-container -->
     <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
 
+    <!-- Small pip install command right below tagline -->
+    <div class="hero-quick-copy">
+      <code>pip install tenets</code>
+      <button class="copy-btn-inline" data-clipboard-text="pip install tenets" aria-label="Copy">
+        <svg viewBox="0 0 16 16" width="12" height="12">
+          <path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
+        </svg>
+      </button>
+    </div>
+
     <p class="hero-description">
       Surface relevant files. Build optimal context. Track velocity.<br>
       Examine code quality metrics. Evaluate and improve your codebase.<br>
@@ -779,69 +789,68 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
     <!-- Architecture details panel -->
     <div class="architecture-details" data-arch-details>
       <div class="detail-card" data-detail="input" aria-hidden="true">
-        <h4>📝 Input</h4>
+        <h4>📝 Input & Prompt Parsing</h4>
         <ul>
-          <li>Natural language prompt or concrete task</li>
-          <li>Optional tenets and constraints applied</li>
+          <li>NLP extracts intent, temporal references, fetches GitHub/JIRA links</li>
+          <li>Intent categorization affects ranking weights</li>
+          <li>Smart test file inclusion based on context</li>
           <li>Project-aware defaults from config</li>
         </ul>
       </div>
 
       <div class="detail-card" data-detail="scan" aria-hidden="true">
-        <h4>🔎 Scan</h4>
+        <h4>🔎 Scan & Discovery</h4>
         <ul>
-          <li>Parallel discovery of candidate files</li>
-          <li>Respects .gitignore and config filters</li>
-          <li>Language detection and basic heuristics</li>
+          <li>Parallel OS-optimized traversal respecting .gitignore and custom filters</li>
+          <li>Language detection for 15+ languages via extensions and content</li>
+          <li>Streams files immediately to analyzers without blocking</li>
         </ul>
       </div>
 
       <div class="detail-card" data-detail="analyze" aria-hidden="true">
-        <h4>🧠 Analyze</h4>
+        <h4>🧠 Analyze & Extract</h4>
         <ul>
-          <li>Language analyzers & AST structure</li>
-          <li>Symbols, imports, and metrics</li>
-          <li>Lightweight, per-language strategies</li>
+          <li>AST parsing extracts imports, functions, classes for 15+ languages</li>
+          <li>Lightweight structure analysis optimized for speed over semantics</li>
+          <li>Content-hash caching prevents re-analysis of unchanged files</li>
         </ul>
       </div>
 
       <div class="detail-card" data-detail="rank" aria-hidden="true">
-        <h4>📈 Rank</h4>
+        <h4>📈 Rank & Score</h4>
         <ul>
-          <li>Keyword and phrase matching</li>
-          <li>Import/dependency graph centrality</li>
-          <li>Path and structure relevance</li>
-          <li>Git recency and ownership signals</li>
+          <li>BM25/TF-IDF similarity with keyword matching and path relevance</li>
+          <li>Import centrality via PageRank on dependency graph</li>
+          <li>Git signals (recency, frequency) and intent-aware weight adjustment</li>
         </ul>
       </div>
 
       <div class="detail-card" data-detail="ml-optional" aria-hidden="true">
         <h4>🤖 ML Integrations (Optional)</h4>
         <ul>
-          <li>Local embeddings for semantic similarity</li>
-          <li>Enhanced ranking with transformers</li>
-          <li>Configurable, disabled by default</li>
-          <li>Install via extras: <code>tenets[ml]</code></li>
+          <li>Local sentence-transformers for semantic similarity without API calls</li>
+          <li>Multiple providers: OpenAI, Anthropic, Cohere, local models</li>
+          <li>Disabled by default - install via <code>pip install tenets[ml]</code></li>
         </ul>
       </div>
 
       <div class="detail-card" data-detail="tenets-injection" aria-hidden="true">
         <h4>🎯 Tenets Injection</h4>
         <ul>
-          <li>Injects guiding principles into context</li>
-          <li>Combats LLM context drift in long sessions</li>
-          <li>Maintains consistency across interactions</li>
-          <li>Configurable frequency: adaptive, periodic, or manual</li>
+          <li>Injects project guidelines to combat LLM drift in long sessions</li>
+          <li>Maintains consistency across multiple AI interactions</li>
+          <li>Adaptive frequency based on conversation complexity</li>
+          <li>Custom tenets via .tenets file or config</li>
         </ul>
       </div>
 
       <div class="detail-card" data-detail="summarize" aria-hidden="true">
         <h4>📦 Summarization & Output</h4>
         <ul>
-          <li>Model-specific token counting</li>
-          <li>Rules-based and ML summarizers built-in</li>
-          <li>Optional LLM summarization only if API keys provided</li>
-          <li>Lightweight dependency architecture and extras</li>
+          <li>Model-specific token counting for GPT-4, Claude, Llama, etc.</li>
+          <li>Built-in summarizers: TextRank, LSA, code-aware extraction</li>
+          <li>Multiple formats: Markdown, XML (Claude), JSON, HTML</li>
+          <li>Optional LLM summarization with explicit API consent</li>
         </ul>
       </div>
     </div>

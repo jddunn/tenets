@@ -223,7 +223,7 @@ code, pre {
 
 .hero-tagline {
   font-size: 1.5rem;
-  color: var(--sepia-600);
+  color: #2a2318; /* Much darker than sepia-600 for better readability */
   font-style: italic;
   margin-bottom: 1rem;
   font-weight: 300;
@@ -424,7 +424,7 @@ code, pre {
    =============================================== */
 
 .examples-section {
-  padding: 5rem 0;
+  padding: 2.5rem 0;
   background: var(--cream-50);
 }
 
@@ -694,7 +694,7 @@ code, pre {
    =============================================== */
 
 .features-section {
-  padding: 5rem 0;
+  padding: 2.5rem 0;
   background: var(--cream-100);
 }
 
@@ -1053,7 +1053,7 @@ code, pre {
    =============================================== */
 
 .install-section {
-  padding: 5rem 0;
+  padding: 2.5rem 0;
   background: var(--cream-100);
 }
 
@@ -1220,9 +1220,35 @@ code, pre {
 
 .newsletter-content p {
   font-size: 1.1rem;
-  color: var(--navy-900); /* Darkened from navy-800 for better contrast */
+  color: #1a1612 !important; /* Very dark, almost black */
   margin-bottom: 1.5rem;
-  font-weight: 500; /* Added weight for better readability */
+  font-weight: 600 !important; /* Bold for maximum readability */
+}
+
+/* Target any privacy/newsletter text that might appear */
+.privacy-text, .gdpr-text, .newsletter-description,
+*[class*="privacy"], *[class*="gdpr"], *[class*="newsletter"] p,
+.md-content p:has-text("sovereignty"),
+.md-content p:has-text("GDPR"),
+.md-content p:has-text("third-party") {
+  color: #0a0805 !important; /* Almost black for max contrast */
+  font-weight: 500 !important;
+}
+
+/* Force all paragraphs in any section that might be newsletter/privacy to be dark */
+section p,
+.md-content__inner p,
+.md-typeset p {
+  color: inherit; /* Use inherited color */
+}
+
+/* Override for sections that should have dark text */
+.newsletter-section p,
+.privacy-section p,
+section:has(p:contains("sovereignty")) p,
+section:has(p:contains("GDPR")) p {
+  color: #0a0805 !important;
+  font-weight: 500 !important;
 }
 
 .newsletter-cta-button {
