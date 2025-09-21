@@ -11,11 +11,11 @@
 [![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
-**tenets** automatically finds and builds the most relevant context from your codebase. Instead of manually copying files or searching for documentation, tenets intelligently aggregates exactly what you need for debugging, building features, or chatting with AI assistants.
+**tenets** is a NLP CLI tool that automatically finds and builds the most relevant context from your codebase, using deterministic statistical algorithms as well as optional deep learning techniques.
+
+Instead of manually copying files or searching for docs, tenets intelligently aggregates the most relevant files and metadata for interacting with AI assistants.
 
 ## What is tenets?
-
-Intelligent context aggregation that:
 
 - **Finds** all relevant files automatically
 - **Ranks** them by importance using multiple factors
@@ -24,6 +24,22 @@ Intelligent context aggregation that:
 - **Pins** critical files per session for guaranteed inclusion
 - **Injects** your tenets (guiding principles) into session interactions automatically in prompts
 - **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
+
+### How It Works
+
+tenets employs a multi-layered approach optimized specifically for code understanding (but its core functionality could be applied to any field of document matching). It tokenizes `camelCase` and `snake_case` identifiers intelligently. Test files are excluded by default unless specifically mentioned in some way. Language-specific AST parsing for [15+ languages](./docs/supported-languages.md) is included.
+
+Deterministic algorithms in `balanced` work reliably and quickly meant to be used by default. BM25 scoring prevents files which may use redundant patterns (test files with `assert` etc.) from dominating results unfairly. 
+
+The default ranking factors consist of: Keyword matching (20%), path relevance (15%), import centrality (10%), git signals (10%), and other code complexity metrics.
+
+Optional semantic analysis captures relationships that keyword matching misses. Sentence-transformer embeddings *understand* that `authenticate()` and `login()` are conceptually related, and relevancy is judged accordingly.
+
+We have additional optional cross-encoder neural re-ranking which jointly evaluates query-document pairs with self-attention. Since this is appending a document and query as a combined input (in O(n^2)), this is much slower than bi-encoders (in our ML-powered regular ranking), and as such is only used for re-ranking the top X results. But, with a cross-encoder, a query like `"implement oauth2"` will rank a document with the text: `"DEPRECATED: We no longer implement oauth2"` much lower compared a function that may be named `implement_authorization_flow()`, **even though** `authorization` in the method name doesn't exactly match `oauth2`.
+
+tenets is able to scan, analyze, match, and summarize hundreds of files for relevant context in significantly under a minute typically, with a multi-tier caching system based on git and file metadata changes ensuring responsive performance, along with parallel and streaming file processing.
+
+All processing runs locally - no API costs, no data leaving your machine, complete privacy.
 
 ## Installation
 
