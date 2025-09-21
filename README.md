@@ -25,22 +25,6 @@ Instead of manually copying files or searching for docs, tenets intelligently ag
 - **Injects** your tenets (guiding principles) into session interactions automatically in prompts
 - **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
 
-### How It Works
-
-tenets employs a multi-layered approach optimized specifically for code understanding (but its core functionality could be applied to any field of document matching). It tokenizes `camelCase` and `snake_case` identifiers intelligently. Test files are excluded by default unless specifically mentioned in some way. Language-specific AST parsing for [15+ languages](./docs/supported-languages.md) is included.
-
-Deterministic algorithms in `balanced` work reliably and quickly meant to be used by default. BM25 scoring prevents files which may use redundant patterns (test files with `assert` etc.) from dominating results unfairly. 
-
-The default ranking factors consist of: Keyword matching (20%), path relevance (15%), import centrality (10%), git signals (10%), and other code complexity metrics.
-
-Optional semantic analysis captures relationships that keyword matching misses. Sentence-transformer embeddings *understand* that `authenticate()` and `login()` are conceptually related, and relevancy is judged accordingly.
-
-We have additional optional cross-encoder neural re-ranking which jointly evaluates query-document pairs with self-attention. Since this is appending a document and query as a combined input (in O(n^2)), this is much slower than bi-encoders (in our ML-powered regular ranking), and as such is only used for re-ranking the top X results. But, with a cross-encoder, a query like `"implement oauth2"` will rank a document with the text: `"DEPRECATED: We no longer implement oauth2"` much lower compared a function that may be named `implement_authorization_flow()`, **even though** `authorization` in the method name doesn't exactly match `oauth2`.
-
-tenets is able to scan, analyze, match, and summarize hundreds of files for relevant context in significantly under a minute typically, with a multi-tier caching system based on git and file metadata changes ensuring responsive performance, along with parallel and streaming file processing.
-
-All processing runs locally - no API costs, no data leaving your machine, complete privacy.
-
 ## Installation
 
 ```bash
@@ -144,6 +128,7 @@ tenets momentum --team                      # Sprint velocity
 tenets examine . --complexity --threshold 10  # Find complex code
 ```
 
+
 ## Configuration
 
 Create `.tenets.yml` in your project:
@@ -166,22 +151,28 @@ ignore:
   - '*.generated.*'
 ```
 
+### How It Works
+
+tenets employs a multi-layered approach optimized specifically for code understanding (but its core functionality could be applied to any field of document matching). It tokenizes `camelCase` and `snake_case` identifiers intelligently. Test files are excluded by default unless specifically mentioned in some way. Language-specific AST parsing for [15+ languages](./docs/supported-languages.md) is included.
+
+Deterministic algorithms in `balanced` work reliably and quickly meant to be used by default. BM25 scoring prevents files which may use redundant patterns (test files with `assert` etc.) from dominating results unfairly. 
+
+The default ranking factors consist of: Keyword matching (20%), path relevance (15%), import centrality (10%), git signals (10%), and other code complexity metrics.
+
+Optional semantic analysis captures relationships that keyword matching misses. Sentence-transformer embeddings *understand* that `authenticate()` and `login()` are conceptually related, and relevancy is judged accordingly.
+
+We have additional optional cross-encoder neural re-ranking which jointly evaluates query-document pairs with self-attention. This helps queries like `"implement oauth2"` rank a document with the text: `"DEPRECATED: We no longer implement oauth2"` much lower compared to a function that may be named `implement_authorization_flow()`, which is exactly what we'd want, **even though** `authorization` in the method name doesn't exactly match `oauth2`.
+
+tenets is able to scan, analyze, match, and summarize hundreds of files for relevant context in significantly under a minute typically, with a multi-tier caching system based on git and file metadata changes ensuring responsive performance.
+
+All processing runs locally - no API costs, no data leaving your machine, complete privacy.
+
 ## Documentation
 
 - **[Full Documentation](https://tenets.dev/docs)** - Complete guide and API reference
 - **[CLI Reference](docs/CLI.md)** - All commands and options
 - **[Configuration Guide](docs/CONFIG.md)** - Detailed configuration options
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - How tenets works internally
-
-### Smart Summarization
-
-When files exceed token budgets, tenets intelligently preserves:
-
-- Function/class signatures
-- Import statements
-- Complex logic blocks
-- Documentation and comments
-- Recent changes
 
 For more details on the summarization system, see [Architecture Documentation](docs/ARCHITECTURE.md).
 
