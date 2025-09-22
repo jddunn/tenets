@@ -137,6 +137,10 @@ def rank(
     ),
     # Features
     no_git: bool = typer.Option(False, "--no-git", help="Disable git signals in ranking"),
+    ml: bool = typer.Option(False, "--ml", help="Enable ML features (embeddings, transformers)"),
+    reranker: bool = typer.Option(
+        False, "--reranker", help="Enable neural cross-encoder reranking (requires --ml)"
+    ),
     session: Optional[str] = typer.Option(
         None, "--session", "-s", help="Use session for stateful ranking"
     ),
@@ -182,8 +186,14 @@ def rank(
         SystemExit: On error with exit code 1.
 
     Examples:
-        # Show top 10 most relevant files
+        # Basic ranking (BM25 text similarity)
         tenets rank "implement OAuth2" --top 10
+
+        # With ML embeddings and transformers
+        tenets rank "fix authentication bug" . --ml
+
+        # With neural cross-encoder reranking (most accurate)
+        tenets rank "optimize database queries" --ml --reranker
 
         # Show files above a score threshold
         tenets rank "fix bug" . --min-score 0.3
@@ -206,6 +216,15 @@ def rank(
 
         # Initialize tenets with same distiller pipeline
         tenets_instance: Tenets = Tenets()
+
+        # Override ML settings if specified
+        if ml or reranker:
+            # Enable ML features in config
+            if hasattr(tenets_instance, "config") and hasattr(tenets_instance.config, "ranking"):
+                tenets_instance.config.ranking.use_ml = True
+                tenets_instance.config.ranking.use_embeddings = True
+                if reranker:
+                    tenets_instance.config.ranking.use_reranker = True
 
         # Use the same distiller pipeline that the distill command uses
         # This ensures consistent ranking behavior
