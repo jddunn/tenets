@@ -537,13 +537,42 @@ class ThoroughRankingStrategy(RankingStrategy):
         self.logger = get_logger(__name__)
         # Get centralized programming patterns
         self.programming_patterns = get_programming_patterns()
-        # Optional embedding model for semantic similarity; tests patch the
-        # constructor in ranker module, so import from there.
-        try:  # pragma: no cover - optional dependency
-            from .ranker import SentenceTransformer as _ST
-            from .ranker import cosine_similarity as _cos
+        # Import cosine similarity - check module level first for test patching
+        import sys
 
-            self._cosine_similarity = _cos
+        ranker_module = sys.modules.get("tenets.core.ranking.ranker")
+        if ranker_module and hasattr(ranker_module, "cosine_similarity"):
+            self._cosine_similarity = ranker_module.cosine_similarity
+        else:
+            try:
+                from tenets.core.nlp.similarity import cosine_similarity as _cos
+
+                self._cosine_similarity = _cos
+            except ImportError:
+                # Fallback for when nlp package not available
+                def cosine_similarity(a, b):
+                    import math
+
+                    if not a or not b:
+                        return 0.0
+                    dot = sum(x * y for x, y in zip(a, b))
+                    norm_a = math.sqrt(sum(x * x for x in a))
+                    norm_b = math.sqrt(sum(y * y for y in b))
+                    if norm_a == 0 or norm_b == 0:
+                        return 0.0
+                    return dot / (norm_a * norm_b)
+
+                self._cosine_similarity = cosine_similarity
+
+        # Optional embedding model for semantic similarity
+        try:  # pragma: no cover - optional dependency
+            # Check if SentenceTransformer is available at module level (for test patching)
+            if ranker_module and hasattr(ranker_module, "SentenceTransformer"):
+                _ST = ranker_module.SentenceTransformer
+            else:
+                # Import directly from sentence_transformers
+                from sentence_transformers import SentenceTransformer as _ST
+
             if _ST is not None:
                 # Tests expect this exact constructor call
                 self._embedding_model = _ST("all-MiniLM-L6-v2")
@@ -867,12 +896,18 @@ class MLRankingStrategy(RankingStrategy):
 
     def __init__(self):
         """Initialize ML ranking strategy."""
+        from collections import OrderedDict
+
         from tenets.utils.logger import get_logger
 
         self.logger = get_logger(__name__)
         self._model = None
-        self._embeddings_cache = {}
+        # Use OrderedDict with size limit for embeddings cache
+        self._embeddings_cache = OrderedDict()
+        self._cache_max_size = 1000  # Limit cache size to prevent unbounded growth
         self._model_loaded = False
+        self._reranker = None  # Neural reranker for cross-encoder
+        self._reranker_loaded = False
         # Don't load model in __init__ - load lazily when needed
 
     def _load_model(self):
@@ -884,6 +919,18 @@ class MLRankingStrategy(RankingStrategy):
             self.logger.info("ML model loaded for semantic ranking")
         except ImportError:
             self.logger.warning("ML features not available. Install with: pip install tenets[ml]")
+
+    def _load_reranker(self):
+        """Load neural reranker lazily."""
+        try:
+            from tenets.core.nlp.ml_utils import NeuralReranker
+
+            self._reranker = NeuralReranker()
+            self.logger.info("Neural reranker loaded for cross-encoder reranking")
+        except ImportError:
+            self.logger.warning(
+                "Neural reranker not available. Install with: pip install tenets[ml]"
+            )
 
     def rank_file(
         self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
@@ -930,6 +977,12 @@ class MLRankingStrategy(RankingStrategy):
             # Fallback to thorough weights if ML not available
             return ThoroughRankingStrategy().get_weights()
 
+    def _manage_cache_size(self):
+        """Ensure cache doesn't exceed max size by removing oldest entries."""
+        while len(self._embeddings_cache) >= self._cache_max_size:
+            # Remove oldest entry (FIFO)
+            self._embeddings_cache.popitem(last=False)
+
     def _calculate_semantic_similarity(self, file_content: str, prompt_text: str) -> float:
         """Calculate semantic similarity using embeddings."""
         if not self._model:
@@ -937,6 +990,9 @@ class MLRankingStrategy(RankingStrategy):
 
         try:
             from tenets.core.nlp.ml_utils import compute_similarity
+
+            # Manage cache size before adding new entries
+            self._manage_cache_size()
 
             # Truncate content if too long
             max_length = 512

@@ -83,6 +83,8 @@ tenets distill [path] <prompt> [options]
 - `--max-tokens`: Maximum tokens for context
 - `--mode`: Analysis mode: fast, balanced (default), thorough
 - `--no-git`: Disable git context inclusion
+- `--ml`: Enable ML features (semantic embeddings, transformers) for better ranking
+- `--reranker`: Enable neural cross-encoder reranking for highest accuracy (requires --ml)
 - `--use-stopwords`: Enable stopword filtering for keyword analysis
 - `--include`, `-i`: Include file patterns (e.g., ".py,.js")
 - `--exclude`, `-e`: Exclude file patterns (e.g., "test_,.backup")
@@ -101,6 +103,10 @@ tenets distill [path] <prompt> [options]
 tenets distill . "implement OAuth2 authentication"  # Explicit current directory
 tenets distill ./src "implement OAuth2"             # Specific directory
 tenets distill "implement OAuth2 authentication"    # Path defaults to current directory
+
+# ML-enhanced ranking for better accuracy
+tenets distill "fix authentication bug" --ml              # Semantic embeddings
+tenets distill "optimize database queries" --ml --reranker  # Neural reranking (best)
 
 # From a GitHub issue (path optional)
 tenets distill https://github.com/org/repo/issues/123
@@ -234,6 +240,8 @@ tenets rank <prompt> [path] [options]
 - `--include-tests`: Include test files
 - `--exclude-tests`: Explicitly exclude test files
 - `--no-git`: Disable git signals in ranking
+- `--ml`: Enable ML features (semantic embeddings) for better ranking
+- `--reranker`: Enable neural cross-encoder reranking for highest accuracy (requires --ml)
 - `--session`, `-s`: Use session for stateful ranking
 - `--stats`: Show ranking statistics
 - `--verbose`, `-v`: Show detailed debug information
@@ -246,6 +254,10 @@ tenets rank <prompt> [path] [options]
 tenets rank "implement OAuth2" --top 10         # Scans current directory by default
 tenets rank "implement OAuth2" . --top 10       # Explicit current directory
 tenets rank "implement OAuth2" ./src --top 10   # Specific directory
+
+# ML-enhanced ranking for better accuracy
+tenets rank "fix authentication bug" --ml       # Uses semantic embeddings
+tenets rank "optimize database" --ml --reranker  # Cross-encoder reranking (best)
 
 # Show files above a relevance threshold
 tenets rank "fix authentication bug" . --min-score 0.3
