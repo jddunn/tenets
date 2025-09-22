@@ -2,7 +2,7 @@
 
 [project]
 name = "tenets"
-version = "0.3.2"
+version = "0.3.3"
 description = "Context that feeds your prompts"
 authors = [{name = "Tenets Team", email = "team@tenets.dev"}]
 readme = "README.md"
