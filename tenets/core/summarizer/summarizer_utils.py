@@ -6,7 +6,7 @@ implementations to avoid code duplication.
 
 import ast
 import re
-from typing import Dict, List, Optional
+from typing import Optional
 
 
 class CodeDetector:
