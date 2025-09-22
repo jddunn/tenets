@@ -197,11 +197,10 @@ def _recommend_mode(text: str, target_ratio: float) -> str:
     """
     text_length = len(text)
 
-    # Check if text looks like code
-    code_indicators = ["def ", "class ", "function ", "import ", "{", "}"]
-    is_code = sum(1 for ind in code_indicators if ind in text) >= 2
+    # Check if text looks like code using shared utility
+    from .summarizer_utils import CodeDetector
 
-    if is_code:
+    if CodeDetector.looks_like_code(text, threshold=2):
         return "extractive"  # Best for preserving code structure
 
     if text_length < 500:
@@ -210,11 +209,10 @@ def _recommend_mode(text: str, target_ratio: float) -> str:
         return "compressive"  # Medium text, remove redundancy
     elif text_length < 10000:
         return "textrank"  # Longer text, use graph-based
+    elif ML_AVAILABLE and target_ratio < 0.3:
+        return "transformer"  # Very long text, aggressive compression
     else:
-        if ML_AVAILABLE and target_ratio < 0.3:
-            return "transformer"  # Very long text, aggressive compression
-        else:
-            return "extractive"  # Fallback for very long text
+        return "extractive"  # Fallback for very long text
 
 
 # Batch processing utilities
