@@ -74,6 +74,14 @@ def distill(
     ),
     # Features
     no_git: bool = typer.Option(False, "--no-git", help="Disable git context inclusion"),
+    ml: bool = typer.Option(
+        False, "--ml", help="Enable ML features (embeddings, transformers) for better ranking"
+    ),
+    reranker: bool = typer.Option(
+        False,
+        "--reranker",
+        help="Enable neural cross-encoder reranking for highest accuracy (requires --ml)",
+    ),
     full: bool = typer.Option(
         False,
         "--full",
@@ -129,8 +137,14 @@ def distill(
 
     Examples:
 
-        # Basic usage
+        # Basic usage (BM25 text similarity)
         tenets distill "implement OAuth2 authentication"
+
+        # With ML embeddings for better semantic matching
+        tenets distill "fix authentication bug" --ml
+
+        # With neural reranking for highest accuracy
+        tenets distill "optimize database performance" --ml --reranker
 
         # From a GitHub issue
         tenets distill https://github.com/org/repo/issues/123
@@ -167,6 +181,15 @@ def distill(
 
         # Initialize tenets
         tenets = Tenets()
+
+        # Override ML settings if specified
+        if ml or reranker:
+            # Enable ML features in config
+            if hasattr(tenets, "config") and hasattr(tenets.config, "ranking"):
+                tenets.config.ranking.use_ml = True
+                tenets.config.ranking.use_embeddings = True
+                if reranker:
+                    tenets.config.ranking.use_reranker = True
 
         # Parse include/exclude patterns
         include_patterns = include.split(",") if include else None

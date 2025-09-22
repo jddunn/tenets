@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2025-01-22
+
+### Fixed
+- Resolved NeuralReranker circular import issues for test compatibility
+- Added Rust and C/C++ import detection support
+- Updated documentation to reflect accurate ranking factor percentages
+- Clarified package installation options (core vs [light] extras)
+
+## [0.3.2] - 2025-01-21
+
+### Fixed
+- Corrected README command examples for rank and distill commands
+- Fixed documentation site styles and navigation
+- Improved API documentation generation with proper module/class links
+
 ## [0.2.0] - 2025-01-11
 
 ### Added

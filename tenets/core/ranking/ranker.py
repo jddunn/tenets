@@ -32,8 +32,9 @@ from .strategies import (
     ThoroughRankingStrategy,
 )
 
-# Optional symbol for tests to patch ML model class - lazy loaded when needed
+# Optional symbols for tests to patch ML model classes - lazy loaded when needed
 SentenceTransformer = None  # Will be imported lazily when ML ranking is used
+NeuralReranker = None  # Will be imported lazily when needed
 
 
 # Import cosine similarity from the central module
@@ -182,6 +183,16 @@ class RelevanceRanker:
         self.use_ml = (
             config.ranking.use_ml if config and hasattr(config.ranking, "use_ml") else False
         )
+        self.use_reranker = (
+            getattr(config.ranking, "use_reranker", False)
+            if config and hasattr(config.ranking, "use_reranker")
+            else False
+        )
+        self.rerank_top_k = (
+            getattr(config.ranking, "rerank_top_k", 20)
+            if config and hasattr(config.ranking, "rerank_top_k")
+            else 20
+        )
 
         # Initialize strategies lazily to avoid loading unnecessary models
         self._strategies_cache: Dict[RankingAlgorithm, RankingStrategy] = {}
@@ -228,14 +239,25 @@ class RelevanceRanker:
         if self._executor_instance is None:
             import sys
 
-            # On Windows with Python 3.13, there can be issues with ThreadPoolExecutor
-            # when called from module imports. Disable parallel processing in this case.
+            # On Windows with Python 3.13+, use ThreadPoolExecutor with thread_name_prefix
+            # to avoid issues with the new GIL implementation
             if sys.platform == "win32" and sys.version_info >= (3, 13):
-                self.logger.warning(
-                    "Disabling parallel ranking on Windows with Python 3.13+ due to compatibility issues"
-                )
-                self._executor_instance = None  # Force sequential processing
-                self._executor = None
+                try:
+                    # ThreadPoolExecutor with explicit thread naming works better on Python 3.13+
+                    self._executor_instance = concurrent.futures.ThreadPoolExecutor(
+                        max_workers=self.max_workers, thread_name_prefix="TenetsRanker"
+                    )
+                    self._executor = self._executor_instance
+                    self.logger.info(
+                        f"Using ThreadPoolExecutor with {self.max_workers} workers on Windows Python 3.13+"
+                    )
+                except Exception as e:
+                    self.logger.warning(
+                        f"ThreadPoolExecutor failed on Windows Python 3.13+: {e}. "
+                        f"Disabling parallel processing."
+                    )
+                    self._executor_instance = None
+                    self._executor = None
             else:
                 self._executor_instance = concurrent.futures.ThreadPoolExecutor(
                     max_workers=self.max_workers
@@ -294,14 +316,8 @@ class RelevanceRanker:
             threshold_applied=self.config.ranking.threshold,
         )
 
-        # Check if we need to disable parallel on Windows Python 3.13+
-        import sys
-
-        if sys.platform == "win32" and sys.version_info >= (3, 13) and parallel:
-            self.logger.warning(
-                "Disabling parallel ranking on Windows with Python 3.13+ due to compatibility issues"
-            )
-            parallel = False
+        # No need to disable parallel on Windows Python 3.13+ anymore
+        # The executor property handles it properly with ProcessPoolExecutor
 
         self.logger.info(
             f"Ranking {len(files)} files using {self.stats.algorithm_used} algorithm "
@@ -338,6 +354,12 @@ class RelevanceRanker:
 
         # Sort by score
         ranked_files.sort(reverse=True)
+
+        # Apply neural reranking if enabled and ML strategy is used
+        if self.use_reranker and self.algorithm == RankingAlgorithm.ML and len(ranked_files) > 0:
+            ranked_files = self._apply_neural_reranking(
+                ranked_files, prompt_context, min(self.rerank_top_k, len(ranked_files))
+            )
 
         # Filter by threshold and update statistics
         threshold = self.config.ranking.threshold
@@ -731,6 +753,70 @@ class RelevanceRanker:
                     return file.path
 
         return None
+
+    def _apply_neural_reranking(
+        self, ranked_files: List["RankedFile"], prompt_context: PromptContext, top_k: int
+    ) -> List["RankedFile"]:
+        """Apply neural cross-encoder reranking to top-k results.
+
+        Args:
+            ranked_files: Initial ranked files
+            prompt_context: Prompt context
+            top_k: Number of top files to rerank
+
+        Returns:
+            Reranked list of RankedFile objects
+        """
+        try:
+            # Import NeuralReranker locally to avoid circular imports
+            # Also set it at module level for tests to access
+            global NeuralReranker
+            if NeuralReranker is None:
+                from tenets.core.nlp.ml_utils import NeuralReranker
+
+            self.logger.info(f"Applying neural reranking to top {top_k} files")
+            reranker = NeuralReranker()
+
+            # Prepare documents for reranking (top-k files)
+            top_files = ranked_files[:top_k]
+            remaining_files = ranked_files[top_k:]
+
+            # Create document-score pairs for reranking
+            documents = []
+            for rf in top_files:
+                # Use file content for reranking, truncate if too long
+                content = rf.analysis.content or ""
+                if len(content) > 2000:
+                    # Take beginning and end for context
+                    content = content[:1000] + "\n...\n" + content[-1000:]
+                documents.append((content, rf.score))
+
+            # Rerank using cross-encoder
+            reranked_docs = reranker.rerank(prompt_context.text, documents, top_k=top_k)
+
+            # Update RankedFile objects with new scores
+            reranked_files = []
+            for i, (content, new_score) in enumerate(reranked_docs):
+                # Find the corresponding RankedFile
+                for rf in top_files:
+                    rf_content = rf.analysis.content or ""
+                    if len(rf_content) > 2000:
+                        rf_content = rf_content[:1000] + "\n...\n" + rf_content[-1000:]
+                    if rf_content == content:
+                        # Update score with reranked score
+                        rf.score = new_score
+                        rf.explanation = f"{rf.explanation} [Cross-encoder reranked]"
+                        reranked_files.append(rf)
+                        break
+
+            # Combine reranked top-k with remaining files
+            result = reranked_files + remaining_files
+            self.logger.info(f"Neural reranking complete, reranked {len(reranked_files)} files")
+            return result
+
+        except Exception as e:
+            self.logger.warning(f"Neural reranking failed: {e}, using original ranking")
+            return ranked_files
 
     def _build_dependency_tree(
         self, files: List[FileAnalysis], import_graph: Dict[str, Set[str]]
