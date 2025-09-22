@@ -11,10 +11,10 @@ graph TD
         ML_STRAT[ML Strategy<br/>5x slower<br/>Semantic Embeddings]
     end
 
-    subgraph "Text Analysis (40% in Balanced)"
-        KEY_MATCH[Keyword Matching<br/>20%<br/>Direct term hits]
-        BM25_SIM[BM25 Similarity<br/>20%<br/>Statistical relevance]
-        BM25_SCORE[BM25 Score<br/>15%<br/>Probabilistic ranking]
+    subgraph "Text Analysis (55% in Balanced)"
+        KEY_MATCH[Keyword Matching<br/>20%<br/>Direct substring matching]
+        BM25_SCORE[BM25 Score<br/>25%<br/>Statistical relevance preventing repetition bias]
+        TFIDF_SIM[TF-IDF Similarity<br/>10%<br/>Term frequency analysis]
     end
 
     subgraph "Code Structure Analysis (25% in Balanced)"
@@ -22,10 +22,9 @@ graph TD
         IMP_CENT[Import Centrality<br/>10%<br/>Dependency importance]
     end
 
-    subgraph "File Characteristics (15% in Balanced)"
+    subgraph "File Characteristics (10% in Balanced)"
         COMPLEXITY_REL[Complexity Relevance<br/>5%<br/>Code complexity signals]
-        FILE_TYPE[File Type Relevance<br/>5%<br/>Extension/type matching]
-        CODE_PAT[Code Patterns<br/>5%<br/>AST pattern matching]
+        TYPE_REL[Type Relevance<br/>5%<br/>Extension/type matching]
     end
 
     subgraph "Git Signals (10% in Balanced)"
@@ -47,8 +46,8 @@ graph TD
     end
 
     FAST --> KEY_MATCH
-    BALANCED --> BM25_SIM
     BALANCED --> BM25_SCORE
+    BALANCED --> TFIDF_SIM
     THOROUGH --> IMP_CENT
     ML_STRAT --> SEM_SIM
 
@@ -57,12 +56,12 @@ graph TD
     RANKING --> AGGREGATION
 
     KEY_MATCH --> RANKING
-    BM25_SIM --> RANKING
     BM25_SCORE --> RANKING
+    TFIDF_SIM --> RANKING
     PATH_REL --> RANKING
     IMP_CENT --> RANKING
     COMPLEXITY_REL --> RANKING
-    FILE_TYPE --> RANKING
+    TYPE_REL --> RANKING
     CODE_PAT --> RANKING
     GIT_REC --> RANKING
     GIT_FREQ --> RANKING
@@ -77,7 +76,7 @@ graph TD
 | Strategy | Speed | Accuracy | Use Cases | Factors Used |
 |----------|-------|----------|-----------|--------------|
 | **Fast** | Fastest | Basic | Quick file discovery | Keyword (60%), Path (30%), File type (10%) |
-| **Balanced** | 1.5x slower | Good | **DEFAULT** Production usage | Keyword (20%), BM25 (35%), Structure (25%), Git (10%) |
+| **Balanced** | 1.5x slower | Good | **DEFAULT** Production usage | BM25 (25%), Keyword (20%), Path (15%), TF-IDF (10%), Import (10%), Git (10%), Complexity (5%), Type (5%) |
 | **Thorough** | 4x slower | High | Complex codebases | All balanced factors + enhanced analysis |
 | **ML** | 5x slower | Highest | Semantic search | Embeddings (25%) + all thorough factors |
 
