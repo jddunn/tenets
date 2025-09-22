@@ -600,6 +600,9 @@ class RankingConfig:
     use_embeddings: bool = False
     use_git: bool = True
     use_ml: bool = False  # Enable ML features (uses NLP package)
+    use_reranker: bool = False  # Enable cross-encoder neural reranking
+    rerank_top_k: int = 20  # Number of top results to rerank
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     embedding_model: str = "all-MiniLM-L6-v2"
     custom_weights: Dict[str, float] = field(
         default_factory=lambda: {

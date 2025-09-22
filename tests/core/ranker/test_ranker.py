@@ -720,11 +720,7 @@ class TestMainRankingPipeline:
         assert ranked[0].relevance_score >= ranked[-1].relevance_score
 
     def test_rank_files_parallel(self, ranker):
-        import sys
-
-        # Skip test on Windows Python 3.13+ where parallel is disabled
-        if sys.platform == "win32" and sys.version_info >= (3, 13):
-            pytest.skip("Parallel ranking disabled on Windows Python 3.13+")
+        # Parallel ranking now works on Windows Python 3.13+
 
         files = [FileAnalysis(path=f"file{i}.py", content=f"content {i}") for i in range(20)]
         prompt_context = PromptContext(text="test", keywords=["test"], task_type="general")
@@ -973,11 +969,8 @@ class TestEdgeCases:
 
     def test_parallel_ranking_timeout(self, ranker):
         """Test handling of timeout in parallel ranking."""
-        import sys
 
-        # Skip test on Windows Python 3.13+ where parallel is disabled
-        if sys.platform == "win32" and sys.version_info >= (3, 13):
-            pytest.skip("Parallel ranking disabled on Windows Python 3.13+")
+        # Parallel ranking now works on Windows Python 3.13+
 
         files = [FileAnalysis(path=f"file{i}.py", content="") for i in range(3)]
         prompt_context = PromptContext(text="test", keywords=[], task_type="general")

@@ -19,26 +19,26 @@ Instead of manually copying files or searching for docs, tenets intelligently ag
 
 - **Finds** all relevant files automatically
 - **Ranks** them by importance using multiple factors
-- **Aggregates** them within your token budget
+- **Aggregates** them within your token budget with intelligent summarizing
 - **Formats** perfectly for any use case
 - **Pins** critical files per session for guaranteed inclusion
 - **Injects** your tenets (guiding principles) into session interactions automatically in prompts
 - **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
 
+All processing runs locally - no API costs, no data leaving your machine, complete privacy.
+
 ## Installation
 
 ```bash
-# Core features only - lightweight, no ML dependencies
+# Basic install - fully functional with BM25/TF-IDF ranking
 pip install tenets
 
-# Add specific features
-pip install tenets[light]  # Adds keyword extraction & BM25/TF-IDF ranking
-pip install tenets[viz]    # Adds visualization capabilities
-pip install tenets[ml]     # Adds deep learning models (2GB+)
-pip install tenets[all]    # Everything
+# Optional extras (most users won't need these)
+pip install tenets[light]  # Adds RAKE/YAKE keyword extraction algorithms
+pip install tenets[viz]    # Adds visualization capabilities (graphs, charts)
+pip install tenets[ml]     # Adds deep learning for semantic search (2GB+ download)
+pip install tenets[all]    # Everything including all optional features
 ```
-
-**Python 3.13 Note:** Compatible but some ML features have limitations. Use Python 3.12 for full ML support.
 
 ## Quick Start
 
@@ -73,6 +73,10 @@ tenets distill "analyze auth flow" --format html -o report.html
 tenets distill "debug issue" --mode fast       # <5s, keyword matching
 tenets distill "refactor API" --mode thorough  # Semantic analysis
 
+# ML-enhanced ranking (requires pip install tenets[ml])
+tenets distill "fix auth bug" --ml              # Semantic embeddings
+tenets distill "optimize queries" --ml --reranker  # Neural reranking (best accuracy)
+
 # Transform content to save tokens
 tenets distill "review code" --remove-comments --condense
 ```
@@ -88,6 +92,10 @@ tenets rank "fix auth" --factors
 
 # Tree view for structure understanding
 tenets rank "add caching" --tree --scores
+
+# ML-enhanced ranking for better accuracy
+tenets rank "fix authentication" --ml           # Uses semantic embeddings
+tenets rank "database optimization" --ml --reranker  # Cross-encoder reranking
 
 # Export for automation
 tenets rank "database migration" --format json | jq '.files[].path'
@@ -128,7 +136,6 @@ tenets momentum --team                      # Sprint velocity
 tenets examine . --complexity --threshold 10  # Find complex code
 ```
 
-
 ## Configuration
 
 Create `.tenets.yml` in your project:
@@ -151,21 +158,39 @@ ignore:
   - '*.generated.*'
 ```
 
-### How It Works
+## How It Works
+
+### Code analysis intelligence
 
 tenets employs a multi-layered approach optimized specifically for code understanding (but its core functionality could be applied to any field of document matching). It tokenizes `camelCase` and `snake_case` identifiers intelligently. Test files are excluded by default unless specifically mentioned in some way. Language-specific AST parsing for [15+ languages](./docs/supported-languages.md) is included.
 
-Deterministic algorithms in `balanced` work reliably and quickly meant to be used by default. BM25 scoring prevents files which may use redundant patterns (test files with `assert` etc.) from dominating results unfairly. 
+### Multi-ranking NLP
 
-The default ranking factors consist of: Keyword matching (20%), path relevance (15%), import centrality (10%), git signals (10%), and other code complexity metrics.
+Deterministic algorithms in `balanced` work reliably and quickly meant to be used by default. BM25 scoring prevents biasing of files which may use redundant patterns (test files with which might have "response" referenced over and over won't necessarily dominate searches for "response").
 
-Optional semantic analysis captures relationships that keyword matching misses. Sentence-transformer embeddings *understand* that `authenticate()` and `login()` are conceptually related, and relevancy is judged accordingly.
+The default ranking factors consist of: BM25 scoring (25% - statistical relevance preventing repetition bias), keyword matching (20% - direct substring matching), path relevance (15%), TF-IDF similarity (10%), import centrality (10%), git signals (10% - recency 5%, frequency 5%), complexity relevance (5%), and type relevance (5%).
 
-We have additional optional cross-encoder neural re-ranking which jointly evaluates query-document pairs with self-attention. This helps queries like `"implement oauth2"` rank a document with the text: `"DEPRECATED: We no longer implement oauth2"` much lower compared to a function that may be named `implement_authorization_flow()`, which is exactly what we'd want, **even though** `authorization` in the method name doesn't exactly match `oauth2`.
+### Smart Summarization
 
-tenets is able to scan, analyze, match, and summarize hundreds of files for relevant context in significantly under a minute typically, with a multi-tier caching system based on git and file metadata changes ensuring responsive performance.
+When files exceed token budgets, tenets intelligently preserves:
 
-All processing runs locally - no API costs, no data leaving your machine, complete privacy.
+- Function/class signatures
+- Import statements
+- Complex logic blocks
+- Documentation and comments
+- Recent changes
+
+### ML / deep learning embeddings
+
+Semantic understand can be had with ML features: `pip install tenets[ml]`. Enable with `--ml --reranker` flags or set `use_ml: true` and `use_reranker: true` in config.
+
+In `thorough` mode, sentence-transformer embeddings are enabled, and _understand_ that `authenticate()` and `login()` are conceptually related for example, and that `payment` even has some crossover in relevancy (since these are typically associated together).
+
+**Optional cross-encoder neural re-ranking** in this mode jointly evaluates query-document pairs with self-attention for superior accuracy.
+
+A cross-encoder, for example, will correctly rank `"DEPRECATED: We no longer implement oauth2"` lower than `implement_authorization_flow()` for query `"implement oauth2"`, understanding the negative context despite keyword matches.
+
+Since cross-encoders process document-query pairs together (O(n²) complexity), they're much slower than bi-encoders and only used for re-ranking top K results.
 
 ## Documentation
 
@@ -173,27 +198,6 @@ All processing runs locally - no API costs, no data leaving your machine, comple
 - **[CLI Reference](docs/CLI.md)** - All commands and options
 - **[Configuration Guide](docs/CONFIG.md)** - Detailed configuration options
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - How tenets works internally
-
-For more details on the summarization system, see [Architecture Documentation](docs/ARCHITECTURE.md).
-
-## Advanced Features
-
-### Test File Handling
-
-Tests are **excluded by default** for most prompts, **automatically included** when your prompt mentions testing:
-
-```bash
-# Tests excluded (better context):
-tenets distill "explain auth flow"
-
-# Tests included (detected by intent):
-tenets distill "write tests for auth"
-tenets distill "fix failing tests"
-
-# Manual override:
-tenets distill "review code" --include-tests
-tenets distill "fix test_user.py" --exclude-tests
-```
 
 ### Output Formats
 

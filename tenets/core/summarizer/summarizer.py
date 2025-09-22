@@ -33,6 +33,11 @@ from .strategies import (
     TextRankStrategy,
     TransformerStrategy,
 )
+from .summarizer_utils import (
+    ASTParser,
+    CodeDetector,
+    ImportParser,
+)
 
 
 class SummarizationMode(Enum):
@@ -755,23 +760,7 @@ class Summarizer:
         Returns:
             True if import line
         """
-        line = line.strip()
-
-        if language == "python":
-            return line.startswith(("import ", "from "))
-        elif language in ["javascript", "typescript"]:
-            return line.startswith(("import ", "const ", "require("))
-        elif language == "java":
-            return line.startswith("import ")
-        elif language in ["c", "cpp"]:
-            return line.startswith("#include")
-        elif language == "go":
-            return line.startswith("import")
-        elif language == "rust":
-            return line.startswith("use ")
-        else:
-            # Generic patterns
-            return any(line.startswith(p) for p in ["import", "include", "require", "use"])
+        return ImportParser.is_import_line(line, language)
 
     def _summarize_imports(self, import_lines: List[str], language: str) -> str:
         """Summarize import statements into a concise description.
@@ -1065,30 +1054,8 @@ class Summarizer:
         Returns:
             True if text appears to be code
         """
-        code_indicators = [
-            "def ",
-            "class ",
-            "function ",
-            "const ",
-            "var ",
-            "let ",
-            "import ",
-            "from ",
-            "#include",
-            "return ",
-            "if (",
-            "for (",
-            "```",
-            "{",
-            "}",
-            ";",
-            "->",
-            "=>",
-            "::",
-        ]
-
-        indicator_count = sum(1 for ind in code_indicators if ind in text)
-        return indicator_count >= 3
+        # Use shared utility with threshold of 3 for consistency
+        return CodeDetector.looks_like_code(text, threshold=3)
 
     def _simple_truncate(self, text: str, target_ratio: float, max_length: Optional[int]) -> str:
         """Simple truncation fallback.
@@ -1385,9 +1352,9 @@ class Summarizer:
                             elif in_code_block:
                                 code_block_lines.append(line)
                             # For non-code lines, only keep the most important ones
-                            elif any(kw.lower() in line.lower() for kw in prompt_keywords):
-                                preserved_lines.append(line)
-                            elif line.strip() and len(preserved_lines) < 5:  # Keep first few lines
+                            elif any(kw.lower() in line.lower() for kw in prompt_keywords) or (
+                                line.strip() and len(preserved_lines) < 5
+                            ):
                                 preserved_lines.append(line)
 
                         # If still in a code block at the end, preserve it
@@ -1516,15 +1483,16 @@ class Summarizer:
 class FileSummarizer:
     """Backward-compatible file summarizer used by tests.
 
-    This lightweight class focuses on extracting a concise summary from a single
-    file using deterministic heuristics (docstrings, leading comments, or head
-    lines). It integrates with Tenets token utilities and returns the
-    `FileSummary` model expected by the tests.
+    This class now delegates to the main Summarizer to avoid code duplication,
+    while maintaining the same API expected by tests.
     """
 
     def __init__(self, model: Optional[str] = None):
         self.model = model
         self.logger = get_logger(__name__)
+        # Create a main summarizer instance for delegation
+        config = TenetsConfig()
+        self.summarizer = Summarizer(config)
 
     # --- Public API used by tests ---
     def summarize_file(self, path: Union[str, Path], max_lines: int = 50):
@@ -1541,6 +1509,8 @@ class FileSummarizer:
 
         p = Path(path)
         text = self._read_text(p)
+
+        # Delegate to shared utilities for summary extraction
         summary_text = self._extract_summary(text, max_lines=max_lines, file_path=p)
 
         tokens = count_tokens(summary_text, model=self.model)
@@ -1591,26 +1561,16 @@ class FileSummarizer:
             return ""
 
         # 1) Try Python module docstring via AST when it looks like Python
-        looks_py = False
-        if file_path is not None and file_path.suffix.lower() in {".py", ".pyw"}:
-            looks_py = True
-        else:
-            # Heuristic look for Python indicators
-            indicators = ("def ", "class ", "import ", "from ", '"""', "'''")
-            looks_py = sum(1 for ind in indicators if ind in text) >= 2
+        language = CodeDetector.detect_language(text, str(file_path) if file_path else None)
 
-        if looks_py:
-            try:
-                module = ast.parse(text)
-                doc = ast.get_docstring(module, clean=True)
-                if doc:
-                    return self._limit_lines(doc, max_lines)
-            except Exception:
-                # Fall through to other strategies on parse errors
-                pass
+        if language == "python":
+            structure = ASTParser.extract_python_structure(text)
+            if structure.get("docstrings"):
+                doc = structure["docstrings"][0]  # Module docstring
+                return self._limit_lines(doc, max_lines)
 
         # 2) Leading comment block extraction (supports Python/JS/TS)
-        comment_block = self._extract_leading_comments(text)
+        comment_block = ASTParser.extract_leading_comments(text)
         if comment_block:
             return self._limit_lines(comment_block, max_lines)
 
@@ -1626,7 +1586,13 @@ class FileSummarizer:
             return "\n".join(lines)
         return "\n".join(lines[:max_lines])
 
-    def _extract_leading_comments(self, text: str) -> str:
+    # Removed _extract_leading_comments - now using ASTParser.extract_leading_comments from shared utils
+
+    def _extract_leading_comments_legacy(self, text: str) -> str:
+        # This method is kept temporarily for backward compatibility but delegates to shared util
+        return ASTParser.extract_leading_comments(text)
+
+    def _extract_leading_comments_old_implementation(self, text: str) -> str:
         lines = text.splitlines()
         buf: List[str] = []
         i = 0
