@@ -119,30 +119,44 @@ class TenetsMCP:
             include_patterns: Optional[list[str]] = None,
             exclude_patterns: Optional[list[str]] = None,
         ) -> dict[str, Any]:
-            """Distill relevant context from a codebase for a given prompt.
+            """Build optimized code context for a task or question.
 
-            Analyzes the codebase, finds relevant files using multi-factor NLP
-            ranking (BM25, keyword matching, import centrality, git signals),
-            and aggregates them into token-optimized context.
+            This is the primary tool for gathering relevant code. It finds,
+            ranks, and aggregates files into token-optimized context ready
+            for AI consumption.
+
+            Use this when you need to:
+            - Understand how a feature is implemented
+            - Find code related to a bug or task
+            - Gather context before making changes
 
             Args:
-                prompt: Task description or query to build context for.
-                path: Root path to analyze. Defaults to current directory.
-                mode: Ranking mode - fast (keyword), balanced (BM25), thorough (ML).
-                max_tokens: Maximum tokens for output context.
-                format: Output format - markdown, xml (Claude-optimized), or json.
-                include_tests: Whether to include test files in analysis.
-                session: Optional session name for stateful context building.
-                include_patterns: File patterns to include (e.g., ["*.py"]).
-                exclude_patterns: File patterns to exclude (e.g., ["*.log"]).
+                prompt: What you're working on. Be specific for better results.
+                    Examples: "implement OAuth2 login", "fix the payment bug",
+                    "understand the caching layer"
+                path: Directory to search. Use "." for current project.
+                mode: Speed vs accuracy tradeoff:
+                    - "fast": Quick keyword matching (~1s)
+                    - "balanced": BM25 + structure analysis (~3s, recommended)
+                    - "thorough": ML embeddings + deep analysis (~10s)
+                max_tokens: Token budget. Default 100k works for most models.
+                format: Output structure:
+                    - "markdown": Human-readable with headers
+                    - "xml": Claude-optimized with tags
+                    - "json": Structured for programmatic use
+                include_tests: Set True when debugging test failures.
+                session: Link to a session for persistent pinned files.
+                include_patterns: Only include matching files (e.g., ["*.py"]).
+                exclude_patterns: Skip matching files (e.g., ["*.log", "*.min.js"]).
 
             Returns:
-                Dictionary containing:
-                - context: The generated context string
-                - token_count: Number of tokens in context
-                - files: List of included file paths
-                - files_summarized: List of files that were summarized
-                - metadata: Additional generation metadata
+                {
+                    "context": "# File: src/auth.py\\n...",
+                    "token_count": 45000,
+                    "files": ["src/auth.py", "src/user.py"],
+                    "files_summarized": ["src/utils.py"],
+                    "metadata": {"mode": "balanced", "total_scanned": 150}
+                }
             """
             result = self.tenets.distill(
                 prompt=prompt,
@@ -166,24 +180,31 @@ class TenetsMCP:
             include_tests: bool = False,
             explain: bool = False,
         ) -> dict[str, Any]:
-            """Rank files by relevance without retrieving full content.
+            """Preview which files are most relevant without fetching content.
 
-            Faster than distill - useful for understanding which files would
-            be relevant before committing to full context retrieval.
+            Faster than distill (~500ms). Use this to:
+            - Quickly check if the right files would be found
+            - Understand file relevance before full context retrieval
+            - Debug ranking when distill results seem off
 
             Args:
-                prompt: Task description or query to rank files for.
-                path: Root path to analyze. Defaults to current directory.
-                mode: Ranking mode - fast, balanced, thorough, or ml.
-                top_n: Number of top files to return.
-                include_tests: Whether to include test files.
-                explain: Whether to include ranking factor explanations.
+                prompt: What you're looking for. Same as distill prompt.
+                path: Directory to search.
+                mode: Ranking algorithm (same as distill).
+                top_n: How many files to return. Default 20 is usually enough.
+                include_tests: Include test files in results.
+                explain: Add breakdown of why each file ranked where it did.
+                    Useful for debugging relevance issues.
 
             Returns:
-                Dictionary containing:
-                - files: List of ranked files with scores
-                - total_scanned: Total number of files scanned
-                - mode: Ranking mode used
+                {
+                    "files": [
+                        {"path": "src/auth.py", "score": 0.85, "factors": {...}},
+                        {"path": "src/user.py", "score": 0.72}
+                    ],
+                    "total_scanned": 150,
+                    "mode": "balanced"
+                }
             """
             result = self.tenets.rank_files(
                 prompt=prompt,
@@ -393,19 +414,29 @@ class TenetsMCP:
             category: Optional[str] = None,
             session: Optional[str] = None,
         ) -> dict[str, Any]:
-            """Add a guiding principle (tenet) for consistent AI interactions.
+            """Add a guiding principle that will be injected into all context.
 
-            Tenets are strategically injected into generated context to maintain
-            consistency and combat context drift in long conversations.
+            Tenets combat "context drift" in long conversations by repeatedly
+            injecting key principles. Use them for:
+            - Coding standards: "Always use type hints in Python"
+            - Security rules: "Never log sensitive data"
+            - Architecture: "All API calls go through the gateway"
+            - Style: "Use descriptive variable names, no abbreviations"
 
             Args:
-                content: The guiding principle text.
-                priority: Priority level for injection ordering.
-                category: Optional category (security, architecture, style, etc.).
-                session: Optional session to bind the tenet to.
+                content: The principle. Keep it concise and actionable.
+                    Good: "Validate all user input before database queries"
+                    Bad: "Be careful with security"
+                priority: How often to inject:
+                    - "critical": Every context (security rules)
+                    - "high": Most contexts (architecture)
+                    - "medium": Regular contexts (style, default)
+                    - "low": Occasional reminder
+                category: Group related tenets (security, style, architecture).
+                session: Bind to specific session, or global if None.
 
             Returns:
-                Dictionary with created tenet information.
+                {"id": "abc123", "content": "...", "priority": "high", "category": "security"}
             """
             tenet = self.tenets.add_tenet(
                 content=content,
