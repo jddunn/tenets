@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const versionElement = document.getElementById('version-number');
         if (versionElement) {
             // This would typically fetch from your API or build process
-            versionElement.textContent = '040'; // v0.4.0 as edition number
+            versionElement.textContent = '050'; // v0.5.0 as edition number
         }
     }
     
