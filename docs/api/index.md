@@ -20,7 +20,7 @@ The API documentation is automatically generated from the source code docstrings
 **`tenets.mcp`** - Model Context Protocol server for AI assistant integration
 - `TenetsMCP` - MCP server class exposing tools, resources, and prompts
 - Native integration with Cursor, Claude Desktop, Windsurf, and other MCP clients
-- Supports stdio, SSE, and HTTP transports
+- Supports stdio, SSE, HTTP transports
 
 ### Core Modules
 **`tenets.core`** - Core functionality powering tenets
