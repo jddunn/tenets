@@ -34,9 +34,12 @@ Tenets employs advanced multi-stage analysis combining NLP, ML, static code anal
 - **[Output Generation & Visualization](architecture/output-visualization.md)** - Report generation and visualization
 - **[Security & Privacy Architecture](architecture/security.md)** - Local-first security model and privacy protection
 
+### Protocol & Integration
+- **[MCP Integration Plan](architecture/mcp-integration-plan.md)** - Model Context Protocol server architecture
+- **[Future Roadmap & Vision](architecture/roadmap.md)** - Development roadmap and long-term vision
+
 ### Quality & Future
 - **[Testing & Quality Assurance](architecture/testing.md)** - Testing strategies and quality metrics
-- **[Future Roadmap & Vision](architecture/roadmap.md)** - Development roadmap and long-term vision
 
 ## Key Features
 
