@@ -1,0 +1,83 @@
+# Tenets - Intelligent Code Context for AI Assistants
+
+> MCP server, CLI & Python library for intelligent code context. Native integration with Cursor, Claude, Windsurf and AI agents.
+
+## What is Tenets?
+
+Tenets is an open-source tool that helps AI coding assistants understand codebases better by automatically finding, ranking, and aggregating relevant code context.
+
+## Installation
+
+```bash
+pip install tenets          # Core CLI and Python library
+pip install tenets[mcp]     # With MCP server support
+pip install tenets[all]     # Everything included
+```
+
+## MCP Server
+
+Start the MCP server:
+
+```bash
+tenets-mcp
+```
+
+### Available Tools
+
+- `distill`: Build optimized code context for a task
+- `rank_files`: Preview file relevance without content
+- `examine`: Analyze codebase structure and complexity
+- `chronicle`: Analyze git history patterns
+- `momentum`: Track development velocity
+- `session_create`: Create stateful sessions
+- `session_list`: List all sessions
+- `session_pin_file`: Pin file to session
+- `session_pin_folder`: Pin folder to session
+- `tenet_add`: Add guiding principle
+- `tenet_list`: List tenets
+- `tenet_instill`: Activate tenets
+- `set_system_instruction`: Set system instruction
+
+### Available Resources
+
+- `tenets://sessions/list`: JSON list of sessions
+- `tenets://sessions/{name}/state`: Session details
+- `tenets://tenets/list`: Active tenets
+- `tenets://config/current`: Current configuration
+
+## CLI Commands
+
+```bash
+tenets distill "task description"    # Build context for task
+tenets examine                        # Analyze codebase
+tenets chronicle                      # Git history analysis
+tenets momentum                       # Development velocity
+tenets session create <name>          # Create session
+tenets session pin <path>             # Pin to session
+tenets tenet add "principle"          # Add guiding principle
+```
+
+## Key Features
+
+1. **Multi-factor ranking**: BM25, TF-IDF, git signals, import centrality
+2. **Token optimization**: Fits context into LLM token budgets
+3. **Session management**: Maintain state across prompts
+4. **Guiding principles**: Inject rules to prevent AI drift
+5. **Local-first**: All processing runs locally, no data egress
+
+## Links
+
+- Website: https://tenets.dev
+- GitHub: https://github.com/jddunn/tenets
+- PyPI: https://pypi.org/project/tenets/
+- Documentation: https://tenets.dev/MCP/
+
+## Contact
+
+- Email: team@manic.agency
+- Agency: https://manic.agency
+
+## License
+
+MIT License - 100% open source, free forever.
+

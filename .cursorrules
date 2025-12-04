@@ -1,0 +1,80 @@
+# Tenets Project Rules
+
+## Project Overview
+Tenets is an MCP server, CLI, and Python library for intelligent code context. It helps AI coding assistants understand codebases by finding, ranking, and aggregating relevant code.
+
+## Architecture
+
+### Core Components
+- `tenets/core/` - Core logic (NLP, ranking, analysis)
+- `tenets/mcp/` - MCP server implementation
+- `tenets/cli/` - CLI application (Typer)
+- `tenets/models/` - Pydantic data models
+- `tenets/storage/` - SQLite session storage
+
+### Key Classes
+- `Tenets` in `tenets/__init__.py` - Main API class
+- `TenetsMCP` in `tenets/mcp/server.py` - MCP server
+- `ContextResult` in `tenets/models/context.py` - Distill output
+
+## Code Style
+
+### Python
+- Use type hints for all function parameters and returns
+- Docstrings in Google style
+- Pydantic for data models
+- Lazy imports for heavy dependencies (ML, viz)
+
+### Testing
+- pytest for all tests
+- Tests in `tests/` mirroring `tenets/` structure
+- Use fixtures from `conftest.py`
+
+### Commits
+- Conventional commits: feat, fix, docs, test, chore
+- 1-2 line messages, human-readable
+
+## Development Commands
+
+```bash
+# Install for development
+pip install -e ".[dev,mcp]"
+
+# Run tests
+pytest
+
+# Run linting
+ruff check tenets/
+
+# Type checking
+mypy tenets/
+
+# Build docs
+mkdocs serve
+```
+
+## MCP Server
+
+### Running
+```bash
+tenets-mcp              # stdio transport
+tenets-mcp --sse        # SSE transport
+tenets-mcp --http       # HTTP transport
+```
+
+### Testing Tools
+Use the MCP inspector or call tools directly via Python:
+
+```python
+from tenets import Tenets
+t = Tenets()
+result = t.distill("find auth code")
+```
+
+## Important Notes
+
+1. **No hardcoded paths** - Use pathlib and relative paths
+2. **Local-first** - No external API calls for core features
+3. **Lazy loading** - Heavy imports (ML, viz) are lazy loaded
+4. **Version sync** - Keep pyproject.toml and __init__.py in sync
+
