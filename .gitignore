@@ -224,3 +224,5 @@ __marimo__/
 
 # Claude
 .claude/
+MARKETING.md
+.private/
