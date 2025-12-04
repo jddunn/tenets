@@ -5,7 +5,7 @@
 # SITE INFORMATION
 # ==============================================================================
 site_name: Tenets
-site_description: Context that feeds your prompts - Intelligent code exploration and AI pair programming tool
+site_description: MCP server, CLI & Python library for intelligent code context. Native integration with Cursor, Claude, Windsurf and AI agents.
 site_url: https://tenets.dev
 site_author: Johnny Dunn
 copyright: >
@@ -416,6 +416,9 @@ nav:
       - MCP Integration: architecture/mcp-integration-plan.md
       - Roadmap: architecture/roadmap.md
   - API Reference: api/
+  - Legal:
+      - Privacy Policy: privacy.md
+      - Terms of Service: terms.md
   - Blog: https://manic.agency/blog
   - Contact: https://manic.agency/contact
 
