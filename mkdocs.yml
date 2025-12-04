@@ -390,6 +390,7 @@ nav:
       - Installation: installation.md
   - User Guide:
       - CLI Reference: CLI.md
+      - MCP Server: MCP.md
       - Supported Languages: supported-languages.md
       - Best Practices: best-practices.md
       - Examples: examples.md
@@ -412,6 +413,7 @@ nav:
       - Testing: architecture/testing.md
       - Guiding Principles: architecture/guiding-principles.md
       - Output & Visualization: architecture/output-visualization.md
+      - MCP Integration: architecture/mcp-integration-plan.md
       - Roadmap: architecture/roadmap.md
   - API Reference: api/
   - Blog: https://manic.agency/blog
