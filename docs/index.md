@@ -17,12 +17,28 @@ hide:
   <p class="hero-tagline">MCP Server for AI Coding Assistants</p>
   <p class="hero-subtitle">Give Cursor, Claude & Windsurf the context they need</p>
 
-  <!-- Single install command - MCP focused -->
+  <!-- Single install command -->
   <div class="hero-install">
     <code>pip install tenets[mcp]</code>
     <button class="copy-btn-inline" data-clipboard-text="pip install tenets[mcp]" aria-label="Copy">
       <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>
     </button>
+  </div>
+
+  <!-- Feature bullets -->
+  <div class="hero-features">
+    <div class="feature-line">
+      <span class="feature-icon">✦</span>
+      <span><strong>Model Context Protocol</strong> — Native integration with Cursor, Claude, Windsurf</span>
+    </div>
+    <div class="feature-line">
+      <span class="feature-icon">✦</span>
+      <span><strong>Multi-factor ranking</strong> — BM25, git signals, import centrality, complexity</span>
+    </div>
+    <div class="feature-line">
+      <span class="feature-icon">✦</span>
+      <span><strong>100% local</strong> — Your code never leaves your machine</span>
+    </div>
   </div>
 
   <div class="hero-actions">
@@ -44,338 +60,508 @@ hide:
       GitHub
     </a>
   </div>
+
+  <div class="terminal-showcase">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-buttons">
+          <span class="terminal-button red"></span>
+          <span class="terminal-button yellow"></span>
+          <span class="terminal-button green"></span>
+        </div>
+        <div class="terminal-title">MCP in Action</div>
+      </div>
+      <div class="terminal-body">
+        <pre><code class="language-bash"><span class="prompt">AI:</span> Using tenets to find authentication code...
+<span class="output">📊 Ranked 847 files
+📦 Selected top 12 (48,500 tokens)
+✅ Context delivered</span>
+
+<span class="prompt">AI:</span> Found these relevant files:
+<span class="output">  • src/auth/service.py (score: 0.94)
+  • src/auth/middleware.py (score: 0.87)
+  • src/models/user.py (score: 0.82)</span></code></pre>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- MCP Setup Section - RIGHT AFTER HERO -->
-<div class="mcp-setup-section" style="padding: 4rem 2rem; background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- MCP SETUP SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div class="features-section">
   <div class="section-header">
     <div class="ornament left"></div>
-    <h2>30-Second Setup</h2>
+    <h2>Quick Setup</h2>
+    <div class="ornament right"></div>
+  </div>
+
+  <div style="max-width: 1000px; margin: 0 auto;">
+    <table style="width: 100%; border-collapse: collapse; margin: 2rem 0;">
+      <thead>
+        <tr style="border-bottom: 2px solid rgba(245, 158, 11, 0.3);">
+          <th style="text-align: left; padding: 1rem; width: 30%;">Platform</th>
+          <th style="text-align: left; padding: 1rem;">Configuration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem; vertical-align: top;">
+            <strong style="color: #f59e0b;">Cursor</strong><br>
+            <small style="opacity: 0.7;">Settings → MCP Servers</small>
+          </td>
+          <td style="padding: 1rem;">
+
+```json
+{ "tenets": { "command": "tenets-mcp" } }
+```
+
+</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem; vertical-align: top;">
+            <strong style="color: #f59e0b;">Claude Desktop</strong><br>
+            <small style="opacity: 0.7;">claude_desktop_config.json</small>
+          </td>
+          <td style="padding: 1rem;">
+
+```json
+{ "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+```
+
+</td>
+        </tr>
+        <tr>
+          <td style="padding: 1rem; vertical-align: top;">
+            <strong style="color: #f59e0b;">Windsurf / VS Code</strong><br>
+            <small style="opacity: 0.7;">MCP extension settings</small>
+          </td>
+          <td style="padding: 1rem;">
+
+```json
+{ "tenets": { "command": "tenets-mcp" } }
+```
+
+</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="text-align: center; opacity: 0.8;">
+      Then ask your AI: <em>"Use tenets to find the payment code"</em>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- MCP TOOLS TABLE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div class="workflow-section">
+  <div class="section-header">
+    <div class="ornament left"></div>
+    <h2>MCP Tools</h2>
+    <div class="ornament right"></div>
+  </div>
+
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid rgba(245, 158, 11, 0.3);">
+          <th style="text-align: left; padding: 1rem;">Tool</th>
+          <th style="text-align: left; padding: 1rem;">Purpose</th>
+          <th style="text-align: left; padding: 1rem;">Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">distill</code></td>
+          <td style="padding: 1rem;">Build optimized code context</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"prompt": "implement OAuth"}</code></td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">rank_files</code></td>
+          <td style="padding: 1rem;">Preview file relevance</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"prompt": "auth bug", "top": 10}</code></td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">examine</code></td>
+          <td style="padding: 1rem;">Analyze codebase structure</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"path": "src/", "depth": 2}</code></td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">session_create</code></td>
+          <td style="padding: 1rem;">Persistent context sessions</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"name": "feature-auth"}</code></td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">session_pin_file</code></td>
+          <td style="padding: 1rem;">Pin critical files</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"path": "src/auth.py"}</code></td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">tenet_add</code></td>
+          <td style="padding: 1rem;">Add coding guidelines</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"content": "Use type hints"}</code></td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">chronicle</code></td>
+          <td style="padding: 1rem;">Query git history</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"since": "last week"}</code></td>
+        </tr>
+        <tr>
+          <td style="padding: 1rem;"><code style="color: #f59e0b;">momentum</code></td>
+          <td style="padding: 1rem;">Track development velocity</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"period": "sprint"}</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="text-align: center; margin-top: 1.5rem;">
+      <a href="MCP/#available-tools" style="color: #f59e0b;">See all 13 tools →</a>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- RANKING FACTORS -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div class="features-section" style="background: linear-gradient(180deg, rgba(245, 158, 11, 0.02) 0%, transparent 100%);">
+  <div class="section-header">
+    <div class="ornament left"></div>
+    <h2>Ranking Intelligence</h2>
     <div class="ornament right"></div>
   </div>
 
   <div style="max-width: 900px; margin: 0 auto;">
-    
-    <!-- Step 1: Install -->
-    <div style="display: flex; align-items: flex-start; gap: 1.5rem; margin-bottom: 2rem;">
-      <div style="background: #f59e0b; color: #000; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">1</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 0.5rem;">Install</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid rgba(245, 158, 11, 0.3);">
+          <th style="text-align: left; padding: 1rem;">Signal</th>
+          <th style="text-align: center; padding: 1rem;">Weight</th>
+          <th style="text-align: left; padding: 1rem;">Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>BM25 Score</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">25%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Statistical text relevance, prevents repetition bias</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>Keyword Match</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">20%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Direct substring matching with position weighting</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>Path Relevance</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">15%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Directory structure and file naming patterns</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>TF-IDF</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">10%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Term frequency-inverse document frequency</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>Import Centrality</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">10%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Position in dependency graph</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>Git Recency</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">5%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Recently modified files ranked higher</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>Change Frequency</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">5%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Hot files with frequent commits</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 0.75rem;"><strong>Complexity</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">5%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">Cyclomatic and cognitive complexity</td>
+        </tr>
+        <tr>
+          <td style="padding: 0.75rem;"><strong>Type Relevance</strong></td>
+          <td style="padding: 0.75rem; text-align: center;">5%</td>
+          <td style="padding: 0.75rem; opacity: 0.85;">File type matching task intent</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-```bash
-pip install tenets[mcp]
-```
-
-</div>
-    </div>
-
-    <!-- Step 2: Configure -->
-    <div style="display: flex; align-items: flex-start; gap: 1.5rem; margin-bottom: 2rem;">
-      <div style="background: #f59e0b; color: #000; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">2</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 0.5rem;">Add to your AI tool</h3>
-        
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
-
-<div style="background: var(--md-code-bg-color); border-radius: 8px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-<div style="padding: 0.75rem 1rem; background: rgba(245, 158, 11, 0.1); font-weight: 600; font-size: 0.9rem;">Cursor</div>
-<div style="padding: 1rem;">
-
-```json
-{
-  "tenets": {
-    "command": "tenets-mcp"
-  }
-}
-```
-
-<small style="opacity: 0.7;">Settings → MCP Servers → Add</small>
-</div>
-</div>
-
-<div style="background: var(--md-code-bg-color); border-radius: 8px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-<div style="padding: 0.75rem 1rem; background: rgba(245, 158, 11, 0.1); font-weight: 600; font-size: 0.9rem;">Claude Desktop</div>
-<div style="padding: 1rem;">
-
-```json
-{
-  "mcpServers": {
-    "tenets": {
-      "command": "tenets-mcp"
-    }
-  }
-}
-```
-
-<small style="opacity: 0.7;">~/Library/Application Support/Claude/claude_desktop_config.json</small>
-</div>
-</div>
-
-</div>
+  <!-- Ranking Modes -->
+  <div style="max-width: 900px; margin: 3rem auto 0;">
+    <h3 style="text-align: center; margin-bottom: 1.5rem;">Three Ranking Modes</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+      <div class="feature-card neumorphic" style="text-align: center;">
+        <h4 style="color: #f59e0b; margin-bottom: 0.5rem;">Fast</h4>
+        <p style="font-size: 0.9rem; opacity: 0.85; margin: 0;">Keyword & path matching<br><strong>&lt; 1 second</strong></p>
+      </div>
+      <div class="feature-card neumorphic" style="text-align: center; border: 1px solid rgba(245, 158, 11, 0.3);">
+        <h4 style="color: #f59e0b; margin-bottom: 0.5rem;">Balanced ★</h4>
+        <p style="font-size: 0.9rem; opacity: 0.85; margin: 0;">BM25 + structure analysis<br><strong>~3 seconds</strong></p>
+      </div>
+      <div class="feature-card neumorphic" style="text-align: center;">
+        <h4 style="color: #f59e0b; margin-bottom: 0.5rem;">Thorough</h4>
+        <p style="font-size: 0.9rem; opacity: 0.85; margin: 0;">ML embeddings + patterns<br><strong>~10 seconds</strong></p>
       </div>
     </div>
-
-    <!-- Step 3: Use -->
-    <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
-      <div style="background: #f59e0b; color: #000; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">3</div>
-      <div style="flex: 1;">
-        <h3 style="margin: 0 0 0.5rem;">Ask your AI</h3>
-        <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 8px; border-left: 3px solid #f59e0b;">
-          <em>"Use tenets to find the authentication code"</em><br><br>
-          <em>"Ask tenets to build context for implementing payments"</em><br><br>
-          <em>"Have tenets analyze the database models"</em>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 
-<!-- What Your AI Gets -->
-<div class="mcp-response-section" style="padding: 4rem 2rem;">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- PIPELINE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div class="workflow-section">
   <div class="section-header">
     <div class="ornament left"></div>
-    <h2>What Your AI Gets</h2>
-    <div class="ornament right"></div>
-  </div>
-  
-  <p style="text-align: center; max-width: 600px; margin: 0 auto 3rem; opacity: 0.9;">
-    Tenets finds, ranks, and delivers the most relevant code — so your AI understands your codebase.
-  </p>
-
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto;">
-    
-    <!-- Request -->
-    <div style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1); border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
-        <strong>🔧 Your AI calls Tenets</strong>
-      </div>
-      <div style="padding: 1.5rem;">
-
-```json
-{
-  "tool": "distill",
-  "arguments": {
-    "prompt": "implement Stripe webhooks",
-    "mode": "balanced"
-  }
-}
-```
-
-</div>
-    </div>
-
-    <!-- Response -->
-    <div style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1); border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
-        <strong>📦 Tenets returns ranked context</strong>
-      </div>
-      <div style="padding: 1.5rem;">
-
-```json
-{
-  "files_included": 8,
-  "total_tokens": 32000,
-  "top_files": [
-    "src/payments/stripe.py",
-    "src/payments/webhooks.py", 
-    "src/models/order.py"
-  ],
-  "context": "# Payment System\n\n## stripe.py\n```python\nclass StripeClient:\n..."
-}
-```
-
-</div>
-    </div>
-  </div>
-</div>
-
-<!-- Available MCP Tools -->
-<div class="mcp-tools-section" style="padding: 4rem 2rem; background: linear-gradient(180deg, transparent 0%, rgba(245, 158, 11, 0.03) 100%);">
-  <div class="section-header">
-    <div class="ornament left"></div>
-    <h2>13 MCP Tools</h2>
+    <h2>How It Works</h2>
     <div class="ornament right"></div>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 2rem auto;">
+  <div class="workflow-diagram">
+    <div class="workflow-step">
+      <div class="step-number">1</div>
+      <h4>Parse</h4>
+      <p>NLP extracts intent & keywords</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step">
+      <div class="step-number">2</div>
+      <h4>Scan</h4>
+      <p>Parallel file discovery</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step">
+      <div class="step-number">3</div>
+      <h4>Analyze</h4>
+      <p>AST & dependency graphs</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step">
+      <div class="step-number">4</div>
+      <h4>Rank</h4>
+      <p>Multi-factor scoring</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step">
+      <div class="step-number">5</div>
+      <h4>Output</h4>
+      <p>Token-aware aggregation</p>
+    </div>
+  </div>
+
+  <!-- Detailed Pipeline Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 3rem auto 0;">
     
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">distill</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Build optimized code context for any task. The main tool your AI will use.</p>
+    <div class="feature-card neumorphic">
+      <h4 style="color: #f59e0b; margin-top: 0;">📝 Input & Parsing</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+        <li>Natural language processing extracts intent</li>
+        <li>Temporal parsing ("last week", "since Monday")</li>
+        <li>GitHub/JIRA/Linear reference detection</li>
+        <li>Intent classification (implement, debug, refactor)</li>
+        <li>Auto include/exclude test files</li>
+      </ul>
     </div>
 
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">rank_files</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Preview which files are most relevant without loading content.</p>
+    <div class="feature-card neumorphic">
+      <h4 style="color: #f59e0b; margin-top: 0;">🔍 Scan & Discover</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+        <li>Parallel file discovery</li>
+        <li>Respects .gitignore and custom filters</li>
+        <li>Language detection for 15+ languages</li>
+        <li>Incremental caching for speed</li>
+      </ul>
     </div>
 
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">examine</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Analyze codebase structure, dependencies, and complexity.</p>
+    <div class="feature-card neumorphic">
+      <h4 style="color: #f59e0b; margin-top: 0;">🧠 Analyze & Extract</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+        <li>AST parsing for classes, functions, imports</li>
+        <li>Dependency graph building</li>
+        <li>Complexity metrics (cyclomatic, cognitive)</li>
+        <li>Git history mining</li>
+      </ul>
     </div>
 
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">session_create</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Create persistent sessions that remember pinned files across requests.</p>
+    <div class="feature-card neumorphic">
+      <h4 style="color: #f59e0b; margin-top: 0;">📊 Rank & Score</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+        <li>8+ ranking signals combined</li>
+        <li>Adaptive weighting per intent</li>
+        <li>ML embeddings in thorough mode</li>
+        <li>Cross-encoder reranking option</li>
+      </ul>
     </div>
 
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">session_pin_file</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Pin critical files so they're always included in context.</p>
+    <div class="feature-card neumorphic">
+      <h4 style="color: #f59e0b; margin-top: 0;">🎯 Tenets Injection</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+        <li>Guiding principles for consistency</li>
+        <li>Context drift prevention</li>
+        <li>Session persistence</li>
+        <li>Pinned files always included</li>
+      </ul>
     </div>
 
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">tenet_add</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Add coding guidelines that get injected into every context.</p>
+    <div class="feature-card neumorphic">
+      <h4 style="color: #f59e0b; margin-top: 0;">📦 Aggregate & Output</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+        <li>Token-aware budgeting</li>
+        <li>Intelligent summarization</li>
+        <li>Markdown, XML, JSON, HTML formats</li>
+        <li>Progressive enhancement</li>
+      </ul>
     </div>
 
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">chronicle</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Query git history — recent changes, active files, contributors.</p>
-    </div>
-
-    <div style="background: var(--md-code-bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15);">
-      <code style="font-size: 1.1rem; color: #f59e0b;">momentum</code>
-      <p style="margin: 0.75rem 0 0; opacity: 0.85;">Track development velocity and sprint progress.</p>
-    </div>
-
-  </div>
-
-  <p style="text-align: center; margin-top: 2rem;">
-    <a href="MCP/#available-tools" style="color: #f59e0b; font-weight: 500;">See all 13 tools with examples →</a>
-  </p>
-</div>
-
-<!-- How Ranking Works -->
-<div class="ranking-section" style="padding: 4rem 2rem;">
-  <div class="section-header">
-    <div class="ornament left"></div>
-    <h2>Intelligent Ranking</h2>
-    <div class="ornament right"></div>
-  </div>
-
-  <p style="text-align: center; max-width: 700px; margin: 0 auto 3rem; opacity: 0.9;">
-    Tenets uses 8+ signals to find the most relevant code for your task.
-  </p>
-
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; max-width: 1000px; margin: 0 auto;">
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
-      <strong>BM25 Scoring</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Statistical text relevance</p>
-    </div>
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔤</div>
-      <strong>Keyword Match</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Direct term matching</p>
-    </div>
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
-      <strong>Path Relevance</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Directory structure</p>
-    </div>
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔗</div>
-      <strong>Import Graph</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Dependency centrality</p>
-    </div>
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">📅</div>
-      <strong>Git Recency</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Recent changes</p>
-    </div>
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔥</div>
-      <strong>Change Frequency</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Hot files</p>
-    </div>
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧩</div>
-      <strong>Complexity</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Code metrics</p>
-    </div>
-    <div style="text-align: center; padding: 1.5rem;">
-      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧠</div>
-      <strong>ML Embeddings</strong>
-      <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Semantic similarity</p>
-    </div>
   </div>
 </div>
 
-<!-- Why Tenets -->
-<div class="why-section" style="padding: 4rem 2rem; background: linear-gradient(180deg, rgba(245, 158, 11, 0.03) 0%, transparent 100%);">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FEATURES GRID -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div class="features-section">
   <div class="section-header">
     <div class="ornament left"></div>
-    <h2>Why Tenets?</h2>
+    <h2>Features</h2>
     <div class="ornament right"></div>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1100px; margin: 2rem auto;">
-    
-    <div style="text-align: center; padding: 2rem;">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+  <div class="features-grid">
+    <div class="feature-card neumorphic featured">
+      <span class="new-badge">MCP</span>
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#FFD600" stroke-width="2" fill="none">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
+        </svg>
+      </div>
+      <h3>MCP Server</h3>
+      <p>Native Model Context Protocol. Works with Cursor, Claude, Windsurf, and any MCP client.</p>
+      <a href="MCP/" class="feature-link">Setup guide →</a>
+    </div>
+
+    <div class="feature-card neumorphic">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#f59e0b" stroke-width="2" fill="none">
+          <circle cx="12" cy="12" r="8"/>
+          <circle cx="12" cy="12" r="3"/>
+          <line x1="12" y1="4" x2="12" y2="7"/>
+          <line x1="12" y1="20" x2="12" y2="17"/>
+        </svg>
+      </div>
+      <h3>Intelligent Ranking</h3>
+      <p>Multi-factor scoring finds exactly what you need. No more manual file hunting.</p>
+    </div>
+
+    <div class="feature-card neumorphic">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#f59e0b" stroke-width="2" fill="none">
+          <path d="M12 2l8 4v5c0 5.5-3.5 10.7-8 12-4.5-1.3-8-6.5-8-12V6l8-4z"/>
+        </svg>
+      </div>
       <h3>100% Local</h3>
-      <p style="opacity: 0.85;">All processing happens on your machine. Your code never leaves. Zero API calls to external services.</p>
+      <p>All processing on your machine. Zero API calls. Complete privacy.</p>
     </div>
 
-    <div style="text-align: center; padding: 2rem;">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">⚡</div>
-      <h3>Fast</h3>
-      <p style="opacity: 0.85;">Analyzes thousands of files in seconds. Intelligent caching makes repeat queries instant.</p>
+    <div class="feature-card neumorphic">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#f59e0b" stroke-width="2" fill="none">
+          <polyline points="13 2 3 14 11 14 11 22 21 10 13 10 13 2"/>
+        </svg>
+      </div>
+      <h3>Lightning Fast</h3>
+      <p>Analyzes thousands of files in seconds with intelligent caching.</p>
     </div>
 
-    <div style="text-align: center; padding: 2rem;">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
-      <h3>Accurate</h3>
-      <p style="opacity: 0.85;">Multi-factor ranking beats naive keyword search. Your AI gets the right files, not just matching files.</p>
+    <div class="feature-card neumorphic">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#f59e0b" stroke-width="2" fill="none">
+          <circle cx="12" cy="12" r="9"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+          <line x1="4" y1="12" x2="20" y2="12"/>
+        </svg>
+      </div>
+      <h3>Guiding Principles</h3>
+      <p>Add persistent tenets that maintain consistency across AI sessions.</p>
     </div>
 
+    <div class="feature-card neumorphic">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="none" fill="#f59e0b">
+          <rect x="4" y="10" width="3" height="10" rx="1"></rect>
+          <rect x="10" y="6" width="3" height="14" rx="1"></rect>
+          <rect x="16" y="13" width="3" height="7" rx="1"></rect>
+        </svg>
+      </div>
+      <h3>Code Intelligence</h3>
+      <p>Visualize dependencies, track velocity, identify hotspots.</p>
+    </div>
   </div>
 </div>
 
-<!-- Also Works As -->
-<div class="also-section" style="padding: 4rem 2rem;">
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- ALSO WORKS AS (CLI/Python) -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div class="see-action">
   <div class="section-header">
     <div class="ornament left"></div>
     <h2>Also Works As</h2>
     <div class="ornament right"></div>
   </div>
 
-  <p style="text-align: center; max-width: 600px; margin: 0 auto 2rem; opacity: 0.9;">
-    Not using MCP? Tenets also works as a CLI and Python library.
-  </p>
-
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; max-width: 900px; margin: 0 auto;">
-    
-    <div style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1);">
-        <strong>CLI</strong>
+  <div class="see-grid">
+    <div class="see-code">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">CLI</div>
       </div>
-      <div style="padding: 1.5rem;">
+      <div class="see-body">
 
 ```bash
 # Build context and copy to clipboard
-tenets distill "implement OAuth" --copy
+$ tenets distill "implement OAuth" --copy
 
-# See ranked files
-tenets rank "fix auth bug" --top 10
+# Preview ranked files
+$ tenets rank "fix auth bug" --top 10 --factors
+
+# Analyze codebase
+$ tenets examine . --complexity
 ```
 
 </div>
     </div>
-
-    <div style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
-      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1);">
-        <strong>Python</strong>
+    <div class="see-code">
+      <div class="see-header">
+        <div class="see-dots">
+          <span class="see-dot red"></span>
+          <span class="see-dot yellow"></span>
+          <span class="see-dot green"></span>
+        </div>
+        <div class="see-title">Python</div>
       </div>
-      <div style="padding: 1.5rem;">
+      <div class="see-body">
 
 ```python
 from tenets import Tenets
 
 t = Tenets()
 result = t.distill("implement webhooks")
+
+print(f"Files: {result.file_count}")
+print(f"Tokens: {result.token_count}")
 print(result.context)
 ```
 
@@ -384,11 +570,16 @@ print(result.context)
   </div>
 
   <p style="text-align: center; margin-top: 2rem;">
-    <a href="CLI/" style="color: #f59e0b;">CLI Reference →</a> · <a href="api/" style="color: #f59e0b;">Python API →</a>
+    <a href="CLI/" style="color: #f59e0b;">CLI Reference →</a> · 
+    <a href="api/" style="color: #f59e0b;">Python API →</a> · 
+    <a href="quickstart/" style="color: #f59e0b;">Quick Start →</a>
   </p>
 </div>
 
-<!-- Enterprise CTA Section -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- ENTERPRISE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
 <div class="enterprise-section" style="padding: 4rem 2rem; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 191, 36, 0.03) 100%); margin: 2rem 0;">
   <div style="max-width: 900px; margin: 0 auto; text-align: center;">
     <span style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #1a1a1a; padding: 0.25rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">ENTERPRISE</span>
@@ -400,37 +591,34 @@ print(result.context)
       <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔒</div>
         <strong>Privacy Redaction</strong>
-        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Auto-remove sensitive data</p>
       </div>
       <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📊</div>
         <strong>Audit Logging</strong>
-        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Track AI interactions</p>
       </div>
       <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔑</div>
         <strong>SSO Integration</strong>
-        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">SAML/OIDC for teams</p>
       </div>
       <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🛡️</div>
-        <strong>Air-Gapped</strong>
-        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">On-prem installation</p>
+        <strong>Air-Gapped Deploy</strong>
       </div>
     </div>
-    <a href="https://manic.agency/contact" target="_blank" rel="noopener" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #1a2332; padding: 0.875rem 2.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Contact manic.agency →</a>
+    <a href="https://manic.agency/contact" target="_blank" rel="noopener" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #1a2332; padding: 0.875rem 2.5rem; border-radius: 8px; text-decoration: none; font-weight: 600;">Contact manic.agency →</a>
   </div>
 </div>
 
-<!-- Final CTA -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FINAL CTA -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+
 <div class="cta-section">
   <div class="cta-content neumorphic">
     <h2>Ready to supercharge your AI coding?</h2>
     <p>Install in 30 seconds. Works with Cursor, Claude, Windsurf, and any MCP client.</p>
     <div class="cta-actions">
-      <a href="MCP/" class="btn-primary large">
-        Setup Guide
-      </a>
+      <a href="MCP/" class="btn-primary large">Setup MCP</a>
       <div class="install-command">
         <code>pip install tenets[mcp]</code>
         <button class="copy-btn" data-clipboard-text="pip install tenets[mcp]">
@@ -441,5 +629,8 @@ print(result.context)
         </button>
       </div>
     </div>
+    <p style="margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.8;">
+      <a href="faq/">FAQ</a> · <a href="about/">About</a> · <a href="tutorial/">Tutorial</a>
+    </p>
   </div>
 </div>
