@@ -471,16 +471,18 @@ def generate_auto_filename(path: str, format: str, timestamp: Optional[datetime]
     if str(path) in [".", ""]:
         # Handle current directory or empty path
         safe_path_name = "project"
-    elif isinstance(path, Path):
-        examined_path = path.name if path.name else "project"
-        safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(examined_path))
-    elif "/" in str(path) or "\\" in str(path):
-        path_obj = Path(path)
-        examined_path = path_obj.name if path_obj.name else "project"
-        safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(examined_path))
     else:
-        # Just a name, not a path
-        safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(path))
+        # Normalize path separators and extract basename
+        # Handle both Unix and Windows paths regardless of current OS
+        path_str = str(path).replace("\\", "/")
+        # Get the last component (basename)
+        if "/" in path_str:
+            examined_path = path_str.rstrip("/").split("/")[-1] or "project"
+        elif isinstance(path, Path):
+            examined_path = path.name if path.name else "project"
+        else:
+            examined_path = path_str
+        safe_path_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(examined_path))
 
     # Handle edge cases where the name becomes empty or just underscores
     if not safe_path_name or all(c == "_" for c in safe_path_name):
