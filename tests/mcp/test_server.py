@@ -19,8 +19,7 @@ import pytest
 # Skip distill/rank tests that trigger the deep import chain on 3.14
 PYTHON_314_PLUS = sys.version_info >= (3, 14)
 skip_on_314 = pytest.mark.skipif(
-    PYTHON_314_PLUS,
-    reason="Python 3.14 has importlib.util.find_spec compatibility issues"
+    PYTHON_314_PLUS, reason="Python 3.14 has importlib.util.find_spec compatibility issues"
 )
 
 
@@ -74,9 +73,17 @@ def mock_mcp_module():
     mock_mcp = MagicMock()
     mock_mcp.server.fastmcp.FastMCP = MockFastMCP
 
-    with patch.dict(sys.modules, {"mcp": mock_mcp, "mcp.server": mock_mcp.server, "mcp.server.fastmcp": mock_mcp.server.fastmcp}):
+    with patch.dict(
+        sys.modules,
+        {
+            "mcp": mock_mcp,
+            "mcp.server": mock_mcp.server,
+            "mcp.server.fastmcp": mock_mcp.server.fastmcp,
+        },
+    ):
         # Reset the global availability check
         import tenets.mcp.server as server_module
+
         server_module._mcp_available = None
         yield mock_mcp
 
@@ -376,7 +383,11 @@ class TestMCPServerRun:
     def test_run_http_transport(self, mcp_server):
         """Test running with HTTP transport."""
         mcp_server.run(transport="http", host="127.0.0.1", port=8081)
-        assert mcp_server._mcp.last_run == {"transport": "streamable-http", "host": "127.0.0.1", "port": 8081}
+        assert mcp_server._mcp.last_run == {
+            "transport": "streamable-http",
+            "host": "127.0.0.1",
+            "port": 8081,
+        }
 
     def test_run_invalid_transport(self, mcp_server):
         """Test running with invalid transport raises error."""
@@ -498,7 +509,7 @@ class TestMCPSessionPersistence:
     async def test_multiple_sessions_isolated(self, mcp_server):
         """Test that multiple sessions are isolated from each other."""
         create_tool = mcp_server._mcp.tools["session_create"]
-        
+
         # Create two sessions
         await create_tool(name="session-a", description="Session A")
         await create_tool(name="session-b", description="Session B")
@@ -518,7 +529,7 @@ class TestMCPTenetOperations:
     async def test_tenet_priority_levels(self, mcp_server):
         """Test that all priority levels work."""
         add_tool = mcp_server._mcp.tools["tenet_add"]
-        
+
         for priority in ["low", "medium", "high", "critical"]:
             result = await add_tool(
                 content=f"Test tenet with {priority} priority",
@@ -530,13 +541,13 @@ class TestMCPTenetOperations:
     async def test_tenet_categories(self, mcp_server):
         """Test that categories are stored correctly."""
         add_tool = mcp_server._mcp.tools["tenet_add"]
-        
+
         result = await add_tool(
             content="Always use HTTPS",
             priority="high",
             category="security",
         )
-        
+
         assert result["category"] == "security"
 
     @pytest.mark.asyncio
@@ -549,7 +560,7 @@ class TestMCPTenetOperations:
         # Instill it
         instill_tool = mcp_server._mcp.tools["tenet_instill"]
         result = await instill_tool()
-        
+
         assert isinstance(result, dict)
 
 
@@ -561,7 +572,7 @@ class TestMCPErrorHandling:
     async def test_distill_with_nonexistent_path(self, mcp_server):
         """Test distill handles nonexistent paths gracefully."""
         distill_tool = mcp_server._mcp.tools["distill"]
-        
+
         # Should not crash, but may return empty or error
         try:
             result = await distill_tool(
@@ -585,7 +596,7 @@ class TestMCPErrorHandling:
             session="error-test-session",
             file_path="/nonexistent/file.py",
         )
-        
+
         # Should return failure indicator
         assert isinstance(result, dict)
 
@@ -601,7 +612,7 @@ class TestMCPParameterValidation:
         test_file.write_text("def test(): pass")
 
         distill_tool = mcp_server._mcp.tools["distill"]
-        
+
         for mode in ["fast", "balanced", "thorough"]:
             result = await distill_tool(
                 prompt="test",
@@ -619,7 +630,7 @@ class TestMCPParameterValidation:
         test_file.write_text("def test(): pass")
 
         distill_tool = mcp_server._mcp.tools["distill"]
-        
+
         for fmt in ["markdown", "xml", "json"]:
             result = await distill_tool(
                 prompt="test",
@@ -643,7 +654,7 @@ class TestMCPParameterValidation:
             path=str(tmp_path),
             top_n=3,
         )
-        
+
         assert len(result["files"]) <= 3
 
 
@@ -749,11 +760,10 @@ class TestMCPResourceContent:
         """Test that config resource masks sensitive data."""
         resource_func = mcp_server._mcp.resources["tenets://config/current"]
         result = await resource_func()
-        
+
         data = json.loads(result)
-        
+
         # If there are API keys, they should be masked
         if "llm" in data and "api_keys" in data["llm"]:
             for key, value in data["llm"]["api_keys"].items():
                 assert value == "***", f"API key {key} not masked"
-

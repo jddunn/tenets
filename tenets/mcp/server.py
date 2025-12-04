@@ -72,8 +72,7 @@ class TenetsMCP:
         """
         if not _check_mcp_available():
             raise ImportError(
-                "MCP dependencies not installed. "
-                "Install with: pip install tenets[mcp]"
+                "MCP dependencies not installed. " "Install with: pip install tenets[mcp]"
             )
 
         self.name = name
@@ -447,8 +446,16 @@ class TenetsMCP:
             return {
                 "id": tenet.id,
                 "content": tenet.content,
-                "priority": tenet.priority.value if hasattr(tenet.priority, "value") else str(tenet.priority),
-                "category": tenet.category.value if tenet.category and hasattr(tenet.category, "value") else str(tenet.category) if tenet.category else None,
+                "priority": (
+                    tenet.priority.value
+                    if hasattr(tenet.priority, "value")
+                    else str(tenet.priority)
+                ),
+                "category": (
+                    tenet.category.value
+                    if tenet.category and hasattr(tenet.category, "value")
+                    else str(tenet.category) if tenet.category else None
+                ),
             }
 
         @mcp.tool()
@@ -575,9 +582,7 @@ class TenetsMCP:
             config_dict = self.tenets.config.to_dict()
             # Remove sensitive data
             if "llm" in config_dict and "api_keys" in config_dict["llm"]:
-                config_dict["llm"]["api_keys"] = {
-                    k: "***" for k in config_dict["llm"]["api_keys"]
-                }
+                config_dict["llm"]["api_keys"] = {k: "***" for k in config_dict["llm"]["api_keys"]}
             return json.dumps(config_dict, indent=2, default=str)
 
     def _register_prompts(self) -> None:
@@ -640,13 +645,15 @@ class TenetsMCP:
             parts = [f"Help me understand this codebase ({depth} level)."]
             if area:
                 parts.append(f"Specifically, I want to understand: {area}")
-            parts.extend([
-                "",
-                "Steps:",
-                "1. Use `examine` to see codebase structure",
-                "2. Use `distill` with an understanding prompt",
-                "3. Identify key architectural patterns",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "Steps:",
+                    "1. Use `examine` to see codebase structure",
+                    "2. Use `distill` with an understanding prompt",
+                    "3. Identify key architectural patterns",
+                ]
+            )
             return "\n".join(parts)
 
     def run(
@@ -760,4 +767,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
