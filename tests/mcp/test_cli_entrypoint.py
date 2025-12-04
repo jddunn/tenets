@@ -42,7 +42,8 @@ def test_cli_version_prints_and_exits(capsys):
 
 
 @pytest.mark.parametrize(
-    "transport,host,port", [("stdio", "127.0.0.1", 8080), ("sse", "0.0.0.0", 8081), ("http", "0.0.0.0", 9090)]
+    "transport,host,port",
+    [("stdio", "127.0.0.1", 8080), ("sse", "0.0.0.0", 8081), ("http", "0.0.0.0", 9090)],
 )
 def test_cli_transports_parsed(transport, host, port):
     """CLI passes transport/host/port to server.run()."""
@@ -51,12 +52,14 @@ def test_cli_transports_parsed(transport, host, port):
 
     fake, called = fake_server()
     with patch.object(server_module, "create_server", return_value=fake):
-        with patch.object(sys, "argv", ["tenets-mcp", "--transport", transport, "--host", host, "--port", str(port)]):
+        with patch.object(
+            sys,
+            "argv",
+            ["tenets-mcp", "--transport", transport, "--host", host, "--port", str(port)],
+        ):
             server_module.main()
 
     assert called["args"] is not None
     assert called["args"]["transport"] == transport
     assert called["args"]["host"] == host
     assert called["args"]["port"] == port
-
-
