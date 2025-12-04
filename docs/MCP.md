@@ -165,6 +165,21 @@ Prompts are reusable templates for common tasks:
 | `code_review_context` | Prepare context for code review |
 | `understand_codebase` | Generate codebase understanding |
 
+## Tool-to-Prompt Matrix
+
+Common development tasks and which tools to use:
+
+| Task | Tool(s) | Example Prompt |
+|------|---------|----------------|
+| Find relevant code | `distill` | "Find code related to payment processing" |
+| Quick file scan | `rank_files` | "Which files are most relevant to auth?" |
+| Code review | `distill` + `chronicle` | "Review recent changes to the API" |
+| Onboarding | `examine` + `distill` | "Help me understand this codebase" |
+| Feature planning | `distill` + `session_create` | "I'm building a new feature for X" |
+| Refactoring | `distill` + `rank_files` | "Find all usages of deprecated function" |
+| Bug investigation | `chronicle` + `distill` | "Find changes that could cause issue X" |
+| Track velocity | `momentum` | "Show development activity this week" |
+
 ## Example Usage
 
 Once configured, ask your AI assistant:
