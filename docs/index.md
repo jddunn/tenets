@@ -15,37 +15,36 @@ hide:
   <h1 class="hero-title">
     <span class="typewriter" data-text="tenets"></span>
   </h1>
-  <p class="hero-tagline">MCP server, CLI, and Python library for intelligent code context</p>
+  <p class="hero-tagline">Context that feeds your prompts</p>
+  <p class="hero-subtitle">MCP server • CLI • Python library for intelligent code context</p>
 
-  <!-- Small pip install right below tagline -->
-  <div class="hero-quick-copy">
-    <code>pip install tenets</code>
-    <button class="copy-btn-inline" data-clipboard-text="pip install tenets" aria-label="Copy">
-      <svg viewBox="0 0 16 16" width="12" height="12">
-        <path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
-      </svg>
-    </button>
-  </div>
-
-  <!-- Elegant minimal install copy at top right -->
-  <div class="hero-quick-install">
-    <code>pip install tenets</code>
-    <button class="copy-btn-mini" data-clipboard-text="pip install tenets" aria-label="Copy">
-      <svg viewBox="0 0 16 16" width="14" height="14">
-        <path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
-      </svg>
-    </button>
-  </div>
-
-  <!-- Installation command at the top -->
-  <div class="hero-install">
-    <code>pip install tenets</code>
-    <button class="copy-btn minimal" data-clipboard-text="pip install tenets" aria-label="Copy command">
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-      </svg>
-    </button>
+  <!-- Tabbed install options -->
+  <div class="hero-install-tabs">
+    <div class="install-tab-buttons">
+      <button class="install-tab-btn active" data-tab="core">Core</button>
+      <button class="install-tab-btn" data-tab="mcp">With MCP</button>
+      <button class="install-tab-btn" data-tab="all">Full</button>
+    </div>
+    <div class="install-tab-content">
+      <div class="install-tab-pane active" data-tab="core">
+        <code>pip install tenets</code>
+        <button class="copy-btn-inline" data-clipboard-text="pip install tenets" aria-label="Copy">
+          <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>
+        </button>
+      </div>
+      <div class="install-tab-pane" data-tab="mcp">
+        <code>pip install tenets[mcp]</code>
+        <button class="copy-btn-inline" data-clipboard-text="pip install tenets[mcp]" aria-label="Copy">
+          <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>
+        </button>
+      </div>
+      <div class="install-tab-pane" data-tab="all">
+        <code>pip install tenets[all]</code>
+        <button class="copy-btn-inline" data-clipboard-text="pip install tenets[all]" aria-label="Copy">
+          <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Elegant feature list -->
