@@ -16,8 +16,10 @@
 
   <!-- SEO Meta Tags -->
   <meta name="description" content="{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}">
-  <meta name="keywords" content="tenets, MCP server, Model Context Protocol, code context, AI programming, LLM tools, developer tools, Cursor integration, Claude Desktop, AI coding assistant, codebase context">
+  <meta name="keywords" content="tenets, MCP server, Model Context Protocol, code context, AI programming, LLM tools, developer tools, Cursor integration, Claude Desktop, AI coding assistant, codebase context, Windsurf, AI agent tools, prompt engineering, RAG, code analysis, semantic search, Python CLI">
   <meta name="author" content="Johnny Dunn, manic.agency">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="{% if page and page.canonical_url %}{{ page.canonical_url }}{% else %}{{ config.site_url }}{% endif %}">
 
   <!-- Open Graph -->
   {% set og_title = (page.title ~ ' - ' ~ config.site_name) if page and page.title else config.site_name %}
@@ -43,16 +45,30 @@
   <link rel="icon" type="image/png" sizes="16x16" href="{{ 'favicon/favicon-16x16.png'}}">
   <link rel="manifest" href="{{ 'favicon/site.webmanifest' | url }}">
 
-  <!-- Schema.org -->
+  <!-- Schema.org SoftwareApplication -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Tenets",
+    "alternateName": "Tenets MCP Server",
     "description": "{{ config.site_description }}",
     "url": "https://tenets.dev",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Windows, macOS, Linux",
+    "softwareVersion": "0.4.0",
+    "programmingLanguage": "Python",
+    "downloadUrl": "https://pypi.org/project/tenets/",
+    "installUrl": "https://pypi.org/project/tenets/",
+    "screenshot": "https://tenets.dev/logos/tenets_dark_icon_transparent_cropped.png",
+    "featureList": [
+      "Model Context Protocol (MCP) server",
+      "Intelligent code context aggregation",
+      "Multi-factor relevance ranking",
+      "Token-optimized output",
+      "Session management",
+      "Integration with Cursor, Claude, Windsurf"
+    ],
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -61,8 +77,35 @@
     "author": {
       "@type": "Organization",
       "name": "manic.agency",
-      "url": "https://manic.agency"
-    }
+      "url": "https://manic.agency",
+      "email": "team@manic.agency"
+    },
+    "maintainer": {
+      "@type": "Person",
+      "name": "Johnny Dunn",
+      "url": "https://jddunn.github.io"
+    },
+    "license": "https://opensource.org/licenses/MIT",
+    "sameAs": [
+      "https://github.com/jddunn/tenets",
+      "https://pypi.org/project/tenets/"
+    ]
+  }
+  </script>
+  
+  <!-- Schema.org Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "manic.agency",
+    "url": "https://manic.agency",
+    "logo": "https://manic.agency/logo.png",
+    "email": "team@manic.agency",
+    "sameAs": [
+      "https://twitter.com/manicagency",
+      "https://github.com/jddunn"
+    ]
   }
   </script>
 {% endblock %}
@@ -134,10 +177,10 @@
           <h5>Documentation</h5>
           <ul>
             <li><a href="{{ 'quickstart/'}}">Quick Start</a></li>
-            <li><a href="{{ 'installation/'}}">Installation</a></li>
+            <li><a href="{{ 'tutorial/'}}">Tutorial</a></li>
             <li><a href="{{ 'MCP/'}}">MCP Server</a></li>
             <li><a href="{{ 'CLI/'}}">CLI Reference</a></li>
-            <li><a href="{{ 'CONFIG/'}}">Configuration</a></li>
+            <li><a href="{{ 'faq/'}}">FAQ</a></li>
           </ul>
         </div>
 
@@ -147,8 +190,8 @@
           <ul>
             <li><a href="https://github.com/jddunn/tenets" target="_blank" rel="noopener">GitHub</a></li>
             <li><a href="https://pypi.org/project/tenets/" target="_blank" rel="noopener">PyPI</a></li>
-            <li><a href="https://discord.gg/DzNgXdYm" target="_blank" rel="noopener">Discord</a></li>
-            <li><a href="https://github.com/jddunn/tenets/issues" target="_blank" rel="noopener">Issues</a></li>
+            <li><a href="{{ 'blog/'}}">Blog</a></li>
+            <li><a href="{{ 'about/'}}">About</a></li>
           </ul>
         </div>
 

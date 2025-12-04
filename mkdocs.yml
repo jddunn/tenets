@@ -9,7 +9,7 @@ site_description: MCP server, CLI & Python library for intelligent code context.
 site_url: https://tenets.dev
 site_author: Johnny Dunn
 copyright: >
-  Copyright &copy; 2024-2025 <a href="https://jddunn.github.io" target="_blank" rel="noopener">Johnny Dunn</a>
+  Copyright &copy; 2024-2025 <a href="https://manic.agency" target="_blank" rel="noopener">manic.agency</a> · Built by <a href="https://jddunn.github.io" target="_blank" rel="noopener">Johnny Dunn</a>
 
 # ==============================================================================
 # DIRECTORIES
@@ -185,13 +185,10 @@ plugins:
         remove_comments: true
         remove_empty_space: true
 
-  # Sitemap for SEO
-  - sitemap:
-      changefreq: daily
-      priority: 0.5
-        reduce_boolean_attributes: true
-        remove_optional_attribute_quotes: false
-      cache_safe: true
+  # Sitemap for SEO (install mkdocs-sitemap-plugin if needed)
+  # - sitemap:
+  #     changefreq: weekly
+  #     priority: 0.8
 
 # ==============================================================================
 # MARKDOWN EXTENSIONS - FULL SET FOR API DOCS
@@ -393,6 +390,7 @@ nav:
   - Getting Started:
       - Quick Start: quickstart.md
       - Installation: installation.md
+      - Tutorial: tutorial.md
   - User Guide:
       - CLI Reference: CLI.md
       - MCP Server: MCP.md
@@ -421,12 +419,17 @@ nav:
       - MCP Integration: architecture/mcp-integration-plan.md
       - Roadmap: architecture/roadmap.md
   - API Reference: api/
+  - Blog:
+      - blog/index.md
+      - Why Context Matters: blog/why-context-matters.md
+      - MCP Explained: blog/mcp-explained.md
+      - Cursor & Claude Setup: blog/cursor-claude-setup.md
+  - About: about.md
+  - FAQ: faq.md
   - Enterprise: enterprise.md
   - Legal:
       - Privacy Policy: privacy.md
       - Terms of Service: terms.md
-  - Blog: https://manic.agency/blog
-  - Contact: https://manic.agency/contact
 
 # ==============================================================================
 # WATCH - Development auto-reload

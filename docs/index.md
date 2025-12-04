@@ -223,6 +223,7 @@ hide:
 
   <div class="features-grid">
     <div class="feature-card neumorphic featured">
+      <span class="new-badge">NEW</span>
       <div class="feature-icon">
         <!-- Plug/connection icon for MCP -->
         <svg viewBox="0 0 24 24" width="36" height="36" stroke="#FFD600" stroke-width="2" fill="none">
@@ -711,14 +712,14 @@ ctx = t.distill("add refund support", session_name="checkout-flow")
 <div class="cta-section">
   <div class="cta-content neumorphic">
     <h2>Ready to illuminate your codebase?</h2>
-    <p>Join thousands of developers building better with Tenets.</p>
+    <p>Join developers building smarter with intelligent code context.</p>
     <div class="cta-actions">
-      <a href="installation/" class="btn-primary large">
-        Get Started Now
+      <a href="tutorial/" class="btn-primary large">
+        Start the Tutorial
       </a>
       <div class="install-command">
-        <code>pip install tenets</code>
-        <button class="copy-btn" data-clipboard-text="pip install tenets">
+        <code>pip install tenets[mcp]</code>
+        <button class="copy-btn" data-clipboard-text="pip install tenets[mcp]">
           <!-- Clipboard icon as inline SVG -->
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" aria-hidden="true">
             <rect x="6" y="5" width="12" height="15" rx="2" ry="2" />
@@ -727,5 +728,8 @@ ctx = t.distill("add refund support", session_name="checkout-flow")
         </button>
       </div>
     </div>
+    <p style="margin-top: 1.5rem; font-size: 0.9rem; opacity: 0.8;">
+      Questions? Check our <a href="faq/">FAQ</a> or <a href="about/">learn more about us</a>.
+    </p>
   </div>
 </div>
