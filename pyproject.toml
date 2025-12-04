@@ -54,8 +54,17 @@ Changelog = "https://github.com/jddunn/tenets/blob/main/CHANGELOG.md"
 
 [project.scripts]
 tenets = "tenets.cli.app:app"
+tenets-mcp = "tenets.mcp.server:main"
 
 [project.optional-dependencies]
+# MCP Server (Model Context Protocol for AI assistants)
+mcp = [
+    "mcp[cli]>=1.0.0",
+    "sse-starlette>=1.6.0",
+    "uvicorn>=0.23.0",
+]
+
+
 # Visualization (graphs, charts)
 viz = [
     "networkx>=3.0",
@@ -189,7 +198,7 @@ docs = [
 
 # All features
 all = [
-    "tenets[light,ml,viz,web,db]",
+    "tenets[light,ml,viz,web,db,mcp]",
 ]
 
 [build-system]
