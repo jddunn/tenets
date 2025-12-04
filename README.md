@@ -11,18 +11,18 @@
 [![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
-**tenets** is a NLP CLI tool that automatically finds and builds the most relevant context from your codebase, using deterministic statistical algorithms as well as optional deep learning techniques.
+**tenets** is an intelligent code context platform that automatically finds, ranks, and aggregates the most relevant files from your codebase for AI coding assistants.
 
-Instead of manually copying files or searching for docs, tenets intelligently aggregates the most relevant files and metadata for interacting with AI assistants.
+Works as a **CLI tool**, **Python library**, and **MCP server** for direct integration with Cursor, Claude Desktop, Windsurf, and other AI tools.
 
 ## What is tenets?
 
-- **Finds** all relevant files automatically
-- **Ranks** them by importance using multiple factors
+- **Finds** all relevant files automatically using NLP analysis
+- **Ranks** them by importance using BM25, TF-IDF, ML embeddings, and git signals
 - **Aggregates** them within your token budget with intelligent summarizing
-- **Formats** perfectly for any use case
+- **Integrates** natively with AI assistants via Model Context Protocol (MCP)
 - **Pins** critical files per session for guaranteed inclusion
-- **Injects** your tenets (guiding principles) into session interactions automatically in prompts
+- **Injects** your tenets (guiding principles) to maintain consistency across AI interactions
 - **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
 
 All processing runs locally - no API costs, no data leaving your machine, complete privacy.
@@ -33,12 +33,49 @@ All processing runs locally - no API costs, no data leaving your machine, comple
 # Basic install - fully functional with BM25/TF-IDF ranking
 pip install tenets
 
-# Optional extras (most users won't need these)
+# With MCP server for AI assistant integration
+pip install tenets[mcp]
+
+# Optional extras
 pip install tenets[light]  # Adds RAKE/YAKE keyword extraction algorithms
 pip install tenets[viz]    # Adds visualization capabilities (graphs, charts)
 pip install tenets[ml]     # Adds deep learning for semantic search (2GB+ download)
 pip install tenets[all]    # Everything including all optional features
 ```
+
+## MCP Server (AI Assistant Integration)
+
+Tenets includes an MCP server for native integration with AI coding assistants:
+
+```bash
+# Start MCP server
+pip install tenets[mcp]
+tenets-mcp
+```
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}
+```
+
+**Cursor** (Settings → MCP Servers):
+```json
+{
+  "tenets": {
+    "command": "tenets-mcp"
+  }
+}
+```
+
+Once configured, ask your AI: *"Use tenets to find relevant files for implementing user authentication"*
+
+See [MCP Documentation](docs/MCP.md) for full setup guide.
 
 ## Quick Start
 
