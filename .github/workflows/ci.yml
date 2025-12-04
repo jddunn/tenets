@@ -188,6 +188,11 @@ jobs:
           pytest -v --cov=tenets --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
         continue-on-error: true # Don't fail on test failures during development
 
+      - name: Gate coverage for MCP/CLI (fail-under 80)
+        run: |
+          pytest -q tests/mcp tests/cli/test_app.py --cov=tenets/mcp --cov=tenets/cli --cov-report=term --cov-fail-under=80
+        continue-on-error: false
+
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4

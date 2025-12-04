@@ -184,6 +184,11 @@ plugins:
       htmlmin_opts:
         remove_comments: true
         remove_empty_space: true
+
+  # Sitemap for SEO
+  - sitemap:
+      changefreq: daily
+      priority: 0.5
         reduce_boolean_attributes: true
         remove_optional_attribute_quotes: false
       cache_safe: true

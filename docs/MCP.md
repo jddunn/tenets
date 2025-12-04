@@ -196,6 +196,54 @@ The AI will use `session_create` and `session_pin_folder`.
 
 The AI will use `tenet_add` to create a guiding principle.
 
+## Tool Responses (Examples)
+
+### distill
+```json
+{
+  "context": "# File: src/auth.py\n...",
+  "token_count": 45000,
+  "files": ["src/auth.py", "src/user.py"],
+  "files_summarized": ["src/utils.py"],
+  "metadata": {"mode": "balanced", "total_scanned": 150}
+}
+```
+
+### rank_files
+```json
+{
+  "files": [
+    {"path": "src/auth.py", "score": 0.85},
+    {"path": "src/user.py", "score": 0.72}
+  ],
+  "total_scanned": 150,
+  "mode": "balanced"
+}
+```
+
+### session_create
+```json
+{
+  "id": "sess_abc123",
+  "name": "auth-feature",
+  "created_at": "2025-12-04T10:00:00"
+}
+```
+
+## Error Semantics
+
+Tenets returns clear errors that AI agents can act on:
+
+- Path errors (missing or inaccessible):
+  - Distill/Rank will raise an error or return an empty result — agents should retry with a valid path.
+- Invalid parameters (mode/format):
+  - MCP validation prevents tool invocation; agents should correct parameters based on schema.
+- Session operations:
+  - Pinning a nonexistent file returns a structured failure response; agents should prompt to confirm the path.
+
+When in doubt, agents should:
+1) Validate inputs against the tool schema, and 2) Ask the user to clarify scope (path, include/exclude patterns, session name).
+
 ## Remote Deployment
 
 For team or cloud deployment, use HTTP transport:

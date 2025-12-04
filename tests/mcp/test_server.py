@@ -32,6 +32,8 @@ class MockFastMCP:
         self.tools: dict[str, Any] = {}
         self.resources: dict[str, Any] = {}
         self.prompts: dict[str, Any] = {}
+        self.last_run: dict[str, Any] | None = None
+        self.runs: list[dict[str, Any]] = []
 
     def tool(self):
         """Decorator to register a tool."""
@@ -61,8 +63,9 @@ class MockFastMCP:
         return decorator
 
     def run(self, transport: str = "stdio", host: str = "127.0.0.1", port: int = 8080):
-        """Mock run method."""
-        pass
+        """Mock run method that records invocation."""
+        self.last_run = {"transport": transport, "host": host, "port": port}
+        self.runs.append(self.last_run)
 
 
 @pytest.fixture
@@ -288,6 +291,23 @@ class TestMCPResources:
         json.loads(result)
 
     @pytest.mark.asyncio
+    async def test_session_state_resource(self, mcp_server, tmp_path):
+        """Test the dynamic session state resource returns expected fields."""
+        # Create a session
+        create_tool = mcp_server._mcp.tools["session_create"]
+        await create_tool(name="state-session", description="State test")
+
+        # Access the resource with path parameter
+        resource_func = mcp_server._mcp.resources["tenets://sessions/{name}/state"]
+        result = await resource_func(name="state-session")
+
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert data["name"] == "state-session"
+        assert "created_at" in data
+        assert "metadata" in data
+
+    @pytest.mark.asyncio
     async def test_config_current_resource(self, mcp_server):
         """Test the config current resource."""
         resource_func = mcp_server._mcp.resources["tenets://config/current"]
@@ -345,18 +365,18 @@ class TestMCPServerRun:
 
     def test_run_stdio_transport(self, mcp_server):
         """Test running with stdio transport."""
-        # Should not raise
         mcp_server.run(transport="stdio")
+        assert mcp_server._mcp.last_run == {"transport": "stdio", "host": "127.0.0.1", "port": 8080}
 
     def test_run_sse_transport(self, mcp_server):
         """Test running with SSE transport."""
-        # Should not raise
         mcp_server.run(transport="sse", host="127.0.0.1", port=8080)
+        assert mcp_server._mcp.last_run == {"transport": "sse", "host": "127.0.0.1", "port": 8080}
 
     def test_run_http_transport(self, mcp_server):
         """Test running with HTTP transport."""
-        # Should not raise
         mcp_server.run(transport="http", host="127.0.0.1", port=8081)
+        assert mcp_server._mcp.last_run == {"transport": "streamable-http", "host": "127.0.0.1", "port": 8081}
 
     def test_run_invalid_transport(self, mcp_server):
         """Test running with invalid transport raises error."""
@@ -660,6 +680,9 @@ class TestMCPIntegration:
             max_tokens=1000,
         )
         assert isinstance(distill_result, dict)
+        # Pinned file should appear in files list
+        files = distill_result.get("files", [])
+        assert any("main.py" in str(p) for p in files)
 
     @pytest.mark.asyncio
     async def test_tenet_workflow(self, mcp_server):
@@ -683,6 +706,25 @@ class TestMCPIntegration:
         instill_tool = mcp_server._mcp.tools["tenet_instill"]
         instill_result = await instill_tool()
         assert isinstance(instill_result, dict)
+
+    @skip_on_314
+    @pytest.mark.asyncio
+    async def test_include_exclude_patterns(self, mcp_server, tmp_path):
+        """Test include/exclude patterns are respected by distill."""
+        (tmp_path / "keep.md").write_text("# Doc")
+        (tmp_path / "skip.py").write_text("print('skip')")
+
+        distill_tool = mcp_server._mcp.tools["distill"]
+        result = await distill_tool(
+            prompt="docs",
+            path=str(tmp_path),
+            include_patterns=["*.md"],
+            exclude_patterns=["*.py"],
+            max_tokens=500,
+        )
+        files = [str(p) for p in result.get("files", [])]
+        assert any("keep.md" in f for f in files)
+        assert all("skip.py" not in f for f in files)
 
 
 class TestMCPResourceContent:
