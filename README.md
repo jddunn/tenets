@@ -12,9 +12,9 @@
 [![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
-**tenets** is an intelligent code context platform that automatically finds, ranks, and aggregates the most relevant files from your codebase for AI coding assistants.
+**tenets** is an **MCP server** for AI coding assistants. It automatically finds, ranks, and aggregates the most relevant files from your codebase.
 
-Works as a **CLI tool**, **Python library**, and **MCP server** for direct integration with Cursor, Claude Desktop, Windsurf, and other AI tools.
+Native **Model Context Protocol** integration with Cursor, Claude Desktop, Windsurf, and other AI tools. Also works as a CLI and Python library.
 
 ## What is tenets?
 

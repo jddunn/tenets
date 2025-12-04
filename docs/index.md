@@ -16,7 +16,7 @@ hide:
     <span class="typewriter" data-text="tenets"></span>
   </h1>
   <p class="hero-tagline">Context that feeds your prompts</p>
-  <p class="hero-subtitle">MCP server • CLI • Python library for intelligent code context</p>
+  <p class="hero-subtitle">MCP server for AI coding assistants — Cursor, Claude, Windsurf</p>
 
   <!-- Tabbed install options -->
   <div class="hero-install-tabs">
@@ -27,22 +27,22 @@ hide:
     </div>
     <div class="install-tab-content">
       <div class="install-tab-pane active" data-tab="core">
-        <code>pip install tenets</code>
-        <button class="copy-btn-inline" data-clipboard-text="pip install tenets" aria-label="Copy">
+    <code>pip install tenets</code>
+    <button class="copy-btn-inline" data-clipboard-text="pip install tenets" aria-label="Copy">
           <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>
-        </button>
-      </div>
+    </button>
+  </div>
       <div class="install-tab-pane" data-tab="mcp">
         <code>pip install tenets[mcp]</code>
         <button class="copy-btn-inline" data-clipboard-text="pip install tenets[mcp]" aria-label="Copy">
           <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>
-        </button>
-      </div>
+    </button>
+  </div>
       <div class="install-tab-pane" data-tab="all">
         <code>pip install tenets[all]</code>
         <button class="copy-btn-inline" data-clipboard-text="pip install tenets[all]" aria-label="Copy">
           <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>
-        </button>
+    </button>
       </div>
     </div>
   </div>
