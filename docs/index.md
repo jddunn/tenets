@@ -15,7 +15,7 @@ hide:
   <h1 class="hero-title">
     <span class="typewriter" data-text="tenets"></span>
   </h1>
-  <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
+  <p class="hero-tagline">MCP server, CLI, and Python library for intelligent code context</p>
 
   <!-- Small pip install right below tagline -->
   <div class="hero-quick-copy">
@@ -52,7 +52,7 @@ hide:
   <div class="hero-features">
     <div class="feature-line">
       <span class="feature-icon">✦</span>
-      <span>Command-line tool and Python API for intelligent code aggregation and analysis</span>
+      <span><strong>MCP Server</strong> — Native integration with Cursor, Claude, Windsurf, and AI agents</span>
     </div>
     <div class="feature-line">
       <span class="feature-icon">✦</span>
@@ -60,7 +60,7 @@ hide:
     </div>
     <div class="feature-line">
       <span class="feature-icon">✦</span>
-      <span>Examine code quality metrics • Evaluate and improve your codebase</span>
+      <span>Multi-factor ranking with BM25, git signals, import centrality, and complexity</span>
     </div>
     <div class="feature-line">
       <span class="feature-icon">✦</span>
@@ -223,6 +223,26 @@ hide:
   </div>
 
   <div class="features-grid">
+    <div class="feature-card neumorphic featured">
+      <div class="feature-icon">
+        <!-- Plug/connection icon for MCP -->
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#FFD600" stroke-width="2" fill="none">
+          <path d="M12 2v4"/>
+          <path d="M12 18v4"/>
+          <path d="M4.93 4.93l2.83 2.83"/>
+          <path d="M16.24 16.24l2.83 2.83"/>
+          <path d="M2 12h4"/>
+          <path d="M18 12h4"/>
+          <path d="M4.93 19.07l2.83-2.83"/>
+          <path d="M16.24 7.76l2.83-2.83"/>
+          <circle cx="12" cy="12" r="4"/>
+        </svg>
+      </div>
+      <h3>MCP Server</h3>
+      <p>Native Model Context Protocol server. Works with Cursor, Claude Desktop, Windsurf, and any MCP client.</p>
+      <a href="MCP/" class="feature-link">Learn more →</a>
+    </div>
+
     <div class="feature-card neumorphic">
       <div class="feature-icon">
         <!-- Target icon -->
