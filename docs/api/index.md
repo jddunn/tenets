@@ -16,6 +16,12 @@ The API documentation is automatically generated from the source code docstrings
 ### Core Package
 **`tenets`** - The main package containing core exports and initialization
 
+### MCP Server
+**`tenets.mcp`** - Model Context Protocol server for AI assistant integration
+- `TenetsMCP` - MCP server class exposing tools, resources, and prompts
+- Native integration with Cursor, Claude Desktop, Windsurf, and other MCP clients
+- Supports stdio, SSE, and HTTP transports
+
 ### Core Modules
 **`tenets.core`** - Core functionality powering tenets
 - Analysis engines for code understanding
@@ -45,7 +51,7 @@ The API documentation is automatically generated from the source code docstrings
 
 The full module documentation is auto-generated during the build process. Use the sidebar navigation to browse through all available modules and their documentation.
 
-!!! tip "Using the API"
+!!! tip "Using the Python API"
     To use Tenets programmatically in your Python code:
     
     ```python
@@ -57,6 +63,17 @@ The full module documentation is auto-generated during the build process. Use th
     # Build context
     result = tenets.distill("implement user authentication")
     ```
+
+!!! tip "Using the MCP Server"
+    To start the MCP server for AI assistant integration:
+    
+    ```bash
+    pip install tenets[mcp]
+    tenets-mcp  # Starts stdio server (default)
+    tenets-mcp --transport http --port 8080  # HTTP server
+    ```
+    
+    See the [MCP Documentation](../MCP.md) for configuration with Claude Desktop, Cursor, and other AI tools.
 
 !!! note "Auto-Generated Content"
     This documentation is generated directly from the source code. Any updates to docstrings in the codebase will be reflected here after rebuilding the documentation.

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-12-04
+
+### Added
+- **MCP Server** - Full Model Context Protocol server implementation (`tenets-mcp`)
+  - Native integration with Cursor, Claude Desktop, Windsurf, and other MCP clients
+  - 13 MCP tools: distill, rank_files, examine, chronicle, momentum, session management, tenet management
+  - 4 MCP resources: sessions list, session state, tenets list, config
+  - 3 MCP prompts: build_context_for_task, code_review_context, understand_codebase
+  - Support for stdio, SSE, and HTTP transports
+- Privacy Policy and Terms of Service pages
+- Enhanced GDPR cookie consent with 3-tier options (Accept All / Essential Only / Reject All)
+- MCP installation option: `pip install tenets[mcp]`
+
+### Changed
+- Landing page now highlights MCP as headline feature
+- Updated site description and SEO meta tags for MCP focus
+- Improved architecture documentation with MCP-first design philosophy
+- Updated roadmap to reflect MCP as foundational layer
+
+### Documentation
+- New comprehensive MCP documentation with IDE configuration guides
+- Detailed MCP integration plan and architecture vision
+- Updated API reference with MCP module documentation
+
 ## [0.3.3] - 2025-01-22
 
 ### Fixed
