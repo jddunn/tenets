@@ -376,9 +376,9 @@ extra_javascript:
   - js/image-modal.js
   - js/lantern.js # Torch animation
   - js/see-it-in-action.js
+  - js/install-tabs.js # Install option tabs
   # - js/main.js  # DISABLED - might cause search issues
   # - js/architecture-diagram.js
-  # - js/see-it-in-action.js
   # - https://unpkg.com/@phosphor-icons/web@2.0.3/src/index.js
 
 # ==============================================================================
@@ -416,6 +416,7 @@ nav:
       - MCP Integration: architecture/mcp-integration-plan.md
       - Roadmap: architecture/roadmap.md
   - API Reference: api/
+  - Enterprise: enterprise.md
   - Legal:
       - Privacy Policy: privacy.md
       - Terms of Service: terms.md
