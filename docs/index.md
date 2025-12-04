@@ -709,6 +709,216 @@ ctx = t.distill("add refund support", session_name="checkout-flow")
   </div>
 </div>
 
+<!-- MCP Integration Section -->
+<div class="mcp-integration-section" style="padding: 4rem 2rem; background: linear-gradient(180deg, rgba(245, 158, 11, 0.03) 0%, transparent 100%);">
+  <div class="section-header">
+    <div class="ornament left"></div>
+    <h2>MCP Integration</h2>
+    <div class="ornament right"></div>
+  </div>
+  <p style="text-align: center; max-width: 700px; margin: 0 auto 3rem; opacity: 0.9;">
+    Connect Tenets to your AI coding assistant in seconds. Native support for the Model Context Protocol.
+  </p>
+
+  <!-- Integration Logos -->
+  <div style="display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; margin-bottom: 3rem;">
+    <div style="text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🖥️</div>
+      <strong>Cursor</strong>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🤖</div>
+      <strong>Claude Desktop</strong>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🌊</div>
+      <strong>Windsurf</strong>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💻</div>
+      <strong>VS Code</strong>
+    </div>
+  </div>
+
+  <!-- Config Snippets -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; max-width: 1000px; margin: 0 auto;">
+    
+    <!-- Claude Desktop Config -->
+    <div class="config-card" style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
+      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1); border-bottom: 1px solid rgba(245, 158, 11, 0.1); display: flex; justify-content: space-between; align-items: center;">
+        <strong>Claude Desktop</strong>
+        <code style="font-size: 0.75rem; opacity: 0.7;">claude_desktop_config.json</code>
+      </div>
+      <div style="padding: 1.5rem;">
+
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}
+```
+
+</div>
+    </div>
+
+    <!-- Cursor Config -->
+    <div class="config-card" style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
+      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1); border-bottom: 1px solid rgba(245, 158, 11, 0.1); display: flex; justify-content: space-between; align-items: center;">
+        <strong>Cursor</strong>
+        <code style="font-size: 0.75rem; opacity: 0.7;">Settings → MCP Servers</code>
+      </div>
+      <div style="padding: 1.5rem;">
+
+```json
+{
+  "tenets": {
+    "command": "tenets-mcp"
+  }
+}
+```
+
+</div>
+    </div>
+  </div>
+
+  <p style="text-align: center; margin-top: 2rem;">
+    <a href="MCP/" style="color: #f59e0b;">Full MCP documentation →</a>
+  </p>
+</div>
+
+<!-- MCP Tools Preview -->
+<div class="mcp-tools-section" style="padding: 4rem 2rem;">
+  <div class="section-header">
+    <div class="ornament left"></div>
+    <h2>What AI Sees</h2>
+    <div class="ornament right"></div>
+  </div>
+  <p style="text-align: center; max-width: 700px; margin: 0 auto 3rem; opacity: 0.9;">
+    When your AI assistant calls Tenets, it receives structured context optimized for code understanding.
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto;">
+    
+    <!-- Tool Call Example -->
+    <div style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
+      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1); border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+        <strong>🔧 AI calls <code>distill</code> tool</strong>
+      </div>
+      <div style="padding: 1.5rem;">
+
+```json
+{
+  "tool": "distill",
+  "arguments": {
+    "prompt": "implement user authentication",
+    "mode": "balanced",
+    "max_tokens": 50000
+  }
+}
+```
+
+</div>
+    </div>
+
+    <!-- Response Example -->
+    <div style="background: var(--md-code-bg-color); border-radius: 12px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.2);">
+      <div style="padding: 1rem 1.5rem; background: rgba(245, 158, 11, 0.1); border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+        <strong>📦 Tenets returns ranked context</strong>
+      </div>
+      <div style="padding: 1.5rem;">
+
+```json
+{
+  "files_included": 12,
+  "total_tokens": 48500,
+  "top_files": [
+    {"path": "src/auth/service.py", "score": 0.94},
+    {"path": "src/auth/middleware.py", "score": 0.87},
+    {"path": "src/models/user.py", "score": 0.82}
+  ],
+  "context": "# Authentication System\n\n## src/auth/service.py\n```python\nclass AuthService:\n    def authenticate(self, credentials):\n        ..."
+}
+```
+
+</div>
+    </div>
+  </div>
+
+  <!-- Available Tools Grid -->
+  <div style="margin-top: 3rem; max-width: 1000px; margin-left: auto; margin-right: auto;">
+    <h3 style="text-align: center; margin-bottom: 1.5rem;">13 MCP Tools Available</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+      <div style="padding: 1rem; background: rgba(245, 158, 11, 0.05); border-radius: 8px; text-align: center;">
+        <code>distill</code>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 0; opacity: 0.8;">Build code context</p>
+      </div>
+      <div style="padding: 1rem; background: rgba(245, 158, 11, 0.05); border-radius: 8px; text-align: center;">
+        <code>rank_files</code>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 0; opacity: 0.8;">Preview relevance</p>
+      </div>
+      <div style="padding: 1rem; background: rgba(245, 158, 11, 0.05); border-radius: 8px; text-align: center;">
+        <code>examine</code>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 0; opacity: 0.8;">Analyze structure</p>
+      </div>
+      <div style="padding: 1rem; background: rgba(245, 158, 11, 0.05); border-radius: 8px; text-align: center;">
+        <code>session_create</code>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 0; opacity: 0.8;">Stateful sessions</p>
+      </div>
+      <div style="padding: 1rem; background: rgba(245, 158, 11, 0.05); border-radius: 8px; text-align: center;">
+        <code>tenet_add</code>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 0; opacity: 0.8;">Add guidelines</p>
+      </div>
+      <div style="padding: 1rem; background: rgba(245, 158, 11, 0.05); border-radius: 8px; text-align: center;">
+        <code>chronicle</code>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 0; opacity: 0.8;">Git history</p>
+      </div>
+    </div>
+    <p style="text-align: center; margin-top: 1.5rem;">
+      <a href="MCP/#available-tools" style="color: #f59e0b;">See all 13 tools →</a>
+    </p>
+  </div>
+</div>
+
+<!-- Enterprise CTA Section -->
+<div class="enterprise-section" style="padding: 4rem 2rem; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 191, 36, 0.03) 100%); margin: 2rem 0;">
+  <div style="max-width: 900px; margin: 0 auto; text-align: center;">
+    <span style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #1a1a1a; padding: 0.25rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">ENTERPRISE</span>
+    <h2 style="margin: 1.5rem 0 1rem;">Need More?</h2>
+    <p style="opacity: 0.9; margin-bottom: 2rem;">
+      Tenets is 100% open source. For teams needing advanced features, we offer enterprise support.
+    </p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+      <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔒</div>
+        <strong>Privacy Redaction</strong>
+        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Auto-remove sensitive data from context</p>
+      </div>
+      <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📊</div>
+        <strong>Audit Logging</strong>
+        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">Track all AI interactions</p>
+      </div>
+      <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔑</div>
+        <strong>SSO Integration</strong>
+        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">SAML/OIDC for teams</p>
+      </div>
+      <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px;">
+        <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🛡️</div>
+        <strong>Air-Gapped Deploy</strong>
+        <p style="font-size: 0.85rem; opacity: 0.8; margin: 0.5rem 0 0;">On-prem installation</p>
+      </div>
+    </div>
+    <a href="https://manic.agency/contact" target="_blank" rel="noopener" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #1a2332; padding: 0.875rem 2.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1.1rem;">Contact manic.agency →</a>
+    <p style="margin-top: 1rem; font-size: 0.85rem; opacity: 0.7;">
+      Or email <a href="mailto:team@manic.agency" style="color: #f59e0b;">team@manic.agency</a>
+    </p>
+  </div>
+</div>
+
 <div class="cta-section">
   <div class="cta-content neumorphic">
     <h2>Ready to illuminate your codebase?</h2>
