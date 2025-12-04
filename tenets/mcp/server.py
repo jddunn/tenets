@@ -530,8 +530,9 @@ class TenetsMCP:
         @mcp.resource("tenets://sessions/list")
         async def get_sessions_list() -> str:
             """List of all development sessions."""
-            from tenets.storage.session_db import SessionDB
             import json
+
+            from tenets.storage.session_db import SessionDB
 
             db = SessionDB(self.tenets.config)
             sessions = db.list_sessions()
@@ -550,8 +551,9 @@ class TenetsMCP:
         @mcp.resource("tenets://sessions/{name}/state")
         async def get_session_state(name: str) -> str:
             """Current state of a specific session."""
-            from tenets.storage.session_db import SessionDB
             import json
+
+            from tenets.storage.session_db import SessionDB
 
             db = SessionDB(self.tenets.config)
             session = db.get_session(name)
