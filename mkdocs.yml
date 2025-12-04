@@ -426,6 +426,7 @@ nav:
       - Cursor & Claude Setup: blog/cursor-claude-setup.md
   - About: about.md
   - FAQ: faq.md
+  - MCP Submission: mcp-submission.md
   - Enterprise: enterprise.md
   - Legal:
       - Privacy Policy: privacy.md
