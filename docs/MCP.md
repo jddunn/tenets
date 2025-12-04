@@ -5,11 +5,7 @@ Tenets includes a Model Context Protocol (MCP) server that integrates with AI co
 ## Installation
 
 ```bash
-# Install with MCP support
 pip install tenets[mcp]
-
-# Or install everything
-pip install tenets[all]
 ```
 
 ## Quick Start
