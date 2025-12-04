@@ -3,7 +3,7 @@
 [project]
 name = "tenets"
 version = "0.4.0"
-description = "MCP server, CLI & Python library for intelligent code context"
+description = "MCP server for AI coding assistants — intelligent code context via Model Context Protocol"
 authors = [{name = "Tenets Team", email = "team@tenets.dev"}]
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {text = "MIT"}
