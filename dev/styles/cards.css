@@ -181,6 +181,70 @@
   color: #d4ccb8;
 }
 
+/* Featured card (MCP highlight) */
+.feature-card.featured {
+  border: 2px solid rgba(255, 214, 0, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(255, 214, 0, 0.08) 0%, 
+    rgba(245, 158, 11, 0.05) 50%,
+    #fdfdf9 100%);
+  position: relative;
+}
+
+[data-md-color-scheme="slate"] .feature-card.featured {
+  background: linear-gradient(135deg, 
+    rgba(255, 214, 0, 0.12) 0%, 
+    rgba(245, 158, 11, 0.08) 50%,
+    #1a2332 100%);
+  border-color: rgba(255, 214, 0, 0.4);
+}
+
+.feature-card.featured::before {
+  content: 'NEW';
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: linear-gradient(135deg, #FFD600 0%, #f59e0b 100%);
+  color: #1a2332;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  z-index: 2;
+}
+
+.feature-card.featured:hover {
+  border-color: rgba(255, 214, 0, 0.6);
+  box-shadow: 
+    0 12px 32px rgba(255, 214, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Feature link inside cards */
+.feature-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f59e0b;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.feature-link:hover {
+  color: #FFD600;
+  transform: translateX(4px);
+}
+
+[data-md-color-scheme="slate"] .feature-link {
+  color: #fbbf24;
+}
+
+[data-md-color-scheme="slate"] .feature-link:hover {
+  color: #FFD600;
+}
+
 /* =====================================================
    HOW IT WORKS CARDS - Interactive Hover States
    ===================================================== */

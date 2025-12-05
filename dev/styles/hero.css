@@ -997,3 +997,145 @@
     display: inline-flex;
   }
 }
+
+/* =====================================================
+   HERO SUBTITLE - Secondary tagline
+   ===================================================== */
+
+.hero-subtitle {
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  color: #8b7355;
+  margin: 0 auto 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+[data-md-color-scheme="slate"] .hero-subtitle {
+  color: #a89984;
+}
+
+/* =====================================================
+   INSTALL TABS - Tabbed installation options
+   ===================================================== */
+
+.hero-install-tabs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1rem auto 1.5rem;
+  max-width: 400px;
+}
+
+.install-tab-buttons {
+  display: flex;
+  gap: 0;
+  background: rgba(26, 29, 36, 0.6);
+  border-radius: 10px 10px 0 0;
+  padding: 0.25rem;
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-bottom: none;
+}
+
+[data-md-color-scheme="slate"] .install-tab-buttons {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.install-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8b7355;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+[data-md-color-scheme="slate"] .install-tab-btn {
+  color: #a89984;
+}
+
+.install-tab-btn:hover {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.install-tab-btn.active {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.install-tab-content {
+  background: linear-gradient(135deg, #1a1d24 0%, #0f1117 100%);
+  border-radius: 0 0 12px 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-top: none;
+  padding: 0.75rem 1.25rem;
+  min-width: 280px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+[data-md-color-scheme="slate"] .install-tab-content {
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+}
+
+.install-tab-pane {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.install-tab-pane.active {
+  display: flex;
+}
+
+.install-tab-pane code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fbbf24;
+  background: none;
+  padding: 0;
+}
+
+.install-tab-pane .copy-btn-inline {
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  color: #f59e0b;
+}
+
+.install-tab-pane .copy-btn-inline:hover {
+  background: rgba(245, 158, 11, 0.15);
+  transform: scale(1.1);
+}
+
+/* Mobile adjustments for tabs */
+@media screen and (max-width: 480px) {
+  .install-tab-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .install-tab-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .install-tab-content {
+    min-width: 250px;
+  }
+  
+  .install-tab-pane code {
+    font-size: 0.85rem;
+  }
+}

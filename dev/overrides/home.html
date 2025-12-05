@@ -275,12 +275,12 @@
      alt="tenets"
      class="torch-logo-static light-logo">
     </div><!-- /torch-container -->
-    <p class="hero-tagline">A powerful CLI & Python library for context that feeds your prompts</p>
+    <p class="hero-tagline">MCP Server for AI Coding Assistants</p>
 
     <!-- Small pip install command right below tagline -->
     <div class="hero-quick-copy">
-      <code>pip install tenets</code>
-      <button class="copy-btn-inline" data-clipboard-text="pip install tenets" aria-label="Copy">
+      <code>pip install tenets[mcp]</code>
+      <button class="copy-btn-inline" data-clipboard-text="pip install tenets[mcp]" aria-label="Copy">
         <svg viewBox="0 0 16 16" width="12" height="12">
           <path fill="currentColor" d="M13 0H6a2 2 0 0 0-2 2 2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm0 13V4a2 2 0 0 0-2-2H5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zM3 4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/>
         </svg>
@@ -288,15 +288,23 @@
     </div>
 
     <p class="hero-description">
-      Surface relevant files. Build optimal context. Track velocity.<br>
-      Examine code quality metrics. Evaluate and improve your codebase.<br>
-      All processing stays local - your code never leaves your machine.
+      Give Cursor, Claude & Windsurf the context they need.<br>
+      Multi-factor ranking finds relevant code automatically.<br>
+      All processing stays local — your code never leaves your machine.
     </p>
 
-    <!-- Quick Start, CLI Docs, API Docs buttons -->
+    <!-- MCP Setup, Quick Start, CLI buttons -->
     <div class="hero-actions">
+      <!-- Link to MCP Setup -->
+      <a href="{{ 'MCP/' | url }}" class="btn-primary">
+        <span>Setup MCP</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
+        </svg>
+      </a>
       <!-- Link directly to Quick Start page -->
-      <a href="{{ 'quickstart/' | url }}" class="btn-primary">
+      <a href="{{ 'quickstart/' | url }}" class="btn-secondary">
         <span>Quick Start</span>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -308,14 +316,6 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
           <path d="M9 9l3 3-3 3M13 15h3"/>
-        </svg>
-      </a>
-      <!-- Link to API Reference -->
-      <a href="{{ 'api/' | url }}" class="btn-secondary">
-        <span>API Docs</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M16 18l6-6-6-6"/>
-          <path d="M8 6l-6 6 6 6"/>
         </svg>
       </a>
       <a href="#examples" class="btn-secondary scroll-to-examples">
@@ -905,77 +905,145 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
   </div>
 </section>
 
+<!-- MCP Configuration Section -->
+<section class="mcp-config-section">
+  <div class="section-container">
+    <h2 class="section-title">Configure Your IDE</h2>
+    <p class="section-subtitle">Add tenets to your AI assistant in seconds</p>
+
+    <div class="ide-tabs">
+      <button class="ide-tab active" data-ide="cursor">Cursor</button>
+      <button class="ide-tab" data-ide="claude">Claude Desktop</button>
+      <button class="ide-tab" data-ide="windsurf">Windsurf</button>
+    </div>
+
+    <div class="ide-config-panels">
+      <!-- Cursor Config -->
+      <div class="ide-config-panel active" data-ide="cursor">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Open Cursor Settings → MCP</span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">3</span>
+          <span class="step-text">Add to <code>~/.cursor/mcp.json</code>:</span>
+        </div>
+        <div class="config-code">
+          <pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+      </div>
+
+      <!-- Claude Desktop Config -->
+      <div class="ide-config-panel" data-ide="claude">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Edit <code>claude_desktop_config.json</code>:</span>
+        </div>
+        <div class="config-code">
+          <pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+        <p class="config-note">macOS: <code>~/Library/Application Support/Claude/</code><br>Windows: <code>%APPDATA%\Claude\</code></p>
+      </div>
+
+      <!-- Windsurf Config -->
+      <div class="ide-config-panel" data-ide="windsurf">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Open Windsurf Settings → Extensions → MCP</span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">3</span>
+          <span class="step-text">Add server configuration:</span>
+        </div>
+        <div class="config-code">
+          <pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="config-ready">✓ Restart your IDE — tenets tools are now available</p>
+  </div>
+  <script>
+    // IDE tab switching
+    document.querySelectorAll('.ide-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        const ide = this.dataset.ide;
+        // Update tabs
+        document.querySelectorAll('.ide-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        // Update panels
+        document.querySelectorAll('.ide-config-panel').forEach(p => p.classList.remove('active'));
+        document.querySelector(`.ide-config-panel[data-ide="${ide}"]`).classList.add('active');
+      });
+    });
+  </script>
+</section>
+
 <!-- Installation Section -->
 <section class="install-section">
   <div class="section-container">
     <h2 class="section-title">Installation Options</h2>
 
     <div class="install-grid">
+      <div class="install-card featured">
+        <div class="featured-badge">Recommended</div>
+        <h3><span class="full-text">MCP Server</span><span class="short-text">MCP</span></h3>
+        <div class="code-block">
+          <code>pip install tenets[mcp]</code>
+          <button class="copy-btn" data-text="pip install tenets[mcp]">Copy</button>
+        </div>
+        <p class="install-note">For Cursor, Claude Desktop, Windsurf</p>
+      </div>
+
       <div class="install-card">
-        <h3><span class="full-text">Quick Install</span><span class="short-text">Quick</span></h3>
+        <h3><span class="full-text">Core Only</span><span class="short-text">Core</span></h3>
         <div class="code-block">
           <code>pip install tenets</code>
           <button class="copy-btn" data-text="pip install tenets">Copy</button>
         </div>
-        <p class="install-note">Core features - lightweight, no ML dependencies</p>
+        <p class="install-note">CLI + Python library (no MCP)</p>
       </div>
 
       <div class="install-card">
-        <h3><span class="full-text">Full Features</span><span class="short-text">All</span></h3>
+        <h3><span class="full-text">Everything</span><span class="short-text">All</span></h3>
         <div class="code-block">
           <code>pip install tenets[all]</code>
           <button class="copy-btn" data-text="pip install tenets[all]">Copy</button>
         </div>
-        <p class="install-note">Everything including ML models and visualization</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">Light NLP</span><span class="short-text">Light</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[light]</code>
-          <button class="copy-btn" data-text="pip install tenets[light]">Copy</button>
-        </div>
-        <p class="install-note">Keyword extraction, TextRank, metrics without deep learning</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">ML</span><span class="short-text">ML</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[ml]</code>
-          <button class="copy-btn" data-text="pip install tenets[ml]">Copy</button>
-        </div>
-        <p class="install-note">Transformers, embeddings, vector search, providers</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">Visualization</span><span class="short-text">Viz</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[viz]</code>
-          <button class="copy-btn" data-text="pip install tenets[viz]">Copy</button>
-        </div>
-        <p class="install-note">Graphs, plots, and visual dashboards</p>
-      </div>
-
-
-
-      <div class="install-card coming-soon" aria-disabled="true">
-        <div class="coming-soon-badge" aria-hidden="true">Coming soon</div>
-        <h3><span class="full-text">Web Interface</span><span class="short-text">Web</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[web]</code>
-          <button class="copy-btn" data-text="pip install tenets[web]" disabled>Copy</button>
-        </div>
-        <p class="install-note">FastAPI, Uvicorn, SSE, uploads</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">Install & Build from Source</span><span class="short-text">Source</span></h3>
-        <div class="code-block code-block-multi">
-          <code>git clone https://github.com/jddunn/tenets.git
-cd tenets && pip install -e .</code>
-          <button class="copy-btn" data-text="git clone https://github.com/jddunn/tenets.git && cd tenets && pip install -e .">Copy</button>
-        </div>
-        <p class="install-note">Latest development version with all updates</p>
+        <p class="install-note">MCP + ML + visualization</p>
       </div>
 
       <div class="install-card coming-soon" aria-disabled="true">

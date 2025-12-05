@@ -1174,6 +1174,183 @@ code, pre {
   box-shadow: var(--shadow-sm);
 }
 
+/* Featured/recommended install card */
+.install-card.featured {
+  position: relative;
+  border: 2px solid var(--amber-400);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.featured-badge {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background: var(--gradient-amber);
+  color: var(--navy-900);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+/* ===============================================
+   MCP CONFIGURATION SECTION
+   =============================================== */
+
+.mcp-config-section {
+  background: var(--navy-900);
+  padding: 4rem 2rem;
+}
+
+[data-md-color-scheme="slate"] .mcp-config-section {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.mcp-config-section .section-subtitle {
+  text-align: center;
+  color: var(--gray-400);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.ide-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.ide-tab {
+  background: transparent;
+  border: 2px solid var(--gray-600);
+  color: var(--gray-400);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.ide-tab:hover {
+  border-color: var(--amber-400);
+  color: var(--amber-400);
+}
+
+.ide-tab.active {
+  background: var(--amber-400);
+  border-color: var(--amber-400);
+  color: var(--navy-900);
+}
+
+.ide-config-panels {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.ide-config-panel {
+  display: none;
+}
+
+.ide-config-panel.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.config-step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: var(--gray-200);
+}
+
+.step-number {
+  background: var(--amber-400);
+  color: var(--navy-900);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.step-text {
+  font-size: 1rem;
+}
+
+.step-text code {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--amber-400);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.config-code {
+  position: relative;
+  background: #0d1117;
+  border: 1px solid var(--gray-700);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.config-code pre {
+  margin: 0;
+}
+
+.config-code code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: #e6edf3;
+  white-space: pre;
+  line-height: 1.6;
+}
+
+.config-code .copy-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.config-note {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin-top: 1rem;
+}
+
+.config-note code {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--amber-400);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.config-ready {
+  text-align: center;
+  color: #22c55e;
+  font-weight: 600;
+  margin-top: 2rem;
+  font-size: 1.1rem;
+}
+
 /* ===============================================
    NEWSLETTER SECTION
    =============================================== */
