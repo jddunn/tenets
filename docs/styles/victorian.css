@@ -1282,18 +1282,18 @@ code, pre {
 }
 
 .ide-config-panels {
-  max-width: 550px;
+  max-width: 700px;
   margin: 0 auto;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.4);
   border-radius: 12px;
-  padding: 2rem;
+  padding: 2rem 2.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 [data-md-color-scheme="default"] .ide-config-panels {
-  background: #fff;
-  border-color: #e2e8f0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .ide-config-panel {
@@ -1319,7 +1319,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-step {
-  color: #334155;
+  color: #f1f5f9;
 }
 
 .step-number {
@@ -1341,32 +1341,32 @@ code, pre {
 }
 
 .step-text code {
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.25);
   color: var(--amber-400);
-  padding: 0.15rem 0.4rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 [data-md-color-scheme="default"] .step-text code {
-  background: rgba(245, 158, 11, 0.15);
-  color: #b45309;
+  background: rgba(245, 158, 11, 0.3);
+  color: var(--amber-400);
 }
 
 .config-code {
   position: relative;
   background: #0d1117;
-  border: 1px solid #30363d;
+  border: 2px solid #30363d;
   border-radius: 8px;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   margin: 1rem 0;
   overflow-x: auto;
 }
 
 [data-md-color-scheme="default"] .config-code {
-  background: #1e293b;
-  border-color: #334155;
+  background: #0f172a;
+  border-color: #475569;
 }
 
 .config-code pre {
@@ -1375,10 +1375,10 @@ code, pre {
 
 .config-code code {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #e6edf3;
   white-space: pre;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .config-code .copy-btn {
@@ -1391,13 +1391,17 @@ code, pre {
 
 .config-note {
   font-size: 0.8rem;
-  color: #64748b;
+  color: #94a3b8;
   margin-top: 0.75rem;
   line-height: 1.6;
 }
 
+[data-md-color-scheme="default"] .config-note {
+  color: #cbd5e1;
+}
+
 .config-note code {
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(245, 158, 11, 0.2);
   color: var(--amber-400);
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
@@ -1405,7 +1409,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-note code {
-  color: #b45309;
+  color: var(--amber-400);
 }
 
 .config-ready {
