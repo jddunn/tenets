@@ -911,71 +911,32 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
     <h2 class="section-title">Installation Options</h2>
 
     <div class="install-grid">
+      <div class="install-card featured">
+        <div class="featured-badge">Recommended</div>
+        <h3><span class="full-text">MCP Server</span><span class="short-text">MCP</span></h3>
+        <div class="code-block">
+          <code>pip install tenets[mcp]</code>
+          <button class="copy-btn" data-text="pip install tenets[mcp]">Copy</button>
+        </div>
+        <p class="install-note">For Cursor, Claude Desktop, Windsurf</p>
+      </div>
+
       <div class="install-card">
-        <h3><span class="full-text">Quick Install</span><span class="short-text">Quick</span></h3>
+        <h3><span class="full-text">Core Only</span><span class="short-text">Core</span></h3>
         <div class="code-block">
           <code>pip install tenets</code>
           <button class="copy-btn" data-text="pip install tenets">Copy</button>
         </div>
-        <p class="install-note">Core features - lightweight, no ML dependencies</p>
+        <p class="install-note">CLI + Python library (no MCP)</p>
       </div>
 
       <div class="install-card">
-        <h3><span class="full-text">Full Features</span><span class="short-text">All</span></h3>
+        <h3><span class="full-text">Everything</span><span class="short-text">All</span></h3>
         <div class="code-block">
           <code>pip install tenets[all]</code>
           <button class="copy-btn" data-text="pip install tenets[all]">Copy</button>
         </div>
-        <p class="install-note">Everything including ML models and visualization</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">Light NLP</span><span class="short-text">Light</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[light]</code>
-          <button class="copy-btn" data-text="pip install tenets[light]">Copy</button>
-        </div>
-        <p class="install-note">Keyword extraction, TextRank, metrics without deep learning</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">ML</span><span class="short-text">ML</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[ml]</code>
-          <button class="copy-btn" data-text="pip install tenets[ml]">Copy</button>
-        </div>
-        <p class="install-note">Transformers, embeddings, vector search, providers</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">Visualization</span><span class="short-text">Viz</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[viz]</code>
-          <button class="copy-btn" data-text="pip install tenets[viz]">Copy</button>
-        </div>
-        <p class="install-note">Graphs, plots, and visual dashboards</p>
-      </div>
-
-
-
-      <div class="install-card coming-soon" aria-disabled="true">
-        <div class="coming-soon-badge" aria-hidden="true">Coming soon</div>
-        <h3><span class="full-text">Web Interface</span><span class="short-text">Web</span></h3>
-        <div class="code-block">
-          <code>pip install tenets[web]</code>
-          <button class="copy-btn" data-text="pip install tenets[web]" disabled>Copy</button>
-        </div>
-        <p class="install-note">FastAPI, Uvicorn, SSE, uploads</p>
-      </div>
-
-      <div class="install-card">
-        <h3><span class="full-text">Install & Build from Source</span><span class="short-text">Source</span></h3>
-        <div class="code-block code-block-multi">
-          <code>git clone https://github.com/jddunn/tenets.git
-cd tenets && pip install -e .</code>
-          <button class="copy-btn" data-text="git clone https://github.com/jddunn/tenets.git && cd tenets && pip install -e .">Copy</button>
-        </div>
-        <p class="install-note">Latest development version with all updates</p>
+        <p class="install-note">MCP + ML + visualization</p>
       </div>
 
       <div class="install-card coming-soon" aria-disabled="true">
