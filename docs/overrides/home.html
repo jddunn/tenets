@@ -905,6 +905,113 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
   </div>
 </section>
 
+<!-- MCP Configuration Section -->
+<section class="mcp-config-section">
+  <div class="section-container">
+    <h2 class="section-title">Configure Your IDE</h2>
+    <p class="section-subtitle">Add tenets to your AI assistant in seconds</p>
+
+    <div class="ide-tabs">
+      <button class="ide-tab active" data-ide="cursor">Cursor</button>
+      <button class="ide-tab" data-ide="claude">Claude Desktop</button>
+      <button class="ide-tab" data-ide="windsurf">Windsurf</button>
+    </div>
+
+    <div class="ide-config-panels">
+      <!-- Cursor Config -->
+      <div class="ide-config-panel active" data-ide="cursor">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Open Cursor Settings → MCP</span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">3</span>
+          <span class="step-text">Add to <code>~/.cursor/mcp.json</code>:</span>
+        </div>
+        <div class="config-code">
+          <pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+      </div>
+
+      <!-- Claude Desktop Config -->
+      <div class="ide-config-panel" data-ide="claude">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Edit <code>claude_desktop_config.json</code>:</span>
+        </div>
+        <div class="config-code">
+          <pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+        <p class="config-note">macOS: <code>~/Library/Application Support/Claude/</code><br>Windows: <code>%APPDATA%\Claude\</code></p>
+      </div>
+
+      <!-- Windsurf Config -->
+      <div class="ide-config-panel" data-ide="windsurf">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Open Windsurf Settings → Extensions → MCP</span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">3</span>
+          <span class="step-text">Add server configuration:</span>
+        </div>
+        <div class="config-code">
+          <pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="config-ready">✓ Restart your IDE — tenets tools are now available</p>
+  </div>
+  <script>
+    // IDE tab switching
+    document.querySelectorAll('.ide-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        const ide = this.dataset.ide;
+        // Update tabs
+        document.querySelectorAll('.ide-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        // Update panels
+        document.querySelectorAll('.ide-config-panel').forEach(p => p.classList.remove('active'));
+        document.querySelector(`.ide-config-panel[data-ide="${ide}"]`).classList.add('active');
+      });
+    });
+  </script>
+</section>
+
 <!-- Installation Section -->
 <section class="install-section">
   <div class="section-container">
