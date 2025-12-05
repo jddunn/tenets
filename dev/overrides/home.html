@@ -275,7 +275,8 @@
      alt="tenets"
      class="torch-logo-static light-logo">
     </div><!-- /torch-container -->
-    <p class="hero-tagline">MCP Server for AI Coding Assistants</p>
+    <p class="hero-tagline">MCP Server for Intelligent Code Context</p>
+    <p class="hero-subtitle">Feed your AI assistant the right code, every time</p>
 
     <!-- Small pip install command right below tagline -->
     <div class="hero-quick-copy">
@@ -288,9 +289,9 @@
     </div>
 
     <p class="hero-description">
-      Give Cursor, Claude & Windsurf the context they need.<br>
       Multi-factor ranking finds relevant code automatically.<br>
-      All processing stays local — your code never leaves your machine.
+      Works with Cursor, Claude Desktop & Windsurf.<br>
+      100% local — your code never leaves your machine.
     </p>
 
     <!-- MCP Setup, Quick Start, CLI buttons -->
@@ -330,6 +331,102 @@
 
   </div><!-- /hero-content -->
 </section><!-- /victorian-hero -->
+
+<!-- MCP Configuration Section -->
+<section class="mcp-config-section">
+  <div class="section-container">
+    <h2 class="section-title">Quick Setup</h2>
+    <p class="section-subtitle">One command, one config file — you're ready</p>
+
+    <div class="ide-tabs">
+      <button class="ide-tab active" data-ide="cursor">Cursor</button>
+      <button class="ide-tab" data-ide="claude">Claude Desktop</button>
+      <button class="ide-tab" data-ide="windsurf">Windsurf</button>
+    </div>
+
+    <div class="ide-config-panels">
+      <!-- Cursor Config -->
+      <div class="ide-config-panel active" data-ide="cursor">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Add to <code>~/.cursor/mcp.json</code>:</span>
+        </div>
+        <div class="config-code">
+<pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+      </div>
+
+      <!-- Claude Desktop Config -->
+      <div class="ide-config-panel" data-ide="claude">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Add to <code>claude_desktop_config.json</code>:</span>
+        </div>
+        <div class="config-code">
+<pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+        <p class="config-note">Config location → macOS: <code>~/Library/Application Support/Claude/</code> · Windows: <code>%APPDATA%\Claude\</code></p>
+      </div>
+
+      <!-- Windsurf Config -->
+      <div class="ide-config-panel" data-ide="windsurf">
+        <div class="config-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
+        </div>
+        <div class="config-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Settings → Extensions → MCP, add:</span>
+        </div>
+        <div class="config-code">
+<pre><code>{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}</code></pre>
+          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="config-ready">✓ Restart your IDE — tenets tools are now available</p>
+  </div>
+  <script>
+    document.querySelectorAll('.ide-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        const ide = this.dataset.ide;
+        document.querySelectorAll('.ide-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.ide-config-panel').forEach(p => p.classList.remove('active'));
+        document.querySelector(`.ide-config-panel[data-ide="${ide}"]`).classList.add('active');
+      });
+    });
+  </script>
+</section>
 
 <!-- See It In Action: Tabbed Examples -->
 <section class="examples-section" id="examples">
@@ -903,113 +1000,6 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
     });
     </script>
   </div>
-</section>
-
-<!-- MCP Configuration Section -->
-<section class="mcp-config-section">
-  <div class="section-container">
-    <h2 class="section-title">Configure Your IDE</h2>
-    <p class="section-subtitle">Add tenets to your AI assistant in seconds</p>
-
-    <div class="ide-tabs">
-      <button class="ide-tab active" data-ide="cursor">Cursor</button>
-      <button class="ide-tab" data-ide="claude">Claude Desktop</button>
-      <button class="ide-tab" data-ide="windsurf">Windsurf</button>
-    </div>
-
-    <div class="ide-config-panels">
-      <!-- Cursor Config -->
-      <div class="ide-config-panel active" data-ide="cursor">
-        <div class="config-step">
-          <span class="step-number">1</span>
-          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
-        </div>
-        <div class="config-step">
-          <span class="step-number">2</span>
-          <span class="step-text">Open Cursor Settings → MCP</span>
-        </div>
-        <div class="config-step">
-          <span class="step-number">3</span>
-          <span class="step-text">Add to <code>~/.cursor/mcp.json</code>:</span>
-        </div>
-        <div class="config-code">
-          <pre><code>{
-  "mcpServers": {
-    "tenets": {
-      "command": "tenets-mcp"
-    }
-  }
-}</code></pre>
-          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
-        </div>
-      </div>
-
-      <!-- Claude Desktop Config -->
-      <div class="ide-config-panel" data-ide="claude">
-        <div class="config-step">
-          <span class="step-number">1</span>
-          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
-        </div>
-        <div class="config-step">
-          <span class="step-number">2</span>
-          <span class="step-text">Edit <code>claude_desktop_config.json</code>:</span>
-        </div>
-        <div class="config-code">
-          <pre><code>{
-  "mcpServers": {
-    "tenets": {
-      "command": "tenets-mcp"
-    }
-  }
-}</code></pre>
-          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
-        </div>
-        <p class="config-note">macOS: <code>~/Library/Application Support/Claude/</code><br>Windows: <code>%APPDATA%\Claude\</code></p>
-      </div>
-
-      <!-- Windsurf Config -->
-      <div class="ide-config-panel" data-ide="windsurf">
-        <div class="config-step">
-          <span class="step-number">1</span>
-          <span class="step-text">Install: <code>pip install tenets[mcp]</code></span>
-        </div>
-        <div class="config-step">
-          <span class="step-number">2</span>
-          <span class="step-text">Open Windsurf Settings → Extensions → MCP</span>
-        </div>
-        <div class="config-step">
-          <span class="step-number">3</span>
-          <span class="step-text">Add server configuration:</span>
-        </div>
-        <div class="config-code">
-          <pre><code>{
-  "mcpServers": {
-    "tenets": {
-      "command": "tenets-mcp"
-    }
-  }
-}</code></pre>
-          <button class="copy-btn" data-text='{"mcpServers":{"tenets":{"command":"tenets-mcp"}}}'>Copy</button>
-        </div>
-      </div>
-    </div>
-
-    <p class="config-ready">✓ Restart your IDE — tenets tools are now available</p>
-  </div>
-  <script>
-    // IDE tab switching
-    document.querySelectorAll('.ide-tab').forEach(tab => {
-      tab.addEventListener('click', function() {
-        const ide = this.dataset.ide;
-        // Update tabs
-        document.querySelectorAll('.ide-tab').forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        // Update panels
-        document.querySelectorAll('.ide-config-panel').forEach(p => p.classList.remove('active'));
-        document.querySelector(`.ide-config-panel[data-ide="${ide}"]`).classList.add('active');
-      });
-    });
-  </script>
 </section>
 
 <!-- Installation Section -->
