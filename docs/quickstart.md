@@ -1,5 +1,31 @@
 # Quickstart
 
+## MCP-first (recommended)
+
+```bash
+pip install tenets[mcp]
+tenets-mcp
+```
+
+Add to your IDE:
+
+- **Cursor** (`~/.cursor/mcp.json`)
+  ```json
+  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+  ```
+- **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+  ```json
+  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+  ```
+- **Windsurf / VS Code MCP**
+  ```json
+  { "tenets": { "command": "tenets-mcp" } }
+  ```
+
+Ask your AI: *“Use tenets to find the auth code and pin src/auth.”*
+
+---
+
 ## Real-world flow: System instruction + Tenets + Sessions
 
 ```bash

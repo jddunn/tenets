@@ -20,32 +20,39 @@ This tutorial walks you through using Tenets to supercharge your AI coding workf
 
 - Python 3.9+
 - A codebase to work with (or use any open-source project)
-- Optional: Claude Desktop or Cursor IDE
+- MCP-ready client: Cursor, Claude Desktop, Windsurf/VS Code MCP extension
 
 ---
 
-## Step 1: Installation
-
-### Basic Install (CLI + Python API)
-
-```bash
-pip install tenets
-```
-
-### With MCP Server (for AI Assistants)
+## Step 1: Installation (MCP-first)
 
 ```bash
 pip install tenets[mcp]
+tenets-mcp --version
+# tenets-mcp v0.7.1
 ```
 
-Verify installation:
+Add to your IDE:
+
+- **Cursor** (`~/.cursor/mcp.json`)
+  ```json
+  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+  ```
+- **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+  ```json
+  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+  ```
+- **Windsurf / VS Code MCP**
+  ```json
+  { "tenets": { "command": "tenets-mcp" } }
+  ```
+
+Prefer to start from CLI only? Install without MCP:
 
 ```bash
+pip install tenets
 tenets --version
-# tenets v0.4.0
-
-tenets-mcp --version  
-# tenets-mcp v0.4.0
+# tenets v0.7.1
 ```
 
 ---

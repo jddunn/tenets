@@ -50,7 +50,7 @@ python3 --version
 
 ## Installation
 
-Install Tenets with MCP support:
+Tenets is an MCP server for AI coding assistants. Install with MCP support:
 
 ```bash
 pip install tenets[mcp]
@@ -65,7 +65,7 @@ tenets-mcp --version
 You should see:
 
 ```
-tenets-mcp v0.4.0
+tenets-mcp v0.7.1
 ```
 
 ### Finding the Executable Path
