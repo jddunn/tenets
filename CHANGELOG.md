@@ -9,10 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.1] - 2025-12-06
 
-### Changed
-- ${COMMIT_TITLE} (${COMMI)
-
-
+### Fixed
+- Resolved Python 3.14 import recursion in `tenets.core.__init__` (MCP tools now load on 3.14).
+- Stabilized ML stubs for `sentence_transformers` on Python 3.13/3.14 in test fixtures.
 
 ## [0.7.0] - 2025-12-06
 
@@ -22,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - README adds MCP quick reference with configs and tool list.
-- Fixed Python 3.14 import recursion in `tenets.core` initialization.
 
 
 ## [0.6.5] - 2025-12-06
