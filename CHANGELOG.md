@@ -9,15 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0] - 2025-12-06
 
-### Changed
-- ${COMMIT_TITLE} (${COMMI)
+### Added
+- MCP tools now support HTML distill output and include/exclude/test filters on rank.
+- Expanded MCP test suite (79 tests) with Python 3.14-compatible mocks and integration flows.
 
+### Changed
+- README adds MCP quick reference with configs and tool list.
 
 
 ## [0.6.5] - 2025-12-06
 
 ### Changed
-- ${COMMIT_TITLE} (${COMMI)
+- Sync MCP-first docs and landing content; add MCP quick setup examples.
 
 
 
