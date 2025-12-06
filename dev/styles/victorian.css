@@ -1376,9 +1376,13 @@ code, pre {
 .config-code code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.9rem;
-  color: #e6edf3;
+  color: #e6edf3 !important;
   white-space: pre;
   line-height: 1.6;
+}
+
+[data-md-color-scheme="default"] .config-code code {
+  color: #e6edf3 !important;
 }
 
 .config-code .copy-btn {
