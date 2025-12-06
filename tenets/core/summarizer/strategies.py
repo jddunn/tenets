@@ -40,6 +40,15 @@ try:
 except ImportError:
     SKLEARN_AVAILABLE = False
 
+# Ensure numpy symbol is available for type hints even if sklearn is missing.
+# TextRankStrategy raises ImportError when sklearn is unavailable, but class
+# definition should not fail due to a missing np name.
+if "np" not in locals():
+    try:
+        import numpy as np
+    except ImportError:  # pragma: no cover - numpy is an optional dep
+        np = None  # type: ignore
+
 try:
     from transformers import pipeline
 
