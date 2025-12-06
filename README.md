@@ -26,23 +26,39 @@
 
 All processing runs locally - no API costs, no data leaving your machine, complete privacy.
 
-## Installation
+## MCP-first Quickstart (recommended)
+
+- **Install + start MCP server**
+  ```bash
+  pip install tenets[mcp]
+  tenets-mcp
+  ```
+- **Cursor** (`~/.cursor/mcp.json`)
+  ```json
+  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+  ```
+- **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+  ```json
+  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+  ```
+- **Windsurf / VS Code MCP extensions**
+  ```json
+  { "tenets": { "command": "tenets-mcp" } }
+  ```
+- **Docs (full tool list & transports):** https://tenets.dev/MCP/
+
+## Installation (CLI/Python)
 
 ```bash
-# Basic install - fully functional with BM25/TF-IDF ranking
-pip install tenets
-
-# With MCP server for AI assistant integration
-pip install tenets[mcp]
-
-# Optional extras
-pip install tenets[light]  # Adds RAKE/YAKE keyword extraction algorithms
-pip install tenets[viz]    # Adds visualization capabilities (graphs, charts)
-pip install tenets[ml]     # Adds deep learning for semantic search (2GB+ download)
-pip install tenets[all]    # Everything including all optional features
+pip install tenets           # CLI + Python, BM25/TF-IDF ranking
+pip install tenets[mcp]      # Adds MCP server (recommended)
+pip install tenets[light]    # RAKE/YAKE keyword extraction
+pip install tenets[viz]      # Visualization features
+pip install tenets[ml]       # ML embeddings / reranker (2GB+)
+pip install tenets[all]      # Everything
 ```
 
-## MCP Quick Reference
+## MCP Tool Surface (AI assistants)
 
 - **Start the MCP server**
   ```bash
@@ -68,39 +84,15 @@ pip install tenets[all]    # Everything including all optional features
 - **Tools exposed**: `distill`, `rank`, `examine`, `session_*`, `tenet_*` (same surface as CLI).
 - **Docs**: see `docs/MCP.md` for full endpoint/tool list, SSE/HTTP details, and IDE notes.
 
-## MCP Server (AI Assistant Integration)
+## MCP Server (AI assistant integration)
 
-Tenets includes an MCP server for native integration with AI coding assistants:
+Once you start `tenets-mcp` and drop one of the configs above into your IDE, ask your AI:
 
-```bash
-# Start MCP server
-pip install tenets[mcp]
-tenets-mcp
-```
+- “Use tenets to find the auth code” (calls `distill`)
+- “Pin src/auth to session auth-feature” (calls `session_pin_folder`)
+- “Rank files for the payment bug” (calls `rank_files`)
 
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "tenets": {
-      "command": "tenets-mcp"
-    }
-  }
-}
-```
-
-**Cursor** (Settings → MCP Servers):
-```json
-{
-  "tenets": {
-    "command": "tenets-mcp"
-  }
-}
-```
-
-Once configured, ask your AI: *"Use tenets to find relevant files for implementing user authentication"*
-
-See [MCP Documentation](docs/MCP.md) for full setup guide.
+See [MCP docs](https://tenets.dev/MCP/) for transports (stdio/SSE/HTTP), tool schemas, and full examples.
 
 ## Quick Start
 

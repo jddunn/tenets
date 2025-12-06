@@ -86,6 +86,48 @@ hide:
   </div>
 </div>
 
+<!-- MCP-FIRST QUICKSTART -->
+<div class="features-section">
+  <div class="section-header">
+    <div class="ornament left"></div>
+    <h2>MCP Quickstart (recommended)</h2>
+    <div class="ornament right"></div>
+  </div>
+
+  <div style="max-width: 1000px; margin: 0 auto;">
+    <ol style="line-height: 1.8; padding-left: 1.5rem;">
+      <li><code>pip install tenets[mcp]</code></li>
+      <li><code>tenets-mcp</code> (stdio transport by default)</li>
+      <li>Drop the JSON below into your IDE’s MCP config</li>
+    </ol>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
+      <div class="card">
+        <h3>Cursor</h3>
+        <pre><code class="language-json">{
+  "mcpServers": { "tenets": { "command": "tenets-mcp" } }
+}</code></pre>
+      </div>
+      <div class="card">
+        <h3>Claude Desktop</h3>
+        <pre><code class="language-json">{
+  "mcpServers": { "tenets": { "command": "tenets-mcp" } }
+}</code></pre>
+      </div>
+      <div class="card">
+        <h3>Windsurf / VS Code</h3>
+        <pre><code class="language-json">{
+  "tenets": { "command": "tenets-mcp" }
+}</code></pre>
+      </div>
+    </div>
+
+    <p style="text-align: center; margin-top: 1.2rem; opacity: 0.85;">
+      Full MCP reference (tools, transports, error semantics): <a href="MCP/">tenets.dev/MCP/</a>
+    </p>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <!-- MCP SETUP SECTION -->
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
