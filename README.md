@@ -9,7 +9,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/tenets.svg)](https://pypi.org/project/tenets/)
 [![MCP Server](https://img.shields.io/badge/MCP-Server-blue?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAydjRNMTIgMTh2NE00LjkzIDQuOTNsLjgzIDIuODNNMTYuMjQgMTYuMjRsMi44My44M000LjkzIDE5LjA3bDIuODMtLjgzTTE2LjI0IDcuNzZsLjgzLTIuODNNMiAxMmg0TTE4IDEyaDQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://tenets.dev/MCP/)
 [![CI](https://github.com/jddunn/tenets/actions/workflows/ci.yml/badge.svg)](https://github.com/jddunn/tenets/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/jddunn/tenets/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
+[![codecov](https://codecov.io/gh/jddunn/tenets/branch/master/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
 **tenets** is an **MCP server** for AI coding assistants: it finds, ranks, and aggregates the most relevant code, integrates natively with Cursor, Claude Desktop, Windsurf via the Model Context Protocol, and also ships a CLI/Python library plus interactive HTML reports with full JSON metadata for automation.
