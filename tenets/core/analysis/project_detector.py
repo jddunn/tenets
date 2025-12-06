@@ -140,7 +140,9 @@ class ProjectDetector:
             if ext in self.EXTENSION_TO_LANGUAGE:
                 language_counts[self.EXTENSION_TO_LANGUAGE[ext]] += count
 
-        analyzer_order = {analyzer.language_name: idx for idx, analyzer in enumerate(self.analyzers)}
+        analyzer_order = {
+            analyzer.language_name: idx for idx, analyzer in enumerate(self.analyzers)
+        }
         languages = [
             lang
             for lang, _ in sorted(
