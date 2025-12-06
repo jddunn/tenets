@@ -42,6 +42,32 @@ pip install tenets[ml]     # Adds deep learning for semantic search (2GB+ downlo
 pip install tenets[all]    # Everything including all optional features
 ```
 
+## MCP Quick Reference
+
+- **Start the MCP server**
+  ```bash
+  pip install tenets[mcp]
+  tenets-mcp
+  ```
+- **Cursor** (`~/.cursor/mcp.json`)
+  ```json
+  {
+    "mcpServers": {
+      "tenets": { "command": "tenets-mcp" }
+    }
+  }
+  ```
+- **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+  ```json
+  {
+    "mcpServers": {
+      "tenets": { "command": "tenets-mcp" }
+    }
+  }
+  ```
+- **Tools exposed**: `distill`, `rank`, `examine`, `session_*`, `tenet_*` (same surface as CLI).
+- **Docs**: see `docs/MCP.md` for full endpoint/tool list, SSE/HTTP details, and IDE notes.
+
 ## MCP Server (AI Assistant Integration)
 
 Tenets includes an MCP server for native integration with AI coding assistants:
