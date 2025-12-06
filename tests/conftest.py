@@ -100,6 +100,10 @@ def test_config() -> TenetsConfig:
     config.tenet.system_instruction = None
     config.tenet.system_instruction_enabled = False
 
+    # Skip automatic tenet injection by default to prevent persistent/local
+    # tenets from altering mocked distill outputs in unit tests.
+    config.tenet.auto_instill = False
+
     return config
 
 
