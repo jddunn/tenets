@@ -221,10 +221,14 @@ class PythonAnalyzer(LanguageAnalyzer):
                             has_all = True
                             if isinstance(node.value, ast.List):
                                 for item in node.value.elts:
-                                    if isinstance(item, (ast.Constant, ast.Str)):
-                                        value = (
-                                            item.value if isinstance(item, ast.Constant) else item.s
-                                        )
+                                    value = None
+                                    if isinstance(item, ast.Constant) and isinstance(
+                                        item.value, str
+                                    ):
+                                        value = item.value
+                                    elif hasattr(ast, "Str") and isinstance(item, ast.Str):
+                                        value = item.s
+                                    if value is not None:
                                         exports.append(
                                             {
                                                 "name": value,
@@ -645,13 +649,14 @@ class PythonAnalyzer(LanguageAnalyzer):
             elif isinstance(node, ast.Name):
                 operands.add(node.id)
                 operand_count += 1
-            elif isinstance(node, (ast.Constant, ast.Num, ast.Str)):
-                value = (
-                    node.value
-                    if isinstance(node, ast.Constant)
-                    else (node.n if isinstance(node, ast.Num) else node.s)
-                )
-                operands.add(str(value))
+            elif isinstance(node, ast.Constant):
+                operands.add(str(node.value))
+                operand_count += 1
+            elif hasattr(ast, "Num") and isinstance(node, ast.Num):
+                operands.add(str(node.n))
+                operand_count += 1
+            elif hasattr(ast, "Str") and isinstance(node, ast.Str):
+                operands.add(str(node.s))
                 operand_count += 1
 
         n1 = len(operators)  # Unique operators
@@ -765,13 +770,12 @@ class PythonAnalyzer(LanguageAnalyzer):
             return f"{self._get_name(node.value)}.{node.attr}"
         elif isinstance(node, ast.Call):
             return self._get_name(node.func)
-        elif isinstance(node, (ast.Constant, ast.Num, ast.Str)):
-            value = (
-                node.value
-                if isinstance(node, ast.Constant)
-                else (node.n if isinstance(node, ast.Num) else node.s)
-            )
-            return str(value)
+        elif isinstance(node, ast.Constant):
+            return str(node.value)
+        elif hasattr(ast, "Num") and isinstance(node, ast.Num):
+            return str(node.n)
+        elif hasattr(ast, "Str") and isinstance(node, ast.Str):
+            return node.s
         elif isinstance(node, ast.Subscript):
             return f"{self._get_name(node.value)}[{self._get_name(node.slice)}]"
         else:

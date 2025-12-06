@@ -19,6 +19,14 @@ Tenets solves the "context problem" in AI-assisted development:
 
 Tenets automatically finds, ranks, and aggregates the right code for every prompt.
 
+## How Tenets uses MCP
+
+- **MCP Server**: Tenets runs as a Model Context Protocol server so AI assistants can call it directly—no manual copy/paste.
+- **Flow**: You ask in your IDE → MCP routes to `tenets-mcp` → Tenets analyzes and ranks code → the assistant gets the curated context.
+- **Why it matters**: Better answers with the right files, fewer hallucinations, and tighter token budgets.
+- **Supported IDEs**: Cursor, Claude Desktop, Windsurf, and any MCP-capable client.
+- **Privacy-first**: Everything runs locally; no code or prompts leave your machine. Core features need zero API keys.
+
 ## The Team
 
 <div class="team-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin: 2rem 0;">

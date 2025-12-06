@@ -134,13 +134,24 @@ class ProjectDetector:
                 if ext:
                     extensions[ext] += 1
 
-        # Determine primary languages based on extensions
-        languages = []
-        for ext, count in extensions.most_common(10):
+        # Determine primary languages based on extensions (aggregate per language for stability)
+        language_counts = Counter()
+        for ext, count in extensions.items():
             if ext in self.EXTENSION_TO_LANGUAGE:
-                lang = self.EXTENSION_TO_LANGUAGE[ext]
-                if lang not in languages:
-                    languages.append(lang)
+                language_counts[self.EXTENSION_TO_LANGUAGE[ext]] += count
+
+        analyzer_order = {analyzer.language_name: idx for idx, analyzer in enumerate(self.analyzers)}
+        languages = [
+            lang
+            for lang, _ in sorted(
+                language_counts.items(),
+                key=lambda item: (
+                    -item[1],
+                    analyzer_order.get(item[0], len(analyzer_order)),
+                    item[0],
+                ),
+            )
+        ]
 
         # Detect frameworks based on indicators
         frameworks = []

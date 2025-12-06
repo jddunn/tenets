@@ -1425,6 +1425,140 @@ code, pre {
 }
 
 /* ===============================================
+   MCP EXPLANATION SECTION
+   =============================================== */
+
+.mcp-explanation-section {
+  padding: 4rem 2rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%);
+}
+
+[data-md-color-scheme="default"] .mcp-explanation-section {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.mcp-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 3rem 0;
+  flex-wrap: wrap;
+}
+
+.mcp-flow-step {
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  min-width: 160px;
+  max-width: 180px;
+}
+
+[data-md-color-scheme="default"] .mcp-flow-step {
+  background: #fff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.flow-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(251, 191, 36, 0.1) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--amber-400);
+}
+
+.mcp-flow-step h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: #f8fafc;
+}
+
+[data-md-color-scheme="default"] .mcp-flow-step h3 {
+  color: #1e293b;
+}
+
+.mcp-flow-step p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+[data-md-color-scheme="default"] .mcp-flow-step p {
+  color: #64748b;
+}
+
+.flow-arrow {
+  font-size: 1.5rem;
+  color: var(--amber-400);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .flow-arrow {
+    transform: rotate(90deg);
+  }
+  .mcp-flow {
+    flex-direction: column;
+  }
+}
+
+.mcp-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.mcp-detail-card {
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+[data-md-color-scheme="default"] .mcp-detail-card {
+  background: #fff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.mcp-detail-card h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--amber-400);
+}
+
+.mcp-detail-card p {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.6;
+}
+
+[data-md-color-scheme="default"] .mcp-detail-card p {
+  color: #475569;
+}
+
+.mcp-detail-card strong {
+  color: #f8fafc;
+}
+
+[data-md-color-scheme="default"] .mcp-detail-card strong {
+  color: #1e293b;
+}
+
+/* ===============================================
    NEWSLETTER SECTION
    =============================================== */
 

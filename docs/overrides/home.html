@@ -428,6 +428,81 @@
   </script>
 </section>
 
+<!-- How MCP Works Section -->
+<section class="mcp-explanation-section">
+  <div class="section-container">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-subtitle">The Model Context Protocol connects AI assistants to your tools</p>
+    
+    <div class="mcp-flow">
+      <div class="mcp-flow-step">
+        <div class="flow-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <h3>You Ask</h3>
+        <p>"Find where user auth is handled"</p>
+      </div>
+      
+      <div class="flow-arrow">→</div>
+      
+      <div class="mcp-flow-step">
+        <div class="flow-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <path d="M8 21h8M12 17v4"/>
+          </svg>
+        </div>
+        <h3>AI Calls Tenets</h3>
+        <p>MCP routes request to tenets-mcp server</p>
+      </div>
+      
+      <div class="flow-arrow">→</div>
+      
+      <div class="mcp-flow-step">
+        <div class="flow-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </div>
+        <h3>Tenets Analyzes</h3>
+        <p>Scans codebase, ranks files, builds context</p>
+      </div>
+      
+      <div class="flow-arrow">→</div>
+      
+      <div class="mcp-flow-step">
+        <div class="flow-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h3>AI Gets Context</h3>
+        <p>Relevant code injected into AI's prompt</p>
+      </div>
+    </div>
+    
+    <div class="mcp-details">
+      <div class="mcp-detail-card">
+        <h4>What is MCP?</h4>
+        <p><strong>Model Context Protocol</strong> is an open standard by Anthropic that lets AI assistants securely connect to external tools and data sources. Instead of manually copying code into prompts, MCP servers provide context automatically.</p>
+      </div>
+      <div class="mcp-detail-card">
+        <h4>Why Tenets?</h4>
+        <p>Other MCP servers give raw file access. Tenets is <strong>intelligent</strong> — it understands your question, finds relevant code across your entire codebase, ranks by importance, and fits everything within token limits.</p>
+      </div>
+      <div class="mcp-detail-card">
+        <h4>100% Local</h4>
+        <p>Tenets runs entirely on your machine. No code ever leaves your computer. No API keys needed for core features. Your codebase stays private.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- See It In Action: Tabbed Examples -->
 <section class="examples-section" id="examples">
   <div class="section-container">
@@ -1010,7 +1085,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
     <div class="install-grid">
       <div class="install-card featured">
         <div class="featured-badge">Recommended</div>
-        <h3><span class="full-text">MCP Server</span><span class="short-text">MCP</span></h3>
+        <h3>MCP Server</h3>
         <div class="code-block">
           <code>pip install tenets[mcp]</code>
           <button class="copy-btn" data-text="pip install tenets[mcp]">Copy</button>
@@ -1019,7 +1094,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
       </div>
 
       <div class="install-card">
-        <h3><span class="full-text">Core Only</span><span class="short-text">Core</span></h3>
+        <h3>Core Only</h3>
         <div class="code-block">
           <code>pip install tenets</code>
           <button class="copy-btn" data-text="pip install tenets">Copy</button>
@@ -1028,7 +1103,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
       </div>
 
       <div class="install-card">
-        <h3><span class="full-text">Everything</span><span class="short-text">All</span></h3>
+        <h3>Everything</h3>
         <div class="code-block">
           <code>pip install tenets[all]</code>
           <button class="copy-btn" data-text="pip install tenets[all]">Copy</button>
@@ -1038,7 +1113,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
 
       <div class="install-card coming-soon" aria-disabled="true">
         <div class="coming-soon-badge" aria-hidden="true">Coming soon</div>
-        <h3><span class="full-text">Docker (Install &amp; Build)</span><span class="short-text">Docker</span></h3>
+        <h3>Docker</h3>
         <div class="code-block">
           <code># Official Docker commands are coming soon</code>
           <button class="copy-btn" disabled>Copy</button>
