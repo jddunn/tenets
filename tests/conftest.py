@@ -271,7 +271,11 @@ def mock_external_dependencies(monkeypatch, request):
                     stub = types.ModuleType(module_name)
                     stub.__file__ = "stub"
                     stub.__loader__ = None
-                    stub.__package__ = None
+                    stub.__package__ = module_name
+                    # Provide a dummy spec to satisfy importlib on Python 3.13/3.14
+                    import importlib.machinery
+
+                    stub.__spec__ = importlib.machinery.ModuleSpec(module_name, loader=None)
 
                     # Add SentenceTransformer for sentence_transformers
                     if module_name == "sentence_transformers":
@@ -294,10 +298,13 @@ def mock_external_dependencies(monkeypatch, request):
             # Only try to patch if the module exists
             if importlib.util.find_spec("sentence_transformers"):
                 monkeypatch.setattr("sentence_transformers.SentenceTransformer", Mock)
-        except (ModuleNotFoundError, AttributeError):
+        except (ModuleNotFoundError, AttributeError, ValueError):
             # Create a minimal stub so code importing sentence_transformers works
             if "sentence_transformers" not in sys.modules:
                 stub = types.ModuleType("sentence_transformers")
+                import importlib.machinery
+
+                stub.__spec__ = importlib.machinery.ModuleSpec("sentence_transformers", loader=None)
 
                 class SentenceTransformer:
                     def __init__(self, *_, **__):

@@ -29,6 +29,11 @@ tenets-mcp --transport http --port 8080
 tenets-mcp --version
 ```
 
+### Python 3.14 compatibility
+
+- Use tenets >= 0.7.0 on Python 3.14 to avoid the prior import recursion in `tenets.core`.
+- No extra flags needed; stdio/SSE/HTTP transports all work on 3.14+.
+
 ## IDE Configuration
 
 ### Claude Desktop

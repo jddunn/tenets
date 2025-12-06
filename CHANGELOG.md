@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - README adds MCP quick reference with configs and tool list.
+- Fixed Python 3.14 import recursion in `tenets.core` initialization.
 
 
 ## [0.6.5] - 2025-12-06
