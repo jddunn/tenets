@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
