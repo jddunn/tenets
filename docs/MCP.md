@@ -111,8 +111,8 @@ The MCP server exposes these tools to AI assistants:
 
 | Tool | Description |
 |------|-------------|
-| `distill` | Build ranked, token-optimized context from codebase |
-| `rank_files` | Rank files by relevance without full content |
+| `distill` | Build ranked, token-optimized context from codebase (markdown/xml/json/html) |
+| `rank_files` | Rank files by relevance without full content (supports include/exclude patterns, test filters) |
 
 ### Analysis Tools
 

@@ -112,8 +112,9 @@ class TenetsMCP:
             path: str = ".",
             mode: Literal["fast", "balanced", "thorough"] = "balanced",
             max_tokens: int = 100000,
-            format: Literal["markdown", "xml", "json"] = "markdown",
+            format: Literal["markdown", "xml", "json", "html"] = "markdown",
             include_tests: bool = False,
+            include_git: bool = True,
             session: Optional[str] = None,
             include_patterns: Optional[list[str]] = None,
             exclude_patterns: Optional[list[str]] = None,
@@ -143,7 +144,9 @@ class TenetsMCP:
                     - "markdown": Human-readable with headers
                     - "xml": Claude-optimized with tags
                     - "json": Structured for programmatic use
+                    - "html": Interactive report (includes full JSON metadata)
                 include_tests: Set True when debugging test failures.
+                include_git: Include git context (commits, contributors, etc.).
                 session: Link to a session for persistent pinned files.
                 include_patterns: Only include matching files (e.g., ["*.py"]).
                 exclude_patterns: Skip matching files (e.g., ["*.log", "*.min.js"]).
@@ -163,6 +166,7 @@ class TenetsMCP:
                 mode=mode,
                 max_tokens=max_tokens,
                 format=format,
+                include_git=include_git,
                 include_tests=include_tests,
                 session_name=session,
                 include_patterns=include_patterns,
@@ -177,6 +181,9 @@ class TenetsMCP:
             mode: Literal["fast", "balanced", "thorough", "ml"] = "balanced",
             top_n: int = 20,
             include_tests: bool = False,
+            exclude_tests: bool = False,
+            include_patterns: Optional[list[str]] = None,
+            exclude_patterns: Optional[list[str]] = None,
             explain: bool = False,
         ) -> dict[str, Any]:
             """Preview which files are most relevant without fetching content.
@@ -192,6 +199,9 @@ class TenetsMCP:
                 mode: Ranking algorithm (same as distill).
                 top_n: How many files to return. Default 20 is usually enough.
                 include_tests: Include test files in results.
+                exclude_tests: Force exclusion of tests (overrides include_tests).
+                include_patterns: Only include matching files.
+                exclude_patterns: Skip matching files.
                 explain: Add breakdown of why each file ranked where it did.
                     Useful for debugging relevance issues.
 
@@ -209,7 +219,10 @@ class TenetsMCP:
                 prompt=prompt,
                 paths=path,
                 mode=mode,
+                include_patterns=include_patterns,
+                exclude_patterns=exclude_patterns,
                 include_tests=include_tests,
+                exclude_tests=exclude_tests,
                 explain=explain,
             )
             files_data = []
