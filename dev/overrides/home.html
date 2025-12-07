@@ -275,8 +275,8 @@
      alt="tenets"
      class="torch-logo-static light-logo">
     </div><!-- /torch-container -->
-    <p class="hero-tagline">MCP Server for Intelligent Code Context</p>
-    <p class="hero-subtitle">Feed your AI assistant the right code, every time</p>
+    <p class="hero-tagline">100% Local MCP Server for Intelligent Code Context</p>
+    <p class="hero-subtitle">NLP-powered code ranking that feeds your AI the right files, every time</p>
 
     <!-- Small pip install command right below tagline -->
     <div class="hero-quick-copy">
@@ -289,9 +289,9 @@
     </div>
 
     <p class="hero-description">
-      Multi-factor ranking finds relevant code automatically.<br>
-      Works with Cursor, Claude Desktop & Windsurf.<br>
-      100% local — your code never leaves your machine.
+      NLP-driven multi-factor ranking finds relevant code automatically.<br>
+      Native MCP integration with Cursor, Claude Desktop & Windsurf.<br>
+      100% local processing — your code never leaves your machine.
     </p>
 
     <!-- MCP Setup, Quick Start, CLI buttons -->
@@ -335,8 +335,8 @@
 <!-- MCP Configuration Section -->
 <section class="mcp-config-section">
   <div class="section-container">
-    <h2 class="section-title">Quick Setup</h2>
-    <p class="section-subtitle">One command, one config file — you're ready</p>
+    <h2 class="section-title">MCP Quick Setup</h2>
+    <p class="section-subtitle">Local MCP server — one install, one config, you're ready</p>
 
     <div class="ide-tabs">
       <button class="ide-tab active" data-ide="cursor">Cursor</button>
@@ -414,6 +414,22 @@
     </div>
 
     <p class="config-ready">✓ Restart your IDE — tenets tools are now available</p>
+    
+    <!-- Quick MCP info cards -->
+    <div class="mcp-details" style="margin-top: 2rem;">
+      <div class="mcp-detail-card">
+        <h4>🔌 Native MCP Integration</h4>
+        <p><strong>Model Context Protocol</strong> is Anthropic's open standard for AI tool connectivity. Tenets is a local MCP server — your AI assistant calls it directly to get intelligent code context.</p>
+      </div>
+      <div class="mcp-detail-card">
+        <h4>🧠 NLP-Powered Ranking</h4>
+        <p>Other MCP servers give raw file access. Tenets uses <strong>NLP analysis</strong> — BM25, TF-IDF, keyword extraction, import graphs — to find and rank the most relevant code for any task.</p>
+      </div>
+      <div class="mcp-detail-card">
+        <h4>🔒 100% Local Processing</h4>
+        <p>Everything runs on your machine. No cloud APIs, no data leaving your computer, no API keys for core features. Your codebase stays completely private.</p>
+      </div>
+    </div>
   </div>
   <script>
     document.querySelectorAll('.ide-tab').forEach(tab => {
@@ -426,81 +442,6 @@
       });
     });
   </script>
-</section>
-
-<!-- How MCP Works Section -->
-<section class="mcp-explanation-section">
-  <div class="section-container">
-    <h2 class="section-title">How It Works</h2>
-    <p class="section-subtitle">The Model Context Protocol connects AI assistants to your tools</p>
-    
-    <div class="mcp-flow">
-      <div class="mcp-flow-step">
-        <div class="flow-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
-        <h3>You Ask</h3>
-        <p>"Find where user auth is handled"</p>
-      </div>
-      
-      <div class="flow-arrow">→</div>
-      
-      <div class="mcp-flow-step">
-        <div class="flow-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="3" width="20" height="14" rx="2"/>
-            <path d="M8 21h8M12 17v4"/>
-          </svg>
-        </div>
-        <h3>AI Calls Tenets</h3>
-        <p>MCP routes request to tenets-mcp server</p>
-      </div>
-      
-      <div class="flow-arrow">→</div>
-      
-      <div class="mcp-flow-step">
-        <div class="flow-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-        </div>
-        <h3>Tenets Analyzes</h3>
-        <p>Scans codebase, ranks files, builds context</p>
-      </div>
-      
-      <div class="flow-arrow">→</div>
-      
-      <div class="mcp-flow-step">
-        <div class="flow-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-          </svg>
-        </div>
-        <h3>AI Gets Context</h3>
-        <p>Relevant code injected into AI's prompt</p>
-      </div>
-    </div>
-    
-    <div class="mcp-details">
-      <div class="mcp-detail-card">
-        <h4>What is MCP?</h4>
-        <p><strong>Model Context Protocol</strong> is an open standard by Anthropic that lets AI assistants securely connect to external tools and data sources. Instead of manually copying code into prompts, MCP servers provide context automatically.</p>
-      </div>
-      <div class="mcp-detail-card">
-        <h4>Why Tenets?</h4>
-        <p>Other MCP servers give raw file access. Tenets is <strong>intelligent</strong> — it understands your question, finds relevant code across your entire codebase, ranks by importance, and fits everything within token limits.</p>
-      </div>
-      <div class="mcp-detail-card">
-        <h4>100% Local</h4>
-        <p>Tenets runs entirely on your machine. No code ever leaves your computer. No API keys needed for core features. Your codebase stays private.</p>
-      </div>
-    </div>
-  </div>
 </section>
 
 <!-- See It In Action: Tabbed Examples -->
@@ -887,7 +828,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
 <!-- How It Works Architecture -->
 <section class="architecture-section">
   <div class="section-container" style="max-width: none; padding-left: 0; padding-right: 0;">
-    <h2 class="section-title">How Tenets Works</h2>
+    <h2 class="section-title">How the NLP Pipeline Works</h2>
 
     <div class="architecture-flow" data-arch-flow>
   <div class="arch-stage" data-stage="1" data-target="input" role="button" tabindex="0">
@@ -1085,12 +1026,12 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
     <div class="install-grid">
       <div class="install-card featured">
         <div class="featured-badge">Recommended</div>
-        <h3>MCP Server</h3>
+        <h3>Local MCP Server</h3>
         <div class="code-block">
           <code>pip install tenets[mcp]</code>
           <button class="copy-btn" data-text="pip install tenets[mcp]">Copy</button>
         </div>
-        <p class="install-note">For Cursor, Claude Desktop, Windsurf</p>
+        <p class="install-note">NLP code context for Cursor, Claude, Windsurf</p>
       </div>
 
       <div class="install-card">
