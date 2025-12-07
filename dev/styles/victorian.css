@@ -1350,8 +1350,9 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .step-text code {
-  background: rgba(245, 158, 11, 0.15) !important;
-  color: #92400e !important;
+  background: #1e293b !important;
+  color: #fbbf24 !important;
+  padding: 0.2rem 0.5rem !important;
 }
 
 /* Force step-text code visibility in light mode */
@@ -1442,7 +1443,8 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-note code {
-  color: #92400e;
+  background: #1e293b !important;
+  color: #fbbf24 !important;
 }
 
 .config-ready {
