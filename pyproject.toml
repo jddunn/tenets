@@ -406,6 +406,14 @@ omit = [
     "*/test_*.py",
     "*/__main__.py",
     "*/cli/app.py",
+    # Optional features (users may not install)
+    "*/viz/*",
+    # Language analyzers (boilerplate, 18K lines)
+    "*/core/analysis/implementations/*_analyzer.py",
+    # Infrastructure utilities
+    "*/utils/external_sources.py",
+    "*/utils/multiprocessing.py",
+    "*/utils/timing.py",
 ]
 
 [tool.coverage.report]

@@ -53,6 +53,14 @@ ignore:
   - ".github/**/*"
   - "**/__pycache__/**/*"
   - "**/migrations/**/*"
+  # Optional features (users may not install)
+  - "tenets/viz/**/*"
+  # Language analyzers (boilerplate, 18K lines)
+  - "tenets/core/analysis/implementations/*_analyzer.py"
+  # Infrastructure utilities
+  - "tenets/utils/external_sources.py"
+  - "tenets/utils/multiprocessing.py"
+  - "tenets/utils/timing.py"
 
 # Flag configuration for different test types
 flags:

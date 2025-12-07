@@ -12,6 +12,8 @@
 [![codecov](https://codecov.io/gh/jddunn/tenets/branch/master/graph/badge.svg)](https://codecov.io/gh/jddunn/tenets)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://tenets.dev/docs)
 
+> **Coverage note:** Measures core modules (distiller, ranking, MCP, CLI, models). Optional features (viz, language analyzers) are excluded.
+
 **tenets** is an **MCP server** for AI coding assistants: it finds, ranks, and aggregates the most relevant code, integrates natively with Cursor, Claude Desktop, Windsurf via the Model Context Protocol, and also ships a CLI/Python library plus interactive HTML reports with full JSON metadata for automation.
 
 ## What is tenets?
