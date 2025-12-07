@@ -1,6 +1,11 @@
+---
+title: CLI Reference - Free AI Code Context Tool
+description: Tenets CLI reference for AI code context generation. distill, rank, examine commands for intelligent codebase analysis. Free, open source, 100% local.
+---
+
 # Tenets CLI Reference
 
-**tenets** - Context that feeds your prompts. A command-line tool for intelligent code aggregation, analysis, and visualization.
+**tenets** - Context that feeds your prompts. A free, open source command-line tool for intelligent code aggregation, analysis, and visualization.
 
 ## Table of Contents
 

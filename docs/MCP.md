@@ -1,6 +1,33 @@
+---
+title: MCP Server Setup - Cursor, Claude, Windsurf Integration
+description: Configure Tenets MCP server for AI coding assistants. Free, open source Model Context Protocol integration. Step-by-step setup for Cursor, Claude Desktop, Windsurf.
+---
+
 # MCP Server
 
-Tenets includes a Model Context Protocol (MCP) server that integrates with AI coding assistants like Cursor, Claude Desktop, Windsurf, and custom AI agents.
+Tenets includes a **free, open source** Model Context Protocol (MCP) server that integrates with AI coding assistants like Cursor, Claude Desktop, Windsurf, and custom AI agents. All processing runs 100% locally.
+
+<div class="grid cards" markdown>
+
+-   :material-cursor-default-outline: **[Cursor Setup](cursor-mcp.md)**
+    
+    Step-by-step guide for Cursor IDE
+
+-   :material-chat-outline: **[Claude Desktop Setup](claude-mcp.md)**
+    
+    Configure Claude Desktop with Tenets
+
+-   :material-rocket-launch-outline: **[Quick Start](quickstart.md)**
+    
+    Get started in 30 seconds
+
+-   :material-help-circle-outline: **[FAQ](faq.md)**
+    
+    Common questions answered
+
+</div>
+
+**Learn more:** [Model Context Protocol Explained](blog/mcp-explained.md) · [Why Context Matters](blog/why-context-matters.md)
 
 ## Installation
 
@@ -458,4 +485,16 @@ The following features are available with enterprise support:
 - **Air-gapped Deployment**: Offline operation support
 
 [Contact us](mailto:team@tenets.dev) for enterprise inquiries.
+
+---
+
+## Related Resources
+
+- **[Cursor MCP Setup Guide](cursor-mcp.md)** — Detailed Cursor configuration
+- **[Claude Desktop MCP Guide](claude-mcp.md)** — Configure Claude Desktop
+- **[Quick Start](quickstart.md)** — Get started in 30 seconds
+- **[CLI Reference](CLI.md)** — Command-line interface documentation
+- **[FAQ](faq.md)** — Frequently asked questions
+- **[Model Context Protocol Explained](blog/mcp-explained.md)** — Technical deep dive into MCP
+- **[Why Context Matters](blog/why-context-matters.md)** — The importance of intelligent context
 

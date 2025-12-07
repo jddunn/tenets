@@ -1,6 +1,7 @@
 ---
 template: home.html
-title: Tenets - MCP Server for AI Coding Assistants
+title: Tenets - Free Open Source MCP Server for AI Coding
+description: Free, 100% local MCP server for AI coding assistants. NLP-powered code ranking for Cursor, Claude Desktop, Windsurf. Open source, MIT license.
 hide:
   - navigation
   - toc

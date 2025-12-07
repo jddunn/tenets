@@ -185,10 +185,10 @@ plugins:
         remove_comments: true
         remove_empty_space: true
 
-  # Sitemap for SEO (install mkdocs-sitemap-plugin if needed)
-  # - sitemap:
-  #     changefreq: weekly
-  #     priority: 0.8
+  # Sitemap for SEO
+  - sitemap:
+      changefreq: weekly
+      priority: 0.8
 
 # ==============================================================================
 # MARKDOWN EXTENSIONS - FULL SET FOR API DOCS
@@ -387,13 +387,16 @@ extra_javascript:
 # NAVIGATION - COMPLETE STRUCTURE
 # ==============================================================================
 nav:
+  - MCP Server:
+      - Overview: MCP.md
+      - Cursor Setup: cursor-mcp.md
+      - Claude Desktop Setup: claude-mcp.md
   - Getting Started:
       - Quick Start: quickstart.md
       - Installation: installation.md
       - Tutorial: tutorial.md
   - User Guide:
       - CLI Reference: CLI.md
-      - MCP Server: MCP.md
       - Supported Languages: supported-languages.md
       - Best Practices: best-practices.md
       - Examples: examples.md

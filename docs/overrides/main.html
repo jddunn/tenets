@@ -56,18 +56,21 @@
     "url": "https://tenets.dev",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Windows, macOS, Linux",
-    "softwareVersion": "0.5.0",
+    "softwareVersion": "0.7.4",
     "programmingLanguage": "Python",
     "downloadUrl": "https://pypi.org/project/tenets/",
     "installUrl": "https://pypi.org/project/tenets/",
     "screenshot": "https://tenets.dev/logos/tenets_dark_icon_transparent_cropped.png",
+    "keywords": "MCP server, Model Context Protocol, AI coding assistant, code context, Cursor MCP, Claude MCP, free open source, LLM tools, AI developer tools, code ranking",
     "featureList": [
-      "Model Context Protocol (MCP) server",
-      "Intelligent code context aggregation",
-      "Multi-factor relevance ranking",
-      "Token-optimized output",
-      "Session management",
-      "Integration with Cursor, Claude, Windsurf"
+      "Free open source MCP server",
+      "Model Context Protocol (MCP) integration",
+      "Native support for Cursor, Claude Desktop, Windsurf",
+      "Intelligent NLP-powered code context",
+      "Multi-factor relevance ranking (BM25, TF-IDF)",
+      "100% local processing - no data egress",
+      "Session management with pinned files",
+      "Guiding principles (tenets) injection"
     ],
     "offers": {
       "@type": "Offer",
@@ -92,6 +95,45 @@
     ]
   }
   </script>
+  
+  <!-- Schema.org BreadcrumbList -->
+  {% if page and page.url != '/' and page.url != '' %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Tenets",
+        "item": "https://tenets.dev/"
+      }
+      {% if page.parent %}
+      ,{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "{{ page.parent.title }}",
+        "item": "https://tenets.dev/{{ page.parent.url }}"
+      }
+      ,{
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ page.title }}",
+        "item": "https://tenets.dev/{{ page.url }}"
+      }
+      {% else %}
+      ,{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "{{ page.title }}",
+        "item": "https://tenets.dev/{{ page.url }}"
+      }
+      {% endif %}
+    ]
+  }
+  </script>
+  {% endif %}
   
   <!-- Schema.org Organization -->
   <script type="application/ld+json">

@@ -1,7 +1,64 @@
 ---
-title: Frequently Asked Questions
-description: Common questions about Tenets MCP server, installation, configuration, and usage with AI coding assistants like Cursor and Claude.
+title: FAQ - Free Open Source MCP Server for AI Coding
+description: Common questions about Tenets MCP server, installation, configuration, and usage with AI coding assistants like Cursor, Claude Desktop, and Windsurf. 100% free and open source.
 ---
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is an MCP server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MCP (Model Context Protocol) is an open standard developed by Anthropic that allows AI assistants to interact with external tools and data sources. An MCP server like Tenets provides tools that AI coding assistants can call directly to get intelligent code context."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Tenets free and open source?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes! Tenets is 100% free and open source under the MIT license. There are no usage limits, API costs, or premium tiers for the core functionality. All processing happens locally on your machine."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I use Tenets with Cursor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Install with 'pip install tenets[mcp]', then add to ~/.cursor/mcp.json: {\"mcpServers\": {\"tenets\": {\"command\": \"tenets-mcp\"}}}. Restart Cursor and the Tenets tools will be available to the AI."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I use Tenets with Claude Desktop?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Install with 'pip install tenets[mcp]', then add to ~/Library/Application Support/Claude/claude_desktop_config.json: {\"mcpServers\": {\"tenets\": {\"command\": \"tenets-mcp\"}}}. Restart Claude Desktop."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does my code leave my machine?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. All processing happens locally. Tenets never sends your code to external servers. This is a core design principle - 100% local, complete privacy."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What AI coding tools work with Tenets MCP server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Tenets works with any MCP-compatible AI tool including Cursor IDE, Claude Desktop, Windsurf, VS Code with Continue extension, and custom AI agents that support the Model Context Protocol."
+      }
+    }
+  ]
+}
+</script>
 
 # Frequently Asked Questions
 

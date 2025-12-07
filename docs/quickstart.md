@@ -1,3 +1,51 @@
+---
+title: Quick Start - Install Free MCP Server in 30 Seconds
+description: Get started with Tenets MCP server for AI coding assistants. Free, open source, 100% local. Works with Cursor, Claude Desktop, Windsurf.
+---
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Install Tenets MCP Server for AI Coding",
+  "description": "Install and configure Tenets MCP server to give AI coding assistants like Cursor and Claude intelligent code context. Free and open source.",
+  "totalTime": "PT2M",
+  "tool": [
+    {
+      "@type": "HowToTool",
+      "name": "Python 3.9+"
+    },
+    {
+      "@type": "HowToTool",
+      "name": "pip package manager"
+    }
+  ],
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Install Tenets with MCP support",
+      "text": "Run: pip install tenets[mcp]",
+      "url": "https://tenets.dev/quickstart/#mcp-first-recommended"
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Add MCP configuration to your IDE",
+      "text": "Add {\"mcpServers\": {\"tenets\": {\"command\": \"tenets-mcp\"}}} to your IDE's MCP config file (Cursor: ~/.cursor/mcp.json, Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json)",
+      "url": "https://tenets.dev/quickstart/#mcp-first-recommended"
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "Restart your IDE and use Tenets",
+      "text": "Restart your IDE and ask the AI: 'Use tenets to find the auth code'",
+      "url": "https://tenets.dev/quickstart/#mcp-first-recommended"
+    }
+  ]
+}
+</script>
+
 # Quickstart
 
 ## MCP-first (recommended)

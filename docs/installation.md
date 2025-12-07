@@ -1,3 +1,8 @@
+---
+title: Installation - Free Open Source MCP Server
+description: Install Tenets MCP server for AI coding assistants. pip install tenets[mcp] - works with Cursor, Claude Desktop, Windsurf. Free, open source, MIT license.
+---
+
 # Installation
 
 ## Requirements
