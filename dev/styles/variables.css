@@ -313,3 +313,10 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* =====================================================
+   FONT PERFORMANCE - Prevent FOIT/FOUT
+   ===================================================== */
+
+/* Font-display swap for Google Fonts loaded by MkDocs Material */
+/* These rules apply when the fonts are loaded via Google Fonts API */
