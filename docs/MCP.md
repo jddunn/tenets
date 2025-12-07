@@ -1,6 +1,6 @@
 ---
-title: MCP Server Setup - Cursor, Claude, Windsurf Integration
-description: Configure Tenets MCP server for AI coding assistants. Free, open source Model Context Protocol integration. Step-by-step setup for Cursor, Claude Desktop, Windsurf.
+title: Tenets MCP Server - Free Open Source for Cursor, Claude, Windsurf
+description: Tenets MCP server for AI coding assistants. Free open source Python library and CLI. Intelligent code context + automatic guiding principles. 100% local, works with Cursor, Claude Desktop, Windsurf.
 ---
 
 # MCP Server

@@ -1,14 +1,17 @@
 ---
 title: "Setting Up Tenets MCP Server: Complete Guide"
-description: Technical walkthrough for integrating Tenets MCP server with Cursor, Claude Desktop, VS Code, and other MCP-compatible tools.
+description: Install and configure Tenets MCP server for Cursor, Claude Desktop, VS Code, Windsurf. Free open source Python CLI and library for LLM code context. 100% local.
 author: Johnny Dunn
 date: 2024-12-04
 tags:
+  - tenets
+  - mcp
   - cursor
   - claude
-  - mcp
+  - python
+  - cli
+  - llm
   - setup
-  - configuration
 ---
 
 # Setting Up Tenets MCP Server: Complete Guide
@@ -19,12 +22,12 @@ tags:
 
 ## Overview
 
-Tenets is a **local MCP server** that provides NLP-powered code context to AI coding assistants. This guide covers installation, configuration, and verification for all major MCP hosts.
+Tenets is a **local MCP server** with two core capabilities:
 
-**What you'll set up:**
-- Tenets MCP server binary
-- IDE/tool configuration
-- Verification that tools are available
+1. **Intelligent code context** — NLP-powered ranking finds relevant files automatically
+2. **Automatic tenets injection** — Your guiding principles are included in every prompt
+
+This guide covers installation, configuration, and verification for all major MCP hosts.
 
 **Time required:** 5-10 minutes
 
@@ -529,9 +532,11 @@ ranking:
 Now that Tenets is configured:
 
 1. **Try distill**: Ask your AI to find code for a specific task
-2. **Create sessions**: Pin files for ongoing work
-3. **Add tenets**: Define guiding principles for consistency
+2. **Create sessions**: Pin files you reference repeatedly
+3. **Add tenets**: Define guiding principles (coding standards, architecture rules) that auto-inject into every prompt
 4. **Explore modes**: Test `fast` vs `balanced` vs `thorough`
+
+The combination of intelligent context + automatic tenets injection helps maintain consistency across long conversations where context would otherwise drift.
 
 ---
 

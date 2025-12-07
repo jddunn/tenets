@@ -1,6 +1,6 @@
 ---
-title: Quick Start - Install Free MCP Server in 30 Seconds
-description: Get started with Tenets MCP server for AI coding assistants. Free, open source, 100% local. Works with Cursor, Claude Desktop, Windsurf.
+title: Tenets Quick Start - Free MCP Server, Python Library, CLI
+description: Install Tenets MCP server in 30 seconds. Free open source Python library and CLI for LLM code context. 100% local, works with Cursor, Claude Desktop, Windsurf.
 ---
 
 <script type="application/ld+json">

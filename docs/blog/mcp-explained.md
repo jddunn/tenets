@@ -1,13 +1,16 @@
 ---
 title: "Model Context Protocol: Technical Deep Dive"
-description: Understanding MCP architecture, JSON-RPC transport, tool schemas, and how Tenets implements intelligent code context as an MCP server.
+description: How MCP works and how Tenets implements it. JSON-RPC transport, tool schemas, intelligent code context for LLMs. Free open source Python MCP server.
 author: Johnny Dunn
 date: 2024-10-22
 tags:
+  - tenets
   - mcp
   - model-context-protocol
+  - python
+  - llm
+  - ai-coding
   - json-rpc
-  - ai-tools
 ---
 
 # Model Context Protocol: Technical Deep Dive
@@ -19,6 +22,8 @@ tags:
 ## What is MCP?
 
 **Model Context Protocol (MCP)** is a JSON-RPC 2.0 based protocol developed by Anthropic for AI applications to interact with external tools and data sources. It standardizes how LLM-powered applications discover, invoke, and receive results from external capabilities.
+
+Tenets implements MCP to provide AI coding assistants with two capabilities: **intelligent code context** (finding relevant files automatically) and **automatic guiding principles injection** (your coding standards in every prompt).
 
 The protocol defines three primitives:
 
@@ -398,9 +403,14 @@ Most MCP servers provide **raw access**—file reading, command execution, API c
 | List directory | Rank files by query relevance |
 | Return full content | Optimize for token budget |
 | Stateless | Session persistence + pinned files |
-| No guidance | Tenet injection for consistency |
+| No guidance | Automatic tenets injection |
 
-The difference is **intelligence at the protocol layer**.
+The two core features:
+
+1. **Intelligent code context**: NLP-powered ranking (BM25, import centrality, git signals) finds exactly what the LLM needs
+2. **Automatic tenets injection**: Your guiding principles (coding standards, architecture rules) are injected into every prompt, preventing context drift in long conversations
+
+Both run 100% locally—no API calls, no data leaving your machine.
 
 ---
 

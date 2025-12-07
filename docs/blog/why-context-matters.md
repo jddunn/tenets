@@ -1,14 +1,17 @@
 ---
 title: "Why Context Is Everything in AI Coding"
-description: The technical breakdown of why LLM code quality depends on context quality. BM25, token budgets, and the math behind intelligent context selection.
+description: Why LLM code quality depends on context quality. BM25 ranking, token budgets, and how Tenets MCP server solves context for AI coding assistants.
 author: Johnny Dunn
 date: 2024-09-15
 tags:
+  - tenets
+  - llm
   - ai-coding
   - context
-  - llm
-  - nlp
+  - mcp
+  - python
   - bm25
+  - nlp
 ---
 
 # Why Context Is Everything in AI Coding
@@ -21,7 +24,12 @@ tags:
 
 When you ask an LLM to write code, it generates tokens based on probability distributions conditioned on its input. The model has no access to your filesystem, your git history, or your architectural decisions—it only sees what's in the context window.
 
-This creates a fundamental problem: **the model fills knowledge gaps with training data**, which may have nothing to do with your project.
+This creates two problems:
+
+1. **Knowledge gaps**: The model fills missing information with generic training data patterns
+2. **Context drift**: In long conversations, the model forgets earlier instructions and coding standards
+
+Tenets addresses both: intelligent code context (finding relevant files) and automatic tenets injection (your guiding principles in every prompt).
 
 ```python
 # You ask: "Add a user authentication endpoint"
@@ -265,11 +273,12 @@ ranking:
 
 ## Key Takeaways
 
-1. **Context quality determines output quality**—not model capability
-2. **Multi-factor ranking** beats keyword matching by 3-5x in relevance
+1. **Context quality determines output quality**—not model capability alone
+2. **Multi-factor ranking** outperforms keyword matching for code relevance
 3. **Token budgets require intelligent selection**, not random sampling
 4. **Import centrality** identifies architectural keystones
-5. **Session state** compounds context across interactions
+5. **Automatic tenets injection** prevents context drift in long conversations
+6. **Session state** compounds context across interactions
 
 ---
 
