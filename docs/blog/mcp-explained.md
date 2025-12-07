@@ -2,7 +2,7 @@
 title: "Model Context Protocol Explained"
 description: What is MCP, why does it matter, and how Tenets fits into the ecosystem. A developer's guide to the open standard for AI tool integration.
 author: Johnny Dunn
-date: 2024-12-04
+date: 2024-10-22
 tags:
   - mcp
   - model-context-protocol
@@ -12,7 +12,7 @@ tags:
 
 # Model Context Protocol Explained
 
-**Author:** Johnny Dunn | **Date:** December 4, 2024
+**Author:** Johnny Dunn | **Date:** October 22, 2024
 
 ---
 

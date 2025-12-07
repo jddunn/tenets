@@ -2,7 +2,7 @@
 title: "Why Context Is Everything in AI Coding"
 description: The difference between great AI-assisted code and hallucinated garbage comes down to context quality. Learn how to provide better context to LLMs.
 author: Johnny Dunn
-date: 2024-12-04
+date: 2024-09-15
 tags:
   - ai-coding
   - context
@@ -12,7 +12,7 @@ tags:
 
 # Why Context Is Everything in AI Coding
 
-**Author:** Johnny Dunn | **Date:** December 4, 2024
+**Author:** Johnny Dunn | **Date:** September 15, 2024
 
 ---
 
