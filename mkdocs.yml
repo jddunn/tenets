@@ -185,10 +185,7 @@ plugins:
         remove_comments: true
         remove_empty_space: true
 
-  # Sitemap for SEO
-  - sitemap:
-      changefreq: weekly
-      priority: 0.8
+  # Note: MkDocs Material generates sitemap.xml automatically
 
 # ==============================================================================
 # MARKDOWN EXTENSIONS - FULL SET FOR API DOCS
