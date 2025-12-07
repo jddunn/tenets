@@ -1350,8 +1350,14 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .step-text code {
-  background: rgba(245, 158, 11, 0.25);
-  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.25) !important;
+  color: #fbbf24 !important;
+}
+
+/* Force step-text code visibility in light mode */
+[data-md-color-scheme="default"] .mcp-config-section .step-text code {
+  background: rgba(245, 158, 11, 0.25) !important;
+  color: #fbbf24 !important;
 }
 
 .config-code {
@@ -1379,10 +1385,33 @@ code, pre {
   color: #e6edf3 !important;
   white-space: pre;
   line-height: 1.6;
+  background: transparent !important;
 }
 
 [data-md-color-scheme="default"] .config-code code {
   color: #e6edf3 !important;
+  background: transparent !important;
+}
+
+/* Force light text in mcp-config-section for ALL code elements */
+.mcp-config-section code,
+.mcp-config-section pre,
+.mcp-config-section pre code,
+.mcp-config-section .config-code code,
+.mcp-config-section .highlight code,
+.mcp-config-section .highlight pre {
+  color: #e6edf3 !important;
+  background: transparent !important;
+}
+
+[data-md-color-scheme="default"] .mcp-config-section code,
+[data-md-color-scheme="default"] .mcp-config-section pre,
+[data-md-color-scheme="default"] .mcp-config-section pre code,
+[data-md-color-scheme="default"] .mcp-config-section .config-code code,
+[data-md-color-scheme="default"] .mcp-config-section .highlight code,
+[data-md-color-scheme="default"] .mcp-config-section .highlight pre {
+  color: #e6edf3 !important;
+  background: transparent !important;
 }
 
 .config-code .copy-btn {
