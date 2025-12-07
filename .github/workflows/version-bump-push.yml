@@ -74,9 +74,16 @@ jobs:
             exit 0
           fi
           
-          # Skip docs/chore/ci/style/test only changes
-          if [[ "$COMMIT_TITLE" =~ ^docs(\(.*\))?:|^chore(\(.*\))?:|^ci(\(.*\))?:|^style(\(.*\))?:|^test(\(.*\))?: ]]; then
+          # Skip docs/chore/ci/style/test/build only changes
+          if [[ "$COMMIT_TITLE" =~ ^docs(\(.*\))?:|^chore(\(.*\))?:|^ci(\(.*\))?:|^style(\(.*\))?:|^test(\(.*\))?:|^build(\(.*\))?: ]]; then
             echo "skip_reason=non-versioned change type" >> $GITHUB_OUTPUT
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Skip CSS/styling fixes (docs styling, not code fixes)
+          if [[ "$COMMIT_TITLE" =~ (css|CSS|theme|styling|landing[[:space:]]page|docs[[:space:]]style) ]]; then
+            echo "skip_reason=styling/CSS change (not a code fix)" >> $GITHUB_OUTPUT
             echo "should_skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
