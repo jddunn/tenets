@@ -156,7 +156,7 @@
     pointer-events: none !important;
   }
 
-  /* Search toggle button - show as icon button on mobile header */
+  /* Search toggle button - ALWAYS visible as icon button on mobile header */
   .md-header__inner label.md-header__button[for="__search"] {
     display: flex !important;
     order: 1;
@@ -187,26 +187,14 @@
     height: 1rem;
   }
   
-  /* Hide inline search form on very small screens, show search button instead */
-  @media screen and (max-width: 500px) {
-    .md-header__inner .md-search__form {
-      display: none !important;
-    }
-    
-    .md-header__inner label.md-header__button[for="__search"] {
-      display: flex !important;
-    }
+  /* Hide inline search form on mobile - just show the search icon button */
+  .md-header__inner .md-search__form {
+    display: none !important;
   }
   
-  /* On larger mobile screens, show inline search and hide search button */
-  @media screen and (min-width: 501px) and (max-width: 1099px) {
-    .md-header__inner label.md-header__button[for="__search"] {
-      display: none !important;
-    }
-    
-    .md-header__inner .md-search__form {
-      display: flex !important;
-    }
+  /* Search icon always visible */
+  .md-header__inner label.md-header__button[for="__search"] {
+    display: flex !important;
   }
 
   /* Theme toggle - order 2, always after search */
@@ -300,11 +288,47 @@
     fill: #fbbf24 !important;
   }
 
-  /* Hide any GitHub/source block that theme may render inside drawer */
+  /* SHOW GitHub/source inside drawer - styled nicely */
   .md-nav__source,
   .md-nav--primary .md-source,
   .md-sidebar--primary .md-source {
-    display: none !important;
+    display: flex !important;
+    margin: 0.75rem 1rem !important;
+    padding: 0.75rem 1rem !important;
+    background: linear-gradient(135deg, #fff5e6 0%, #ffedcc 100%) !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    text-decoration: none !important;
+  }
+  
+  [data-md-color-scheme="slate"] .md-nav__source,
+  [data-md-color-scheme="slate"] .md-nav--primary .md-source,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-source {
+    background: linear-gradient(135deg, #263244 0%, #1e2a3a 100%) !important;
+    border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  }
+  
+  /* Show GitHub text in drawer */
+  .md-nav--primary .md-source__repository,
+  .md-sidebar--primary .md-source__repository {
+    display: block !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: #2a2723 !important;
+  }
+  
+  [data-md-color-scheme="slate"] .md-nav--primary .md-source__repository,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-source__repository {
+    color: #f3f0e8 !important;
+  }
+  
+  .md-nav--primary .md-source__icon svg,
+  .md-sidebar--primary .md-source__icon svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: #f59e0b !important;
   }
 
 
@@ -489,6 +513,42 @@
     background-image: url('../logos/tenets_dark_icon_transparent_cropped.png');
   }
 
+  /* Search input inside drawer - after the logo header using ::after */
+  .md-nav--primary .md-nav__title:first-child::after,
+  .md-sidebar--primary .md-nav__title:first-child::after {
+    content: '🔍 Search docs...';
+    display: block !important;
+    position: absolute;
+    bottom: -40px;
+    left: 1rem;
+    right: 1rem;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 16px;
+    font-size: 0.75rem !important;
+    color: #94a3b8 !important;
+    padding: 0 1rem;
+    line-height: 32px;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  [data-md-color-scheme="slate"] .md-nav--primary .md-nav__title:first-child::after,
+  [data-md-color-scheme="slate"] .md-sidebar--primary .md-nav__title:first-child::after {
+    background: rgba(38, 50, 68, 0.9);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    color: #94a3b8 !important;
+  }
+
+  /* Adjust nav title to accommodate search below */
+  .md-nav--primary .md-nav__title:first-child,
+  .md-sidebar--primary .md-nav__title:first-child {
+    margin-bottom: 48px !important;
+    position: relative;
+  }
+
   /* Ensure we're hiding ALL possible logo/title elements */
   .md-nav--primary *[class*="logo"],
   .md-sidebar--primary *[class*="logo"],
@@ -647,30 +707,23 @@
       padding: 0 0.4rem;
     }
 
-    /* Compact search */
-    .md-header__inner .md-search {
-      flex: 1 1 auto;
-      min-width: 0;
-      max-width: 180px;
-    }
-    .md-header__inner .md-search__form {
-      display: flex !important; /* keep form visible */
-      width: 100% !important;
-      height: 26px !important; /* very compact on mobile */
-    }
-    /* Adjust input for small screens */
-    .md-header__inner .md-search__input {
-      font-size: 0.65rem !important;
-      padding: 0 1.8rem 0 0.4rem !important;
-      height: 26px !important;
-      line-height: 26px !important;
-    }
-
-    /* Compact GitHub/source: icon only */
+    /* Compact GitHub/source: icon only in header */
     .md-header__source,
-    .md-header .md-source { display: inline-flex !important; order: 3; }
+    .md-header .md-source { 
+      display: inline-flex !important; 
+      order: 3;
+      padding: 0.2rem 0.35rem !important;
+    }
     .md-header .md-source__repository { display: none !important; }
     .md-header .md-source__icon { margin: 0 !important; }
+
+    /* Smaller buttons on small phones */
+    .md-header__inner label.md-header__button[for="__search"],
+    .md-header__button[for="__drawer"],
+    label.md-header__button[for^="__palette_"] {
+      width: 1.75rem !important;
+      height: 1.75rem !important;
+    }
 
     /* Remove extra padding since we're using flexbox */
     .md-header__inner {

@@ -76,6 +76,30 @@
         document.body.classList.remove('drawer-open');
       }
     });
+    
+    // Make drawer search placeholder clickable - triggers the main search
+    if(sidebar) {
+      const navTitle = sidebar.querySelector('.md-nav__title:first-child');
+      if(navTitle) {
+        navTitle.addEventListener('click', function(e) {
+          // Check if click is on the ::after pseudo element area (bottom part)
+          const rect = navTitle.getBoundingClientRect();
+          const clickY = e.clientY - rect.top;
+          
+          // If click is in the search area (bottom 48px)
+          if(clickY > rect.height - 48) {
+            e.preventDefault();
+            closeDrawer();
+            
+            // Trigger the search overlay
+            const searchToggle = document.querySelector('label[for="__search"]');
+            if(searchToggle) {
+              searchToggle.click();
+            }
+          }
+        });
+      }
+    }
   }
 
   // Initialize when DOM is ready
