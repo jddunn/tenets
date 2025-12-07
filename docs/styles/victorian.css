@@ -1217,10 +1217,10 @@ code, pre {
   border-bottom: 1px solid rgba(245, 158, 11, 0.2);
 }
 
-/* Light mode - keep dark for code readability */
+/* Light mode - use light background, only code blocks stay dark */
 [data-md-color-scheme="default"] .mcp-config-section {
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  border-color: rgba(245, 158, 11, 0.2);
+  background: linear-gradient(180deg, #faf9f7 0%, #f5f3ef 100%);
+  border-color: rgba(139, 90, 43, 0.2);
 }
 
 .mcp-config-section .section-title {
@@ -1228,7 +1228,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .mcp-config-section .section-title {
-  color: #f8fafc;
+  color: #1e293b;
 }
 
 .mcp-config-section .section-subtitle {
@@ -1239,7 +1239,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .mcp-config-section .section-subtitle {
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .ide-tabs {
@@ -1264,9 +1264,9 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .ide-tab {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: #475569;
-  color: #cbd5e1;
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #374151;
 }
 
 .ide-tab:hover {
@@ -1291,9 +1291,9 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .ide-config-panels {
-  background: rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .ide-config-panel {
@@ -1319,7 +1319,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-step {
-  color: #e2e8f0;
+  color: #374151;
 }
 
 .step-number {
@@ -1350,8 +1350,8 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .step-text code {
-  background: rgba(245, 158, 11, 0.25) !important;
-  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #92400e !important;
 }
 
 /* Force step-text code visibility in light mode */
@@ -1430,7 +1430,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-note {
-  color: #94a3b8;
+  color: #6b7280;
 }
 
 .config-note code {
@@ -1442,7 +1442,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-note code {
-  color: #fbbf24;
+  color: #92400e;
 }
 
 .config-ready {
