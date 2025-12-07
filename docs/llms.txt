@@ -1,0 +1,51 @@
+# Tenets - MCP Server for Intelligent Code Context
+
+> Context that feeds your prompts
+
+## What is Tenets?
+
+Tenets is a free, open-source MCP (Model Context Protocol) server, CLI tool, and Python library that provides intelligent code context for AI coding assistants.
+
+## Two Core Features
+
+1. **Intelligent Code Context Aggregation**: NLP-powered file ranking (BM25, TF-IDF, import centrality, git signals) finds and aggregates the most relevant code for any task.
+
+2. **Automatic Guiding Principles Injection**: Define tenets (guiding principles) that are automatically injected into every prompt, preventing context drift in long conversations.
+
+## Quick Install
+
+```bash
+pip install tenets[mcp]
+```
+
+## MCP Configuration
+
+For Cursor IDE (`~/.cursor/mcp.json`):
+```json
+{"mcpServers": {"tenets": {"command": "tenets-mcp"}}}
+```
+
+For Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{"mcpServers": {"tenets": {"command": "tenets-mcp"}}}
+```
+
+## Key MCP Tools
+
+- `distill`: Build optimized code context for a task
+- `rank_files`: Preview file relevance scores
+- `examine`: Analyze codebase structure and complexity
+- `session_create`: Create stateful development sessions
+- `tenet_add`: Add guiding principles for consistency
+- `tenet_instill`: Activate tenets for injection
+
+## Links
+
+- Documentation: https://tenets.dev
+- GitHub: https://github.com/jddunn/tenets
+- PyPI: https://pypi.org/project/tenets/
+
+## License
+
+MIT License - 100% free and open source
+

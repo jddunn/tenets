@@ -3,6 +3,21 @@
 {% block extrahead %}
   {{ super() }}
   
+  <!-- Performance: DNS Prefetch & Preconnect -->
+  <link rel="dns-prefetch" href="https://github.com">
+  <link rel="dns-prefetch" href="https://pypi.org">
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- LLM Context Files -->
+  <link rel="alternate" type="text/plain" href="{{ 'llms.txt' | url }}" title="LLM Context">
+  
+  <!-- Language -->
+  <link rel="alternate" hreflang="en" href="{{ config.site_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ config.site_url }}">
+  
   <!-- Microsoft Clarity -->
   {% if config.extra.clarity %}
   <script type="text/javascript">
@@ -24,18 +39,24 @@
   <!-- Open Graph -->
   {% set og_title = (page.title ~ ' - ' ~ config.site_name) if page and page.title else config.site_name %}
   {% set og_desc = (page.meta.description) if page and page.meta and page.meta.description else config.site_description %}
-  {% set og_image = config.site_url ~ '/logos/tenets_dark_icon_transparent_cropped.png' %}
+  {% set og_image = config.site_url ~ '/assets/og-image.png' %}
   <meta property="og:title" content="{{ og_title }}">
   <meta property="og:description" content="{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{% if page and page.canonical_url %}{{ page.canonical_url }}{% else %}{{ config.site_url }}{% endif %}">
   <meta property="og:image" content="{{ og_image }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Tenets - MCP server for context that feeds your prompts">
+  <meta property="og:site_name" content="Tenets">
+  <meta property="og:locale" content="en_US">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ og_title }}">
   <meta name="twitter:description" content="{{ og_desc }}">
   <meta name="twitter:image" content="{{ og_image }}">
+  <meta name="twitter:image:alt" content="Tenets - MCP server for context that feeds your prompts">
   <meta name="twitter:site" content="@manicagency">
   <meta name="twitter:creator" content="@manicagency">
 
@@ -154,6 +175,8 @@
 
 
 {% block site_nav %}
+  <!-- Skip Link for Accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   {{ super() }}
 {% endblock %}
 

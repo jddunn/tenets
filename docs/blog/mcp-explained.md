@@ -13,6 +13,33 @@ tags:
   - json-rpc
 ---
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Model Context Protocol: Technical Deep Dive",
+  "description": "How MCP works and how Tenets implements it. JSON-RPC transport, tool schemas, intelligent code context for LLMs.",
+  "author": {
+    "@type": "Person",
+    "name": "Johnny Dunn",
+    "url": "https://jddunn.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "manic.agency",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://tenets.dev/logos/tenets_dark_icon_transparent_cropped.png"
+    }
+  },
+  "datePublished": "2024-10-22",
+  "dateModified": "2024-12-07",
+  "mainEntityOfPage": "https://tenets.dev/blog/mcp-explained/",
+  "image": "https://tenets.dev/assets/og-image.png",
+  "keywords": ["MCP", "Model Context Protocol", "JSON-RPC", "AI coding", "Tenets", "Python"]
+}
+</script>
+
 # Model Context Protocol: Technical Deep Dive
 
 **Author:** Johnny Dunn | **Date:** October 22, 2024

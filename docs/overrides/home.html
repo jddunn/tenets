@@ -1,6 +1,7 @@
 {% extends "main.html" %}
 
 {% block content %}
+<main id="main-content" role="main" aria-label="Main content">
 <style>
   /* Hide sidebars on homepage for desktop only; keep mobile drawer working */
   @media (min-width: 1100px) {
@@ -1082,6 +1083,7 @@ $ tenets distill "add OAuth2 refresh tokens" --session payment-integration --rem
 
 <!-- Back to top handled by js/back-to-top.js -->
 
+</main><!-- /main-content -->
 {% endblock %}
 
 {% block footer %}

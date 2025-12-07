@@ -2,6 +2,11 @@ User-agent: *
 Allow: /
 Sitemap: https://tenets.dev/sitemap.xml
 
+# LLM context files (llms.txt standard)
+# See: https://llmstxt.org/
+# llms.txt: https://tenets.dev/llms.txt
+# llms-full.txt: https://tenets.dev/llms-full.txt
+
 # AI crawlers (explicitly welcome)
 User-agent: GPTBot
 Allow: /
@@ -16,5 +21,14 @@ User-agent: Amazonbot
 Allow: /
 
 User-agent: cohere-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: YouBot
 Allow: /
 

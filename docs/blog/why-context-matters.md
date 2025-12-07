@@ -14,6 +14,33 @@ tags:
   - nlp
 ---
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Why Context Is Everything in AI Coding",
+  "description": "Why LLM code quality depends on context quality. BM25 ranking, token budgets, and how Tenets MCP server solves context for AI coding assistants.",
+  "author": {
+    "@type": "Person",
+    "name": "Johnny Dunn",
+    "url": "https://jddunn.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "manic.agency",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://tenets.dev/logos/tenets_dark_icon_transparent_cropped.png"
+    }
+  },
+  "datePublished": "2024-09-15",
+  "dateModified": "2024-12-07",
+  "mainEntityOfPage": "https://tenets.dev/blog/why-context-matters/",
+  "image": "https://tenets.dev/assets/og-image.png",
+  "keywords": ["AI coding", "LLM context", "BM25", "code ranking", "MCP server", "Tenets"]
+}
+</script>
+
 # Why Context Is Everything in AI Coding
 
 **Author:** Johnny Dunn | **Date:** September 15, 2024
@@ -289,7 +316,7 @@ pip install tenets[mcp]
 tenets distill "your task" --copy
 ```
 
-See the [Architecture Documentation](../architecture.md) for the full technical breakdown.
+See the [Architecture Documentation](../ARCHITECTURE.md) for the full technical breakdown.
 
 ---
 

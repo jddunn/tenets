@@ -1,0 +1,289 @@
+# Tenets - Complete Documentation for AI Assistants
+
+> MCP server for context that feeds your prompts
+
+## Overview
+
+Tenets is a free, open-source tool that helps AI coding assistants understand codebases better. It runs 100% locally - your code never leaves your machine.
+
+## Installation Options
+
+```bash
+# MCP server (recommended)
+pip install tenets[mcp]
+
+# Core only (CLI + Python library)
+pip install tenets
+
+# Everything (MCP + ML + visualization)
+pip install tenets[all]
+```
+
+Python 3.9-3.13 supported. Python 3.11+ recommended.
+
+---
+
+## The Two Core Features
+
+### 1. Intelligent Code Context Aggregation
+
+Tenets uses multi-factor NLP ranking to find the most relevant files for any task:
+
+**Ranking Factors:**
+- BM25/TF-IDF text similarity
+- Keyword extraction and matching
+- Import centrality (PageRank on dependency graph)
+- Git signals (recency, frequency, authorship)
+- Path relevance (filename matches query)
+- Complexity metrics
+
+**Modes:**
+- `fast`: ~1s, keyword matching
+- `balanced`: ~3s, BM25 + structure analysis (default)
+- `thorough`: ~10s, ML embeddings when enabled
+
+### 2. Automatic Tenets Injection
+
+Define guiding principles that are automatically injected into every context:
+
+```bash
+# Add tenets
+tenets tenet add "Always validate user input" --priority critical --category security
+tenets tenet add "Use type hints in Python" --priority high --category style
+tenets tenet add "Prefer small, safe diffs" --priority medium --category workflow
+
+# Activate tenets
+tenets instill
+```
+
+This prevents "context drift" in long AI conversations where the model forgets project conventions.
+
+---
+
+## MCP Server Usage
+
+### Starting the Server
+
+```bash
+tenets-mcp              # stdio transport (default)
+tenets-mcp --sse        # SSE transport
+tenets-mcp --http       # HTTP transport
+```
+
+### IDE Configuration
+
+**Cursor** (`~/.cursor/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}
+```
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp"
+    }
+  }
+}
+```
+
+**Windsurf**: Settings → Extensions → MCP, add the same config.
+
+### MCP Tools Reference
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `distill` | Build optimized code context | "Find auth implementation" |
+| `rank_files` | Preview relevance without content | "Which files handle payments?" |
+| `examine` | Analyze structure and complexity | Identify hotspots, tech debt |
+| `chronicle` | Git history analysis | Recent changes, contributors |
+| `momentum` | Development velocity metrics | Team productivity trends |
+| `session_create` | Create named session | Persistent context across prompts |
+| `session_pin_file` | Pin file to session | Guarantee inclusion in context |
+| `tenet_add` | Add guiding principle | Coding standards, security rules |
+| `tenet_instill` | Activate pending tenets | Enable injection |
+| `set_system_instruction` | Set system prompt | AI persona, output format |
+
+---
+
+## CLI Reference
+
+### Context Building
+
+```bash
+# Basic distill
+tenets distill "implement OAuth2 login"
+
+# With options
+tenets distill "fix payment bug" \
+  --mode thorough \
+  --max-tokens 80000 \
+  --format markdown \
+  --include "*.py" \
+  --exclude "**/tests/**"
+
+# Copy to clipboard
+tenets distill "add caching" --copy
+```
+
+### File Ranking
+
+```bash
+# Preview relevant files
+tenets rank "authentication" --top 20
+
+# With explanations
+tenets rank "database queries" --explain
+```
+
+### Code Analysis
+
+```bash
+# Examine codebase
+tenets examine . --complexity --hotspots
+
+# Git analysis
+tenets chronicle --since "1 week"
+
+# Team velocity
+tenets momentum --team --since "last month"
+```
+
+### Sessions
+
+```bash
+# Create session
+tenets session create auth-refactor
+
+# Pin files
+tenets session pin src/auth/ --session auth-refactor
+
+# Use session
+tenets distill "add MFA support" --session auth-refactor
+```
+
+### Tenets (Guiding Principles)
+
+```bash
+# Add tenet
+tenets tenet add "Never log sensitive data" --priority critical --category security
+
+# List tenets
+tenets tenet list
+
+# Instill (activate)
+tenets instill
+
+# System instruction
+tenets system-instruction set "You are a senior engineer. Be concise." --enable
+```
+
+---
+
+## Python API
+
+```python
+from tenets import Tenets
+
+# Initialize
+t = Tenets()
+
+# Build context
+result = t.distill(
+    prompt="implement user registration",
+    max_tokens=100000,
+    mode="balanced",
+    format="markdown"
+)
+
+print(f"Found {len(result.files)} files")
+print(f"Token count: {result.token_count}")
+print(result.context)
+
+# Rank files
+ranking = t.rank_files("payment processing", top_n=10)
+for file in ranking.files:
+    print(f"{file.path}: {file.score:.2f}")
+
+# Sessions
+t.session_create("feature-x")
+t.session_pin_file("feature-x", "src/core/handler.py")
+result = t.distill("extend handler", session="feature-x")
+
+# Tenets
+t.tenet_add("Use async/await for I/O", priority="high", category="performance")
+t.tenet_instill()
+```
+
+---
+
+## Architecture
+
+### NLP Pipeline
+
+1. **Input Parsing**: Extract intent, temporal refs, external links
+2. **File Scanning**: Parallel traversal respecting .gitignore
+3. **Analysis**: AST parsing, import extraction (15+ languages)
+4. **Ranking**: Multi-factor scoring with configurable weights
+5. **ML (Optional)**: Semantic embeddings via `tenets[ml]`
+6. **Tenets Injection**: Add guiding principles to context
+7. **Output**: Token-optimized, model-specific formatting
+
+### Supported Languages
+
+Python, JavaScript/TypeScript, Go, Rust, Java, C/C++, Ruby, PHP, Swift, Kotlin, Scala, C#, and more.
+
+### Output Formats
+
+- `markdown`: Human-readable with headers
+- `xml`: Claude-optimized with tags
+- `json`: Structured for programmatic use
+- `html`: Interactive report
+
+---
+
+## Configuration
+
+Create `tenets.toml` in project root:
+
+```toml
+[ranking]
+mode = "balanced"
+max_tokens = 100000
+
+[ranking.weights]
+bm25 = 0.3
+keywords = 0.2
+imports = 0.2
+git = 0.15
+path = 0.15
+
+[output]
+format = "markdown"
+copy_on_distill = true
+
+[filters]
+include = ["*.py", "*.js", "*.ts"]
+exclude = ["**/node_modules/**", "**/dist/**"]
+```
+
+---
+
+## Links
+
+- **Website**: https://tenets.dev
+- **GitHub**: https://github.com/jddunn/tenets
+- **PyPI**: https://pypi.org/project/tenets/
+- **Discord**: https://discord.gg/DzNgXdYm
+
+## License
+
+MIT License - 100% free and open source. No usage limits, no API costs.
+

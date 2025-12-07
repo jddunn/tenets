@@ -14,6 +14,33 @@ tags:
   - setup
 ---
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Setting Up Tenets MCP Server: Complete Guide",
+  "description": "Install and configure Tenets MCP server for Cursor, Claude Desktop, VS Code, Windsurf. Free open source Python CLI and library for LLM code context.",
+  "author": {
+    "@type": "Person",
+    "name": "Johnny Dunn",
+    "url": "https://jddunn.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "manic.agency",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://tenets.dev/logos/tenets_dark_icon_transparent_cropped.png"
+    }
+  },
+  "datePublished": "2024-12-04",
+  "dateModified": "2024-12-07",
+  "mainEntityOfPage": "https://tenets.dev/blog/cursor-claude-setup/",
+  "image": "https://tenets.dev/assets/og-image.png",
+  "keywords": ["Cursor MCP", "Claude Desktop", "MCP setup", "Tenets", "AI coding", "Python"]
+}
+</script>
+
 # Setting Up Tenets MCP Server: Complete Guide
 
 **Author:** Johnny Dunn | **Date:** December 4, 2024
@@ -544,8 +571,8 @@ The combination of intelligent context + automatic tenets injection helps mainta
 
 - [MCP Documentation](../MCP.md) — Full tool reference
 - [CLI Reference](../CLI.md) — Command-line usage
-- [Configuration Guide](../configuration.md) — All config options
-- [Architecture](../architecture.md) — How Tenets works
+- [Configuration Guide](../CONFIG.md) — All config options
+- [Architecture](../ARCHITECTURE.md) — How Tenets works
 
 ---
 

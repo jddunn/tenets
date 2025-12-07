@@ -1,0 +1,225 @@
+/* Accessibility Enhancements
+   Path: docs/styles/accessibility.css
+   Skip links, focus styles, reduced motion
+   ========================================== */
+
+/* =====================================================
+   SKIP LINK - Screen reader and keyboard navigation
+   ===================================================== */
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  padding: 1rem 2rem;
+  background: var(--tenets-amber-500, #f59e0b);
+  color: var(--tenets-navy-900, #1a2332);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid var(--tenets-navy-900, #1a2332);
+  outline-offset: 2px;
+}
+
+/* =====================================================
+   FOCUS STYLES - Visible keyboard focus indicators
+   ===================================================== */
+
+/* Global focus-visible for all interactive elements */
+:focus-visible {
+  outline: 3px solid var(--tenets-amber-500, #f59e0b) !important;
+  outline-offset: 2px !important;
+}
+
+/* Remove default outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Enhanced focus for buttons */
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid var(--tenets-amber-500, #f59e0b);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.2);
+}
+
+/* Focus for links */
+a:focus-visible {
+  outline: 2px solid var(--tenets-amber-500, #f59e0b);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Focus for form inputs */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--tenets-amber-500, #f59e0b);
+  outline-offset: 1px;
+  border-color: var(--tenets-amber-500, #f59e0b);
+}
+
+/* Focus for tabs and interactive cards */
+.ide-tab:focus-visible,
+.see-tab-label:focus-visible,
+.arch-stage:focus-visible,
+.detail-card:focus-visible,
+.feature-card-large:focus-visible {
+  outline: 3px solid var(--tenets-amber-500, #f59e0b);
+  outline-offset: 2px;
+}
+
+/* Dark mode focus adjustments */
+[data-md-color-scheme="slate"] :focus-visible {
+  outline-color: var(--tenets-amber-400, #fbbf24) !important;
+}
+
+[data-md-color-scheme="slate"] .btn-primary:focus-visible,
+[data-md-color-scheme="slate"] .btn-secondary:focus-visible {
+  box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.2);
+}
+
+/* =====================================================
+   REDUCED MOTION - Respect user preferences
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Keep essential state changes visible */
+  .skip-link {
+    transition: none;
+  }
+  
+  /* Disable decorative animations */
+  .pulse-node,
+  .connection-line,
+  .bar-grow,
+  .line-draw,
+  .dot-appear,
+  .session-dot,
+  .branch-line,
+  .rocket-body,
+  .rocket-flame,
+  .exhaust-left,
+  .exhaust-right,
+  .lantern-layer,
+  .hero-background svg {
+    animation: none !important;
+  }
+  
+  /* Screenshot fade-in - show immediately */
+  .screenshot-item {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+/* =====================================================
+   HIGH CONTRAST MODE
+   ===================================================== */
+
+@media (prefers-contrast: more) {
+  :root {
+    --border-default: rgba(0, 0, 0, 0.3);
+    --border-hover: rgba(0, 0, 0, 0.5);
+  }
+  
+  [data-md-color-scheme="slate"] {
+    --border-default: rgba(255, 255, 255, 0.3);
+    --border-hover: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Increase text contrast */
+  .text-muted {
+    opacity: 1 !important;
+  }
+  
+  /* Stronger borders */
+  .feature-card-large,
+  .install-card,
+  .mcp-detail-card,
+  .config-code {
+    border-width: 2px !important;
+  }
+}
+
+/* =====================================================
+   SCREEN READER ONLY - Visually hidden but accessible
+   ===================================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Show on focus for skip links etc */
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* =====================================================
+   TOUCH TARGET SIZE - Minimum 44x44px
+   ===================================================== */
+
+@media (pointer: coarse) {
+  /* Ensure buttons are touch-friendly */
+  .btn-primary,
+  .btn-secondary,
+  .copy-btn,
+  .ide-tab,
+  .see-tab-label {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Navigation links */
+  .md-nav__link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* Social links */
+  .social-link {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+

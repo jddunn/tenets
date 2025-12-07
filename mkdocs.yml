@@ -322,6 +322,7 @@ extra:
 extra_css:
   # Core styles (working properly)
   - styles/variables.css
+  - styles/accessibility.css # Skip links, focus styles, reduced motion
   - styles/header.css # Consolidated header styles with nav, animations, logo fixes, and torch
   - styles/buttons.css
   - styles/cards.css
