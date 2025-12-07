@@ -1456,6 +1456,154 @@ code, pre {
 }
 
 /* ===============================================
+   MCP CONFIG SECTION - MOBILE RESPONSIVE
+   =============================================== */
+
+@media (max-width: 768px) {
+  .mcp-config-section {
+    padding: 2rem 1rem;
+  }
+  
+  .mcp-config-section .section-title {
+    font-size: 1.5rem;
+  }
+  
+  .mcp-config-section .section-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .ide-tabs {
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .ide-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .ide-config-panels {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  
+  .config-step {
+    padding: 0.5rem 0;
+    flex-wrap: wrap;
+  }
+  
+  .step-number {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  
+  .step-text {
+    font-size: 0.85rem;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+  }
+  
+  /* Make JSON code blocks more readable on mobile */
+  .config-code {
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin: 0.75rem 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .config-code pre {
+    margin: 0;
+    overflow-x: visible;
+  }
+  
+  .config-code code {
+    font-size: 0.75rem !important;
+    line-height: 1.5;
+    white-space: pre;
+    display: block;
+    min-width: max-content;
+  }
+  
+  .config-code .copy-btn {
+    top: 0.35rem;
+    right: 0.35rem;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.6rem;
+  }
+  
+  .config-note {
+    font-size: 0.7rem;
+    line-height: 1.4;
+    margin-top: 0.5rem;
+  }
+  
+  .config-note code {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.25rem;
+    word-break: break-all;
+  }
+  
+  .config-ready {
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+  
+  /* MCP details cards on mobile */
+  .mcp-details {
+    gap: 1rem;
+  }
+  
+  .mcp-detail-card {
+    padding: 1rem;
+  }
+  
+  .mcp-detail-card h4 {
+    font-size: 0.9rem;
+  }
+  
+  .mcp-detail-card p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mcp-config-section {
+    padding: 1.5rem 0.75rem;
+  }
+  
+  .ide-config-panels {
+    padding: 0.75rem;
+  }
+  
+  /* Ensure JSON is scrollable horizontally on very small screens */
+  .config-code {
+    padding: 0.5rem;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .config-code code {
+    font-size: 0.7rem !important;
+    line-height: 1.4;
+  }
+  
+  .step-text {
+    font-size: 0.8rem;
+  }
+  
+  .step-text code {
+    font-size: 0.7rem;
+    word-break: break-all;
+  }
+}
+
+/* ===============================================
    MCP EXPLANATION SECTION
    =============================================== */
 
