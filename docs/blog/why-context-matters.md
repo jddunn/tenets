@@ -1,13 +1,14 @@
 ---
 title: "Why Context Is Everything in AI Coding"
-description: The difference between great AI-assisted code and hallucinated garbage comes down to context quality. Learn how to provide better context to LLMs.
+description: The technical breakdown of why LLM code quality depends on context quality. BM25, token budgets, and the math behind intelligent context selection.
 author: Johnny Dunn
 date: 2024-09-15
 tags:
   - ai-coding
   - context
   - llm
-  - best-practices
+  - nlp
+  - bm25
 ---
 
 # Why Context Is Everything in AI Coding
@@ -16,191 +17,270 @@ tags:
 
 ---
 
-## Table of Contents
-
-- [The Context Problem](#the-context-problem)
-- [What Good Context Looks Like](#what-good-context-looks-like)
-- [The Cost of Bad Context](#the-cost-of-bad-context)
-- [How Tenets Solves This](#how-tenets-solves-this)
-- [Practical Tips](#practical-tips)
-- [Conclusion](#conclusion)
-
----
-
 ## The Context Problem
 
-You've probably experienced this: you ask an AI assistant to help with code, and it returns something that:
+When you ask an LLM to write code, it generates tokens based on probability distributions conditioned on its input. The model has no access to your filesystem, your git history, or your architectural decisions—it only sees what's in the context window.
 
-- Uses libraries you don't have
-- Ignores your existing patterns
-- Invents APIs that don't exist
-- Duplicates functionality you already wrote
+This creates a fundamental problem: **the model fills knowledge gaps with training data**, which may have nothing to do with your project.
 
-This isn't because the AI is stupid. It's because **the AI doesn't know what you know**.
+```python
+# You ask: "Add a user authentication endpoint"
 
-When you look at your codebase, you see:
+# Without context, the LLM might generate:
+from flask import Flask  # You use FastAPI
+import bcrypt  # You use argon2
+from sqlalchemy import create_engine  # You use async SQLAlchemy
 
-- Years of decisions and conventions
-- Dependencies and their versions
-- Custom utilities and helpers
-- Architectural patterns
-- Team preferences
-
-When the AI looks at your codebase (or doesn't), it sees... nothing. It fills in the blanks with training data—generic patterns that may have nothing to do with your project.
-
-**Context is the difference between an AI that helps and an AI that wastes your time.**
-
----
-
-## What Good Context Looks Like
-
-Good context for AI coding includes:
-
-### 1. Relevant Code
-
-Not just the file you're working on, but:
-
-- Files that import/export from the current file
-- Similar implementations to reference
-- Utilities and helpers you should reuse
-- Types and interfaces to match
-
-### 2. Conventions
-
-- How do you name variables?
-- What patterns do you follow?
-- What frameworks and libraries are standard?
-- What's the testing strategy?
-
-### 3. Constraints
-
-- What shouldn't the AI do?
-- What security requirements exist?
-- What performance considerations matter?
-
-### 4. Structure
-
-The AI needs to understand:
-
-- Where does this code live in the architecture?
-- What layers exist?
-- How do components communicate?
-
----
-
-## The Cost of Bad Context
-
-Bad context isn't just annoying—it's expensive:
-
-| Problem | Time Cost | Risk |
-|---------|-----------|------|
-| Wrong patterns | 15-30min to refactor | Inconsistent codebase |
-| Missing utilities | 10-20min to rewrite | Code duplication |
-| Wrong dependencies | 5-60min debugging | Broken builds |
-| Hallucinated APIs | 20-45min to fix | Runtime errors |
-| Security anti-patterns | Hours to days | Vulnerabilities |
-
-A study by GitHub found that developers accept ~30% of Copilot suggestions. That means 70% need modification or rejection. Better context can significantly improve this ratio.
-
----
-
-## How Tenets Solves This
-
-Tenets automatically builds optimal context through:
-
-### Multi-Factor Ranking
-
-Instead of just keyword matching, Tenets uses:
-
-1. **BM25 scoring** — Finds semantically relevant code
-2. **Import analysis** — Includes dependencies
-3. **Git signals** — Prioritizes recently-modified code
-4. **Complexity weighting** — Focuses on significant code
-5. **Path relevance** — Matches file/folder names
-
-### Token Optimization
-
-LLMs have context windows. Tenets:
-
-- Ranks all files by relevance
-- Fills context up to your token budget
-- Prioritizes high-signal code
-- Truncates intelligently
-
-### Session State
-
-For ongoing work, Tenets maintains:
-
-- Pinned files (always included)
-- Conversation history
-- Guiding principles (tenets)
-
----
-
-## Practical Tips
-
-### Tip 1: Be Specific in Your Prompts
-
-Instead of:
-> "Fix the bug"
-
-Try:
-> "Fix the authentication bug where users can't log in with valid credentials"
-
-More specific prompts = better ranking = better context.
-
-### Tip 2: Pin Related Files
-
-If you're working on authentication:
-
-```bash
-tenets session pin src/auth/ --session current-task
+# With proper context, it generates:
+from fastapi import APIRouter, Depends  # Matches your stack
+from app.auth.argon2 import hash_password  # Uses your utility
+from app.db.session import get_async_session  # Your DB pattern
 ```
 
-These files will always be in context.
-
-### Tip 3: Add Tenets for Consistency
-
-```bash
-tenets tenet add "Use bcrypt for password hashing" --priority high
-tenets tenet add "All API endpoints require authentication middleware"
-```
-
-These rules appear at the top of every context.
-
-### Tip 4: Match Mode to Task
-
-| Task | Mode |
-|------|------|
-| Quick question | `fast` |
-| Normal development | `balanced` |
-| Major refactoring | `thorough` |
-
-### Tip 5: Review Before Sending
-
-```bash
-tenets distill "your task" --copy
-```
-
-Glance at the context before pasting. Sometimes you'll spot missing pieces.
+The difference isn't AI capability—it's **input quality**.
 
 ---
 
-## Conclusion
+## The Math: Why Random File Selection Fails
 
-AI coding assistants are only as good as the context they receive. Random file selection and manual context building don't scale.
+Consider a 50,000-file codebase with a 128k token context window. Naive approaches fail mathematically:
 
-**Tenets automates optimal context**, letting you focus on the creative work while ensuring the AI has everything it needs.
+### Random Selection
+
+If you randomly select files until hitting the token budget:
+
+- **P(relevant file)** ≈ 50/50,000 = 0.1%
+- **Expected relevant files in 100 selected**: ~0.1 files
+- **Result**: Context filled with irrelevant code
+
+### Keyword Matching Only
+
+Simple substring matching has precision problems:
+
+```python
+# Query: "authentication"
+# Matches:
+"authentication.py"           # ✓ Relevant
+"test_authentication.py"       # Maybe relevant
+"old_authentication_backup.py" # ✗ Deprecated
+"docs/authentication.md"       # ✗ Wrong type
+"// TODO: add authentication"  # ✗ Comment noise
+```
+
+False positives dilute context quality.
+
+### Why Multi-Factor Ranking Works
+
+Tenets uses **BM25 + structural analysis + git signals** to compute relevance:
+
+```
+score(file) = 
+    0.25 × BM25(query, file_content) +      # Statistical text relevance
+    0.20 × keyword_match(query, file) +     # Direct term matching
+    0.15 × path_relevance(query, file) +    # Directory structure signals
+    0.10 × tfidf_similarity(query, file) +  # Term frequency analysis
+    0.10 × import_centrality(file) +        # Dependency importance
+    0.10 × git_signals(file) +              # Recency + frequency
+    0.05 × complexity_relevance(file) +     # Code complexity
+    0.05 × type_relevance(query, file)      # File type matching
+```
+
+This multi-factor approach:
+
+1. **Prevents repetition bias**: BM25 penalizes files that repeat terms without adding information
+2. **Captures structure**: Import centrality finds files that are "hubs" in your dependency graph
+3. **Prioritizes freshness**: Git signals weight recently-modified, frequently-changed files
 
 ---
 
-*Ready to try it?* 
+## Token Budgets: The Constraint That Shapes Everything
+
+LLMs have hard context limits. Even GPT-4's 128k tokens fills fast:
+
+| Content Type | Tokens/File (avg) | Files in 100k |
+|--------------|-------------------|---------------|
+| Python modules | 800-1500 | 65-125 |
+| TypeScript files | 600-1200 | 80-165 |
+| Config files | 100-300 | 300+ |
+| Test files | 1000-2000 | 50-100 |
+
+**The problem**: You can't include everything. You must **rank and select**.
+
+### Intelligent Truncation
+
+When a file is relevant but too large, naive truncation loses signal:
+
+```python
+# Bad: First N tokens (loses the important parts)
+def helper_one():
+    pass
+
+def helper_two():
+    pass
+
+# ... truncated at 500 tokens ...
+# MISSED: The actual authenticate() function at line 400
+```
+
+Tenets preserves structure through intelligent summarization:
+
+```python
+# Good: Signature + docstring + key blocks
+def authenticate(username: str, password: str) -> AuthResult:
+    """
+    Authenticate user credentials against database.
+    Returns AuthResult with user data or error details.
+    """
+    # Implementation: 45 lines - validates credentials
+    # Uses: app.auth.argon2.verify_password
+    # Raises: AuthenticationError, RateLimitError
+```
+
+---
+
+## Real Example: Debugging Authentication
+
+Let's trace how context quality affects a real task.
+
+**Task**: "Fix the bug where users can't reset passwords"
+
+### Without Intelligent Context
+
+The LLM sees random files or keyword matches:
+
+```
+Context (keyword "password"):
+- docs/security-policy.md (mentions "password" 20x)
+- scripts/generate_test_passwords.py
+- migrations/0001_add_password_hash.sql
+- tests/test_password_validation.py
+```
+
+Result: The LLM hallucinates a solution based on generic patterns.
+
+### With Tenets Context
+
+```bash
+tenets distill "fix password reset bug" --mode balanced
+```
+
+Tenets analyzes:
+1. **Query understanding**: Extracts keywords `password`, `reset`, `bug`
+2. **BM25 ranking**: Scores files by statistical relevance
+3. **Import graph**: Finds files that import/export password utilities
+4. **Git signals**: Prioritizes recently-modified auth files
+
+```
+Context (ranked by relevance):
+1. app/auth/password_reset.py      (0.89) - Reset logic
+2. app/auth/token_manager.py       (0.76) - Token generation
+3. app/models/user.py              (0.71) - User model
+4. app/email/templates/reset.html  (0.65) - Email template
+5. tests/auth/test_reset.py        (0.61) - Existing tests
+```
+
+The LLM now sees **exactly the code it needs**.
+
+---
+
+## The Import Centrality Signal
+
+One of Tenets' most powerful signals is **import centrality**—measuring how "central" a file is in your dependency graph.
+
+```mermaid
+graph TD
+    A[app/main.py] --> B[app/auth/router.py]
+    A --> C[app/users/router.py]
+    B --> D[app/auth/service.py]
+    B --> E[app/auth/models.py]
+    C --> E
+    D --> E
+    D --> F[app/auth/utils.py]
+```
+
+Files imported by many others (like `app/auth/models.py`) are **architectural keystones**. Including them gives the LLM understanding of shared data structures.
+
+Centrality calculation:
+
+```python
+def import_centrality(file: Path, graph: ImportGraph) -> float:
+    """PageRank-style centrality for import graph."""
+    in_degree = len(graph.importers_of(file))
+    out_degree = len(graph.imports_of(file))
+    total_files = len(graph.all_files())
+    
+    return (in_degree + 0.5 * out_degree) / total_files
+```
+
+---
+
+## Session State: Context Across Interactions
+
+Coding isn't one-shot—it's iterative. Tenets maintains session state:
+
+```bash
+# Create a session for your feature work
+tenets session create auth-refactor
+
+# Pin files you'll reference repeatedly
+tenets session pin src/auth/ --session auth-refactor
+
+# Add guiding principles
+tenets tenet add "Use argon2 for all password hashing" --session auth-refactor
+tenets tenet add "All endpoints require rate limiting" --priority high
+
+# Every distill now includes pinned files + tenets
+tenets distill "add MFA support" --session auth-refactor
+```
+
+Your context compounds across the session.
+
+---
+
+## Practical Configuration
+
+### Mode Selection
+
+| Task | Mode | Why |
+|------|------|-----|
+| Quick question | `fast` | Keyword + path only, <1s |
+| Feature development | `balanced` | Full NLP pipeline, ~3s |
+| Major refactoring | `thorough` | Deep analysis + ML, ~10s |
+
+### Token Budget Tuning
+
+```yaml
+# .tenets.yml
+context:
+  max_tokens: 100000  # Default: fits most models
+  reserve_tokens: 10000  # Leave room for response
+  
+ranking:
+  algorithm: balanced
+  threshold: 0.1  # Minimum relevance score
+  use_git: true  # Include git signals
+```
+
+---
+
+## Key Takeaways
+
+1. **Context quality determines output quality**—not model capability
+2. **Multi-factor ranking** beats keyword matching by 3-5x in relevance
+3. **Token budgets require intelligent selection**, not random sampling
+4. **Import centrality** identifies architectural keystones
+5. **Session state** compounds context across interactions
+
+---
+
+*Ready to try intelligent context?*
 
 ```bash
 pip install tenets[mcp]
+tenets distill "your task" --copy
 ```
 
-See the [Tutorial](../tutorial.md) for a complete walkthrough.
+See the [Architecture Documentation](../architecture.md) for the full technical breakdown.
 
 ---
 
@@ -215,4 +295,3 @@ See the [Tutorial](../tutorial.md) for a complete walkthrough.
   <p>Built by <a href="https://manic.agency" target="_blank">manic.agency</a></p>
   <a href="https://manic.agency/contact" style="color: #f59e0b;">Need custom AI tooling? →</a>
 </div>
-

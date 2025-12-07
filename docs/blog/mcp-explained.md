@@ -1,264 +1,430 @@
 ---
-title: "Model Context Protocol Explained"
-description: What is MCP, why does it matter, and how Tenets fits into the ecosystem. A developer's guide to the open standard for AI tool integration.
+title: "Model Context Protocol: Technical Deep Dive"
+description: Understanding MCP architecture, JSON-RPC transport, tool schemas, and how Tenets implements intelligent code context as an MCP server.
 author: Johnny Dunn
 date: 2024-10-22
 tags:
   - mcp
   - model-context-protocol
+  - json-rpc
   - ai-tools
-  - integration
 ---
 
-# Model Context Protocol Explained
+# Model Context Protocol: Technical Deep Dive
 
 **Author:** Johnny Dunn | **Date:** October 22, 2024
 
 ---
 
-## Table of Contents
-
-- [What is MCP?](#what-is-mcp)
-- [The Problem MCP Solves](#the-problem-mcp-solves)
-- [MCP Architecture](#mcp-architecture)
-- [MCP Primitives](#mcp-primitives)
-- [How Tenets Uses MCP](#how-tenets-uses-mcp)
-- [Getting Started](#getting-started)
-- [The Future of MCP](#the-future-of-mcp)
-
----
-
 ## What is MCP?
 
-**Model Context Protocol (MCP)** is an open standard developed by Anthropic that allows AI applications to interact with external tools, data sources, and services through a unified interface.
+**Model Context Protocol (MCP)** is a JSON-RPC 2.0 based protocol developed by Anthropic for AI applications to interact with external tools and data sources. It standardizes how LLM-powered applications discover, invoke, and receive results from external capabilities.
 
-Think of it like USB for AI tools—a standard way for AI assistants to "plug in" to external capabilities.
+The protocol defines three primitives:
 
-Before MCP:
-```
-AI Assistant → Custom integration → Tool A
-AI Assistant → Different integration → Tool B
-AI Assistant → Yet another integration → Tool C
-```
-
-After MCP:
-```
-AI Assistant → MCP → Tool A, Tool B, Tool C
-```
+| Primitive | Direction | Purpose |
+|-----------|-----------|---------|
+| **Tools** | AI → Server | Functions the AI can invoke |
+| **Resources** | AI ← Server | Data endpoints the AI can read |
+| **Prompts** | AI ← Server | Pre-built interaction templates |
 
 ---
 
-## The Problem MCP Solves
-
-AI assistants face a fundamental limitation: they can only work with what's in their context window. They can't:
-
-- Read your files
-- Run commands
-- Query databases
-- Access APIs
-
-**Integrations** solve this, but every integration requires custom code on both sides. This doesn't scale.
-
-MCP provides a **standard interface** so:
-
-1. Tool developers build MCP servers once
-2. AI application developers support MCP once
-3. Everything connects automatically
-
-### Real-World Analogy
-
-Remember when every device had a different charger? Then USB came along.
-
-MCP is USB for AI tools.
-
----
-
-## MCP Architecture
+## Protocol Architecture
 
 ```
-┌─────────────────┐     ┌─────────────┐     ┌─────────────┐
-│  AI Application │────▶│ MCP Client  │────▶│ MCP Server  │
-│  (Claude, etc.) │     │  (in app)   │     │  (Tenets)   │
-└─────────────────┘     └─────────────┘     └─────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                      MCP Host (Cursor, Claude Desktop)       │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  │
+│  │   LLM Engine   │  │   MCP Client   │  │   UI Layer     │  │
+│  └───────┬────────┘  └───────┬────────┘  └────────────────┘  │
+│          │                   │                               │
+│          │ Tool calls        │ JSON-RPC 2.0                  │
+│          └───────────────────┤                               │
+└──────────────────────────────┼───────────────────────────────┘
                                │
-                               ▼
-                        ┌─────────────┐
-                        │  Transport  │
-                        │ stdio/http  │
-                        └─────────────┘
+                    ┌──────────┴──────────┐
+                    │     Transport       │
+                    │  stdio | SSE | HTTP │
+                    └──────────┬──────────┘
+                               │
+┌──────────────────────────────┼───────────────────────────────┐
+│                      MCP Server (Tenets)                     │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  │
+│  │  Tool Handler  │  │ Resource Mgr   │  │ Prompt Registry│  │
+│  └───────┬────────┘  └───────┬────────┘  └───────┬────────┘  │
+│          │                   │                   │           │
+│  ┌───────┴───────────────────┴───────────────────┴────────┐  │
+│  │                    Tenets Core                         │  │
+│  │   Distiller │ Ranker │ Analyzer │ Session │ Git        │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Components
+### Transport Mechanisms
 
-**MCP Host**: The AI application (Claude Desktop, Cursor, etc.)
+MCP supports multiple transports:
 
-**MCP Client**: Built into the host, communicates with servers
+**stdio** (default): Server runs as subprocess, communicates via stdin/stdout
+```json
+{"jsonrpc": "2.0", "method": "tools/call", "params": {...}, "id": 1}
+```
 
-**MCP Server**: Provides tools, resources, and prompts (like Tenets)
+**SSE (Server-Sent Events)**: HTTP-based streaming for web clients
+```bash
+tenets-mcp --sse --port 8080
+```
 
-**Transport**: Communication method (stdio for local, HTTP for remote)
+**HTTP**: REST-like interface for integration scenarios
+```bash
+tenets-mcp --http --port 8080
+```
 
 ---
 
-## MCP Primitives
+## JSON-RPC Message Flow
 
-MCP defines three primitives:
+### Tool Discovery
 
-### 1. Tools
+When the MCP host connects, it discovers available tools:
 
-**Functions the AI can call.** Like REST endpoints but for AI.
+```json
+// Request: List available tools
+{
+  "jsonrpc": "2.0",
+  "method": "tools/list",
+  "id": 1
+}
+
+// Response: Tool schemas
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "tools": [
+      {
+        "name": "distill",
+        "description": "Build optimized code context for a task",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Task or question to find context for"
+            },
+            "path": {
+              "type": "string",
+              "default": "."
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["fast", "balanced", "thorough"],
+              "default": "balanced"
+            },
+            "max_tokens": {
+              "type": "integer",
+              "default": 100000
+            }
+          },
+          "required": ["prompt"]
+        }
+      }
+    ]
+  },
+  "id": 1
+}
+```
+
+### Tool Invocation
+
+The AI constructs a tool call based on the schema:
+
+```json
+// Request: Call distill tool
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "distill",
+    "arguments": {
+      "prompt": "implement user authentication with JWT",
+      "path": "/home/user/project",
+      "mode": "balanced",
+      "max_tokens": 80000
+    }
+  },
+  "id": 2
+}
+
+// Response: Context result
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "# Context for: implement user authentication with JWT\n\n## File: src/auth/jwt.py (relevance: 0.92)\n```python\nimport jwt\nfrom datetime import datetime, timedelta\n..."
+      }
+    ],
+    "isError": false
+  },
+  "id": 2
+}
+```
+
+---
+
+## Tenets MCP Server Implementation
+
+### Tool Definitions
+
+Tenets exposes its core capabilities as MCP tools:
+
+```python
+# tenets/mcp/server.py
+
+@mcp.tool()
+async def distill(
+    prompt: str,
+    path: str = ".",
+    mode: Literal["fast", "balanced", "thorough"] = "balanced",
+    max_tokens: int = 100000,
+    format: Literal["markdown", "xml", "json", "html"] = "markdown",
+    include_tests: bool = False,
+    include_git: bool = True,
+    session: Optional[str] = None,
+    include_patterns: Optional[list[str]] = None,
+    exclude_patterns: Optional[list[str]] = None,
+) -> dict[str, Any]:
+    """
+    Build optimized code context for a task or question.
+    
+    Uses multi-factor NLP ranking (BM25, keyword matching, import 
+    centrality, git signals) to find and aggregate relevant code
+    within your token budget.
+    
+    Args:
+        prompt: What you're working on. Be specific for better results.
+        path: Directory to search. Use "." for current project.
+        mode: Speed vs accuracy tradeoff.
+        max_tokens: Token budget for context.
+        format: Output structure (markdown recommended for LLMs).
+        include_tests: Set True when debugging test failures.
+        session: Link to a session for pinned files.
+    
+    Returns:
+        Dictionary with context, token_count, files, and metadata.
+    """
+    result = tenets_instance.distill(
+        prompt=prompt,
+        path=Path(path),
+        mode=mode,
+        max_tokens=max_tokens,
+        format=format,
+        include_tests=include_tests,
+        include_git=include_git,
+        session=session,
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
+    )
+    return result.to_dict()
+```
+
+### Full Tool Surface
+
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `distill` | Build ranked code context | prompt, mode, max_tokens |
+| `rank_files` | Preview file relevance scores | prompt, top_n, explain |
+| `examine` | Analyze codebase structure | path, include_complexity |
+| `chronicle` | Analyze git history | since, author |
+| `momentum` | Track development velocity | since, team |
+| `session_create` | Create development session | name, description |
+| `session_pin_file` | Pin file to session | session, file_path |
+| `session_pin_folder` | Pin folder to session | session, folder_path, patterns |
+| `tenet_add` | Add guiding principle | content, priority, category |
+| `tenet_list` | List active tenets | session, pending_only |
+| `tenet_instill` | Activate pending tenets | session, force |
+| `set_system_instruction` | Set AI instruction | instruction, position |
+
+### Resource Definitions
+
+Resources expose read-only data:
+
+```python
+@mcp.resource("tenets://sessions/list")
+async def list_sessions() -> str:
+    """List all active development sessions."""
+    sessions = tenets_instance.list_sessions()
+    return json.dumps(sessions, indent=2)
+
+@mcp.resource("tenets://sessions/{name}/state")  
+async def get_session_state(name: str) -> str:
+    """Get detailed state for a specific session."""
+    state = tenets_instance.get_session(name)
+    return json.dumps(state.to_dict(), indent=2)
+
+@mcp.resource("tenets://config/current")
+async def get_config() -> str:
+    """Get current Tenets configuration."""
+    return json.dumps(tenets_instance.config.to_dict(), indent=2)
+```
+
+---
+
+## How the AI Uses MCP
+
+When you ask Claude or Cursor: *"Find the authentication code in my project"*
+
+### Step 1: Intent Recognition
+The AI recognizes this requires external tool access.
+
+### Step 2: Tool Selection
+The AI examines available tools and selects `distill`:
+
+```
+Available tools: distill, rank_files, examine, chronicle...
+Selected: distill (builds code context for queries)
+```
+
+### Step 3: Parameter Construction
+The AI constructs the call based on the schema:
 
 ```json
 {
   "name": "distill",
-  "description": "Build optimized code context for a task",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "prompt": {"type": "string"},
-      "mode": {"type": "string", "enum": ["fast", "balanced", "thorough"]}
-    }
+  "arguments": {
+    "prompt": "authentication code",
+    "mode": "balanced"
   }
 }
 ```
 
-The AI sees this schema and knows how to call the tool.
+### Step 4: Result Integration
+The MCP response becomes part of the AI's context:
 
-### 2. Resources
+```markdown
+# Context for: authentication code
 
-**Data endpoints the AI can read.** Like GET endpoints.
-
+## File: src/auth/service.py (relevance: 0.91)
+```python
+class AuthService:
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
+        self.hasher = Argon2Hasher()
+    
+    async def authenticate(self, email: str, password: str) -> AuthResult:
+        user = await self.user_repo.get_by_email(email)
+        if not user or not self.hasher.verify(password, user.password_hash):
+            raise AuthenticationError("Invalid credentials")
+        return AuthResult(user=user, token=self._generate_token(user))
 ```
-tenets://sessions/list
-tenets://config/current
-tenets://tenets/list
+
+## File: src/auth/middleware.py (relevance: 0.87)
+...
 ```
 
-Resources are read-only and provide state/data to the AI.
-
-### 3. Prompts
-
-**Templates for common workflows.** Pre-built interaction patterns.
-
-```json
-{
-  "name": "build_context_for_task",
-  "description": "Build context for a coding task",
-  "arguments": [
-    {"name": "task_description", "required": true}
-  ]
-}
-```
+The AI now has **relevant, ranked code** to work with.
 
 ---
 
-## How Tenets Uses MCP
+## Configuration Examples
 
-Tenets implements an MCP server that exposes:
-
-### Tools (Actions)
-
-| Tool | Purpose |
-|------|---------|
-| `distill` | Build optimized code context |
-| `rank_files` | Preview file relevance scores |
-| `examine` | Analyze codebase structure |
-| `chronicle` | Analyze git history |
-| `session_create` | Create development sessions |
-| `session_pin_file` | Pin files to sessions |
-| `tenet_add` | Add guiding principles |
-
-### Resources (Data)
-
-| Resource | Returns |
-|----------|---------|
-| `tenets://sessions/list` | All active sessions |
-| `tenets://sessions/{name}/state` | Session details |
-| `tenets://tenets/list` | Active tenets |
-| `tenets://config/current` | Current configuration |
-
-### Prompts (Templates)
-
-| Prompt | Use Case |
-|--------|----------|
-| `build_context_for_task` | Standard coding tasks |
-| `code_review_context` | Reviewing code changes |
-| `understand_codebase` | Onboarding/exploration |
-
----
-
-## Getting Started
-
-### 1. Install Tenets
-
-```bash
-pip install tenets[mcp]
-```
-
-### 2. Test the Server
-
-```bash
-tenets-mcp --version
-```
-
-### 3. Configure Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+### Cursor (`~/.cursor/mcp.json`)
 
 ```json
 {
   "mcpServers": {
     "tenets": {
-      "command": "tenets-mcp"
+      "command": "tenets-mcp",
+      "args": [],
+      "env": {
+        "TENETS_LOG_LEVEL": "INFO"
+      }
     }
   }
 }
 ```
 
-### 4. Restart Claude Desktop
+### Claude Desktop
 
-### 5. Use It
+**macOS** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "/usr/local/bin/tenets-mcp"
+    }
+  }
+}
+```
 
-In Claude, try:
+**Windows** (`%APPDATA%\Claude\claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "C:\\Python311\\Scripts\\tenets-mcp.exe"
+    }
+  }
+}
+```
 
-> "Use tenets to find code related to user authentication"
+### Multiple Project Configuration
 
-Claude will call the Tenets MCP server automatically.
+```json
+{
+  "mcpServers": {
+    "tenets-frontend": {
+      "command": "tenets-mcp",
+      "args": ["--path", "/projects/frontend"]
+    },
+    "tenets-backend": {
+      "command": "tenets-mcp", 
+      "args": ["--path", "/projects/backend"]
+    }
+  }
+}
+```
 
 ---
 
-## The Future of MCP
+## Why Tenets + MCP
 
-MCP is rapidly becoming the standard for AI tool integration:
+Most MCP servers provide **raw access**—file reading, command execution, API calls. Tenets provides **intelligent access**:
 
-### Current Adoption
+| Raw MCP Server | Tenets MCP Server |
+|----------------|-------------------|
+| Read file by path | Find relevant files automatically |
+| List directory | Rank files by query relevance |
+| Return full content | Optimize for token budget |
+| Stateless | Session persistence + pinned files |
+| No guidance | Tenet injection for consistency |
 
-- **Claude Desktop** — Full MCP support
-- **Cursor** — Native MCP integration
-- **Continue** — MCP-compatible
-- **Windsurf** — Adding MCP support
+The difference is **intelligence at the protocol layer**.
 
-### Ecosystem Growth
+---
 
-The [MCP Servers Directory](https://github.com/modelcontextprotocol/servers) is growing rapidly with servers for:
+## Performance Characteristics
 
-- Databases (PostgreSQL, MongoDB)
-- Development tools (GitHub, GitLab)
-- Productivity (Slack, Notion)
-- Infrastructure (AWS, Kubernetes)
+| Operation | Latency | Notes |
+|-----------|---------|-------|
+| Tool discovery | <10ms | Cached after first call |
+| `distill` (fast) | 500ms-1s | Keyword + path matching |
+| `distill` (balanced) | 2-4s | Full NLP pipeline |
+| `distill` (thorough) | 8-15s | ML embeddings |
+| `rank_files` | 200ms-2s | Preview without content |
+| `examine` | 1-3s | Structure analysis |
 
-### What This Means
-
-Building an MCP server (like Tenets) means automatic compatibility with the entire ecosystem. One integration, everywhere.
+All processing runs **100% locally**—no API calls, no data leaving your machine.
 
 ---
 
 ## Learn More
 
-- [Official MCP Documentation](https://modelcontextprotocol.io)
-- [MCP Servers Directory](https://github.com/modelcontextprotocol/servers)
+- [MCP Specification](https://spec.modelcontextprotocol.io)
 - [Tenets MCP Documentation](../MCP.md)
-- [Tenets Tutorial](../tutorial.md)
+- [Architecture: MCP Integration](../architecture/mcp-integration-plan.md)
+- [Architecture: Ranking System](../architecture/ranking-system.md)
 
 ---
 
@@ -273,4 +439,3 @@ Building an MCP server (like Tenets) means automatic compatibility with the enti
   <p>Built by <a href="https://manic.agency" target="_blank">manic.agency</a></p>
   <a href="https://manic.agency/contact" style="color: #f59e0b;">Need custom AI tooling? →</a>
 </div>
-

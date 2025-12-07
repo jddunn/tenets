@@ -1,106 +1,117 @@
 ---
-title: "Setting Up Tenets with Cursor and Claude"
-description: Step-by-step guide to integrating Tenets MCP server with Cursor IDE and Claude Desktop for AI-powered coding.
+title: "Setting Up Tenets MCP Server: Complete Guide"
+description: Technical walkthrough for integrating Tenets MCP server with Cursor, Claude Desktop, VS Code, and other MCP-compatible tools.
 author: Johnny Dunn
 date: 2024-12-04
 tags:
   - cursor
   - claude
+  - mcp
   - setup
-  - tutorial
+  - configuration
 ---
 
-# Setting Up Tenets with Cursor and Claude
+# Setting Up Tenets MCP Server: Complete Guide
 
 **Author:** Johnny Dunn | **Date:** December 4, 2024
 
 ---
 
-## Table of Contents
+## Overview
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Claude Desktop Setup](#claude-desktop-setup)
-- [Cursor Setup](#cursor-setup)
-- [VS Code Setup](#vs-code-setup)
-- [Verification](#verification)
-- [Troubleshooting](#troubleshooting)
+Tenets is a **local MCP server** that provides NLP-powered code context to AI coding assistants. This guide covers installation, configuration, and verification for all major MCP hosts.
+
+**What you'll set up:**
+- Tenets MCP server binary
+- IDE/tool configuration
+- Verification that tools are available
+
+**Time required:** 5-10 minutes
 
 ---
 
 ## Prerequisites
 
-Before you begin, ensure you have:
+### Python Environment
 
-- **Python 3.9+** installed
-- **pip** package manager
-- One of:
-    - Claude Desktop (macOS, Windows)
-    - Cursor IDE
-    - VS Code with MCP extension
-
-Check your Python version:
+Tenets requires Python 3.9+:
 
 ```bash
 python3 --version
-# Python 3.11.4 or higher
+# Python 3.11.x or higher recommended
 ```
+
+### pip Package Manager
+
+```bash
+pip --version
+# pip 23.x or higher
+```
+
+### MCP-Compatible Host
+
+One of:
+- **Cursor** (native MCP support)
+- **Claude Desktop** (macOS, Windows)
+- **Windsurf** (MCP extension)
+- **VS Code** with Continue or MCP extension
 
 ---
 
 ## Installation
 
-Tenets is an MCP server for AI coding assistants. Install with MCP support:
+### Standard Installation
 
 ```bash
 pip install tenets[mcp]
 ```
 
-Verify the installation:
+This installs:
+- `tenets` CLI and Python library
+- `tenets-mcp` server binary
+- MCP protocol dependencies (`mcp`, `httpx`)
+
+### Verify Installation
 
 ```bash
 tenets-mcp --version
+# tenets-mcp v0.7.x
+
+which tenets-mcp
+# /usr/local/bin/tenets-mcp (or your Python bin path)
 ```
 
-You should see:
+**Save this path**—you'll need it for configuration.
 
-```
-tenets-mcp v0.7.1
-```
+### Optional: ML Features
 
-### Finding the Executable Path
-
-You'll need the full path to `tenets-mcp` for configuration:
+For semantic embeddings (slower but more accurate):
 
 ```bash
-which tenets-mcp
-# /usr/local/bin/tenets-mcp
-# or
-# /Users/yourname/.local/bin/tenets-mcp
+pip install tenets[ml]
 ```
 
-Note this path for the next steps.
+Adds `sentence-transformers` for embedding-based ranking.
 
 ---
 
-## Claude Desktop Setup
+## Cursor Configuration
 
-### macOS
+Cursor has native MCP support. Configuration lives in `~/.cursor/mcp.json`.
 
-1. **Open the config file:**
-
-```bash
-open ~/Library/Application\ Support/Claude/claude_desktop_config.json
-```
-
-If it doesn't exist, create it:
+### Step 1: Create/Edit Config
 
 ```bash
-mkdir -p ~/Library/Application\ Support/Claude
-touch ~/Library/Application\ Support/Claude/claude_desktop_config.json
+# Create directory if needed
+mkdir -p ~/.cursor
+
+# Edit config
+nano ~/.cursor/mcp.json
 ```
 
-2. **Add Tenets configuration:**
+### Step 2: Add Tenets Server
+
+**Minimal configuration:**
 
 ```json
 {
@@ -112,7 +123,7 @@ touch ~/Library/Application\ Support/Claude/claude_desktop_config.json
 }
 ```
 
-**Or with full path (recommended):**
+**With full path (recommended for reliability):**
 
 ```json
 {
@@ -124,19 +135,74 @@ touch ~/Library/Application\ Support/Claude/claude_desktop_config.json
 }
 ```
 
-3. **Restart Claude Desktop**
+**With environment variables:**
 
-Quit and reopen Claude Desktop for changes to take effect.
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp",
+      "env": {
+        "TENETS_LOG_LEVEL": "DEBUG",
+        "TENETS_CACHE_DIR": "/tmp/tenets-cache"
+      }
+    }
+  }
+}
+```
+
+### Step 3: Restart Cursor
+
+Fully quit and reopen Cursor (not just reload window).
+
+### Step 4: Verify
+
+In Cursor's AI chat:
+
+```
+What MCP tools do you have available?
+```
+
+You should see `distill`, `rank_files`, `examine`, etc.
+
+---
+
+## Claude Desktop Configuration
+
+### macOS
+
+**Config path:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```bash
+# Create directory
+mkdir -p ~/Library/Application\ Support/Claude
+
+# Create/edit config
+nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+**Configuration:**
+
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "/usr/local/bin/tenets-mcp"
+    }
+  }
+}
+```
 
 ### Windows
 
-1. **Open the config file:**
+**Config path:** `%APPDATA%\Claude\claude_desktop_config.json`
 
-```
-%APPDATA%\Claude\claude_desktop_config.json
+```powershell
+# Open config location
+explorer %APPDATA%\Claude
 ```
 
-2. **Add configuration:**
+**Configuration:**
 
 ```json
 {
@@ -148,19 +214,26 @@ Quit and reopen Claude Desktop for changes to take effect.
 }
 ```
 
-3. **Restart Claude Desktop**
+Find your path:
+```powershell
+where tenets-mcp
+```
+
+### Restart Claude Desktop
+
+Quit and reopen the application.
 
 ---
 
-## Cursor Setup
+## Windsurf Configuration
 
-### Method 1: Settings UI
+Windsurf uses VS Code-style settings with MCP extension.
 
-1. Open Cursor
-2. Go to **Settings** (⌘/Ctrl + ,)
-3. Search for "MCP"
-4. Click "Edit in settings.json"
-5. Add:
+### Step 1: Open Settings
+
+`Cmd/Ctrl + ,` → Search "MCP"
+
+### Step 2: Edit JSON
 
 ```json
 {
@@ -172,31 +245,26 @@ Quit and reopen Claude Desktop for changes to take effect.
 }
 ```
 
-### Method 2: Edit JSON Directly
+### Step 3: Restart
 
-1. Open Command Palette (⌘/Ctrl + Shift + P)
-2. Type "Open Settings (JSON)"
-3. Add the MCP configuration above
-
-### Restart Cursor
-
-Restart Cursor for changes to take effect.
+Reload Windsurf window.
 
 ---
 
-## VS Code Setup
+## VS Code with Continue
 
-VS Code requires an MCP extension. Install **Continue** or another MCP-compatible extension.
+Continue extension provides MCP support for VS Code.
 
-### With Continue
+### Step 1: Install Continue
 
-1. Install Continue extension
-2. Open Continue settings
-3. Add Tenets as an MCP server:
+Install from VS Code marketplace.
+
+### Step 2: Configure MCP
+
+Open Continue settings and add:
 
 ```json
 {
-  "models": [...],
   "mcpServers": {
     "tenets": {
       "command": "tenets-mcp"
@@ -207,143 +275,34 @@ VS Code requires an MCP extension. Install **Continue** or another MCP-compatibl
 
 ---
 
-## Verification
-
-### Test in Claude Desktop
-
-Open Claude and type:
-
-> "What tools do you have available from tenets?"
-
-Claude should respond with a list of available tools like `distill`, `examine`, `rank_files`, etc.
-
-### Test Functionality
-
-Try:
-
-> "Use tenets to examine the structure of /path/to/your/project"
-
-Claude should call the `examine` tool and return codebase analysis.
-
-### Test in Cursor
-
-In Cursor's AI chat, try:
-
-> "Use tenets to find code related to authentication"
-
----
-
-## Troubleshooting
-
-### "Command not found"
-
-**Problem:** The MCP server can't find `tenets-mcp`.
-
-**Solution:** Use the full path:
-
-```json
-{
-  "mcpServers": {
-    "tenets": {
-      "command": "/full/path/to/tenets-mcp"
-    }
-  }
-}
-```
-
-Find the path with:
-
-```bash
-which tenets-mcp
-```
-
-### "MCP server not responding"
-
-**Problem:** Server starts but doesn't respond.
-
-**Solutions:**
-
-1. Check the server manually:
-   ```bash
-   tenets-mcp
-   ```
-   
-2. Look for Python errors in output
-
-3. Verify dependencies:
-   ```bash
-   pip install tenets[mcp] --upgrade
-   ```
-
-### "Tools not appearing"
-
-**Problem:** Claude/Cursor doesn't show Tenets tools.
-
-**Solutions:**
-
-1. Fully restart the application (not just reload)
-2. Check config JSON syntax (use a JSON validator)
-3. Verify config file location
-
-### "Permission denied"
-
-**Problem:** Can't execute `tenets-mcp`.
-
-**Solution:**
-
-```bash
-chmod +x $(which tenets-mcp)
-```
-
-### Check Server Logs
-
-Run the server with debug output:
-
-```bash
-tenets-mcp 2>&1 | tee mcp-debug.log
-```
-
----
-
 ## Advanced Configuration
 
-### Working Directory
+### Project-Specific Servers
 
-Set a default project directory:
-
-```json
-{
-  "mcpServers": {
-    "tenets": {
-      "command": "tenets-mcp",
-      "args": ["--path", "/path/to/your/project"]
-    }
-  }
-}
-```
-
-### Multiple Projects
-
-You can configure multiple Tenets servers for different projects:
+Run different Tenets instances for different projects:
 
 ```json
 {
   "mcpServers": {
     "tenets-frontend": {
       "command": "tenets-mcp",
-      "args": ["--path", "/path/to/frontend"]
+      "args": ["--path", "/home/user/projects/frontend"]
     },
     "tenets-backend": {
       "command": "tenets-mcp",
-      "args": ["--path", "/path/to/backend"]
+      "args": ["--path", "/home/user/projects/backend"]
+    },
+    "tenets-infra": {
+      "command": "tenets-mcp",
+      "args": ["--path", "/home/user/projects/infrastructure"]
     }
   }
 }
 ```
 
-### Environment Variables
+### Debug Mode
 
-Pass environment variables:
+Enable verbose logging:
 
 ```json
 {
@@ -358,13 +317,230 @@ Pass environment variables:
 }
 ```
 
+### Custom Config File
+
+Point to a specific `.tenets.yml`:
+
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp",
+      "env": {
+        "TENETS_CONFIG": "/path/to/.tenets.yml"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Verification
+
+### Test 1: Tool Discovery
+
+Ask your AI:
+
+```
+What tools are available from tenets?
+```
+
+**Expected response:**
+- `distill` — Build optimized code context
+- `rank_files` — Preview file relevance scores
+- `examine` — Analyze codebase structure
+- `session_create`, `session_pin_file`, etc.
+
+### Test 2: Basic Distill
+
+```
+Use tenets to find code related to user authentication in /path/to/project
+```
+
+**Expected:** The AI calls `distill` and returns ranked code context.
+
+### Test 3: Examine Codebase
+
+```
+Use tenets examine on /path/to/project
+```
+
+**Expected:** Structure analysis with file counts, languages, complexity.
+
+### Test 4: Session Creation
+
+```
+Create a tenets session called "auth-feature"
+```
+
+**Expected:** Confirmation of session creation.
+
+---
+
+## Troubleshooting
+
+### "Command not found"
+
+**Cause:** Shell can't find `tenets-mcp` binary.
+
+**Fix:** Use absolute path:
+
+```bash
+# Find the path
+which tenets-mcp
+# /home/user/.local/bin/tenets-mcp
+
+# Use in config
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "/home/user/.local/bin/tenets-mcp"
+    }
+  }
+}
+```
+
+### "Server not responding"
+
+**Cause:** Server crashes on startup.
+
+**Debug:**
+
+```bash
+# Run manually to see errors
+tenets-mcp
+
+# Check for Python errors
+python -c "import tenets; print(tenets.__version__)"
+```
+
+**Common fixes:**
+```bash
+# Upgrade to latest
+pip install tenets[mcp] --upgrade
+
+# Reinstall
+pip uninstall tenets && pip install tenets[mcp]
+```
+
+### "Tools not appearing"
+
+**Cause:** Config not loaded or JSON syntax error.
+
+**Debug:**
+
+1. Validate JSON syntax: https://jsonlint.com
+2. Check config file path is correct
+3. Fully restart application (not just reload)
+
+### "Permission denied"
+
+**Cause:** Binary not executable.
+
+**Fix:**
+```bash
+chmod +x $(which tenets-mcp)
+```
+
+### Server Hangs on Large Codebases
+
+**Cause:** Scanning too many files.
+
+**Fix:** Add excludes to `.tenets.yml`:
+
+```yaml
+scanner:
+  exclude:
+    - node_modules/
+    - .git/
+    - dist/
+    - build/
+    - "*.min.js"
+```
+
+---
+
+## Server Logs
+
+### Enable Debug Logging
+
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "command": "tenets-mcp",
+      "env": {
+        "TENETS_LOG_LEVEL": "DEBUG"
+      }
+    }
+  }
+}
+```
+
+### Manual Server Testing
+
+```bash
+# Run server and send test request
+echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | tenets-mcp
+```
+
+### Log File Location
+
+Logs write to stderr by default. Capture them:
+
+```bash
+tenets-mcp 2>&1 | tee /tmp/tenets-mcp.log
+```
+
+---
+
+## Performance Tuning
+
+### For Large Codebases (>10k files)
+
+```yaml
+# .tenets.yml
+scanner:
+  max_files: 5000  # Limit scan
+  exclude:
+    - "*.generated.*"
+    - vendor/
+    - third_party/
+
+ranking:
+  algorithm: fast  # Use faster mode by default
+```
+
+### For Slow Machines
+
+```yaml
+context:
+  max_tokens: 50000  # Reduce token budget
+
+ranking:
+  use_ml: false  # Disable ML features
+```
+
 ---
 
 ## Next Steps
 
-- [Complete Tutorial](../tutorial.md) — Learn all Tenets features
-- [MCP Documentation](../MCP.md) — Deep dive into MCP capabilities
-- [CLI Reference](../CLI.md) — Use Tenets from the command line
+Now that Tenets is configured:
+
+1. **Try distill**: Ask your AI to find code for a specific task
+2. **Create sessions**: Pin files for ongoing work
+3. **Add tenets**: Define guiding principles for consistency
+4. **Explore modes**: Test `fast` vs `balanced` vs `thorough`
+
+---
+
+## Resources
+
+- [MCP Documentation](../MCP.md) — Full tool reference
+- [CLI Reference](../CLI.md) — Command-line usage
+- [Configuration Guide](../configuration.md) — All config options
+- [Architecture](../architecture.md) — How Tenets works
 
 ---
 
@@ -379,4 +555,3 @@ Pass environment variables:
   <p>Built by <a href="https://manic.agency" target="_blank">manic.agency</a></p>
   <a href="https://manic.agency/contact" style="color: #f59e0b;">Need custom AI tooling? →</a>
 </div>
-
