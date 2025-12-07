@@ -1217,10 +1217,10 @@ code, pre {
   border-bottom: 1px solid rgba(245, 158, 11, 0.2);
 }
 
-/* Light mode */
+/* Light mode - keep dark for code readability */
 [data-md-color-scheme="default"] .mcp-config-section {
-  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-  border-color: rgba(30, 41, 59, 0.1);
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-color: rgba(245, 158, 11, 0.2);
 }
 
 .mcp-config-section .section-title {
@@ -1228,7 +1228,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .mcp-config-section .section-title {
-  color: var(--navy-900);
+  color: #f8fafc;
 }
 
 .mcp-config-section .section-subtitle {
@@ -1239,7 +1239,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .mcp-config-section .section-subtitle {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .ide-tabs {
@@ -1264,9 +1264,9 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .ide-tab {
-  background: #fff;
-  border-color: #cbd5e1;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #475569;
+  color: #cbd5e1;
 }
 
 .ide-tab:hover {
@@ -1291,9 +1291,9 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .ide-config-panels {
-  background: #1e293b;
-  border-color: #334155;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .ide-config-panel {
@@ -1319,7 +1319,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-step {
-  color: #f1f5f9;
+  color: #e2e8f0;
 }
 
 .step-number {
@@ -1350,8 +1350,8 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .step-text code {
-  background: rgba(245, 158, 11, 0.3);
-  color: var(--amber-400);
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
 }
 
 .config-code {
@@ -1365,8 +1365,8 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-code {
-  background: #0f172a;
-  border-color: #475569;
+  background: #0d1117;
+  border-color: #30363d;
 }
 
 .config-code pre {
@@ -1401,7 +1401,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-note {
-  color: #cbd5e1;
+  color: #94a3b8;
 }
 
 .config-note code {
@@ -1413,7 +1413,7 @@ code, pre {
 }
 
 [data-md-color-scheme="default"] .config-note code {
-  color: var(--amber-400);
+  color: #fbbf24;
 }
 
 .config-ready {
