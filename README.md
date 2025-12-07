@@ -2,7 +2,9 @@
 
 <a href="https://tenets.dev"><img src="https://raw.githubusercontent.com/jddunn/tenets/master/docs/logos/tenets_dark_icon_transparent.png" alt="tenets logo" width="140" /></a>
 
-**context that feeds your prompts.**
+**MCP server for context that feeds your prompts.**
+
+*Intelligent code context aggregation + automatic guiding principles injection—100% local.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -14,19 +16,25 @@
 
 > **Coverage note:** Measures core modules (distiller, ranking, MCP, CLI, models). Optional features (viz, language analyzers) are excluded.
 
-**tenets** is an **MCP server** for AI coding assistants: it finds, ranks, and aggregates the most relevant code, integrates natively with Cursor, Claude Desktop, Windsurf via the Model Context Protocol, and also ships a CLI/Python library plus interactive HTML reports with full JSON metadata for automation.
+**tenets** is a **100% local MCP server** for AI coding assistants. It solves two critical problems:
+
+1. **Intelligent Code Context** — Finds, ranks, and aggregates the most relevant code using NLP (BM25, TF-IDF, import centrality, git signals). No more manual file hunting.
+
+2. **Automatic Guiding Principles** — Injects your tenets (coding standards, architecture rules, security requirements) into every prompt automatically. Prevents context drift in long conversations.
+
+Integrates natively with **Cursor, Claude Desktop, Windsurf** via Model Context Protocol. Also ships a CLI and Python library.
 
 ## What is tenets?
 
 - **Finds** all relevant files automatically using NLP analysis
 - **Ranks** them by importance using BM25, TF-IDF, ML embeddings, and git signals
 - **Aggregates** them within your token budget with intelligent summarizing
+- **Injects** guiding principles (tenets) automatically into every prompt for consistency
 - **Integrates** natively with AI assistants via Model Context Protocol (MCP)
 - **Pins** critical files per session for guaranteed inclusion
-- **Injects** your tenets (guiding principles) to maintain consistency across AI interactions
 - **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
 
-All processing runs locally - no API costs, no data leaving your machine, complete privacy.
+**100% local processing** — no API costs, no data leaving your machine, complete privacy.
 
 ## MCP-first Quickstart (recommended)
 
@@ -160,22 +168,31 @@ tenets rank "database migration" --format json | jq '.files[].path'
 tenets rank "payment refactoring" ./src --top 10
 ```
 
-### Sessions & Persistence
+### Sessions & Guiding Principles (Tenets)
+
+The killer feature: define guiding principles once, and they're **automatically injected into every prompt**.
 
 ```bash
 # Create a working session
 tenets session create payment-feature
 
-# Pin critical files for the session
-tenets instill --session payment-feature --add-file src/core/payment.py
+# Add guiding principles (tenets) — these auto-inject into all prompts
+tenets tenet add "Always validate user inputs before database operations" --priority critical
+tenets tenet add "Use Decimal for monetary calculations, never float" --priority high
+tenets tenet add "Log all payment state transitions" --priority medium
 
-# Add guiding principles (tenets)
-tenets tenet add "Always validate inputs" --priority critical
+# Pin critical files (guaranteed inclusion in context)
+tenets session pin-file payment-feature src/core/payment.py
+
+# Instill tenets to the session
 tenets instill --session payment-feature
 
-# Build context using the session
+# Now every distill automatically includes your tenets + pinned files
 tenets distill "add refund flow" --session payment-feature
+# Output includes: relevant code + your 3 guiding principles
 ```
+
+**Why this matters:** In long AI conversations, context drifts. The AI forgets your coding standards. Tenets solve this by re-injecting your rules every time.
 
 ### Other Commands
 

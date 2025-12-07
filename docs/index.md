@@ -15,8 +15,8 @@ hide:
   <h1 class="hero-title">
     <span class="typewriter" data-text="tenets"></span>
   </h1>
-  <p class="hero-tagline">MCP Server for AI Coding Assistants</p>
-  <p class="hero-subtitle">Give Cursor, Claude & Windsurf the context they need</p>
+  <p class="hero-tagline">MCP server for context that feeds your prompts</p>
+  <p class="hero-subtitle">Intelligent code context + automatic guiding principles injection</p>
 
   <!-- Single install command -->
   <div class="hero-install">
@@ -30,15 +30,15 @@ hide:
   <div class="hero-features">
     <div class="feature-line">
       <span class="feature-icon">✦</span>
-      <span><strong>Model Context Protocol</strong> — Native integration with Cursor, Claude, Windsurf</span>
+      <span><strong>Intelligent Context</strong> — NLP-powered code ranking finds exactly what your AI needs</span>
     </div>
     <div class="feature-line">
       <span class="feature-icon">✦</span>
-      <span><strong>Multi-factor ranking</strong> — BM25, git signals, import centrality, complexity</span>
+      <span><strong>Guiding Principles</strong> — Inject tenets automatically into every prompt for consistency</span>
     </div>
     <div class="feature-line">
       <span class="feature-icon">✦</span>
-      <span><strong>100% local</strong> — Your code never leaves your machine</span>
+      <span><strong>100% Local MCP</strong> — Native Cursor, Claude, Windsurf integration. Your code never leaves your machine</span>
     </div>
   </div>
 
@@ -74,14 +74,18 @@ hide:
       </div>
       <div class="terminal-body">
         <pre><code class="language-bash"><span class="prompt">AI:</span> Using tenets to find authentication code...
-<span class="output">📊 Ranked 847 files
+<span class="output">📊 Ranked 847 files by relevance
 📦 Selected top 12 (48,500 tokens)
+🎯 Injected 3 guiding principles
 ✅ Context delivered</span>
 
 <span class="prompt">AI:</span> Found these relevant files:
 <span class="output">  • src/auth/service.py (score: 0.94)
   • src/auth/middleware.py (score: 0.87)
-  • src/models/user.py (score: 0.82)</span></code></pre>
+  • src/models/user.py (score: 0.82)
+  
+  Tenets applied: "Always validate JWT tokens",
+  "Use bcrypt for password hashing"</span></code></pre>
       </div>
     </div>
   </div>
@@ -443,13 +447,14 @@ hide:
       </ul>
     </div>
 
-    <div class="feature-card neumorphic">
-      <h4 style="color: #f59e0b; margin-top: 0;">🎯 Tenets Injection</h4>
+    <div class="feature-card neumorphic" style="border: 1px solid rgba(245, 158, 11, 0.3);">
+      <h4 style="color: #f59e0b; margin-top: 0;">🎯 Automatic Tenets Injection</h4>
       <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7;">
-        <li>Guiding principles for consistency</li>
-        <li>Context drift prevention</li>
-        <li>Session persistence</li>
-        <li>Pinned files always included</li>
+        <li><strong>Guiding principles auto-injected</strong> into every prompt</li>
+        <li>Prevents context drift in long conversations</li>
+        <li>Priority levels: critical, high, medium, low</li>
+        <li>Session-scoped or global tenets</li>
+        <li>Pinned files guaranteed in context</li>
       </ul>
     </div>
 
@@ -524,16 +529,18 @@ hide:
       <p>Analyzes thousands of files in seconds with intelligent caching.</p>
     </div>
 
-    <div class="feature-card neumorphic">
+    <div class="feature-card neumorphic featured">
+      <span class="new-badge">NEW</span>
       <div class="feature-icon">
-        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#f59e0b" stroke-width="2" fill="none">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#FFD600" stroke-width="2" fill="none">
           <circle cx="12" cy="12" r="9"/>
           <line x1="12" y1="4" x2="12" y2="20"/>
           <line x1="4" y1="12" x2="20" y2="12"/>
         </svg>
       </div>
-      <h3>Guiding Principles</h3>
-      <p>Add persistent tenets that maintain consistency across AI sessions.</p>
+      <h3>Auto-Injected Tenets</h3>
+      <p>Define guiding principles once—they're automatically injected into every prompt. Prevents context drift, ensures coding standards.</p>
+      <a href="concepts/tenets/" class="feature-link">Learn more →</a>
     </div>
 
     <div class="feature-card neumorphic">
@@ -658,8 +665,8 @@ print(result.context)
 
 <div class="cta-section">
   <div class="cta-content neumorphic">
-    <h2>Ready to supercharge your AI coding?</h2>
-    <p>Install in 30 seconds. Works with Cursor, Claude, Windsurf, and any MCP client.</p>
+    <h2>MCP server for context that feeds your prompts</h2>
+    <p>Intelligent code context aggregation + automatic guiding principles injection. 100% local, works with Cursor, Claude, Windsurf.</p>
     <div class="cta-actions">
       <a href="MCP/" class="btn-primary large">Setup MCP</a>
       <div class="install-command">

@@ -5,7 +5,12 @@ description: Configure Tenets MCP server for AI coding assistants. Free, open so
 
 # MCP Server
 
-Tenets includes a **free, open source** Model Context Protocol (MCP) server that integrates with AI coding assistants like Cursor, Claude Desktop, Windsurf, and custom AI agents. All processing runs 100% locally.
+Tenets is a **free, open source, 100% local** MCP server that solves two critical problems for AI coding:
+
+1. **Intelligent Code Context** — NLP-powered ranking finds and aggregates the most relevant code automatically
+2. **Automatic Guiding Principles** — Your tenets (coding standards, rules) are injected into every prompt, preventing context drift
+
+Integrates natively with Cursor, Claude Desktop, Windsurf, and custom AI agents.
 
 <div class="grid cards" markdown>
 

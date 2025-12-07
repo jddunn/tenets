@@ -48,6 +48,8 @@ description: Get started with Tenets MCP server for AI coding assistants. Free, 
 
 # Quickstart
 
+Tenets gives your AI two superpowers: **intelligent code context** (finds the right files automatically) and **automatic tenets injection** (your guiding principles in every prompt).
+
 ## MCP-first (recommended)
 
 ```bash
@@ -70,7 +72,17 @@ Add to your IDE:
   { "tenets": { "command": "tenets-mcp" } }
   ```
 
-Ask your AI: *“Use tenets to find the auth code and pin src/auth.”*
+Ask your AI: *"Use tenets to find the auth code and pin src/auth."*
+
+---
+
+## The Two Core Features
+
+### 1. Intelligent Code Context
+Your AI asks tenets to find relevant code. Tenets uses NLP (BM25, import centrality, git signals) to rank and aggregate the best files within your token budget.
+
+### 2. Automatic Tenets Injection
+Define guiding principles once—they're automatically injected into every prompt. This prevents context drift in long conversations and ensures consistent coding standards.
 
 ---
 
