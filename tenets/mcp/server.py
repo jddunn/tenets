@@ -718,6 +718,37 @@ def create_server(
     return TenetsMCP(name=name, config=config)
 
 
+def _configure_mcp_logging(transport: str) -> None:
+    """Configure logging for MCP server to avoid polluting stdout.
+    
+    MCP stdio transport uses stdout for JSON-RPC messages.
+    Any non-JSON output (like colored logs) breaks the protocol.
+    
+    Args:
+        transport: The transport type (stdio, sse, http)
+    """
+    import logging
+    import os
+    
+    # Disable colored output - MCP expects clean JSON on stdout
+    os.environ["NO_COLOR"] = "1"
+    os.environ["FORCE_COLOR"] = "0"
+    
+    # For stdio transport, redirect all logging to stderr
+    if transport == "stdio":
+        # Configure root logger to use stderr with no colors
+        logging.basicConfig(
+            level=logging.WARNING,  # Only warnings and errors
+            format="%(levelname)s: %(message)s",
+            stream=sys.stderr,
+            force=True,  # Override any existing configuration
+        )
+        
+        # Suppress verbose loggers
+        for logger_name in ["tenets", "mcp", "httpx", "httpcore", "asyncio"]:
+            logging.getLogger(logger_name).setLevel(logging.WARNING)
+
+
 def main() -> None:
     """CLI entry point for tenets-mcp server.
 
@@ -761,8 +792,11 @@ def main() -> None:
     if args.version:
         from tenets import __version__
 
-        print(f"tenets-mcp v{__version__}")
+        print(f"tenets-mcp v{__version__}", file=sys.stderr)
         sys.exit(0)
+
+    # Configure logging BEFORE importing anything else
+    _configure_mcp_logging(args.transport)
 
     try:
         server = create_server()
@@ -776,7 +810,7 @@ def main() -> None:
         print("Install MCP dependencies with: pip install tenets[mcp]", file=sys.stderr)
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\nServer stopped.")
+        print("\nServer stopped.", file=sys.stderr)
         sys.exit(0)
 
 

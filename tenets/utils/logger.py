@@ -16,7 +16,17 @@ Console = None
 
 
 def _check_rich_available():
-    """Check if Rich is available."""
+    """Check if Rich is available and colors are not disabled."""
+    import os
+    
+    # Respect NO_COLOR standard (https://no-color.org/)
+    if os.environ.get("NO_COLOR"):
+        return False
+    
+    # Also check FORCE_COLOR=0
+    if os.environ.get("FORCE_COLOR") == "0":
+        return False
+    
     try:
         # Try a simple import instead of using importlib.util which seems to hang
         import rich
