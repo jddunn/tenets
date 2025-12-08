@@ -720,20 +720,20 @@ def create_server(
 
 def _configure_mcp_logging(transport: str) -> None:
     """Configure logging for MCP server to avoid polluting stdout.
-    
+
     MCP stdio transport uses stdout for JSON-RPC messages.
     Any non-JSON output (like colored logs) breaks the protocol.
-    
+
     Args:
         transport: The transport type (stdio, sse, http)
     """
     import logging
     import os
-    
+
     # Disable colored output - MCP expects clean JSON on stdout
     os.environ["NO_COLOR"] = "1"
     os.environ["FORCE_COLOR"] = "0"
-    
+
     # For stdio transport, redirect all logging to stderr
     if transport == "stdio":
         # Configure root logger to use stderr with no colors
@@ -743,7 +743,7 @@ def _configure_mcp_logging(transport: str) -> None:
             stream=sys.stderr,
             force=True,  # Override any existing configuration
         )
-        
+
         # Suppress verbose loggers
         for logger_name in ["tenets", "mcp", "httpx", "httpcore", "asyncio"]:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
