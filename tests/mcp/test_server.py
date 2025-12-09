@@ -106,6 +106,7 @@ def reset_mcp_singleton():
     """Reset the MCP singleton before and after each test for isolation."""
     try:
         import tenets.mcp.server as server_module
+
         # Reset before test
         server_module._mcp_instance = None
         yield
@@ -219,6 +220,7 @@ def mcp_server_with_mock_tenets(mock_mcp_module, tmp_path):
 
     # Clean up singleton after test
     from tenets.mcp.server import TenetsMCP
+
     TenetsMCP.reset_instance()
 
 

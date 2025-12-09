@@ -492,7 +492,7 @@ class RelevanceRanker:
                 if deadline is not None and time.time() >= deadline:
                     self.logger.warning("Stopping parallel ranking early due to deadline")
                     # Cancel remaining futures
-                    for _, f in futures[len(ranked_files):]:
+                    for _, f in futures[len(ranked_files) :]:
                         f.cancel()
                     break
 

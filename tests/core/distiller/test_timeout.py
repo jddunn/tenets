@@ -97,9 +97,7 @@ class TestTimeoutEdgeCases:
         with patch.object(distiller.analyzer, "analyze_file", side_effect=slow_analyze):
             # Pass the config timeout explicitly (simulating what Tenets.distill does)
             result = distiller.distill(
-                prompt="sample",
-                paths=tmp_path,
-                timeout=config.distill_timeout
+                prompt="sample", paths=tmp_path, timeout=config.distill_timeout
             )
 
         # Should timeout
@@ -283,9 +281,14 @@ class TestParallelAnalysisTimeout:
         for i in range(20):
             (tmp_path / f"file{i}.py").write_text(f"def func{i}(): return {i}")
 
-        def slow_analyze_files(file_paths, deep=False, parallel=True,
-                               progress_callback=None, extract_keywords=True,
-                               deadline=None):
+        def slow_analyze_files(
+            file_paths,
+            deep=False,
+            parallel=True,
+            progress_callback=None,
+            extract_keywords=True,
+            deadline=None,
+        ):
             """Simulate slow parallel analysis."""
             results = []
             for path in file_paths:
@@ -328,7 +331,9 @@ class TestRankerDeadline:
         # Make ranking slow
         original_rank = distiller.ranker.rank_files
 
-        def slow_rank(files, prompt_context, algorithm=None, parallel=True, explain=False, deadline=None):
+        def slow_rank(
+            files, prompt_context, algorithm=None, parallel=True, explain=False, deadline=None
+        ):
             time.sleep(0.1)
             return original_rank(files, prompt_context, algorithm, parallel, explain, deadline)
 
@@ -360,12 +365,7 @@ class TestModeSpecificTimeouts:
             return FileAnalysis(path=str(path))
 
         with patch.object(distiller.analyzer, "analyze_file", side_effect=slow_analyze):
-            result = distiller.distill(
-                prompt="sample", paths=tmp_path, timeout=0.01, mode=mode
-            )
+            result = distiller.distill(prompt="sample", paths=tmp_path, timeout=0.01, mode=mode)
 
         assert result.metadata.get("timed_out") is True
         assert result.metadata.get("mode") == mode
-
-
-

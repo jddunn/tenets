@@ -205,7 +205,9 @@ def distill(
         effective_timeout = timeout
         if effective_timeout is None:
             try:
-                effective_timeout = getattr(getattr(tenets, "config", None), "distill_timeout", None)
+                effective_timeout = getattr(
+                    getattr(tenets, "config", None), "distill_timeout", None
+                )
             except Exception:
                 effective_timeout = None
         try:

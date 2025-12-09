@@ -157,6 +157,7 @@ class TenetsMCP:
 
             # Pre-warm token encoding cache
             from tenets.utils.tokens import _get_cached_encoding
+
             _get_cached_encoding(None)  # Default encoding
             _get_cached_encoding("gpt-4o")  # Common model
             logger.debug("Token encoding cache warmed")

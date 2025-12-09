@@ -217,7 +217,9 @@ def count_tokens(text: str, model: Optional[str] = None) -> int:
 
     # Create cache key using hash + length + model
     # MD5 is fast and collision-resistant enough for caching
-    text_hash = hashlib.md5(text.encode("utf-8", errors="replace"), usedforsecurity=False).hexdigest()
+    text_hash = hashlib.md5(
+        text.encode("utf-8", errors="replace"), usedforsecurity=False
+    ).hexdigest()
     cache_key = (text_hash, len(text), model)
 
     # Check cache first (fast path)

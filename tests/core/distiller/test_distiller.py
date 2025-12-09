@@ -49,10 +49,11 @@ def mock_components(distiller):
                 path=str(file_path),
                 content=f"Content of {file_path.name}",
                 language="python",
-                lines=100
+                lines=100,
             )
             for file_path in file_paths
         ]
+
     distiller.analyzer.analyze_files.side_effect = mock_analyze_files
 
     # Mock parser
@@ -417,13 +418,17 @@ class TestDistiller:
                                         analyzed_files = []
 
                                         def analyze_files_side_effect(file_paths, **kwargs):
-                                            analyzed_files.extend([Path(p).name for p in file_paths])
+                                            analyzed_files.extend(
+                                                [Path(p).name for p in file_paths]
+                                            )
                                             return [
                                                 FileAnalysis(path=str(path), content="x")
                                                 for path in file_paths
                                             ]
 
-                                        inst_analyzer.analyze_files.side_effect = analyze_files_side_effect
+                                        inst_analyzer.analyze_files.side_effect = (
+                                            analyze_files_side_effect
+                                        )
                                         dist.ranker.rank_files.side_effect = (
                                             lambda files, **k: files
                                         )

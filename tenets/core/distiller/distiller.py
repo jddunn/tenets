@@ -440,9 +440,7 @@ class Distiller:
         # Parallel overhead not worth it for small file counts
         use_parallel = mode != "fast" and len(files) > 10
 
-        self.logger.info(
-            f"Analyzing {len(files)} files (mode={mode}, parallel={use_parallel})"
-        )
+        self.logger.info(f"Analyzing {len(files)} files (mode={mode}, parallel={use_parallel})")
 
         try:
             analyzed = self.analyzer.analyze_files(
