@@ -97,6 +97,12 @@ def distill(
         "--remove-comments",
         help="Strip comments (heuristic, language-aware) before counting tokens",
     ),
+    timeout: Optional[int] = typer.Option(
+        None,
+        "--timeout",
+        "-t",
+        help="Timeout in seconds for distill (default: config distill_timeout, <=0 disables)",
+    ),
     docstring_weight: Optional[float] = typer.Option(
         None,
         "--docstring-weight",
@@ -195,6 +201,21 @@ def distill(
         include_patterns = include.split(",") if include else None
         exclude_patterns = exclude.split(",") if exclude else None
 
+        # Determine timeout precedence: CLI flag > config > disabled
+        effective_timeout = timeout
+        if effective_timeout is None:
+            try:
+                effective_timeout = getattr(getattr(tenets, "config", None), "distill_timeout", None)
+            except Exception:
+                effective_timeout = None
+        try:
+            if effective_timeout is not None:
+                effective_timeout = float(effective_timeout)
+        except (TypeError, ValueError):
+            effective_timeout = None
+        if effective_timeout is not None and effective_timeout <= 0:
+            effective_timeout = None
+
         # Determine test inclusion based on CLI flags
         # Priority: exclude_tests flag > include_tests flag > automatic detection
         test_inclusion = None
@@ -232,6 +253,7 @@ def distill(
                     include_tests=test_inclusion,
                     docstring_weight=docstring_weight,
                     summarize_imports=not no_summarize_imports,
+                    timeout=effective_timeout,
                 )
         else:
             # No progress bar in quiet mode
@@ -252,11 +274,21 @@ def distill(
                 include_tests=test_inclusion,
                 docstring_weight=docstring_weight,
                 summarize_imports=not no_summarize_imports,
+                timeout=effective_timeout,
             )
 
         # Prepare metadata and interactivity flags
         raw_meta = getattr(result, "metadata", {})
         metadata = raw_meta if isinstance(raw_meta, dict) else {}
+
+        # Emit timeout warning on stderr only
+        if metadata.get("timed_out"):
+            err_console = Console(stderr=True, file=sys.stderr)
+            limit_display = metadata.get("timeout_seconds")
+            limit_txt = f" (limit: {limit_display}s)" if limit_display else ""
+            err_console.print(
+                f"[yellow]Timeout:[/yellow] distill exceeded time budget{limit_txt}; returning partial context."
+            )
 
         # Show verbose debug information if requested
         if verbose and not quiet:

@@ -37,8 +37,10 @@ def test_cli_version_prints_and_exits(capsys):
         with pytest.raises(SystemExit):
             server_module.main()
 
-    out = capsys.readouterr().out.strip()
-    assert f"tenets-mcp v{__version__}" in out
+    captured = capsys.readouterr()
+    # Version can be printed to stdout or stderr depending on argparse version
+    output = (captured.out + captured.err).strip()
+    assert f"tenets-mcp v{__version__}" in output
 
 
 @pytest.mark.parametrize(

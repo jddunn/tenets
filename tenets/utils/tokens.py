@@ -13,10 +13,12 @@ Notes:
 
 from __future__ import annotations
 
+import hashlib
 import math
 import sys
+import threading
 import types
-from typing import Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .logger import get_logger
 
@@ -47,6 +49,47 @@ _MODEL_TO_ENCODING = {
     "gpt-4.1": "o200k_base",
     # "gpt-3.5-turbo": "cl100k_base",  # legacy model
 }
+
+# ============================================================================
+# Caching infrastructure for performance
+# ============================================================================
+
+# Cache for encoding objects (keyed by model name)
+_encoding_cache: Dict[Optional[str], Any] = {}
+_encoding_cache_lock = threading.Lock()
+
+# Cache for token counts (keyed by content hash + length + model)
+# Using hash + length ensures collision safety while keeping keys small
+_token_cache: Dict[Tuple[str, int, Optional[str]], int] = {}
+_token_cache_lock = threading.Lock()
+_TOKEN_CACHE_MAX_SIZE = 10000
+
+
+def clear_token_cache() -> None:
+    """Clear all token-related caches.
+
+    Useful for testing or when memory pressure is a concern.
+    """
+    global _token_cache, _encoding_cache
+    with _token_cache_lock:
+        _token_cache.clear()
+    with _encoding_cache_lock:
+        _encoding_cache.clear()
+
+
+def _get_cached_encoding(model: Optional[str]) -> Any:
+    """Get encoding for model, using cache to avoid repeated initialization."""
+    with _encoding_cache_lock:
+        if model in _encoding_cache:
+            return _encoding_cache[model]
+
+    # Get encoding (potentially slow)
+    enc = _get_encoding_for_model(model)
+
+    with _encoding_cache_lock:
+        _encoding_cache[model] = enc
+
+    return enc
 
 
 def _get_encoding_for_model(model: Optional[str]):
@@ -152,6 +195,9 @@ def count_tokens(text: str, model: Optional[str] = None) -> int:
     Uses `tiktoken` for accurate counts when available; otherwise falls back
     to a simple heuristic (~4 characters per token).
 
+    Results are cached using a hash of the text content for performance.
+    The cache is thread-safe and automatically limits its size.
+
     Args:
         text: Input text to tokenize.
         model: Optional model name used to select an appropriate tokenizer
@@ -164,19 +210,44 @@ def count_tokens(text: str, model: Optional[str] = None) -> int:
         >>> count_tokens("hello world") > 0
         True
     """
+    global _token_cache
+
     if not text:
         return 0
 
-    enc = _get_encoding_for_model(model)
+    # Create cache key using hash + length + model
+    # MD5 is fast and collision-resistant enough for caching
+    text_hash = hashlib.md5(text.encode("utf-8", errors="replace"), usedforsecurity=False).hexdigest()
+    cache_key = (text_hash, len(text), model)
+
+    # Check cache first (fast path)
+    with _token_cache_lock:
+        if cache_key in _token_cache:
+            return _token_cache[cache_key]
+
+    # Compute token count (slow path)
+    enc = _get_cached_encoding(model)
     if enc is not None:
         try:
-            return len(enc.encode(text))
+            count = len(enc.encode(text))
         except Exception:
             # Fall through to heuristic on any failure
-            pass
+            count = max(1, len(text) // 4)
+    else:
+        # Fallback heuristic: ~4 chars per token
+        count = max(1, len(text) // 4)
 
-    # Fallback heuristic: ~4 chars per token, use floor to match expected tests
-    return max(1, len(text) // 4)
+    # Store in cache with size limit
+    with _token_cache_lock:
+        if len(_token_cache) >= _TOKEN_CACHE_MAX_SIZE:
+            # Simple eviction: clear half the cache
+            # More sophisticated LRU could be added if needed
+            keys_to_remove = list(_token_cache.keys())[: _TOKEN_CACHE_MAX_SIZE // 2]
+            for key in keys_to_remove:
+                del _token_cache[key]
+        _token_cache[cache_key] = count
+
+    return count
 
 
 def get_model_max_tokens(model: Optional[str]) -> int:

@@ -280,6 +280,7 @@ class Tenets:
         include_tests: Optional[bool] = None,
         docstring_weight: Optional[float] = None,
         summarize_imports: bool = True,
+        timeout: Optional[float] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -301,6 +302,7 @@ class Tenets:
             include_patterns: File patterns to include (e.g., ['*.py', '*.js'])
             exclude_patterns: File patterns to exclude (e.g., ['test_*', '*.backup'])
             apply_tenets: Whether to apply tenets (None = use config default)
+            timeout: Optional timeout in seconds (<=0 disables; defaults to config value)
 
         Returns:
             ContextResult containing the generated context, metadata, and statistics.
@@ -384,6 +386,18 @@ class Tenets:
                     pass
         except Exception:  # pragma: no cover
             pinned_files = []
+        # Determine timeout precedence: explicit arg > config > disabled
+        effective_timeout = timeout
+        if effective_timeout is None:
+            effective_timeout = getattr(self.config, "distill_timeout", None)
+        try:
+            if effective_timeout is not None:
+                effective_timeout = float(effective_timeout)
+        except (TypeError, ValueError):
+            effective_timeout = None
+        if effective_timeout is not None and effective_timeout <= 0:
+            effective_timeout = None
+
         result = self.distiller.distill(
             prompt=prompt,
             paths=files,
@@ -402,6 +416,7 @@ class Tenets:
             include_tests=include_tests,
             docstring_weight=docstring_weight,
             summarize_imports=summarize_imports,
+            timeout=effective_timeout,
         )
 
         # Inject system instruction if configured (skip for HTML reports meant for humans)

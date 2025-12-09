@@ -101,6 +101,20 @@ class MockRankedFile:
         self.ranking_factors = factors or {"keyword": 0.3, "path": 0.2}
 
 
+@pytest.fixture(autouse=True)
+def reset_mcp_singleton():
+    """Reset the MCP singleton before and after each test for isolation."""
+    try:
+        import tenets.mcp.server as server_module
+        # Reset before test
+        server_module._mcp_instance = None
+        yield
+        # Reset after test
+        server_module._mcp_instance = None
+    except ImportError:
+        yield
+
+
 @pytest.fixture
 def mock_mcp_module():
     """Mock the MCP module for testing."""
@@ -128,6 +142,9 @@ def mcp_server(mock_mcp_module, tmp_path):
     from tenets.config import TenetsConfig
     from tenets.mcp.server import TenetsMCP
 
+    # Reset singleton before creating server for test isolation
+    TenetsMCP.reset_instance()
+
     # Create config with temp cache directory
     config = TenetsConfig()
     config.cache.directory = tmp_path / "cache"
@@ -136,7 +153,10 @@ def mcp_server(mock_mcp_module, tmp_path):
     config.tenet.storage_path.mkdir(parents=True, exist_ok=True)
 
     server = TenetsMCP(name="test-tenets", config=config, project_path=tmp_path)
-    return server
+    yield server
+
+    # Clean up singleton after test
+    TenetsMCP.reset_instance()
 
 
 @pytest.fixture
@@ -144,6 +164,9 @@ def mcp_server_with_mock_tenets(mock_mcp_module, tmp_path):
     """Create a TenetsMCP server with mocked Tenets instance for Py3.14 compat."""
     from tenets.config import TenetsConfig
     from tenets.mcp.server import TenetsMCP
+
+    # Reset singleton before creating server for test isolation
+    TenetsMCP.reset_instance()
 
     config = TenetsConfig()
     config.cache.directory = tmp_path / "cache"
@@ -157,8 +180,12 @@ def mcp_server_with_mock_tenets(mock_mcp_module, tmp_path):
     mock_tenets = MagicMock()
     mock_tenets.config = config
 
+    # Track calls for assertions
+    distill_calls: list[dict[str, Any]] = []
+
     # Mock distill to return MockContextResult
     def mock_distill(**kwargs):
+        distill_calls.append(kwargs)
         return MockContextResult(
             context="# Test context\ndef hello(): pass",
             files=[tmp_path / "test.py"],
@@ -186,8 +213,13 @@ def mcp_server_with_mock_tenets(mock_mcp_module, tmp_path):
 
     # Inject mock
     server._tenets = mock_tenets
+    server._tenets.distill_calls = distill_calls
 
-    return server
+    yield server
+
+    # Clean up singleton after test
+    from tenets.mcp.server import TenetsMCP
+    TenetsMCP.reset_instance()
 
 
 class TestTenetsMCPInitialization:
@@ -342,6 +374,59 @@ class TestMCPTools:
                 max_tokens=100,
             )
             assert isinstance(result, dict)
+
+    @pytest.mark.asyncio
+    async def test_distill_tool_timeout_param(self, mcp_server_with_mock_tenets, tmp_path):
+        """Test distill propagates timeout parameter."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def test(): pass")
+
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        await distill_tool(
+            prompt="test timeout",
+            path=str(tmp_path),
+            timeout=7,
+        )
+
+        calls = getattr(mcp_server_with_mock_tenets._tenets, "distill_calls", [])
+        assert calls, "distill was not called"
+        assert calls[-1].get("timeout") == 7
+
+    @pytest.mark.asyncio
+    async def test_distill_timeout_zero_disables(self, mcp_server_with_mock_tenets, tmp_path):
+        """Test timeout=0 is passed through to disable timeout."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def test(): pass")
+
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        await distill_tool(
+            prompt="test timeout zero",
+            path=str(tmp_path),
+            timeout=0,
+        )
+
+        calls = getattr(mcp_server_with_mock_tenets._tenets, "distill_calls", [])
+        assert calls, "distill was not called"
+        # timeout=0 should be passed through (disables timeout)
+        assert calls[-1].get("timeout") == 0
+
+    @pytest.mark.asyncio
+    async def test_distill_default_timeout(self, mcp_server_with_mock_tenets, tmp_path):
+        """Test default timeout value (120) when not specified."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("def test(): pass")
+
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        await distill_tool(
+            prompt="test default timeout",
+            path=str(tmp_path),
+            # Don't specify timeout - should use default
+        )
+
+        calls = getattr(mcp_server_with_mock_tenets._tenets, "distill_calls", [])
+        assert calls, "distill was not called"
+        # Default timeout is 120 seconds
+        assert calls[-1].get("timeout") == 120
 
     @pytest.mark.asyncio
     async def test_distill_with_patterns(self, mcp_server_with_mock_tenets, tmp_path):

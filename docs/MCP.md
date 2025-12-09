@@ -151,6 +151,8 @@ The MCP server exposes these tools to AI assistants:
 | `distill` | Build ranked, token-optimized context from codebase (markdown/xml/json/html) |
 | `rank_files` | Rank files by relevance without full content (supports include/exclude patterns, test filters) |
 
+Default distill timeout is 120s; pass the `timeout` argument (seconds, `0` to disable) to override.
+
 ### Analysis Tools
 
 | Tool | Description |

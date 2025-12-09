@@ -178,6 +178,34 @@ class TestDistillCommand:
             assert call_args["max_tokens"] == 50000
             assert call_args["model"] == "gpt-4o"
 
+    def test_distill_with_timeout_flag(self, runner, mock_tenets):
+        """Test timeout flag overrides config value."""
+        mock_tenets.config.distill_timeout = 33
+
+        with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
+            app = typer.Typer()
+            app.command()(distill)
+
+            result = runner.invoke(app, ["task", ".", "--timeout", "5"])
+
+            assert result.exit_code == 0
+            call_args = mock_tenets.distill.call_args[1]
+            assert call_args["timeout"] == 5
+
+    def test_distill_timeout_uses_config_default(self, runner, mock_tenets):
+        """Test timeout falls back to config when not provided."""
+        mock_tenets.config.distill_timeout = 42
+
+        with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):
+            app = typer.Typer()
+            app.command()(distill)
+
+            result = runner.invoke(app, ["task", "."])
+
+            assert result.exit_code == 0
+            call_args = mock_tenets.distill.call_args[1]
+            assert call_args["timeout"] == 42
+
     def test_distill_with_session(self, runner, mock_tenets):
         """Test distillation with session context."""
         with patch("tenets.cli.commands.distill.Tenets", return_value=mock_tenets):

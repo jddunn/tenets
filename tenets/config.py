@@ -985,6 +985,7 @@ class TenetsConfig:
     config_file: Optional[Path] = None
     project_root: Optional[Path] = None
     max_tokens: int = 100_000
+    distill_timeout: float = 120.0  # Seconds; set <=0 to disable
     version: str = "0.1.0"
     debug: bool = False
     quiet: bool = False
@@ -1215,6 +1216,7 @@ class TenetsConfig:
             # Special-case common top-level keys that include underscores
             top_level_map = {
                 "max_tokens": ["max", "tokens"],
+                "distill_timeout": ["distill", "timeout"],
                 "project_root": ["project", "root"],
             }
 
@@ -1329,6 +1331,18 @@ class TenetsConfig:
             raise ValueError(f"max_tokens must be at least 1000, got {self.max_tokens}")
         if self.max_tokens > 2_000_000:
             raise ValueError(f"max_tokens cannot exceed 2,000,000, got {self.max_tokens}")
+
+        # Validate distill timeout (allow disabling with <=0)
+        if self.distill_timeout is None:
+            self._logger.debug("distill_timeout not set; timeouts disabled")
+        elif self.distill_timeout < 0:
+            raise ValueError(f"distill_timeout cannot be negative, got {self.distill_timeout}")
+
+        # Validate distill timeout (allow 0/negative to mean disabled)
+        if self.distill_timeout is not None and self.distill_timeout < 0:
+            raise ValueError(
+                f"distill_timeout must be non-negative (0 disables), got {self.distill_timeout}"
+            )
 
         # Validate ranking algorithm
         valid_algorithms = ["fast", "balanced", "thorough", "ml", "custom"]

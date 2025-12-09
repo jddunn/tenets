@@ -74,6 +74,8 @@ Generate optimized context for LLMs from your codebase.
 tenets distill [path] <prompt> [options]
 ```
 
+Default timeout: 120s. Override with `--timeout <seconds>` or set `--timeout 0` to disable.
+
 
 **Arguments:**
 

@@ -283,6 +283,7 @@ class RelevanceRanker:
         algorithm: Optional[str] = None,
         parallel: bool = True,
         explain: bool = False,
+        deadline: Optional[float] = None,
     ) -> List[FileAnalysis]:
         """Rank files by relevance to prompt.
 
@@ -296,6 +297,7 @@ class RelevanceRanker:
             algorithm: Override algorithm for this ranking
             parallel: Whether to rank files in parallel
             explain: Whether to generate ranking explanations
+            deadline: Optional deadline timestamp (time.time() based) to stop early
 
         Returns:
             List of FileAnalysis objects sorted by relevance (highest first)
@@ -340,9 +342,14 @@ class RelevanceRanker:
         corpus_stats = self._analyze_corpus(files, prompt_context)
         self.stats.corpus_stats = corpus_stats
 
+        # Check deadline before ranking
+        if deadline is not None and time.time() >= deadline:
+            self.logger.warning("Deadline reached before ranking, returning empty results")
+            return []
+
         # Rank files
         ranked_files = self._rank_with_strategy(
-            files, prompt_context, corpus_stats, strategy, parallel
+            files, prompt_context, corpus_stats, strategy, parallel, deadline
         )
 
         # Apply custom rankers
@@ -448,6 +455,7 @@ class RelevanceRanker:
         corpus_stats: Dict[str, Any],
         strategy: RankingStrategy,
         parallel: bool,
+        deadline: Optional[float] = None,
     ) -> List[RankedFile]:
         """Rank files using a specific strategy.
 
@@ -457,6 +465,7 @@ class RelevanceRanker:
             corpus_stats: Corpus statistics
             strategy: Ranking strategy to use
             parallel: Whether to use parallel processing
+            deadline: Optional deadline timestamp to stop early
 
         Returns:
             List of RankedFile objects
@@ -477,13 +486,31 @@ class RelevanceRanker:
                 )
                 futures.append((file, future))
 
-            # Collect results
+            # Collect results, checking deadline
             for file, future in futures:
+                # Check deadline before waiting for result
+                if deadline is not None and time.time() >= deadline:
+                    self.logger.warning("Stopping parallel ranking early due to deadline")
+                    # Cancel remaining futures
+                    for _, f in futures[len(ranked_files):]:
+                        f.cancel()
+                    break
+
                 try:
-                    ranked_file = future.result(timeout=5.0)
+                    # Calculate remaining time for timeout
+                    if deadline is not None:
+                        remaining = max(0.1, deadline - time.time())
+                        wait_timeout = min(remaining, 5.0)
+                    else:
+                        wait_timeout = 5.0
+
+                    ranked_file = future.result(timeout=wait_timeout)
                     if ranked_file:
                         ranked_files.append(ranked_file)
                         self.stats.files_ranked += 1
+                except concurrent.futures.CancelledError:
+                    # Future was cancelled due to deadline
+                    break
                 except Exception as e:
                     self.logger.warning(f"Failed to rank {file.path}: {e}")
                     self.stats.files_failed += 1
@@ -503,6 +530,11 @@ class RelevanceRanker:
                 f"(parallel={parallel}, threshold for parallel: >10 files)"
             )
             for file in files:
+                # Check deadline before each file
+                if deadline is not None and time.time() >= deadline:
+                    self.logger.warning("Stopping sequential ranking early due to deadline")
+                    break
+
                 try:
                     ranked_file = self._rank_single_file(
                         file, prompt_context, corpus_stats, strategy, weights

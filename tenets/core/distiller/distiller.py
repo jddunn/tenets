@@ -4,9 +4,13 @@ The Distiller coordinates the entire context extraction process, from
 understanding the prompt to delivering optimized context.
 """
 
+import time
+from datetime import datetime
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from tenets.utils.timing import format_duration
 from tenets.config import TenetsConfig
 from tenets.core.analysis import CodeAnalyzer
 from tenets.core.distiller.aggregator import ContextAggregator
@@ -83,6 +87,7 @@ class Distiller:
         include_tests: Optional[bool] = None,
         docstring_weight: Optional[float] = None,
         summarize_imports: bool = True,
+        timeout: Optional[float] = None,
     ) -> ContextResult:
         """Distill relevant context from codebase based on prompt.
 
@@ -114,15 +119,25 @@ class Distiller:
             ... )
             >>> print(result.context)
         """
-        import time
-
         start_time = time.time()
+        deadline = start_time + timeout if timeout and timeout > 0 else None
+        timed_out = False
+
+        def _check_timeout(stage: str) -> bool:
+            nonlocal timed_out
+            if deadline is not None and time.time() >= deadline:
+                timed_out = True
+                self.logger.warning(f"Distillation timed out during {stage}")
+                return True
+            return False
+
         self.logger.info(f"Distilling context for: {prompt[:100]}...")
 
         # 1. Parse and understand the prompt
         parse_start = time.time()
         prompt_context = self._parse_prompt(prompt)
         self.logger.debug(f"Prompt parsing took {time.time() - parse_start:.2f}s")
+        _check_timeout("prompt parsing")
 
         # Override test inclusion if explicitly specified
         if include_tests is not None:
@@ -141,6 +156,7 @@ class Distiller:
             exclude_patterns=exclude_patterns,
         )
         self.logger.debug(f"File discovery took {time.time() - discover_start:.2f}s")
+        _check_timeout("file discovery")
 
         # 4. Analyze files for structure and content
         # Prepend pinned files (avoid duplicates) while preserving original discovery order
@@ -166,14 +182,65 @@ class Distiller:
                     ordered.append(f)
             files = ordered
 
-        analyzed_files = self._analyze_files(files=files, mode=mode, prompt_context=prompt_context)
+        analyzed_files = self._analyze_files(
+            files=files, mode=mode, prompt_context=prompt_context, deadline=deadline
+        )
+        _check_timeout("file analysis")
 
         # 5. Rank files by relevance
         rank_start = time.time()
         ranked_files = self._rank_files(
-            files=analyzed_files, prompt_context=prompt_context, mode=mode
+            files=analyzed_files,
+            prompt_context=prompt_context,
+            mode=mode,
+            deadline=deadline,
         )
         self.logger.debug(f"File ranking took {time.time() - rank_start:.2f}s")
+        _check_timeout("ranking")
+
+        # If we hit timeout before aggregation, return partial context quickly
+        if timed_out:
+            end_time = time.time()
+            duration = end_time - start_time
+            partial_files = ranked_files[:10] if ranked_files else []
+            context_lines = [
+                "Distillation timed out before completion.",
+                f"Elapsed: {format_duration(duration)}",
+            ]
+            if timeout and timeout > 0:
+                context_lines[-1] += f" (limit: {int(timeout)}s)"
+            if partial_files:
+                context_lines.append("")
+                context_lines.append("Top files considered:")
+                for f in partial_files:
+                    context_lines.append(f"- {getattr(f, 'path', f)}")
+
+            metadata = {
+                "mode": mode,
+                "files_analyzed": len(analyzed_files),
+                "files_included": len(partial_files),
+                "model": model,
+                "format": format,
+                "session": session_name,
+                "prompt": prompt,
+                "full_mode": full,
+                "condense": condense,
+                "remove_comments": remove_comments,
+                "included_files": partial_files,
+                "total_tokens": 0,
+                "timed_out": True,
+                "timeout_seconds": timeout,
+                "timing": {
+                    "duration": duration,
+                    "formatted_duration": format_duration(duration),
+                    "start_datetime": datetime.fromtimestamp(start_time).isoformat(),
+                    "end_datetime": datetime.fromtimestamp(end_time).isoformat(),
+                },
+            }
+            return self._build_result(
+                formatted="\n".join(context_lines),
+                metadata=metadata,
+            )
 
         # 6. Add git context if requested
         git_context = None
@@ -197,6 +264,7 @@ class Distiller:
             summarize_imports=summarize_imports,
         )
         self.logger.debug(f"File aggregation took {time.time() - aggregate_start:.2f}s")
+        _check_timeout("aggregation")
 
         # 8. Format the output
         formatted = self._format_output(
@@ -212,6 +280,7 @@ class Distiller:
             "files_analyzed": len(files),
             "files_included": len(aggregated["included_files"]),
             "model": model,
+            "format": format,
             "session": session_name,
             "prompt": prompt,
             "full_mode": full,
@@ -268,6 +337,17 @@ class Distiller:
             "files_considered": len(ranked_files),
             "files_rejected": len(ranked_files) - len(aggregated["included_files"]),
             "rejection_reasons": aggregated.get("rejection_reasons", {}),
+        }
+
+        end_time = time.time()
+        duration = end_time - start_time
+        metadata["timed_out"] = timed_out
+        metadata["timeout_seconds"] = timeout
+        metadata["timing"] = {
+            "duration": duration,
+            "formatted_duration": format_duration(duration),
+            "start_datetime": datetime.fromtimestamp(start_time).isoformat(),
+            "end_datetime": datetime.fromtimestamp(end_time).isoformat(),
         }
 
         return self._build_result(
@@ -342,31 +422,56 @@ class Distiller:
         return files
 
     def _analyze_files(
-        self, files: List[Path], mode: str, prompt_context: PromptContext
+        self,
+        files: List[Path],
+        mode: str,
+        prompt_context: PromptContext,
+        deadline: Optional[float] = None,
     ) -> List[FileAnalysis]:
-        """Analyze files for content and structure."""
+        """Analyze files for content and structure.
+
+        Uses parallel analysis for balanced/thorough modes with >10 files,
+        sequential for fast mode or small file counts.
+        """
         # Determine analysis depth based on mode
         deep_analysis = mode in ["balanced", "thorough"]
 
-        analyzed = []
-        for file in files:
-            try:
-                # Use positional path argument for compatibility with tests that
-                # patch analyze_file expecting a first positional parameter named 'path'.
-                analysis = self.analyzer.analyze_file(
-                    file, deep=deep_analysis, extract_keywords=True
-                )
-                analyzed.append(analysis)
-            except Exception as e:
-                self.logger.warning(f"Failed to analyze {file}: {e}")
+        # Use parallel analysis for non-fast modes with sufficient files
+        # Parallel overhead not worth it for small file counts
+        use_parallel = mode != "fast" and len(files) > 10
+
+        self.logger.info(
+            f"Analyzing {len(files)} files (mode={mode}, parallel={use_parallel})"
+        )
+
+        try:
+            analyzed = self.analyzer.analyze_files(
+                file_paths=files,
+                deep=deep_analysis,
+                parallel=use_parallel,
+                extract_keywords=True,
+                deadline=deadline,
+            )
+        except Exception as e:
+            self.logger.error(f"File analysis failed: {e}")
+            analyzed = []
 
         return analyzed
 
     def _rank_files(
-        self, files: List[FileAnalysis], prompt_context: PromptContext, mode: str
+        self,
+        files: List[FileAnalysis],
+        prompt_context: PromptContext,
+        mode: str,
+        deadline: Optional[float] = None,
     ) -> List[FileAnalysis]:
         """Rank files by relevance to the prompt."""
-        return self.ranker.rank_files(files=files, prompt_context=prompt_context, algorithm=mode)
+        return self.ranker.rank_files(
+            files=files,
+            prompt_context=prompt_context,
+            algorithm=mode,
+            deadline=deadline,
+        )
 
     def _get_git_context(
         self, paths: List[Path], prompt_context: PromptContext, files: List[FileAnalysis]

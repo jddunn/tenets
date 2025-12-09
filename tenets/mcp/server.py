@@ -15,7 +15,9 @@ behavior between CLI, Python API, and MCP interfaces.
 from __future__ import annotations
 
 import asyncio
+import logging
 import sys
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
@@ -25,6 +27,10 @@ if TYPE_CHECKING:
 
 # Lazy imports to avoid loading MCP dependencies unless needed
 _mcp_available = None
+
+# Singleton instance for MCP server (preserves warm state across invocations)
+_mcp_instance: Optional["TenetsMCP"] = None
+_mcp_instance_lock = threading.Lock()
 
 
 def _check_mcp_available() -> bool:
@@ -80,7 +86,87 @@ class TenetsMCP:
         self._config = config
         self._tenets: Optional[Tenets] = None
         self._mcp = None
+        self._warmed = False
         self._setup_server()
+
+    @classmethod
+    def get_instance(
+        cls,
+        name: str = "tenets",
+        config: Optional["TenetsConfig"] = None,
+        project_path: Optional[Path] = None,
+    ) -> "TenetsMCP":
+        """Get or create a singleton MCP server instance.
+
+        Using a singleton preserves warm state (loaded analyzers, cached results)
+        across multiple tool invocations, significantly improving response times.
+
+        Args:
+            name: Server name shown to MCP clients.
+            config: Optional TenetsConfig. Only used on first creation.
+            project_path: Optional project root path. Only used on first creation.
+
+        Returns:
+            The singleton TenetsMCP instance.
+        """
+        global _mcp_instance
+
+        with _mcp_instance_lock:
+            if _mcp_instance is None:
+                _mcp_instance = cls(name=name, config=config, project_path=project_path)
+            return _mcp_instance
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset the singleton instance.
+
+        Primarily for testing. Clears the cached instance so the next
+        call to get_instance() creates a fresh server.
+        """
+        global _mcp_instance
+
+        with _mcp_instance_lock:
+            _mcp_instance = None
+
+    def warm_components(self) -> None:
+        """Pre-warm critical components for faster tool responses.
+
+        Triggers lazy loading of expensive components (analyzers, rankers)
+        before the first tool invocation, reducing initial response latency.
+
+        This is called automatically on server start when using run().
+        """
+        if self._warmed:
+            return
+
+        logger = logging.getLogger(__name__)
+        logger.debug("Pre-warming MCP server components...")
+
+        try:
+            # Trigger lazy loading of the Tenets instance
+            tenets = self.tenets
+
+            # Warm the distiller's components
+            if hasattr(tenets, "distiller"):
+                distiller = tenets.distiller
+                # Access analyzer to trigger initialization
+                _ = distiller.analyzer
+                # Access ranker to trigger initialization
+                _ = distiller.ranker
+                logger.debug("Distiller components warmed")
+
+            # Pre-warm token encoding cache
+            from tenets.utils.tokens import _get_cached_encoding
+            _get_cached_encoding(None)  # Default encoding
+            _get_cached_encoding("gpt-4o")  # Common model
+            logger.debug("Token encoding cache warmed")
+
+            self._warmed = True
+            logger.debug("MCP server components pre-warmed successfully")
+
+        except Exception as e:
+            logger.warning(f"Failed to pre-warm components: {e}")
+            # Don't fail startup if warming fails
 
     @property
     def tenets(self) -> Tenets:
@@ -118,6 +204,7 @@ class TenetsMCP:
             session: Optional[str] = None,
             include_patterns: Optional[list[str]] = None,
             exclude_patterns: Optional[list[str]] = None,
+            timeout: Optional[int] = 120,
         ) -> dict[str, Any]:
             """Build optimized code context for a task or question.
 
@@ -150,6 +237,7 @@ class TenetsMCP:
                 session: Link to a session for persistent pinned files.
                 include_patterns: Only include matching files (e.g., ["*.py"]).
                 exclude_patterns: Skip matching files (e.g., ["*.log", "*.min.js"]).
+                timeout: Timeout in seconds (<=0 disables; defaults to 120s).
 
             Returns:
                 {
@@ -171,6 +259,7 @@ class TenetsMCP:
                 session_name=session,
                 include_patterns=include_patterns,
                 exclude_patterns=exclude_patterns,
+                timeout=timeout,
             )
             return result.to_dict()
 
@@ -676,6 +765,7 @@ class TenetsMCP:
         transport: Literal["stdio", "sse", "http"] = "stdio",
         host: str = "127.0.0.1",
         port: int = 8080,
+        warm: bool = True,
     ) -> None:
         """Run the MCP server with the specified transport.
 
@@ -683,7 +773,12 @@ class TenetsMCP:
             transport: Transport type - stdio (local), sse, or http (remote).
             host: Host for network transports (sse, http).
             port: Port for network transports (sse, http).
+            warm: Whether to pre-warm components before starting (default True).
         """
+        # Pre-warm components for faster first response
+        if warm:
+            self.warm_components()
+
         if transport == "stdio":
             self._mcp.run(transport="stdio")
         elif transport == "sse":
@@ -697,15 +792,21 @@ class TenetsMCP:
 def create_server(
     name: str = "tenets",
     config: Optional[TenetsConfig] = None,
+    use_singleton: bool = True,
 ) -> TenetsMCP:
-    """Create a new Tenets MCP server instance.
+    """Create or get a Tenets MCP server instance.
 
     Factory function for creating MCP servers. This is the recommended way
     to instantiate the server for programmatic use.
 
+    By default, uses a singleton pattern to preserve warm state across
+    invocations, significantly improving response times for repeated calls.
+
     Args:
         name: Server name shown to MCP clients.
         config: Optional TenetsConfig for customization.
+        use_singleton: If True (default), returns a shared singleton instance.
+            Set to False to create a fresh instance each time.
 
     Returns:
         Configured TenetsMCP instance ready to run.
@@ -715,6 +816,8 @@ def create_server(
         >>> server = create_server()
         >>> server.run(transport="stdio")
     """
+    if use_singleton:
+        return TenetsMCP.get_instance(name=name, config=config)
     return TenetsMCP(name=name, config=config)
 
 

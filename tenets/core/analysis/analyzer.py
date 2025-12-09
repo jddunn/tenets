@@ -340,6 +340,8 @@ class CodeAnalyzer:
         deep: bool = False,
         parallel: bool = True,
         progress_callback: Optional[Callable] = None,
+        extract_keywords: bool = True,
+        deadline: Optional[float] = None,
     ) -> list[FileAnalysis]:
         """Analyze multiple files.
 
@@ -348,10 +350,14 @@ class CodeAnalyzer:
             deep: Whether to perform deep analysis
             parallel: Whether to analyze files in parallel
             progress_callback: Optional callback for progress updates
+            extract_keywords: Whether to extract keywords from content
+            deadline: Optional deadline timestamp (time.time() based) to stop early
 
         Returns:
             List of FileAnalysis objects
         """
+        import time
+
         self.logger.info(f"Analyzing {len(file_paths)} files (parallel={parallel})")
 
         if parallel and len(file_paths) > 1:
@@ -359,19 +365,41 @@ class CodeAnalyzer:
             futures = []
             for file_path in file_paths:
                 future = self._executor.submit(
-                    self.analyze_file, file_path, deep=deep, progress_callback=progress_callback
+                    self.analyze_file,
+                    file_path,
+                    deep=deep,
+                    extract_keywords=extract_keywords,
+                    progress_callback=progress_callback,
                 )
                 futures.append((future, file_path))
 
-            # Collect results
+            # Collect results, checking deadline
             results = []
             for future, file_path in futures:
+                # Check deadline before waiting for result
+                if deadline is not None and time.time() >= deadline:
+                    self.logger.warning("Stopping parallel analysis early due to deadline")
+                    # Cancel remaining futures
+                    for f, _ in futures[len(results) :]:
+                        f.cancel()
+                    break
+
                 try:
-                    result = future.result(timeout=self.config.scanner.timeout)
+                    # Calculate remaining time for this result
+                    if deadline is not None:
+                        remaining = max(0.1, deadline - time.time())
+                        wait_timeout = min(remaining, self.config.scanner.timeout)
+                    else:
+                        wait_timeout = self.config.scanner.timeout
+
+                    result = future.result(timeout=wait_timeout)
                     results.append(result)
                 except concurrent.futures.TimeoutError:
                     self.logger.warning(f"Analysis timeout for {file_path}")
                     results.append(FileAnalysis(path=str(file_path), error="Analysis timeout"))
+                except concurrent.futures.CancelledError:
+                    # Future was cancelled due to deadline
+                    break
                 except Exception as e:
                     self.logger.warning(f"Failed to analyze {file_path}: {e}")
                     results.append(FileAnalysis(path=str(file_path), error=str(e)))
@@ -381,7 +409,12 @@ class CodeAnalyzer:
             # Sequential analysis
             results = []
             for i, file_path in enumerate(file_paths):
-                result = self.analyze_file(file_path, deep=deep)
+                # Check deadline before each file
+                if deadline is not None and time.time() >= deadline:
+                    self.logger.warning("Stopping sequential analysis early due to deadline")
+                    break
+
+                result = self.analyze_file(file_path, deep=deep, extract_keywords=extract_keywords)
                 results.append(result)
 
                 if progress_callback:

@@ -42,10 +42,18 @@ def mock_components(distiller):
     # Mock scanner
     distiller.scanner.scan.return_value = [Path("file1.py"), Path("file2.py"), Path("file3.py")]
 
-    # Mock analyzer
-    distiller.analyzer.analyze_file.side_effect = lambda file_path, **kwargs: FileAnalysis(
-        path=str(file_path), content=f"Content of {file_path.name}", language="python", lines=100
-    )
+    # Mock analyzer - now uses analyze_files instead of analyze_file
+    def mock_analyze_files(file_paths, **kwargs):
+        return [
+            FileAnalysis(
+                path=str(file_path),
+                content=f"Content of {file_path.name}",
+                language="python",
+                lines=100
+            )
+            for file_path in file_paths
+        ]
+    distiller.analyzer.analyze_files.side_effect = mock_analyze_files
 
     # Mock parser
     distiller.parser.parse.return_value = PromptContext(
@@ -149,18 +157,18 @@ class TestDistiller:
         """Test distillation with different modes."""
         result = mock_components.distill("test prompt", mode="thorough")
 
-        # Should affect analysis depth
-        mock_components.analyzer.analyze_file.assert_called()
-        call_args = mock_components.analyzer.analyze_file.call_args
+        # Should affect analysis depth - now uses analyze_files
+        mock_components.analyzer.analyze_files.assert_called()
+        call_args = mock_components.analyzer.analyze_files.call_args
         assert call_args[1]["deep"] == True
 
     def test_distill_fast_mode(self, mock_components):
         """Test distillation in fast mode."""
         result = mock_components.distill("test prompt", mode="fast")
 
-        # Should not use deep analysis
-        mock_components.analyzer.analyze_file.assert_called()
-        call_args = mock_components.analyzer.analyze_file.call_args
+        # Should not use deep analysis - now uses analyze_files
+        mock_components.analyzer.analyze_files.assert_called()
+        call_args = mock_components.analyzer.analyze_files.call_args
         assert call_args[1]["deep"] == False
 
     def test_distill_without_git(self, mock_components):
@@ -248,7 +256,7 @@ class TestDistiller:
 
     def test_analyze_files_with_errors(self, mock_components):
         """Test file analysis with errors."""
-        mock_components.analyzer.analyze_file.side_effect = Exception("Analysis failed")
+        mock_components.analyzer.analyze_files.side_effect = Exception("Analysis failed")
 
         files = [Path("file1.py")]
         prompt_context = PromptContext(text="test")
@@ -272,8 +280,12 @@ class TestDistiller:
             files=files, prompt_context=prompt_context, mode="balanced"
         )
 
+        # Verify rank_files was called with expected parameters
         mock_components.ranker.rank_files.assert_called_with(
-            files=files, prompt_context=prompt_context, algorithm="balanced"
+            files=files,
+            prompt_context=prompt_context,
+            algorithm="balanced",
+            deadline=None,  # deadline parameter now passed
         )
 
     def test_get_git_context(self, mock_components):
@@ -360,7 +372,7 @@ class TestDistiller:
         # Verify all components were called
         assert mock_components.parser.parse.called
         assert mock_components.scanner.scan.called
-        assert mock_components.analyzer.analyze_file.called
+        assert mock_components.analyzer.analyze_files.called
         assert mock_components.ranker.rank_files.called
         assert mock_components.aggregator.aggregate.called
         assert mock_components.formatter.format.called
@@ -402,13 +414,16 @@ class TestDistiller:
                                         ]
                                         # Analyzer returns simple FileAnalysis objects
                                         inst_analyzer = dist.analyzer
-                                        call_order = []
+                                        analyzed_files = []
 
-                                        def analyze_side_effect(path, **kwargs):
-                                            call_order.append(Path(path).name)
-                                            return FileAnalysis(path=str(path), content="x")
+                                        def analyze_files_side_effect(file_paths, **kwargs):
+                                            analyzed_files.extend([Path(p).name for p in file_paths])
+                                            return [
+                                                FileAnalysis(path=str(path), content="x")
+                                                for path in file_paths
+                                            ]
 
-                                        inst_analyzer.analyze_file.side_effect = analyze_side_effect
+                                        inst_analyzer.analyze_files.side_effect = analyze_files_side_effect
                                         dist.ranker.rank_files.side_effect = (
                                             lambda files, **k: files
                                         )
@@ -428,7 +443,8 @@ class TestDistiller:
                                         dist.formatter.format.return_value = "ctx"
                                         # Distill with a.py pinned
                                         result = dist.distill("p", pinned_files=[Path("a.py")])
-                                        assert call_order[0] == "a.py"
+                                        # Pinned files should be first in the list passed to analyze
+                                        assert analyzed_files[0] == "a.py"
                                         assert result.metadata.get("files_analyzed") == 3
 
     def test_test_exclusion_with_test_intent(self, mock_components):

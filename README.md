@@ -143,6 +143,9 @@ tenets distill "optimize queries" --ml --reranker  # Neural reranking (best accu
 
 # Transform content to save tokens
 tenets distill "review code" --remove-comments --condense
+
+# Adjust timeout (default 120s; set 0 to disable)
+tenets distill "implement OAuth2" --timeout 180
 ```
 
 #### `rank` - Preview Files Without Content

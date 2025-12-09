@@ -180,6 +180,54 @@ def test_token_counting():
     pass
 ```
 
+## Timeout Testing
+
+The distill timeout feature is thoroughly tested in `tests/core/distiller/test_timeout.py`:
+
+```bash
+# Run all timeout tests
+pytest tests/core/distiller/test_timeout.py -v
+
+# Run specific timeout test category
+pytest tests/core/distiller/test_timeout.py -k "edge" -v  # Edge cases
+pytest tests/core/distiller/test_timeout.py -k "stage" -v  # Stage-specific
+pytest tests/core/distiller/test_timeout.py -k "partial" -v  # Partial results
+```
+
+### Timeout Test Categories
+
+| Category | Tests | Description |
+|----------|-------|-------------|
+| Edge Cases | 4 | Zero/negative timeout, config defaults |
+| Stage-Specific | 3 | Timeout during discovery, analysis, ranking |
+| Partial Results | 3 | Metadata accuracy, timing, format validity |
+| Parallel Analysis | 1 | Deadline with parallel file processing |
+| Ranker Deadline | 1 | Deadline propagation to ranker |
+| Mode-Specific | 3 | Timeout across fast/balanced/thorough modes |
+
+### Writing Timeout Tests
+
+```python
+def test_timeout_behavior(tmp_path: Path):
+    """Test timeout returns partial results."""
+    config = TenetsConfig()
+    distiller = Distiller(config)
+
+    # Create test files
+    (tmp_path / "test.py").write_text("def foo(): pass")
+
+    # Mock slow analysis
+    def slow_analyze(path, **kwargs):
+        time.sleep(0.1)
+        return FileAnalysis(path=str(path))
+
+    with patch.object(distiller.analyzer, "analyze_files", side_effect=slow_analyze):
+        result = distiller.distill("test", paths=tmp_path, timeout=0.01)
+
+    assert result.metadata.get("timed_out") is True
+    assert "timeout_seconds" in result.metadata
+```
+
 ## CI Integration
 
 ```yaml
@@ -252,6 +300,14 @@ pytest tests/performance/ --benchmark-only
 # Profile slow tests
 pytest --durations=10
 ```
+
+## Large-repo sanity check (manual)
+
+- Repo: `~/Documents/git/voice-chat-assistant` (monorepo with frontend, backend, docs).
+- Suggested prompts for `tenets distill --timeout 180`:
+  - Trace voice/text request flow: frontend -> `/api/chat` -> AgentOS guardrails.
+  - Add guardrail service to AgentOS runtime for blocking unsafe tools.
+  - Prepare release of `@framers/codex-viewer` package and PWA manifest in `apps/frame.dev`.
 
 ## Troubleshooting
 
