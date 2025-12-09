@@ -6,11 +6,9 @@ understanding the prompt to delivering optimized context.
 
 import time
 from datetime import datetime
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from tenets.utils.timing import format_duration
 from tenets.config import TenetsConfig
 from tenets.core.analysis import CodeAnalyzer
 from tenets.core.distiller.aggregator import ContextAggregator
@@ -23,6 +21,7 @@ from tenets.models.analysis import FileAnalysis
 from tenets.models.context import ContextResult, PromptContext
 from tenets.utils.logger import get_logger
 from tenets.utils.scanner import FileScanner
+from tenets.utils.timing import format_duration
 
 
 class Distiller:
