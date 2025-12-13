@@ -15,19 +15,23 @@ Integrates natively with Cursor, Claude Desktop, Windsurf, and custom AI agents.
 <div class="grid cards" markdown>
 
 -   :material-cursor-default-outline: **[Cursor Setup](cursor-mcp.md)**
-    
+
     Step-by-step guide for Cursor IDE
 
 -   :material-chat-outline: **[Claude Desktop Setup](claude-mcp.md)**
-    
+
     Configure Claude Desktop with Tenets
 
+-   :material-microsoft-visual-studio-code: **[VSCode Extension](https://marketplace.visualstudio.com/items?itemName=ManicAgency.tenets-mcp-server)**
+
+    Install from marketplace • [Setup guide](vscode-setup.md)
+
 -   :material-rocket-launch-outline: **[Quick Start](quickstart.md)**
-    
+
     Get started in 30 seconds
 
 -   :material-help-circle-outline: **[FAQ](faq.md)**
-    
+
     Common questions answered
 
 </div>

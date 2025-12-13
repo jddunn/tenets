@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Package files
+*.vsix
+
+# Internal docs (don't commit)
+PUBLISHING.md
+
+# IDE
+.vscode/
+.DS_Store
+
+# Logs
+*.log

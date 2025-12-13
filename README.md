@@ -55,18 +55,32 @@ Integrates natively with **Cursor, Claude Desktop, Windsurf** via Model Context 
   ```json
   { "tenets": { "command": "tenets-mcp" } }
   ```
+- **VS Code Extension** (recommended for VS Code users)
+  - **[Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ManicAgency.tenets-mcp-server)** ⭐
+  - Or search "Tenets MCP Server" in VS Code Extensions
+  - Extension auto-starts the server and provides status indicator + commands
 - **Docs (full tool list & transports):** https://tenets.dev/MCP/
 
 ## Installation (CLI/Python)
 
 ```bash
-pip install tenets           # CLI + Python, BM25/TF-IDF ranking
-pip install tenets[mcp]      # Adds MCP server (recommended)
+# Using pipx (recommended for CLI tools)
+pipx install tenets[mcp]     # MCP server + CLI (recommended)
+pipx install tenets          # CLI only (no MCP server)
+
+# Or using pip
+pip install tenets[mcp]      # Adds MCP server dependencies (REQUIRED for MCP)
+pip install tenets           # CLI + Python, BM25/TF-IDF ranking (no MCP)
 pip install tenets[light]    # RAKE/YAKE keyword extraction
 pip install tenets[viz]      # Visualization features
 pip install tenets[ml]       # ML embeddings / reranker (2GB+)
 pip install tenets[all]      # Everything
 ```
+
+**Important:** The `[mcp]` extra is **required** for MCP server functionality. Without it:
+- The `tenets-mcp` executable exists but will fail when you try to run it
+- Missing dependencies: `mcp`, `sse-starlette`, `uvicorn` (15 additional packages)
+- You'll get a clear error: `ImportError: MCP dependencies not installed`
 
 ## MCP Tool Surface (AI assistants)
 

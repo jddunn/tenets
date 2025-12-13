@@ -1,0 +1,81 @@
+{
+  "name": "tenets-mcp-server",
+  "displayName": "Tenets MCP Server",
+  "description": "Intelligent code context for AI assistants via MCP",
+  "version": "0.1.0",
+  "publisher": "ManicAgency",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jddunn/tenets"
+  },
+  "bugs": {
+    "url": "https://github.com/jddunn/tenets/issues"
+  },
+  "homepage": "https://github.com/jddunn/tenets",
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "mcp",
+    "context",
+    "ai",
+    "claude",
+    "tenets"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tenets.start",
+        "title": "Tenets: Start MCP Server"
+      },
+      {
+        "command": "tenets.stop",
+        "title": "Tenets: Stop MCP Server"
+      },
+      {
+        "command": "tenets.restart",
+        "title": "Tenets: Restart MCP Server"
+      },
+      {
+        "command": "tenets.viewLogs",
+        "title": "Tenets: View Logs"
+      }
+    ],
+    "configuration": {
+      "title": "Tenets MCP Server",
+      "properties": {
+        "tenets.mcpPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to tenets-mcp executable (leave empty for auto-detect)"
+        },
+        "tenets.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start Tenets MCP server on VSCode startup"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "@types/vscode": "^1.107.0",
+    "esbuild": "^0.27.1",
+    "typescript": "^5.9.3",
+    "vsce": "^2.15.0"
+  }
+}

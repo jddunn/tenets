@@ -120,10 +120,11 @@ hide:
 }</code></pre>
       </div>
       <div class="card">
-        <h3>Windsurf / VS Code</h3>
-        <pre><code class="language-json">{
-  "tenets": { "command": "tenets-mcp" }
-}</code></pre>
+        <h3>VS Code Extension</h3>
+        <p style="font-size: 0.9em; margin-bottom: 0.5rem;">
+          <strong><a href="https://marketplace.visualstudio.com/items?itemName=ManicAgency.tenets-mcp-server" target="_blank">Install from Marketplace</a></strong>
+        </p>
+        <p style="font-size: 0.85em; opacity: 0.8;">Auto-starts server + status indicator</p>
       </div>
     </div>
 
