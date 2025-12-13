@@ -72,7 +72,43 @@ tenets-mcp --version
 
 ## IDE Configuration
 
-### Claude Desktop
+### Claude Code (CLI / VS Code Extension)
+
+**Recommended:** Use the CLI command to automatically configure:
+
+```bash
+claude mcp add tenets -s user -- tenets-mcp
+```
+
+Or manually add to `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "type": "stdio",
+      "command": "tenets-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+If you installed tenets in a virtual environment, use the full path:
+
+```json
+{
+  "mcpServers": {
+    "tenets": {
+      "type": "stdio",
+      "command": "/path/to/venv/bin/tenets-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+### Claude Desktop (macOS App)
 
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 

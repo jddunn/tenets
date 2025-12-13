@@ -42,19 +42,27 @@ Integrates natively with **Cursor, Claude Desktop, Windsurf, VS Code** via Model
   pip install tenets[mcp]
   tenets-mcp
   ```
+- **Claude Code** (CLI / VS Code extension)
+  ```bash
+  claude mcp add tenets -s user -- tenets-mcp
+  ```
+  Or manually add to `~/.claude.json`:
+  ```json
+  { "mcpServers": { "tenets": { "type": "stdio", "command": "tenets-mcp", "args": [] } } }
+  ```
+- **Claude Desktop** (macOS app - `~/Library/Application Support/Claude/claude_desktop_config.json`)
+  ```json
+  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
+  ```
 - **Cursor** (`~/.cursor/mcp.json`)
   ```json
   { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
   ```
-- **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`)
-  ```json
-  { "mcpServers": { "tenets": { "command": "tenets-mcp" } } }
-  ```
-- **Windsurf / VS Code MCP extensions**
+- **Windsurf** (`~/.windsurf/mcp.json`)
   ```json
   { "tenets": { "command": "tenets-mcp" } }
   ```
-- **VS Code Extension** (recommended for VS Code users)
+- **VS Code Extension** (alternative for VS Code users)
   - **[Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ManicAgency.tenets-mcp-server)** ⭐
   - Or search "Tenets MCP Server" in VS Code Extensions
   - Extension auto-starts the server and provides status indicator + commands

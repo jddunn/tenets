@@ -114,7 +114,12 @@ hide:
       <li>Drop the JSON below into your IDE’s MCP config</li>
     </ol>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem;">
+      <div class="card">
+        <h3>Claude Code (CLI)</h3>
+        <pre><code class="language-bash">claude mcp add tenets -s user -- tenets-mcp</code></pre>
+        <p style="font-size: 0.85em; opacity: 0.8; margin-top: 0.5rem;">Or add to <code>~/.claude.json</code></p>
+      </div>
       <div class="card">
         <h3>Cursor</h3>
         <pre><code class="language-json">{
@@ -164,6 +169,19 @@ hide:
       <tbody>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem; vertical-align: top;">
+            <strong style="color: #f59e0b;">Claude Code (CLI)</strong><br>
+            <small style="opacity: 0.7;">~/.claude.json</small>
+          </td>
+          <td style="padding: 1rem;">
+
+```bash
+claude mcp add tenets -s user -- tenets-mcp
+```
+
+</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
+          <td style="padding: 1rem; vertical-align: top;">
             <strong style="color: #f59e0b;">Cursor</strong><br>
             <small style="opacity: 0.7;">Settings → MCP Servers</small>
           </td>
@@ -177,7 +195,7 @@ hide:
         </tr>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem; vertical-align: top;">
-            <strong style="color: #f59e0b;">Claude Desktop</strong><br>
+            <strong style="color: #f59e0b;">Claude Desktop (macOS App)</strong><br>
             <small style="opacity: 0.7;">claude_desktop_config.json</small>
           </td>
           <td style="padding: 1rem;">
@@ -190,8 +208,8 @@ hide:
         </tr>
         <tr>
           <td style="padding: 1rem; vertical-align: top;">
-            <strong style="color: #f59e0b;">Windsurf / VS Code</strong><br>
-            <small style="opacity: 0.7;">MCP extension settings</small>
+            <strong style="color: #f59e0b;">Windsurf</strong><br>
+            <small style="opacity: 0.7;">~/.windsurf/mcp.json</small>
           </td>
           <td style="padding: 1rem;">
 
