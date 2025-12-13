@@ -16,13 +16,13 @@
 
 > **Coverage note:** Measures core modules (distiller, ranking, MCP, CLI, models). Optional features (viz, language analyzers) are excluded.
 
-**tenets** is a **100% local MCP server** for AI coding assistants. It solves two critical problems:
+**tenets** is an MCP server for AI coding assistants. It solves two critical problems:
 
 1. **Intelligent Code Context** — Finds, ranks, and aggregates the most relevant code using NLP (BM25, TF-IDF, import centrality, git signals). No more manual file hunting.
 
 2. **Automatic Guiding Principles** — Injects your tenets (coding standards, architecture rules, security requirements) into every prompt automatically. Prevents context drift in long conversations.
 
-Integrates natively with **Cursor, Claude Desktop, Windsurf** via Model Context Protocol. Also ships a CLI and Python library.
+Integrates natively with **Cursor, Claude Desktop, Windsurf, VS Code** via Model Context Protocol. Also ships a CLI and Python library. **100% local processing** — no API costs, no data leaving your machine.
 
 ## What is tenets?
 
@@ -33,8 +33,6 @@ Integrates natively with **Cursor, Claude Desktop, Windsurf** via Model Context 
 - **Integrates** natively with AI assistants via Model Context Protocol (MCP)
 - **Pins** critical files per session for guaranteed inclusion
 - **Transforms** content on demand (strip comments, condense whitespace, or force full raw context)
-
-**100% local processing** — no API costs, no data leaving your machine, complete privacy.
 
 ## MCP-first Quickstart (recommended)
 
