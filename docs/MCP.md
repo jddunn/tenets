@@ -182,14 +182,14 @@ If using an MCP extension for VS Code:
 
 ## Available Tools
 
-The MCP server exposes these tools to AI assistants:
+The MCP server exposes 8 tools to AI assistants (consolidated from 13 in v0.8.0):
 
 ### Context Tools
 
 | Tool | Description |
 |------|-------------|
-| `distill` | Build ranked, token-optimized context from codebase (markdown/xml/json/html) |
-| `rank_files` | Rank files by relevance without full content (supports include/exclude patterns, test filters) |
+| `tenets_distill` | Build ranked, token-optimized context from codebase (markdown/xml/json/html) |
+| `tenets_rank_files` | Rank files by relevance without full content (supports include/exclude patterns, test filters) |
 
 Default distill timeout is 120s; pass the `timeout` argument (seconds, `0` to disable) to override.
 
@@ -197,27 +197,22 @@ Default distill timeout is 120s; pass the `timeout` argument (seconds, `0` to di
 
 | Tool | Description |
 |------|-------------|
-| `examine` | Analyze codebase structure and complexity |
-| `chronicle` | Analyze git history and patterns |
-| `momentum` | Track development velocity |
+| `tenets_examine` | Analyze codebase structure and complexity |
+| `tenets_chronicle` | Analyze git history and patterns |
+| `tenets_momentum` | Track development velocity |
 
-### Session Tools
-
-| Tool | Description |
-|------|-------------|
-| `session_create` | Create a development session |
-| `session_list` | List all sessions |
-| `session_pin_file` | Pin a file to a session |
-| `session_pin_folder` | Pin a folder to a session |
-
-### Tenet Tools
+### Session Tool (consolidated)
 
 | Tool | Description |
 |------|-------------|
-| `tenet_add` | Add a guiding principle |
-| `tenet_list` | List all tenets |
-| `tenet_instill` | Activate pending tenets |
-| `set_system_instruction` | Set system-level instruction |
+| `tenets_session` | Manage sessions with `action` parameter: `create`, `list`, `pin_file`, `pin_folder` |
+
+### Tenet Tools (consolidated)
+
+| Tool | Description |
+|------|-------------|
+| `tenets_tenet` | Manage guiding principles with `action` parameter: `add`, `list`, `instill` |
+| `tenets_system_instruction` | Set system-level instruction |
 
 ## Available Resources
 
@@ -227,8 +222,12 @@ Resources are read-only data the AI can access:
 |--------------|-------------|
 | `tenets://sessions/list` | All development sessions |
 | `tenets://sessions/{name}/state` | Specific session state |
+| `tenets://sessions/active` | Currently active session |
 | `tenets://tenets/list` | All guiding principles |
 | `tenets://config/current` | Current configuration |
+| `tenets://ranking/factors` | Ranking factor explanations |
+| `tenets://analysis/hotspots` | Complexity hotspots |
+| `tenets://analysis/summary` | Codebase summary |
 
 ## Available Prompts
 
@@ -237,8 +236,11 @@ Prompts are reusable templates for common tasks:
 | Prompt | Description |
 |--------|-------------|
 | `build_context_for_task` | Build context for a development task |
-| `code_review_context` | Prepare context for code review |
 | `understand_codebase` | Generate codebase understanding |
+| `refactoring_guide` | Step-by-step refactoring workflow |
+| `bug_investigation` | Systematic bug investigation workflow |
+| `code_review` | Comprehensive code review checklist |
+| `onboarding` | New developer onboarding workflow |
 
 ## Tool-to-Prompt Matrix
 
@@ -246,14 +248,14 @@ Common development tasks and which tools to use:
 
 | Task | Tool(s) | Example Prompt |
 |------|---------|----------------|
-| Find relevant code | `distill` | "Find code related to payment processing" |
-| Quick file scan | `rank_files` | "Which files are most relevant to auth?" |
-| Code review | `distill` + `chronicle` | "Review recent changes to the API" |
-| Onboarding | `examine` + `distill` | "Help me understand this codebase" |
-| Feature planning | `distill` + `session_create` | "I'm building a new feature for X" |
-| Refactoring | `distill` + `rank_files` | "Find all usages of deprecated function" |
-| Bug investigation | `chronicle` + `distill` | "Find changes that could cause issue X" |
-| Track velocity | `momentum` | "Show development activity this week" |
+| Find relevant code | `tenets_distill` | "Find code related to payment processing" |
+| Quick file scan | `tenets_rank_files` | "Which files are most relevant to auth?" |
+| Code review | `tenets_distill` + `tenets_chronicle` | "Review recent changes to the API" |
+| Onboarding | `tenets_examine` + `tenets_distill` | "Help me understand this codebase" |
+| Feature planning | `tenets_distill` + `tenets_session(action='create')` | "I'm building a new feature for X" |
+| Refactoring | `tenets_distill` + `tenets_rank_files` | "Find all usages of deprecated function" |
+| Bug investigation | `tenets_chronicle` + `tenets_distill` | "Find changes that could cause issue X" |
+| Track velocity | `tenets_momentum` | "Show development activity this week" |
 
 ## Example Usage
 
@@ -261,19 +263,19 @@ Once configured, ask your AI assistant:
 
 > "Use tenets to find relevant files for implementing user authentication"
 
-The AI will call the `distill` tool and return ranked, optimized context.
+The AI will call the `tenets_distill` tool and return ranked, optimized context.
 
 > "Create a session called 'auth-feature' and pin the auth folder"
 
-The AI will use `session_create` and `session_pin_folder`.
+The AI will use `tenets_session` with `action='create'` then `action='pin_folder'`.
 
 > "Add a tenet: Always validate user input before processing"
 
-The AI will use `tenet_add` to create a guiding principle.
+The AI will use `tenets_tenet` with `action='add'` to create a guiding principle.
 
 ## Tool Responses (Examples)
 
-### distill
+### tenets_distill
 ```json
 {
   "context": "# File: src/auth.py\n...",
@@ -284,24 +286,36 @@ The AI will use `tenet_add` to create a guiding principle.
 }
 ```
 
-### rank_files
+### tenets_rank_files
 ```json
 {
   "files": [
-    {"path": "src/auth.py", "score": 0.85},
-    {"path": "src/user.py", "score": 0.72}
+    {"path": "src/auth.py", "score": 0.85, "factors": {"keyword_match": 0.9, "bm25_score": 0.8}},
+    {"path": "src/user.py", "score": 0.72, "factors": {"keyword_match": 0.7, "path_relevance": 0.75}}
   ],
   "total_scanned": 150,
   "mode": "balanced"
 }
 ```
 
-### session_create
+### tenets_session (action='create')
 ```json
 {
+  "action": "create",
   "id": "sess_abc123",
   "name": "auth-feature",
   "created_at": "2025-12-04T10:00:00"
+}
+```
+
+### tenets_tenet (action='add')
+```json
+{
+  "action": "add",
+  "id": "tenet_xyz789",
+  "content": "Always validate user input",
+  "priority": "high",
+  "category": "security"
 }
 ```
 
