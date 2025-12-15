@@ -853,21 +853,26 @@ class TenetsMCP:
             sessions = db.list_sessions()
 
             if not sessions:
-                return json.dumps({
-                    "active": False,
-                    "message": "No sessions exist. Create one with tenets_session(action='create').",
-                })
+                return json.dumps(
+                    {
+                        "active": False,
+                        "message": "No sessions exist. Create one with tenets_session(action='create').",
+                    }
+                )
 
             # Most recent session is considered active
             most_recent = max(sessions, key=lambda s: s.created_at)
-            return json.dumps({
-                "active": True,
-                "session": {
-                    "name": most_recent.name,
-                    "created_at": most_recent.created_at.isoformat(),
-                    "metadata": most_recent.metadata,
+            return json.dumps(
+                {
+                    "active": True,
+                    "session": {
+                        "name": most_recent.name,
+                        "created_at": most_recent.created_at.isoformat(),
+                        "metadata": most_recent.metadata,
+                    },
                 },
-            }, indent=2)
+                indent=2,
+            )
 
         # === Hotspots Resource ===
 
@@ -887,23 +892,30 @@ class TenetsMCP:
                     hotspots = result.get("hotspots", [])
                     complexity = result.get("complexity", {})
 
-                    return json.dumps({
-                        "description": "Files with high complexity or frequent changes",
-                        "hotspots": hotspots[:20] if hotspots else [],
-                        "high_complexity_files": [
-                            {"path": k, "complexity": v}
-                            for k, v in sorted(
-                                complexity.items(),
-                                key=lambda x: x[1] if isinstance(x[1], (int, float)) else 0,
-                                reverse=True,
-                            )[:10]
-                        ] if complexity else [],
-                        "recommendations": [
-                            "Consider refactoring files with complexity > 20",
-                            "High-churn + high-complexity = maintenance risk",
-                            "Add tests for hotspot files first",
-                        ],
-                    }, indent=2)
+                    return json.dumps(
+                        {
+                            "description": "Files with high complexity or frequent changes",
+                            "hotspots": hotspots[:20] if hotspots else [],
+                            "high_complexity_files": (
+                                [
+                                    {"path": k, "complexity": v}
+                                    for k, v in sorted(
+                                        complexity.items(),
+                                        key=lambda x: x[1] if isinstance(x[1], (int, float)) else 0,
+                                        reverse=True,
+                                    )[:10]
+                                ]
+                                if complexity
+                                else []
+                            ),
+                            "recommendations": [
+                                "Consider refactoring files with complexity > 20",
+                                "High-churn + high-complexity = maintenance risk",
+                                "Add tests for hotspot files first",
+                            ],
+                        },
+                        indent=2,
+                    )
                 return json.dumps({"error": "Could not analyze hotspots"})
             except Exception as e:
                 return json.dumps({"error": str(e)})
@@ -921,13 +933,16 @@ class TenetsMCP:
             try:
                 result = self.tenets.examine(path=".", deep=False)
                 if isinstance(result, dict):
-                    return json.dumps({
-                        "description": "Codebase overview",
-                        "languages": result.get("languages", {}),
-                        "file_count": result.get("file_count", 0),
-                        "total_lines": result.get("total_lines", 0),
-                        "structure": result.get("structure", {}),
-                    }, indent=2)
+                    return json.dumps(
+                        {
+                            "description": "Codebase overview",
+                            "languages": result.get("languages", {}),
+                            "file_count": result.get("file_count", 0),
+                            "total_lines": result.get("total_lines", 0),
+                            "structure": result.get("structure", {}),
+                        },
+                        indent=2,
+                    )
                 return json.dumps({"error": "Could not analyze codebase"})
             except Exception as e:
                 return json.dumps({"error": str(e)})
@@ -1009,18 +1024,20 @@ class TenetsMCP:
             }
             parts.append(f"Safety level: {safety_level} - {safety_guidance[safety_level]}")
 
-            parts.extend([
-                "",
-                "## Step 5: Execute Refactoring",
-                "- Make changes incrementally",
-                "- Run tests after each change",
-                "- Update callers if needed",
-                "",
-                "## Step 6: Verify",
-                "- Run full test suite",
-                "- Check for type errors",
-                "- Review changed files",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "## Step 5: Execute Refactoring",
+                    "- Make changes incrementally",
+                    "- Run tests after each change",
+                    "- Update callers if needed",
+                    "",
+                    "## Step 6: Verify",
+                    "- Run full test suite",
+                    "- Check for type errors",
+                    "- Review changed files",
+                ]
+            )
 
             return "\n".join(parts)
 
@@ -1053,45 +1070,49 @@ class TenetsMCP:
                     f"Use `tenets_distill` with prompt: '{symptom}' focused on {location_hint}"
                 )
             else:
-                parts.append(
-                    f"Use `tenets_distill` with prompt: 'code related to: {symptom}'"
-                )
+                parts.append(f"Use `tenets_distill` with prompt: 'code related to: {symptom}'")
 
-            parts.extend([
-                "",
-                "## Step 2: Find Related Code",
-                f"Use `tenets_rank_files` with prompt: '{symptom}'",
-                "READ the top 3-5 files to understand the code flow.",
-                "",
-                "## Step 3: Identify Error Handling",
-                "Look for:",
-                "- try/except blocks in the area",
-                "- Error messages that match the symptom",
-                "- Logging statements",
-                "",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "## Step 2: Find Related Code",
+                    f"Use `tenets_rank_files` with prompt: '{symptom}'",
+                    "READ the top 3-5 files to understand the code flow.",
+                    "",
+                    "## Step 3: Identify Error Handling",
+                    "Look for:",
+                    "- try/except blocks in the area",
+                    "- Error messages that match the symptom",
+                    "- Logging statements",
+                    "",
+                ]
+            )
 
             if include_history:
-                parts.extend([
-                    "## Step 4: Check Recent Changes",
-                    "Use `tenets_chronicle` with since='2 weeks' to see recent changes.",
-                    "Recent changes to affected files may have introduced the bug.",
-                    "",
-                ])
+                parts.extend(
+                    [
+                        "## Step 4: Check Recent Changes",
+                        "Use `tenets_chronicle` with since='2 weeks' to see recent changes.",
+                        "Recent changes to affected files may have introduced the bug.",
+                        "",
+                    ]
+                )
 
-            parts.extend([
-                "## Step 5: Form Hypothesis",
-                "Based on context gathered:",
-                "1. What is the expected behavior?",
-                "2. What is the actual behavior?",
-                "3. What code path leads to the bug?",
-                "",
-                "## Step 6: Fix and Verify",
-                "- Implement fix",
-                "- Add test case that reproduces the bug",
-                "- Verify fix resolves the issue",
-                "- Check for similar patterns elsewhere",
-            ])
+            parts.extend(
+                [
+                    "## Step 5: Form Hypothesis",
+                    "Based on context gathered:",
+                    "1. What is the expected behavior?",
+                    "2. What is the actual behavior?",
+                    "3. What code path leads to the bug?",
+                    "",
+                    "## Step 6: Fix and Verify",
+                    "- Implement fix",
+                    "- Add test case that reproduces the bug",
+                    "- Verify fix resolves the issue",
+                    "- Check for similar patterns elsewhere",
+                ]
+            )
 
             return "\n".join(parts)
 
@@ -1119,74 +1140,86 @@ class TenetsMCP:
             ]
 
             if scope == "recent":
-                parts.extend([
-                    "## Step 1: Identify Changes",
-                    f"Use `tenets_chronicle` with since='{since}' to see recent commits.",
-                    "",
-                    "## Step 2: Gather Context",
-                    "For each changed file, use `tenets_distill` to understand:",
-                    "- What the code does",
-                    "- Why changes were made",
-                    "- Impact on other parts of the codebase",
-                ])
+                parts.extend(
+                    [
+                        "## Step 1: Identify Changes",
+                        f"Use `tenets_chronicle` with since='{since}' to see recent commits.",
+                        "",
+                        "## Step 2: Gather Context",
+                        "For each changed file, use `tenets_distill` to understand:",
+                        "- What the code does",
+                        "- Why changes were made",
+                        "- Impact on other parts of the codebase",
+                    ]
+                )
             elif scope == "file":
-                parts.extend([
-                    "## Step 1: Understand the File",
-                    "Use `tenets_distill` with the file path to get context.",
-                    "",
-                    "## Step 2: Check Dependencies",
-                    "Use `tenets_rank_files` to find related files.",
-                ])
+                parts.extend(
+                    [
+                        "## Step 1: Understand the File",
+                        "Use `tenets_distill` with the file path to get context.",
+                        "",
+                        "## Step 2: Check Dependencies",
+                        "Use `tenets_rank_files` to find related files.",
+                    ]
+                )
             elif scope == "pr":
-                parts.extend([
-                    "## Step 1: Review PR Changes",
-                    "List all files changed in the PR.",
-                    "",
-                    "## Step 2: Understand Context",
-                    "For each changed file, use `tenets_distill` to understand the change.",
-                ])
+                parts.extend(
+                    [
+                        "## Step 1: Review PR Changes",
+                        "List all files changed in the PR.",
+                        "",
+                        "## Step 2: Understand Context",
+                        "For each changed file, use `tenets_distill` to understand the change.",
+                    ]
+                )
             else:  # module
-                parts.extend([
-                    "## Step 1: Examine Module Structure",
-                    "Use `tenets_examine` to see module structure and complexity.",
-                    "",
-                    "## Step 2: Understand Module",
-                    "Use `tenets_distill` with the module path.",
-                ])
+                parts.extend(
+                    [
+                        "## Step 1: Examine Module Structure",
+                        "Use `tenets_examine` to see module structure and complexity.",
+                        "",
+                        "## Step 2: Understand Module",
+                        "Use `tenets_distill` with the module path.",
+                    ]
+                )
 
-            parts.extend([
-                "",
-                "## Review Checklist",
-                "",
-                "### Correctness",
-                "- [ ] Logic is correct",
-                "- [ ] Edge cases handled",
-                "- [ ] Error handling appropriate",
-                "",
-                "### Security",
-                "- [ ] Input validated",
-                "- [ ] No hardcoded secrets",
-                "- [ ] SQL injection safe",
-                "- [ ] XSS prevented",
-                "",
-                "### Performance",
-                "- [ ] No unnecessary loops",
-                "- [ ] Database queries optimized",
-                "- [ ] Memory usage reasonable",
-                "",
-                "### Maintainability",
-                "- [ ] Code is readable",
-                "- [ ] Functions single-purpose",
-                "- [ ] Naming is clear",
-                "- [ ] Tests included",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "## Review Checklist",
+                    "",
+                    "### Correctness",
+                    "- [ ] Logic is correct",
+                    "- [ ] Edge cases handled",
+                    "- [ ] Error handling appropriate",
+                    "",
+                    "### Security",
+                    "- [ ] Input validated",
+                    "- [ ] No hardcoded secrets",
+                    "- [ ] SQL injection safe",
+                    "- [ ] XSS prevented",
+                    "",
+                    "### Performance",
+                    "- [ ] No unnecessary loops",
+                    "- [ ] Database queries optimized",
+                    "- [ ] Memory usage reasonable",
+                    "",
+                    "### Maintainability",
+                    "- [ ] Code is readable",
+                    "- [ ] Functions single-purpose",
+                    "- [ ] Naming is clear",
+                    "- [ ] Tests included",
+                ]
+            )
 
             if focus:
-                parts.extend([
-                    "",
-                    f"## Special Focus: {focus}",
-                    f"Pay extra attention to {focus}-related issues.",
-                ])
+                parts.extend(
+                    [
+                        "",
+                        f"## Special Focus: {focus}",
+                        f"Pay extra attention to {focus}-related issues.",
+                    ]
+                )
 
             return "\n".join(parts)
 
@@ -1231,12 +1264,14 @@ class TenetsMCP:
             ]
 
             if focus_area:
-                parts.extend([
-                    f"## Step 4: Focus Area - {focus_area}",
-                    f"Use `tenets_distill` with prompt: 'how {focus_area} works'",
-                    "Then READ the returned files to understand the implementation.",
-                    "",
-                ])
+                parts.extend(
+                    [
+                        f"## Step 4: Focus Area - {focus_area}",
+                        f"Use `tenets_distill` with prompt: 'how {focus_area} works'",
+                        "Then READ the returned files to understand the implementation.",
+                        "",
+                    ]
+                )
 
             role_guidance = {
                 "developer": [
@@ -1264,15 +1299,17 @@ class TenetsMCP:
 
             parts.extend(role_guidance.get(role, []))
 
-            parts.extend([
-                "",
-                "## Key Questions to Answer",
-                "1. How do I run the project locally?",
-                "2. How do I run tests?",
-                "3. What's the deployment process?",
-                "4. Where do I find documentation?",
-                "5. Who do I ask for help?",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "## Key Questions to Answer",
+                    "1. How do I run the project locally?",
+                    "2. How do I run tests?",
+                    "3. What's the deployment process?",
+                    "4. Where do I find documentation?",
+                    "5. Who do I ask for help?",
+                ]
+            )
 
             return "\n".join(parts)
 
@@ -1292,13 +1329,15 @@ class TenetsMCP:
             parts = [f"Help me understand this codebase ({depth} level)."]
             if area:
                 parts.append(f"Specifically, I want to understand: {area}")
-            parts.extend([
-                "",
-                "Steps:",
-                "1. Use `tenets_examine` to see codebase structure",
-                "2. Use `tenets_distill` with an understanding prompt",
-                "3. Identify key architectural patterns",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "Steps:",
+                    "1. Use `tenets_examine` to see codebase structure",
+                    "2. Use `tenets_distill` with an understanding prompt",
+                    "3. Identify key architectural patterns",
+                ]
+            )
             return "\n".join(parts)
 
     def run(

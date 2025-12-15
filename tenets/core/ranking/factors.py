@@ -606,16 +606,18 @@ class RankingExplainer:
             normalized = contribution / total_weight if total_weight > 0 else 0
 
             if value > 0 or weight > 0:
-                contributions.append({
-                    "factor": factor_name,
-                    "display_name": self.FACTOR_NAMES.get(factor_name, factor_name),
-                    "description": self.FACTOR_DESCRIPTIONS.get(factor_name, ""),
-                    "value": round(value, 4),
-                    "weight": round(weight, 4),
-                    "contribution": round(contribution, 4),
-                    "normalized_contribution": round(normalized, 4),
-                    "percentage": round(normalized * 100, 2) if total_weight > 0 else 0,
-                })
+                contributions.append(
+                    {
+                        "factor": factor_name,
+                        "display_name": self.FACTOR_NAMES.get(factor_name, factor_name),
+                        "description": self.FACTOR_DESCRIPTIONS.get(factor_name, ""),
+                        "value": round(value, 4),
+                        "weight": round(weight, 4),
+                        "contribution": round(contribution, 4),
+                        "normalized_contribution": round(normalized, 4),
+                        "percentage": round(normalized * 100, 2) if total_weight > 0 else 0,
+                    }
+                )
 
         # Sort by contribution
         contributions.sort(key=lambda x: x["contribution"], reverse=True)
@@ -647,7 +649,7 @@ class RankingExplainer:
         lines = [
             f"File: {result['file']}",
             f"Score: {result['score']:.4f}",
-            f"Rank: #{result['rank']}" if result['rank'] else "Rank: N/A",
+            f"Rank: #{result['rank']}" if result["rank"] else "Rank: N/A",
             "",
             "Factor Breakdown:",
             "-" * 60,
@@ -662,11 +664,13 @@ class RankingExplainer:
                 )
 
         if result["zero_factors"]:
-            lines.extend([
-                "",
-                "Zero-value factors:",
-                f"  {', '.join(result['zero_factors'][:5])}",
-            ])
+            lines.extend(
+                [
+                    "",
+                    "Zero-value factors:",
+                    f"  {', '.join(result['zero_factors'][:5])}",
+                ]
+            )
 
         return "\n".join(lines)
 
@@ -676,7 +680,7 @@ class RankingExplainer:
             f"## File: `{result['file']}`",
             "",
             f"**Score:** {result['score']:.4f}",
-            f"**Rank:** #{result['rank']}" if result['rank'] else "**Rank:** N/A",
+            f"**Rank:** #{result['rank']}" if result["rank"] else "**Rank:** N/A",
             "",
             "### Factor Breakdown",
             "",
@@ -758,32 +762,40 @@ class RankingExplainer:
         for factor, stats in factor_usage.items():
             weight = weights.get(factor, 0)
             if weight > 0 and stats["count_nonzero"] == 0:
-                issues.append({
-                    "type": "unused_factor",
-                    "factor": factor,
-                    "message": f"Factor '{factor}' has weight {weight} but all values are 0",
-                })
+                issues.append(
+                    {
+                        "type": "unused_factor",
+                        "factor": factor,
+                        "message": f"Factor '{factor}' has weight {weight} but all values are 0",
+                    }
+                )
 
         # Check for score clustering
         if score_variance < 0.01:
-            issues.append({
-                "type": "low_variance",
-                "message": "Score variance is very low - files may not be well differentiated",
-                "variance": score_variance,
-            })
+            issues.append(
+                {
+                    "type": "low_variance",
+                    "message": "Score variance is very low - files may not be well differentiated",
+                    "variance": score_variance,
+                }
+            )
 
         # Check for threshold issues
         threshold_count = sum(1 for s in scores if s > 0.5)
         if threshold_count == 0:
-            issues.append({
-                "type": "low_scores",
-                "message": "No files scored above 0.5 - query may be too specific",
-            })
+            issues.append(
+                {
+                    "type": "low_scores",
+                    "message": "No files scored above 0.5 - query may be too specific",
+                }
+            )
         elif threshold_count == len(scores):
-            issues.append({
-                "type": "high_scores",
-                "message": "All files scored above 0.5 - query may be too broad",
-            })
+            issues.append(
+                {
+                    "type": "high_scores",
+                    "message": "All files scored above 0.5 - query may be too broad",
+                }
+            )
 
         return {
             "query": query,
@@ -805,8 +817,11 @@ class RankingExplainer:
                 {
                     "path": rf.path,
                     "score": round(rf.score, 4),
-                    "top_factor": rf.factors.get_top_factors(weights, n=1)[0][0]
-                    if rf.factors.get_top_factors(weights, n=1) else None,
+                    "top_factor": (
+                        rf.factors.get_top_factors(weights, n=1)[0][0]
+                        if rf.factors.get_top_factors(weights, n=1)
+                        else None
+                    ),
                 }
                 for rf in ranked_files[:10]
             ],

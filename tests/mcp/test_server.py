@@ -950,7 +950,9 @@ class TestMCPSessionPersistence:
         session_tool = mcp_server._mcp.tools["tenets_session"]
 
         # Create session
-        result = await session_tool(action="create", name="persist-test", description="Persistence test")
+        result = await session_tool(
+            action="create", name="persist-test", description="Persistence test"
+        )
         session_id = result["id"]
 
         # Verify it appears in list
