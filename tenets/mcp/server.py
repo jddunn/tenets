@@ -188,13 +188,21 @@ class TenetsMCP:
         self._register_prompts()
 
     def _register_tools(self) -> None:
-        """Register all MCP tools."""
+        """Register all MCP tools.
+
+        Tools are prefixed with 'tenets_' to distinguish them from other MCPs
+        and improve LLM discoverability. Descriptions follow a pattern:
+        1. WHAT it does (one line)
+        2. WHEN to use it (explicit trigger phrases)
+        3. WHY it's necessary (prevent LLM from skipping)
+        4. Encouragement to explore further after using the tool
+        """
         mcp = self._mcp
 
         # === Context Tools ===
 
         @mcp.tool()
-        async def distill(
+        async def tenets_distill(
             prompt: str,
             path: str = ".",
             mode: Literal["fast", "balanced", "thorough"] = "balanced",
@@ -207,47 +215,50 @@ class TenetsMCP:
             exclude_patterns: Optional[list[str]] = None,
             timeout: Optional[int] = 120,
         ) -> dict[str, Any]:
-            """Build optimized code context for a task or question.
+            """Find and retrieve the most relevant code for a task.
 
-            This is the primary tool for gathering relevant code. It finds,
-            ranks, and aggregates files into token-optimized context ready
-            for AI consumption.
+            USE THIS TOOL when you need to:
+            - Understand how a feature, module, or system works
+            - Find code related to a bug, error, or task
+            - Gather context BEFORE writing or modifying any code
+            - Answer "how does X work?" or "where is Y implemented?"
 
-            Use this when you need to:
-            - Understand how a feature is implemented
-            - Find code related to a bug or task
-            - Gather context before making changes
+            IMPORTANT: This tool returns ranked, relevant code as a STARTING POINT.
+            After receiving results, you should:
+            1. Review the returned file list to understand the codebase structure
+            2. Read specific files directly for deeper understanding
+            3. Explore related files that weren't returned but seem relevant
+            4. Use the context to inform your next actions, not as the final answer
+
+            Do NOT guess about code structure - always use this tool first.
+            The semantic ranking finds connections you might miss with keyword search.
 
             Args:
-                prompt: What you're working on. Be specific for better results.
-                    Examples: "implement OAuth2 login", "fix the payment bug",
-                    "understand the caching layer"
+                prompt: Describe what you're looking for. Be specific for better results.
+                    Good: "OAuth2 authentication flow with JWT tokens"
+                    Good: "payment processing error handling"
+                    Bad: "auth stuff" or "the bug"
                 path: Directory to search. Use "." for current project.
                 mode: Speed vs accuracy tradeoff:
-                    - "fast": Quick keyword matching (~1s)
-                    - "balanced": BM25 + structure analysis (~3s, recommended)
-                    - "thorough": ML embeddings + deep analysis (~10s)
-                max_tokens: Token budget. Default 100k works for most models.
+                    - "fast": Quick keyword matching (~1s) - good for simple queries
+                    - "balanced": BM25 + structure analysis (~3s) - recommended default
+                    - "thorough": ML embeddings + deep analysis (~10s) - complex tasks
+                max_tokens: Token budget for returned context. Default 100k works for most models.
                 format: Output structure:
-                    - "markdown": Human-readable with headers
-                    - "xml": Claude-optimized with tags
+                    - "markdown": Human-readable with headers (default)
+                    - "xml": Claude-optimized with semantic tags
                     - "json": Structured for programmatic use
-                    - "html": Interactive report (includes full JSON metadata)
-                include_tests: Set True when debugging test failures.
-                include_git: Include git context (commits, contributors, etc.).
+                    - "html": Interactive report with full metadata
+                include_tests: Set True when debugging test failures or understanding test patterns.
+                include_git: Include git context (recent commits, contributors).
                 session: Link to a session for persistent pinned files.
-                include_patterns: Only include matching files (e.g., ["*.py"]).
+                include_patterns: Only include matching files (e.g., ["*.py", "*.ts"]).
                 exclude_patterns: Skip matching files (e.g., ["*.log", "*.min.js"]).
                 timeout: Timeout in seconds (<=0 disables; defaults to 120s).
 
             Returns:
-                {
-                    "context": "# File: src/auth.py\\n...",
-                    "token_count": 45000,
-                    "files": ["src/auth.py", "src/user.py"],
-                    "files_summarized": ["src/utils.py"],
-                    "metadata": {"mode": "balanced", "total_scanned": 150}
-                }
+                Dictionary with context, token_count, files list, and metadata.
+                Use the files list to identify what to explore further.
             """
             result = self.tenets.distill(
                 prompt=prompt,
@@ -265,7 +276,7 @@ class TenetsMCP:
             return result.to_dict()
 
         @mcp.tool()
-        async def rank_files(
+        async def tenets_rank_files(
             prompt: str,
             path: str = ".",
             mode: Literal["fast", "balanced", "thorough", "ml"] = "balanced",
@@ -276,34 +287,42 @@ class TenetsMCP:
             exclude_patterns: Optional[list[str]] = None,
             explain: bool = False,
         ) -> dict[str, Any]:
-            """Preview which files are most relevant without fetching content.
+            """Quickly identify which files are most relevant to a task (without fetching content).
 
-            Faster than distill (~500ms). Use this to:
-            - Quickly check if the right files would be found
-            - Understand file relevance before full context retrieval
-            - Debug ranking when distill results seem off
+            USE THIS TOOL when you want to:
+            - Get a quick overview of relevant files before deep diving
+            - Check if you're looking in the right area of the codebase
+            - Plan which files to read or modify
+            - Debug why certain files aren't being found by distill
+            - Scout the codebase structure before committing to a full context fetch
+
+            FASTER than tenets_distill (~500ms vs ~3s). Use this workflow:
+            1. Call tenets_rank_files to see what's relevant
+            2. Review the ranked file list and scores
+            3. Read the top files directly to understand their contents
+            4. Use tenets_distill if you need aggregated context from multiple files
+
+            Do NOT guess which files exist - use this tool to discover them.
 
             Args:
-                prompt: What you're looking for. Same as distill prompt.
+                prompt: What you're looking for. Same format as tenets_distill prompt.
                 path: Directory to search.
-                mode: Ranking algorithm (same as distill).
-                top_n: How many files to return. Default 20 is usually enough.
+                mode: Ranking algorithm:
+                    - "fast": Keyword matching
+                    - "balanced": BM25 + structure (recommended)
+                    - "thorough": Deep analysis
+                    - "ml": Machine learning embeddings
+                top_n: How many files to return. Default 20 is usually enough to start.
                 include_tests: Include test files in results.
                 exclude_tests: Force exclusion of tests (overrides include_tests).
-                include_patterns: Only include matching files.
-                exclude_patterns: Skip matching files.
+                include_patterns: Only include matching files (e.g., ["*.py"]).
+                exclude_patterns: Skip matching files (e.g., ["*.log"]).
                 explain: Add breakdown of why each file ranked where it did.
-                    Useful for debugging relevance issues.
+                    Set True when debugging relevance issues.
 
             Returns:
-                {
-                    "files": [
-                        {"path": "src/auth.py", "score": 0.85, "factors": {...}},
-                        {"path": "src/user.py", "score": 0.72}
-                    ],
-                    "total_scanned": 150,
-                    "mode": "balanced"
-                }
+                Dictionary with ranked files (path, score, optional factors),
+                total_scanned count, and mode used. Use this to decide what to read next.
             """
             result = self.tenets.rank_files(
                 prompt=prompt,
@@ -334,24 +353,34 @@ class TenetsMCP:
         # === Analysis Tools ===
 
         @mcp.tool()
-        async def examine(
+        async def tenets_examine(
             path: str = ".",
             include_complexity: bool = True,
             include_hotspots: bool = True,
         ) -> dict[str, Any]:
-            """Examine codebase structure and quality metrics.
+            """Analyze codebase structure, complexity, and quality metrics.
 
-            Analyzes the codebase to identify structure, complexity patterns,
-            and maintenance hotspots.
+            USE THIS TOOL when asked about:
+            - Codebase overview: "what's in this repo?", "project structure"
+            - Code quality: "complex files", "hotspots", "tech debt areas"
+            - Language breakdown: "what languages?", "file counts", "line counts"
+            - Architecture: "how is this organized?", "main components"
+
+            Returns real metrics from static analysis - do NOT guess about
+            codebase structure, file counts, or complexity scores.
+
+            After examining, explore specific areas that seem interesting or
+            problematic based on the metrics. Use tenets_distill or tenets_rank_files
+            to dive deeper into high-complexity or high-churn areas identified.
 
             Args:
                 path: Root path to examine.
-                include_complexity: Include complexity metrics.
-                include_hotspots: Identify maintenance hotspots.
+                include_complexity: Include cyclomatic complexity metrics.
+                include_hotspots: Identify maintenance hotspots (high churn + complexity).
 
             Returns:
-                Dictionary with examination results including file counts,
-                language distribution, complexity metrics, and hotspots.
+                Dictionary with file counts, language distribution, complexity
+                metrics, and hotspot identification. Use this to prioritize exploration.
             """
             result = self.tenets.examine(
                 path=path,
@@ -360,23 +389,34 @@ class TenetsMCP:
             return result if isinstance(result, dict) else {"result": str(result)}
 
         @mcp.tool()
-        async def chronicle(
+        async def tenets_chronicle(
             path: str = ".",
             since: str = "1 week",
             author: Optional[str] = None,
         ) -> dict[str, Any]:
-            """Analyze git history and development patterns.
+            """Analyze git history and recent development activity.
 
-            Returns commit activity, file churn, contributor patterns,
-            and temporal development insights.
+            USE THIS TOOL when asked about:
+            - Recent changes: "what changed recently?", "what's new?", "recent commits"
+            - Contributors: "who worked on this?", "who modified X?"
+            - File history: "when was this changed?", "commit history for file"
+            - Code review prep: "what should I review?", "recent activity"
+            - Change patterns: "what files change together?", "hot areas"
+
+            Queries actual git data - do NOT guess about commit history, authors,
+            or when files were modified.
+
+            Use the results to identify files worth exploring further. High-churn
+            files often indicate active development or problematic areas.
 
             Args:
                 path: Repository path to analyze.
-                since: Time period (e.g., "1 week", "3 days", "last month").
-                author: Optional author filter.
+                since: Time period (e.g., "1 week", "3 days", "1 month", "last month").
+                author: Optional author filter (name or email pattern).
 
             Returns:
-                Dictionary with git history analysis.
+                Dictionary with commit activity, file churn, contributor patterns,
+                and temporal insights. Use this to guide further exploration.
             """
             result = self.tenets.track_changes(
                 path=path,
@@ -386,23 +426,30 @@ class TenetsMCP:
             return result if isinstance(result, dict) else {"result": str(result)}
 
         @mcp.tool()
-        async def momentum(
+        async def tenets_momentum(
             path: str = ".",
             since: str = "last-month",
             team: bool = False,
         ) -> dict[str, Any]:
-            """Track development velocity and team momentum.
+            """Track development velocity and contribution patterns over time.
 
-            Provides sprint velocity metrics, contribution patterns,
-            and development trend analysis.
+            USE THIS TOOL when asked about:
+            - Velocity: "how fast is development?", "sprint progress", "throughput"
+            - Team activity: "who's contributing?", "team momentum", "bus factor"
+            - Trends: "development patterns", "activity over time", "slowdowns"
+            - Project health: "is this project active?", "maintenance status"
+
+            Returns real metrics derived from git history - useful for understanding
+            project health and identifying active vs stale areas of the codebase.
 
             Args:
                 path: Repository path to analyze.
-                since: Time period for analysis.
-                team: Whether to show team-wide statistics.
+                since: Time period for analysis (e.g., "last-month", "3 months", "1 year").
+                team: Show team-wide statistics vs individual breakdown.
 
             Returns:
-                Dictionary with momentum metrics.
+                Dictionary with velocity metrics, contribution patterns, and
+                development trends. Use to understand project dynamics.
             """
             result = self.tenets.momentum(
                 path=path,
@@ -411,209 +458,234 @@ class TenetsMCP:
             )
             return result if isinstance(result, dict) else {"result": str(result)}
 
-        # === Session Tools ===
+        # === Session Management (Consolidated) ===
 
         @mcp.tool()
-        async def session_create(
-            name: str,
+        async def tenets_session(
+            action: Literal["create", "list", "pin_file", "pin_folder"],
+            name: Optional[str] = None,
             description: Optional[str] = None,
-        ) -> dict[str, Any]:
-            """Create a new development session for stateful context building.
-
-            Sessions allow pinning files, tracking context history, and
-            maintaining state across multiple distill operations.
-
-            Args:
-                name: Unique session name.
-                description: Optional session description.
-
-            Returns:
-                Dictionary with session information.
-            """
-            from tenets.storage.session_db import SessionDB
-
-            db = SessionDB(self.tenets.config)
-            metadata = {"description": description} if description else {}
-            session = db.create_session(name, metadata=metadata)
-            return {
-                "id": session.id,
-                "name": session.name,
-                "created_at": session.created_at.isoformat(),
-            }
-
-        @mcp.tool()
-        async def session_list() -> dict[str, Any]:
-            """List all development sessions.
-
-            Returns:
-                Dictionary with list of sessions and their metadata.
-            """
-            from tenets.storage.session_db import SessionDB
-
-            db = SessionDB(self.tenets.config)
-            sessions = db.list_sessions()
-            return {
-                "sessions": [
-                    {
-                        "id": s.id,
-                        "name": s.name,
-                        "created_at": s.created_at.isoformat(),
-                        "metadata": s.metadata,
-                    }
-                    for s in sessions
-                ]
-            }
-
-        @mcp.tool()
-        async def session_pin_file(
-            session: str,
-            file_path: str,
-        ) -> dict[str, Any]:
-            """Pin a file to a session for guaranteed inclusion in future distills.
-
-            Pinned files are always included in context generation for the
-            session, regardless of relevance ranking.
-
-            Args:
-                session: Session name.
-                file_path: Path to file to pin.
-
-            Returns:
-                Dictionary indicating success.
-            """
-            success = self.tenets.add_file_to_session(file_path, session=session)
-            return {"success": success, "file": file_path, "session": session}
-
-        @mcp.tool()
-        async def session_pin_folder(
-            session: str,
-            folder_path: str,
+            file_path: Optional[str] = None,
+            folder_path: Optional[str] = None,
             patterns: Optional[list[str]] = None,
         ) -> dict[str, Any]:
-            """Pin all files in a folder to a session.
+            """Manage development sessions for persistent context across conversations.
+
+            USE THIS TOOL when:
+            - Starting a focused task: create a session to track relevant context
+            - Certain files are always relevant: pin them so they're always included
+            - Resuming previous work: list sessions to find your previous context
+            - Building up context incrementally: pin files as you discover they matter
+
+            Sessions persist across conversations. Pinned files are ALWAYS included
+            in tenets_distill results for that session, regardless of relevance ranking.
+            This is useful for config files, key modules, or files you're actively editing.
+
+            Actions:
+            - "create": Start a new session
+                Required: name
+                Optional: description
+            - "list": Show all existing sessions
+                No parameters required
+            - "pin_file": Pin a single file to a session
+                Required: name (session name), file_path
+            - "pin_folder": Pin all matching files in a folder
+                Required: name (session name), folder_path
+                Optional: patterns (e.g., ["*.py", "*.ts"])
 
             Args:
-                session: Session name.
-                folder_path: Path to folder.
-                patterns: Optional file patterns to include (e.g., ["*.py"]).
+                action: The operation to perform.
+                name: Session name (required for create, pin_file, pin_folder).
+                description: Optional description when creating a session.
+                file_path: Path to file to pin (for pin_file action).
+                folder_path: Path to folder to pin (for pin_folder action).
+                patterns: File patterns to include when pinning folder (e.g., ["*.py"]).
 
             Returns:
-                Dictionary with count of pinned files.
+                Dictionary with action-specific results (session info, file list, etc.).
             """
-            count = self.tenets.add_folder_to_session(
-                folder_path,
-                session=session,
-                include_patterns=patterns,
-            )
-            return {"pinned_count": count, "folder": folder_path, "session": session}
+            from tenets.storage.session_db import SessionDB
 
-        # === Tenet Tools ===
+            if action == "create":
+                if not name:
+                    return {"error": "name is required for create action"}
+                db = SessionDB(self.tenets.config)
+                metadata = {"description": description} if description else {}
+                session = db.create_session(name, metadata=metadata)
+                return {
+                    "action": "create",
+                    "id": session.id,
+                    "name": session.name,
+                    "created_at": session.created_at.isoformat(),
+                }
+
+            elif action == "list":
+                db = SessionDB(self.tenets.config)
+                sessions = db.list_sessions()
+                return {
+                    "action": "list",
+                    "sessions": [
+                        {
+                            "id": s.id,
+                            "name": s.name,
+                            "created_at": s.created_at.isoformat(),
+                            "metadata": s.metadata,
+                        }
+                        for s in sessions
+                    ],
+                }
+
+            elif action == "pin_file":
+                if not name or not file_path:
+                    return {"error": "name and file_path are required for pin_file action"}
+                success = self.tenets.add_file_to_session(file_path, session=name)
+                return {
+                    "action": "pin_file",
+                    "success": success,
+                    "file": file_path,
+                    "session": name,
+                }
+
+            elif action == "pin_folder":
+                if not name or not folder_path:
+                    return {"error": "name and folder_path are required for pin_folder action"}
+                count = self.tenets.add_folder_to_session(
+                    folder_path,
+                    session=name,
+                    include_patterns=patterns,
+                )
+                return {
+                    "action": "pin_folder",
+                    "pinned_count": count,
+                    "folder": folder_path,
+                    "session": name,
+                    "patterns": patterns,
+                }
+
+            else:
+                return {"error": f"Unknown action: {action}"}
+
+        # === Tenet Management (Consolidated) ===
 
         @mcp.tool()
-        async def tenet_add(
-            content: str,
+        async def tenets_tenet(
+            action: Literal["add", "list", "instill"],
+            content: Optional[str] = None,
             priority: Literal["low", "medium", "high", "critical"] = "medium",
             category: Optional[str] = None,
             session: Optional[str] = None,
-        ) -> dict[str, Any]:
-            """Add a guiding principle that will be injected into all context.
-
-            Tenets combat "context drift" in long conversations by repeatedly
-            injecting key principles. Use them for:
-            - Coding standards: "Always use type hints in Python"
-            - Security rules: "Never log sensitive data"
-            - Architecture: "All API calls go through the gateway"
-            - Style: "Use descriptive variable names, no abbreviations"
-
-            Args:
-                content: The principle. Keep it concise and actionable.
-                    Good: "Validate all user input before database queries"
-                    Bad: "Be careful with security"
-                priority: How often to inject:
-                    - "critical": Every context (security rules)
-                    - "high": Most contexts (architecture)
-                    - "medium": Regular contexts (style, default)
-                    - "low": Occasional reminder
-                category: Group related tenets (security, style, architecture).
-                session: Bind to specific session, or global if None.
-
-            Returns:
-                {"id": "abc123", "content": "...", "priority": "high", "category": "security"}
-            """
-            tenet = self.tenets.add_tenet(
-                content=content,
-                priority=priority,
-                category=category,
-                session=session,
-            )
-            return {
-                "id": tenet.id,
-                "content": tenet.content,
-                "priority": (
-                    tenet.priority.value
-                    if hasattr(tenet.priority, "value")
-                    else str(tenet.priority)
-                ),
-                "category": (
-                    tenet.category.value
-                    if tenet.category and hasattr(tenet.category, "value")
-                    else str(tenet.category) if tenet.category else None
-                ),
-            }
-
-        @mcp.tool()
-        async def tenet_list(
-            session: Optional[str] = None,
             pending_only: bool = False,
-        ) -> dict[str, Any]:
-            """List all tenets with optional filtering.
-
-            Args:
-                session: Optional session filter.
-                pending_only: Only show pending (not yet instilled) tenets.
-
-            Returns:
-                Dictionary with list of tenets.
-            """
-            tenets = self.tenets.list_tenets(
-                session=session,
-                pending_only=pending_only,
-            )
-            return {"tenets": tenets}
-
-        @mcp.tool()
-        async def tenet_instill(
-            session: Optional[str] = None,
             force: bool = False,
         ) -> dict[str, Any]:
-            """Instill pending tenets, marking them active for injection.
+            """Manage guiding principles that get injected into all generated context.
+
+            USE THIS TOOL when the user wants to:
+            - Set coding standards: "always use type hints", "no magic numbers"
+            - Enforce security rules: "validate all input", "never log secrets"
+            - Remember architectural decisions: "use repository pattern", "events over direct calls"
+            - Maintain consistency: "follow existing patterns", "match project style"
+
+            Tenets combat "context drift" in long conversations by repeatedly
+            injecting key principles into generated context. Higher priority = more
+            frequent injection. Use this to ensure important rules aren't forgotten
+            as the conversation progresses.
+
+            Actions:
+            - "add": Create a new tenet
+                Required: content (the principle text)
+                Optional: priority, category, session
+            - "list": Show existing tenets
+                Optional: session (filter by session), pending_only
+            - "instill": Activate pending tenets for injection
+                Optional: session, force (re-instill already active tenets)
 
             Args:
-                session: Optional session to instill tenets for.
-                force: Re-instill even already instilled tenets.
+                action: The operation to perform.
+                content: The principle text (for add). Keep it concise and actionable.
+                    Good: "Validate all user input before database queries"
+                    Bad: "Be careful with security"
+                priority: Injection frequency (for add):
+                    - "critical": Every context generation (security rules)
+                    - "high": Most contexts (architecture decisions)
+                    - "medium": Regular contexts (style guidelines, default)
+                    - "low": Occasional reminder
+                category: Group related tenets (e.g., "security", "style", "architecture").
+                session: Bind tenet to specific session, or global if None.
+                pending_only: Only show pending (not yet instilled) tenets (for list).
+                force: Re-instill already instilled tenets (for instill).
 
             Returns:
-                Dictionary with instillation results.
+                Dictionary with action-specific results (tenet info, list, etc.).
             """
-            result = self.tenets.instill_tenets(session=session, force=force)
-            return result if isinstance(result, dict) else {"result": str(result)}
+            if action == "add":
+                if not content:
+                    return {"error": "content is required for add action"}
+                tenet = self.tenets.add_tenet(
+                    content=content,
+                    priority=priority,
+                    category=category,
+                    session=session,
+                )
+                return {
+                    "action": "add",
+                    "id": tenet.id,
+                    "content": tenet.content,
+                    "priority": (
+                        tenet.priority.value
+                        if hasattr(tenet.priority, "value")
+                        else str(tenet.priority)
+                    ),
+                    "category": (
+                        tenet.category.value
+                        if tenet.category and hasattr(tenet.category, "value")
+                        else str(tenet.category) if tenet.category else None
+                    ),
+                }
+
+            elif action == "list":
+                tenets_list = self.tenets.list_tenets(
+                    session=session,
+                    pending_only=pending_only,
+                )
+                return {"action": "list", "tenets": tenets_list}
+
+            elif action == "instill":
+                result = self.tenets.instill_tenets(session=session, force=force)
+                if isinstance(result, dict):
+                    result["action"] = "instill"
+                    return result
+                return {"action": "instill", "result": str(result)}
+
+            else:
+                return {"error": f"Unknown action: {action}"}
+
+        # === System Instruction ===
 
         @mcp.tool()
-        async def set_system_instruction(
+        async def tenets_system_instruction(
             instruction: str,
             position: Literal["top", "after_header", "before_content"] = "top",
         ) -> dict[str, Any]:
-            """Set a system instruction for AI interactions.
+            """Set a system instruction to be injected into all generated context.
 
-            System instructions are injected at the specified position in
-            all generated context.
+            USE THIS TOOL when the user wants to:
+            - Add persistent instructions: "always explain your reasoning"
+            - Set behavior guidelines: "be concise", "focus on security"
+            - Configure AI behavior for this project: "use TypeScript conventions"
+            - Add project-specific context: "this is a Django project using DRF"
+
+            The instruction appears at the specified position in every tenets_distill
+            output, ensuring consistent behavior across all context generation.
 
             Args:
-                instruction: The system instruction text.
-                position: Where to inject the instruction.
+                instruction: The system instruction text. Be clear and specific.
+                position: Where to inject in generated context:
+                    - "top": At the very beginning (default, highest visibility)
+                    - "after_header": After the context header/summary
+                    - "before_content": Just before the file contents
 
             Returns:
-                Dictionary confirming the instruction was set.
+                Dictionary confirming the instruction was set with length and position.
             """
             self.tenets.set_system_instruction(
                 instruction=instruction,
@@ -691,8 +763,14 @@ class TenetsMCP:
             return json.dumps(config_dict, indent=2, default=str)
 
     def _register_prompts(self) -> None:
-        """Register all MCP prompt templates."""
+        """Register all MCP prompt templates.
+
+        Prompts provide pre-built workflows that guide LLMs through common
+        development tasks using the tenets tools effectively.
+        """
         mcp = self._mcp
+
+        # === Context Building Prompts ===
 
         @mcp.prompt()
         def build_context_for_task(
@@ -711,30 +789,324 @@ class TenetsMCP:
             prompt_parts = [
                 f"I need to work on: {task}",
                 "",
-                "Please use the tenets `distill` tool to build relevant context.",
+                "Please use the tenets_distill tool to build relevant context.",
             ]
             if focus_areas:
                 prompt_parts.append(f"Focus on these areas: {focus_areas}")
             return "\n".join(prompt_parts)
 
+        # === Refactoring Workflow Prompt ===
+
         @mcp.prompt()
-        def code_review_context(
-            scope: Literal["recent", "file", "module"] = "recent",
-            focus: Optional[str] = None,
+        def refactoring_guide(
+            target: str,
+            goal: Optional[str] = None,
+            safety_level: Literal["conservative", "moderate", "aggressive"] = "moderate",
         ) -> str:
-            """Prepare context for code review.
+            """Guide for safe code refactoring with proper context gathering.
+
+            Provides a step-by-step workflow for refactoring code safely,
+            ensuring all dependencies and usages are understood before changes.
 
             Args:
-                scope: Review scope - recent changes, specific file, or module.
-                focus: Optional focus area (security, performance, etc.).
+                target: What to refactor (function, class, module, or file path).
+                goal: Optional refactoring goal (e.g., "improve readability").
+                safety_level: How aggressive to be with changes.
             """
-            parts = ["Prepare context for a code review."]
-            if scope == "recent":
-                parts.append("Focus on recent changes (use chronicle tool first).")
-            parts.append("Use distill to get relevant code context.")
-            if focus:
-                parts.append(f"Pay special attention to: {focus}")
+            parts = [
+                f"# Refactoring Guide: {target}",
+                "",
+                "## Step 1: Understand Current State",
+                f"Use `tenets_distill` with prompt: 'How does {target} work and what depends on it'",
+                "",
+                "## Step 2: Map Dependencies",
+                f"Use `tenets_rank_files` with prompt: 'files that import or call {target}'",
+                "Then READ the top results to understand usage patterns.",
+                "",
+                "## Step 3: Identify Test Coverage",
+                f"Use `tenets_distill` with include_tests=True, prompt: 'tests for {target}'",
+                "",
+                "## Step 4: Plan Changes",
+            ]
+
+            if goal:
+                parts.append(f"Goal: {goal}")
+
+            safety_guidance = {
+                "conservative": "Make minimal changes. Preserve all existing behavior.",
+                "moderate": "Balance improvements with safety. Add deprecation warnings.",
+                "aggressive": "Prioritize clean design. May require broader updates.",
+            }
+            parts.append(f"Safety level: {safety_level} - {safety_guidance[safety_level]}")
+
+            parts.extend([
+                "",
+                "## Step 5: Execute Refactoring",
+                "- Make changes incrementally",
+                "- Run tests after each change",
+                "- Update callers if needed",
+                "",
+                "## Step 6: Verify",
+                "- Run full test suite",
+                "- Check for type errors",
+                "- Review changed files",
+            ])
+
             return "\n".join(parts)
+
+        # === Bug Investigation Prompt ===
+
+        @mcp.prompt()
+        def bug_investigation(
+            symptom: str,
+            location_hint: Optional[str] = None,
+            include_history: bool = True,
+        ) -> str:
+            """Systematic workflow for investigating and fixing bugs.
+
+            Guides through gathering context, understanding the bug,
+            finding root cause, and implementing a fix.
+
+            Args:
+                symptom: Description of the bug or error message.
+                location_hint: Optional hint about where the bug might be.
+                include_history: Whether to check git history for related changes.
+            """
+            parts = [
+                f"# Bug Investigation: {symptom}",
+                "",
+                "## Step 1: Gather Context",
+            ]
+
+            if location_hint:
+                parts.append(
+                    f"Use `tenets_distill` with prompt: '{symptom}' focused on {location_hint}"
+                )
+            else:
+                parts.append(
+                    f"Use `tenets_distill` with prompt: 'code related to: {symptom}'"
+                )
+
+            parts.extend([
+                "",
+                "## Step 2: Find Related Code",
+                f"Use `tenets_rank_files` with prompt: '{symptom}'",
+                "READ the top 3-5 files to understand the code flow.",
+                "",
+                "## Step 3: Identify Error Handling",
+                "Look for:",
+                "- try/except blocks in the area",
+                "- Error messages that match the symptom",
+                "- Logging statements",
+                "",
+            ])
+
+            if include_history:
+                parts.extend([
+                    "## Step 4: Check Recent Changes",
+                    "Use `tenets_chronicle` with since='2 weeks' to see recent changes.",
+                    "Recent changes to affected files may have introduced the bug.",
+                    "",
+                ])
+
+            parts.extend([
+                "## Step 5: Form Hypothesis",
+                "Based on context gathered:",
+                "1. What is the expected behavior?",
+                "2. What is the actual behavior?",
+                "3. What code path leads to the bug?",
+                "",
+                "## Step 6: Fix and Verify",
+                "- Implement fix",
+                "- Add test case that reproduces the bug",
+                "- Verify fix resolves the issue",
+                "- Check for similar patterns elsewhere",
+            ])
+
+            return "\n".join(parts)
+
+        # === Code Review Prompt ===
+
+        @mcp.prompt()
+        def code_review(
+            scope: Literal["recent", "file", "pr", "module"] = "recent",
+            focus: Optional[str] = None,
+            since: str = "1 week",
+        ) -> str:
+            """Comprehensive code review workflow with context.
+
+            Prepares context and checklist for thorough code review,
+            including checking for common issues and patterns.
+
+            Args:
+                scope: Review scope - recent changes, specific file, PR, or module.
+                focus: Optional focus area (security, performance, style, etc.).
+                since: Time period for recent changes (default: 1 week).
+            """
+            parts = [
+                f"# Code Review ({scope} scope)",
+                "",
+            ]
+
+            if scope == "recent":
+                parts.extend([
+                    "## Step 1: Identify Changes",
+                    f"Use `tenets_chronicle` with since='{since}' to see recent commits.",
+                    "",
+                    "## Step 2: Gather Context",
+                    "For each changed file, use `tenets_distill` to understand:",
+                    "- What the code does",
+                    "- Why changes were made",
+                    "- Impact on other parts of the codebase",
+                ])
+            elif scope == "file":
+                parts.extend([
+                    "## Step 1: Understand the File",
+                    "Use `tenets_distill` with the file path to get context.",
+                    "",
+                    "## Step 2: Check Dependencies",
+                    "Use `tenets_rank_files` to find related files.",
+                ])
+            elif scope == "pr":
+                parts.extend([
+                    "## Step 1: Review PR Changes",
+                    "List all files changed in the PR.",
+                    "",
+                    "## Step 2: Understand Context",
+                    "For each changed file, use `tenets_distill` to understand the change.",
+                ])
+            else:  # module
+                parts.extend([
+                    "## Step 1: Examine Module Structure",
+                    "Use `tenets_examine` to see module structure and complexity.",
+                    "",
+                    "## Step 2: Understand Module",
+                    "Use `tenets_distill` with the module path.",
+                ])
+
+            parts.extend([
+                "",
+                "## Review Checklist",
+                "",
+                "### Correctness",
+                "- [ ] Logic is correct",
+                "- [ ] Edge cases handled",
+                "- [ ] Error handling appropriate",
+                "",
+                "### Security",
+                "- [ ] Input validated",
+                "- [ ] No hardcoded secrets",
+                "- [ ] SQL injection safe",
+                "- [ ] XSS prevented",
+                "",
+                "### Performance",
+                "- [ ] No unnecessary loops",
+                "- [ ] Database queries optimized",
+                "- [ ] Memory usage reasonable",
+                "",
+                "### Maintainability",
+                "- [ ] Code is readable",
+                "- [ ] Functions single-purpose",
+                "- [ ] Naming is clear",
+                "- [ ] Tests included",
+            ])
+
+            if focus:
+                parts.extend([
+                    "",
+                    f"## Special Focus: {focus}",
+                    f"Pay extra attention to {focus}-related issues.",
+                ])
+
+            return "\n".join(parts)
+
+        # === Onboarding Prompt ===
+
+        @mcp.prompt()
+        def onboarding(
+            role: Literal["developer", "reviewer", "maintainer"] = "developer",
+            focus_area: Optional[str] = None,
+        ) -> str:
+            """New developer onboarding workflow for understanding a codebase.
+
+            Provides a structured approach to learning a new codebase,
+            from high-level overview to specific implementation details.
+
+            Args:
+                role: The person's role - affects what to focus on.
+                focus_area: Optional specific area to focus on first.
+            """
+            parts = [
+                "# Codebase Onboarding",
+                "",
+                "## Step 1: High-Level Overview",
+                "Use `tenets_examine` to see:",
+                "- Languages used",
+                "- File counts and structure",
+                "- Complexity hotspots",
+                "",
+                "## Step 2: Architecture",
+                "Use `tenets_distill` with prompt: 'main architecture and entry points'",
+                "Identify:",
+                "- Main modules/packages",
+                "- Entry points",
+                "- Core abstractions",
+                "",
+                "## Step 3: Recent Activity",
+                "Use `tenets_chronicle` with since='1 month' to see:",
+                "- Active areas of development",
+                "- Key contributors",
+                "- Recent focus areas",
+                "",
+            ]
+
+            if focus_area:
+                parts.extend([
+                    f"## Step 4: Focus Area - {focus_area}",
+                    f"Use `tenets_distill` with prompt: 'how {focus_area} works'",
+                    "Then READ the returned files to understand the implementation.",
+                    "",
+                ])
+
+            role_guidance = {
+                "developer": [
+                    "## Developer Focus",
+                    "- Understand coding conventions",
+                    "- Find example implementations",
+                    "- Identify testing patterns",
+                    "- Learn the build/deploy process",
+                ],
+                "reviewer": [
+                    "## Reviewer Focus",
+                    "- Understand quality standards",
+                    "- Identify high-risk areas",
+                    "- Learn the review checklist",
+                    "- Know the security requirements",
+                ],
+                "maintainer": [
+                    "## Maintainer Focus",
+                    "- Identify technical debt",
+                    "- Understand deployment pipeline",
+                    "- Know the monitoring/alerting",
+                    "- Map external dependencies",
+                ],
+            }
+
+            parts.extend(role_guidance.get(role, []))
+
+            parts.extend([
+                "",
+                "## Key Questions to Answer",
+                "1. How do I run the project locally?",
+                "2. How do I run tests?",
+                "3. What's the deployment process?",
+                "4. Where do I find documentation?",
+                "5. Who do I ask for help?",
+            ])
+
+            return "\n".join(parts)
+
+        # === Understand Codebase (Updated) ===
 
         @mcp.prompt()
         def understand_codebase(
@@ -750,15 +1122,13 @@ class TenetsMCP:
             parts = [f"Help me understand this codebase ({depth} level)."]
             if area:
                 parts.append(f"Specifically, I want to understand: {area}")
-            parts.extend(
-                [
-                    "",
-                    "Steps:",
-                    "1. Use `examine` to see codebase structure",
-                    "2. Use `distill` with an understanding prompt",
-                    "3. Identify key architectural patterns",
-                ]
-            )
+            parts.extend([
+                "",
+                "Steps:",
+                "1. Use `tenets_examine` to see codebase structure",
+                "2. Use `tenets_distill` with an understanding prompt",
+                "3. Identify key architectural patterns",
+            ])
             return "\n".join(parts)
 
     def run(
