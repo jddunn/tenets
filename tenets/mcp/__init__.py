@@ -47,10 +47,15 @@ Example IDE Configuration (Claude Desktop):
     ```
 """
 
+from tenets import __version__
 from tenets.mcp.server import TenetsMCP, create_server, main
+
+# MCP server version (same as package version)
+MCP_VERSION = __version__
 
 __all__ = [
     "TenetsMCP",
     "create_server",
     "main",
+    "MCP_VERSION",
 ]
