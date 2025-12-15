@@ -761,9 +761,9 @@ class TestMCPPrompts:
         assert isinstance(result, str)
         assert "add logging" in result
 
-    def test_code_review_context_prompt(self, mcp_server):
-        """Test the code_review_context prompt."""
-        prompt_func = mcp_server._mcp.prompts["code_review_context"]
+    def test_code_review_prompt(self, mcp_server):
+        """Test the code_review prompt."""
+        prompt_func = mcp_server._mcp.prompts["code_review"]
         result = prompt_func(
             scope="recent",
             focus="security",
@@ -772,9 +772,9 @@ class TestMCPPrompts:
         assert isinstance(result, str)
         assert "security" in result
 
-    def test_code_review_context_scopes(self, mcp_server):
-        """Test code_review_context with different scopes."""
-        prompt_func = mcp_server._mcp.prompts["code_review_context"]
+    def test_code_review_scopes(self, mcp_server):
+        """Test code_review with different scopes."""
+        prompt_func = mcp_server._mcp.prompts["code_review"]
 
         for scope in ["recent", "file", "module"]:
             result = prompt_func(scope=scope)
