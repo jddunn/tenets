@@ -699,8 +699,14 @@ class TenetsMCP:
             }
 
     def _register_resources(self) -> None:
-        """Register all MCP resources."""
+        """Register all MCP resources.
+
+        Resources provide read-only access to tenets data without requiring
+        tool calls. LLMs can access these directly for quick lookups.
+        """
         mcp = self._mcp
+
+        # === Session Resources ===
 
         @mcp.resource("tenets://sessions/list")
         async def get_sessions_list() -> str:
@@ -743,6 +749,8 @@ class TenetsMCP:
                 indent=2,
             )
 
+        # === Tenet Resources ===
+
         @mcp.resource("tenets://tenets/list")
         async def get_tenets_list() -> str:
             """List of all guiding principles (tenets)."""
@@ -750,6 +758,8 @@ class TenetsMCP:
 
             tenets = self.tenets.list_tenets()
             return json.dumps(tenets, indent=2, default=str)
+
+        # === Configuration Resources ===
 
         @mcp.resource("tenets://config/current")
         async def get_current_config() -> str:
@@ -761,6 +771,166 @@ class TenetsMCP:
             if "llm" in config_dict and "api_keys" in config_dict["llm"]:
                 config_dict["llm"]["api_keys"] = {k: "***" for k in config_dict["llm"]["api_keys"]}
             return json.dumps(config_dict, indent=2, default=str)
+
+        # === Ranking Factors Resource ===
+
+        @mcp.resource("tenets://ranking/factors")
+        async def get_ranking_factors() -> str:
+            """Explains how files are ranked for relevance.
+
+            Use this to understand why certain files appear in results
+            and how to improve your queries for better ranking.
+            """
+            import json
+
+            factors = {
+                "description": "How tenets ranks files for relevance to your query",
+                "modes": {
+                    "fast": {
+                        "description": "Keyword-based matching (~1s)",
+                        "factors": [
+                            "Exact keyword matches in file content",
+                            "Keyword matches in file path/name",
+                            "Word frequency (TF-IDF)",
+                        ],
+                        "best_for": "Simple queries, known keywords",
+                    },
+                    "balanced": {
+                        "description": "BM25 + structural analysis (~3s)",
+                        "factors": [
+                            "BM25 text relevance score",
+                            "Code structure (classes, functions)",
+                            "Import/dependency relationships",
+                            "File recency (recent changes boost)",
+                            "Path relevance (matches query terms)",
+                        ],
+                        "best_for": "Most queries (recommended default)",
+                    },
+                    "thorough": {
+                        "description": "Deep semantic analysis (~10s)",
+                        "factors": [
+                            "All balanced mode factors",
+                            "AST-based code understanding",
+                            "Cross-file relationship mapping",
+                            "Complexity-weighted scoring",
+                        ],
+                        "best_for": "Complex queries, architectural questions",
+                    },
+                    "ml": {
+                        "description": "ML embedding similarity",
+                        "factors": [
+                            "Semantic embedding similarity",
+                            "Contextual understanding",
+                            "Concept matching (not just keywords)",
+                        ],
+                        "best_for": "Conceptual queries, 'how does X work'",
+                    },
+                },
+                "tips": [
+                    "Use specific terms over generic ones",
+                    "Include function/class names if known",
+                    "Describe the behavior, not just keywords",
+                    "Use 'balanced' mode for most queries",
+                    "Use 'ml' mode for conceptual questions",
+                ],
+            }
+            return json.dumps(factors, indent=2)
+
+        # === Active Session Resource ===
+
+        @mcp.resource("tenets://sessions/active")
+        async def get_active_session() -> str:
+            """Returns the currently active session, if any.
+
+            Active session is determined by most recent activity
+            or explicit activation.
+            """
+            import json
+
+            from tenets.storage.session_db import SessionDB
+
+            db = SessionDB(self.tenets.config)
+            sessions = db.list_sessions()
+
+            if not sessions:
+                return json.dumps({
+                    "active": False,
+                    "message": "No sessions exist. Create one with tenets_session(action='create').",
+                })
+
+            # Most recent session is considered active
+            most_recent = max(sessions, key=lambda s: s.created_at)
+            return json.dumps({
+                "active": True,
+                "session": {
+                    "name": most_recent.name,
+                    "created_at": most_recent.created_at.isoformat(),
+                    "metadata": most_recent.metadata,
+                },
+            }, indent=2)
+
+        # === Hotspots Resource ===
+
+        @mcp.resource("tenets://analysis/hotspots")
+        async def get_hotspots() -> str:
+            """Pre-computed complexity hotspots in the codebase.
+
+            Hotspots are files with high complexity and/or high churn,
+            indicating areas that may need attention or refactoring.
+            """
+            import json
+
+            try:
+                # Get examination results which include hotspots
+                result = self.tenets.examine(path=".", deep=True)
+                if isinstance(result, dict):
+                    hotspots = result.get("hotspots", [])
+                    complexity = result.get("complexity", {})
+
+                    return json.dumps({
+                        "description": "Files with high complexity or frequent changes",
+                        "hotspots": hotspots[:20] if hotspots else [],
+                        "high_complexity_files": [
+                            {"path": k, "complexity": v}
+                            for k, v in sorted(
+                                complexity.items(),
+                                key=lambda x: x[1] if isinstance(x[1], (int, float)) else 0,
+                                reverse=True,
+                            )[:10]
+                        ] if complexity else [],
+                        "recommendations": [
+                            "Consider refactoring files with complexity > 20",
+                            "High-churn + high-complexity = maintenance risk",
+                            "Add tests for hotspot files first",
+                        ],
+                    }, indent=2)
+                return json.dumps({"error": "Could not analyze hotspots"})
+            except Exception as e:
+                return json.dumps({"error": str(e)})
+
+        # === Codebase Summary Resource ===
+
+        @mcp.resource("tenets://analysis/summary")
+        async def get_codebase_summary() -> str:
+            """Quick summary of the codebase structure and metrics.
+
+            Provides an overview without requiring a full examine call.
+            """
+            import json
+
+            try:
+                result = self.tenets.examine(path=".", deep=False)
+                if isinstance(result, dict):
+                    return json.dumps({
+                        "description": "Codebase overview",
+                        "languages": result.get("languages", {}),
+                        "file_count": result.get("file_count", 0),
+                        "total_lines": result.get("total_lines", 0),
+                        "structure": result.get("structure", {}),
+                    }, indent=2)
+                return json.dumps({"error": "Could not analyze codebase"})
+            except Exception as e:
+                return json.dumps({"error": str(e)})
 
     def _register_prompts(self) -> None:
         """Register all MCP prompt templates.
