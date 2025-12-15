@@ -400,7 +400,54 @@ class RankingExplainer:
 
     Provides detailed explanations of why files ranked the way they did,
     useful for debugging and understanding ranking behavior.
+
+    Supports multiple output formats:
+    - text: Human-readable text for CLI output
+    - json: Structured JSON for programmatic use
+    - markdown: Formatted markdown for documentation
     """
+
+    # Human-readable factor names
+    FACTOR_NAMES = {
+        "keyword_match": "Keyword Match",
+        "tfidf_similarity": "TF-IDF Similarity",
+        "bm25_score": "BM25 Score",
+        "path_relevance": "Path Relevance",
+        "import_centrality": "Import Centrality",
+        "dependency_depth": "Dependency Depth",
+        "git_recency": "Git Recency",
+        "git_frequency": "Git Change Frequency",
+        "git_author_relevance": "Author Relevance",
+        "complexity_relevance": "Complexity Score",
+        "maintainability_score": "Maintainability",
+        "semantic_similarity": "Semantic Similarity",
+        "type_relevance": "File Type Relevance",
+        "code_patterns": "Code Pattern Match",
+        "ast_relevance": "AST Structure Match",
+        "test_coverage": "Test Coverage",
+        "documentation_score": "Documentation Quality",
+    }
+
+    # Factor descriptions for help text
+    FACTOR_DESCRIPTIONS = {
+        "keyword_match": "Direct keyword matching between query and file content",
+        "tfidf_similarity": "Term frequency-inverse document frequency similarity",
+        "bm25_score": "BM25 probabilistic relevance score",
+        "path_relevance": "How well the file path matches query terms",
+        "import_centrality": "How central the file is in the import graph",
+        "dependency_depth": "Position in the dependency hierarchy",
+        "git_recency": "How recently the file was modified",
+        "git_frequency": "How frequently the file changes over time",
+        "git_author_relevance": "Relevance based on commit authors",
+        "complexity_relevance": "Cyclomatic complexity relevance to query",
+        "maintainability_score": "Code maintainability index",
+        "semantic_similarity": "ML-based semantic similarity score",
+        "type_relevance": "Relevance based on file extension/type",
+        "code_patterns": "Pattern matching for code structures",
+        "ast_relevance": "Abstract syntax tree structural relevance",
+        "test_coverage": "Test file relevance",
+        "documentation_score": "Documentation quality score",
+    }
 
     def __init__(self):
         """Initialize the explainer."""
@@ -523,3 +570,244 @@ class RankingExplainer:
                 )
 
         return "\n".join(lines)
+
+    def explain_file_ranking(
+        self,
+        ranked_file: RankedFile,
+        weights: Dict[str, float],
+        format: str = "text",
+    ) -> Dict[str, Any]:
+        """Generate detailed explanation for a single file's ranking.
+
+        Provides comprehensive breakdown of why a file received its score,
+        useful for debugging relevance issues.
+
+        Args:
+            ranked_file: The ranked file to explain
+            weights: Factor weights used for ranking
+            format: Output format ('text', 'json', 'markdown')
+
+        Returns:
+            Dictionary with explanation data and formatted output
+        """
+        factors = ranked_file.factors
+        all_factors = factors.to_dict()
+
+        # Calculate contribution for each factor
+        contributions = []
+        total_weight = sum(weights.values())
+
+        for factor_name, value in all_factors.items():
+            if factor_name in ("custom_scores", "metadata"):
+                continue
+
+            weight = weights.get(factor_name, 0)
+            contribution = value * weight
+            normalized = contribution / total_weight if total_weight > 0 else 0
+
+            if value > 0 or weight > 0:
+                contributions.append({
+                    "factor": factor_name,
+                    "display_name": self.FACTOR_NAMES.get(factor_name, factor_name),
+                    "description": self.FACTOR_DESCRIPTIONS.get(factor_name, ""),
+                    "value": round(value, 4),
+                    "weight": round(weight, 4),
+                    "contribution": round(contribution, 4),
+                    "normalized_contribution": round(normalized, 4),
+                    "percentage": round(normalized * 100, 2) if total_weight > 0 else 0,
+                })
+
+        # Sort by contribution
+        contributions.sort(key=lambda x: x["contribution"], reverse=True)
+
+        # Build result
+        result = {
+            "file": ranked_file.path,
+            "score": round(ranked_file.score, 4),
+            "rank": ranked_file.rank,
+            "confidence": round(ranked_file.confidence, 4),
+            "factors": contributions,
+            "top_contributors": [c for c in contributions[:5] if c["contribution"] > 0],
+            "zero_factors": [c["factor"] for c in contributions if c["value"] == 0],
+            "summary": ranked_file.generate_explanation(weights, verbose=True),
+        }
+
+        # Format output based on requested format
+        if format == "markdown":
+            result["formatted"] = self._format_markdown(result)
+        elif format == "text":
+            result["formatted"] = self._format_text(result)
+        else:
+            result["formatted"] = None  # JSON format doesn't need extra formatting
+
+        return result
+
+    def _format_text(self, result: Dict[str, Any]) -> str:
+        """Format explanation as plain text."""
+        lines = [
+            f"File: {result['file']}",
+            f"Score: {result['score']:.4f}",
+            f"Rank: #{result['rank']}" if result['rank'] else "Rank: N/A",
+            "",
+            "Factor Breakdown:",
+            "-" * 60,
+        ]
+
+        for f in result["factors"]:
+            if f["contribution"] > 0:
+                lines.append(
+                    f"  {f['display_name']:25s} "
+                    f"{f['value']:.3f} × {f['weight']:.2f} = "
+                    f"{f['contribution']:.4f} ({f['percentage']:.1f}%)"
+                )
+
+        if result["zero_factors"]:
+            lines.extend([
+                "",
+                "Zero-value factors:",
+                f"  {', '.join(result['zero_factors'][:5])}",
+            ])
+
+        return "\n".join(lines)
+
+    def _format_markdown(self, result: Dict[str, Any]) -> str:
+        """Format explanation as markdown."""
+        lines = [
+            f"## File: `{result['file']}`",
+            "",
+            f"**Score:** {result['score']:.4f}",
+            f"**Rank:** #{result['rank']}" if result['rank'] else "**Rank:** N/A",
+            "",
+            "### Factor Breakdown",
+            "",
+            "| Factor | Value | Weight | Contribution | % |",
+            "|--------|-------|--------|--------------|---|",
+        ]
+
+        for f in result["factors"]:
+            if f["contribution"] > 0:
+                lines.append(
+                    f"| {f['display_name']} | {f['value']:.3f} | "
+                    f"{f['weight']:.2f} | {f['contribution']:.4f} | {f['percentage']:.1f}% |"
+                )
+
+        return "\n".join(lines)
+
+    def debug_ranking(
+        self,
+        ranked_files: List[RankedFile],
+        weights: Dict[str, float],
+        query: str = "",
+    ) -> Dict[str, Any]:
+        """Generate comprehensive debug information for ranking results.
+
+        Provides detailed analysis of the ranking process, useful for
+        understanding and improving ranking quality.
+
+        Args:
+            ranked_files: List of ranked files
+            weights: Factor weights used
+            query: Original query string
+
+        Returns:
+            Dictionary with comprehensive debug information
+        """
+        if not ranked_files:
+            return {
+                "error": "No files to analyze",
+                "query": query,
+            }
+
+        # Calculate statistics
+        scores = [rf.score for rf in ranked_files]
+        avg_score = sum(scores) / len(scores)
+        score_variance = sum((s - avg_score) ** 2 for s in scores) / len(scores)
+
+        # Analyze factor usage
+        factor_usage = {}
+        for rf in ranked_files:
+            factors_dict = rf.factors.to_dict()
+            for factor, value in factors_dict.items():
+                if factor in ("custom_scores", "metadata"):
+                    continue
+                if factor not in factor_usage:
+                    factor_usage[factor] = {
+                        "count_nonzero": 0,
+                        "sum": 0,
+                        "max": 0,
+                        "values": [],
+                    }
+                if value > 0:
+                    factor_usage[factor]["count_nonzero"] += 1
+                    factor_usage[factor]["sum"] += value
+                    factor_usage[factor]["max"] = max(factor_usage[factor]["max"], value)
+                    factor_usage[factor]["values"].append(value)
+
+        # Calculate factor averages
+        for factor, stats in factor_usage.items():
+            if stats["values"]:
+                stats["avg"] = sum(stats["values"]) / len(stats["values"])
+            else:
+                stats["avg"] = 0
+            del stats["values"]  # Remove raw values from output
+
+        # Identify problematic patterns
+        issues = []
+
+        # Check for factors with zero contribution
+        for factor, stats in factor_usage.items():
+            weight = weights.get(factor, 0)
+            if weight > 0 and stats["count_nonzero"] == 0:
+                issues.append({
+                    "type": "unused_factor",
+                    "factor": factor,
+                    "message": f"Factor '{factor}' has weight {weight} but all values are 0",
+                })
+
+        # Check for score clustering
+        if score_variance < 0.01:
+            issues.append({
+                "type": "low_variance",
+                "message": "Score variance is very low - files may not be well differentiated",
+                "variance": score_variance,
+            })
+
+        # Check for threshold issues
+        threshold_count = sum(1 for s in scores if s > 0.5)
+        if threshold_count == 0:
+            issues.append({
+                "type": "low_scores",
+                "message": "No files scored above 0.5 - query may be too specific",
+            })
+        elif threshold_count == len(scores):
+            issues.append({
+                "type": "high_scores",
+                "message": "All files scored above 0.5 - query may be too broad",
+            })
+
+        return {
+            "query": query,
+            "total_files": len(ranked_files),
+            "statistics": {
+                "min_score": round(min(scores), 4),
+                "max_score": round(max(scores), 4),
+                "avg_score": round(avg_score, 4),
+                "variance": round(score_variance, 4),
+                "median_score": round(sorted(scores)[len(scores) // 2], 4),
+            },
+            "weights": {k: round(v, 4) for k, v in weights.items() if v > 0},
+            "factor_usage": {
+                k: {kk: round(vv, 4) if isinstance(vv, float) else vv for kk, vv in v.items()}
+                for k, v in factor_usage.items()
+            },
+            "issues": issues,
+            "top_files": [
+                {
+                    "path": rf.path,
+                    "score": round(rf.score, 4),
+                    "top_factor": rf.factors.get_top_factors(weights, n=1)[0][0]
+                    if rf.factors.get_top_factors(weights, n=1) else None,
+                }
+                for rf in ranked_files[:10]
+            ],
+        }
