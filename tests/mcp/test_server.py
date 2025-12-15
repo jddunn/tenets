@@ -235,19 +235,23 @@ class TestTenetsMCPInitialization:
     def test_server_has_tools_registered(self, mcp_server):
         """Test that tools are registered on the server."""
         tools = mcp_server._mcp.tools
-        assert "distill" in tools
-        assert "rank_files" in tools
-        assert "examine" in tools
-        assert "chronicle" in tools
-        assert "momentum" in tools
-        assert "session_create" in tools
-        assert "session_list" in tools
-        assert "session_pin_file" in tools
-        assert "session_pin_folder" in tools
-        assert "tenet_add" in tools
-        assert "tenet_list" in tools
-        assert "tenet_instill" in tools
-        assert "set_system_instruction" in tools
+        # Context tools
+        assert "tenets_distill" in tools
+        assert "tenets_rank_files" in tools
+        # Analysis tools
+        assert "tenets_examine" in tools
+        assert "tenets_chronicle" in tools
+        assert "tenets_momentum" in tools
+        # Consolidated session tool
+        assert "tenets_session" in tools
+        # Consolidated tenet tool
+        assert "tenets_tenet" in tools
+        # System instruction tool
+        assert "tenets_system_instruction" in tools
+        # Verify old tool names are NOT present (consolidation)
+        assert "session_create" not in tools
+        assert "session_list" not in tools
+        assert "tenet_add" not in tools
 
     def test_server_has_resources_registered(self, mcp_server):
         """Test that resources are registered on the server."""
@@ -255,6 +259,11 @@ class TestTenetsMCPInitialization:
         assert "tenets://sessions/list" in resources
         assert "tenets://tenets/list" in resources
         assert "tenets://config/current" in resources
+        # New resources
+        assert "tenets://ranking/factors" in resources
+        assert "tenets://sessions/active" in resources
+        assert "tenets://analysis/hotspots" in resources
+        assert "tenets://analysis/summary" in resources
         # Dynamic resource patterns
         assert any("sessions" in uri and "state" in uri for uri in resources)
 
@@ -262,8 +271,12 @@ class TestTenetsMCPInitialization:
         """Test that prompts are registered on the server."""
         prompts = mcp_server._mcp.prompts
         assert "build_context_for_task" in prompts
-        assert "code_review_context" in prompts
         assert "understand_codebase" in prompts
+        # New workflow prompts
+        assert "refactoring_guide" in prompts
+        assert "bug_investigation" in prompts
+        assert "code_review" in prompts
+        assert "onboarding" in prompts
 
     def test_tenets_lazy_loading(self, mcp_server):
         """Test that Tenets instance is lazily loaded."""
@@ -305,12 +318,12 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_distill_tool_with_mock(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test the distill tool with mocked Tenets (Py3.14 compatible)."""
+        """Test the tenets_distill tool with mocked Tenets (Py3.14 compatible)."""
         # Create a test file
         test_file = tmp_path / "test.py"
         test_file.write_text("def hello(): pass")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         result = await distill_tool(
             prompt="find hello function",
             path=str(tmp_path),
@@ -325,12 +338,12 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_rank_files_tool_with_mock(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test the rank_files tool with mocked Tenets (Py3.14 compatible)."""
+        """Test the tenets_rank_files tool with mocked Tenets (Py3.14 compatible)."""
         # Create test files
         (tmp_path / "auth.py").write_text("def authenticate(): pass")
         (tmp_path / "utils.py").write_text("def helper(): pass")
 
-        rank_tool = mcp_server_with_mock_tenets._mcp.tools["rank_files"]
+        rank_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_rank_files"]
         result = await rank_tool(
             prompt="authentication",
             path=str(tmp_path),
@@ -345,11 +358,11 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_distill_tool_modes(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill accepts all valid mode values."""
+        """Test tenets_distill accepts all valid mode values."""
         test_file = tmp_path / "test.py"
         test_file.write_text("def test(): pass")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
 
         for mode in ["fast", "balanced", "thorough"]:
             result = await distill_tool(
@@ -362,11 +375,11 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_distill_tool_formats(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill accepts all valid format values."""
+        """Test tenets_distill accepts all valid format values."""
         test_file = tmp_path / "test.py"
         test_file.write_text("def test(): pass")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
 
         for fmt in ["markdown", "xml", "json", "html"]:
             result = await distill_tool(
@@ -379,11 +392,11 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_distill_tool_timeout_param(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill propagates timeout parameter."""
+        """Test tenets_distill propagates timeout parameter."""
         test_file = tmp_path / "test.py"
         test_file.write_text("def test(): pass")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         await distill_tool(
             prompt="test timeout",
             path=str(tmp_path),
@@ -400,7 +413,7 @@ class TestMCPTools:
         test_file = tmp_path / "test.py"
         test_file.write_text("def test(): pass")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         await distill_tool(
             prompt="test timeout zero",
             path=str(tmp_path),
@@ -418,7 +431,7 @@ class TestMCPTools:
         test_file = tmp_path / "test.py"
         test_file.write_text("def test(): pass")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         await distill_tool(
             prompt="test default timeout",
             path=str(tmp_path),
@@ -432,11 +445,11 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_distill_with_patterns(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill with include/exclude patterns."""
+        """Test tenets_distill with include/exclude patterns."""
         (tmp_path / "keep.py").write_text("# keep")
         (tmp_path / "skip.log").write_text("# skip")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         result = await distill_tool(
             prompt="test",
             path=str(tmp_path),
@@ -448,12 +461,12 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_distill_with_session(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill with session parameter."""
-        # Create session first
-        create_tool = mcp_server_with_mock_tenets._mcp.tools["session_create"]
-        await create_tool(name="distill-session")
+        """Test tenets_distill with session parameter."""
+        # Create session first using consolidated tool
+        session_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="distill-session")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         result = await distill_tool(
             prompt="test",
             path=str(tmp_path),
@@ -464,10 +477,10 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_rank_files_with_explain(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test rank_files with explain flag."""
+        """Test tenets_rank_files with explain flag."""
         (tmp_path / "test.py").write_text("def test(): pass")
 
-        rank_tool = mcp_server_with_mock_tenets._mcp.tools["rank_files"]
+        rank_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_rank_files"]
         result = await rank_tool(
             prompt="test",
             path=str(tmp_path),
@@ -483,11 +496,11 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_rank_files_top_n_respected(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test that rank_files respects top_n parameter."""
+        """Test that tenets_rank_files respects top_n parameter."""
         for i in range(10):
             (tmp_path / f"file{i}.py").write_text(f"def func{i}(): pass")
 
-        rank_tool = mcp_server_with_mock_tenets._mcp.tools["rank_files"]
+        rank_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_rank_files"]
         result = await rank_tool(
             prompt="function",
             path=str(tmp_path),
@@ -497,66 +510,72 @@ class TestMCPTools:
         assert len(result["files"]) <= 3
 
     @pytest.mark.asyncio
-    async def test_session_create_tool(self, mcp_server):
-        """Test the session_create tool."""
-        session_tool = mcp_server._mcp.tools["session_create"]
+    async def test_session_create_action(self, mcp_server):
+        """Test the tenets_session tool with create action."""
+        session_tool = mcp_server._mcp.tools["tenets_session"]
         result = await session_tool(
+            action="create",
             name="test-session",
             description="A test session",
         )
 
         assert isinstance(result, dict)
+        assert result["action"] == "create"
         assert "name" in result
         assert result["name"] == "test-session"
 
     @pytest.mark.asyncio
-    async def test_session_list_tool(self, mcp_server):
-        """Test the session_list tool."""
+    async def test_session_list_action(self, mcp_server):
+        """Test the tenets_session tool with list action."""
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+
         # First create a session
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="list-test-session")
+        await session_tool(action="create", name="list-test-session")
 
         # Then list sessions
-        list_tool = mcp_server._mcp.tools["session_list"]
-        result = await list_tool()
+        result = await session_tool(action="list")
 
         assert isinstance(result, dict)
+        assert result["action"] == "list"
         assert "sessions" in result
         assert isinstance(result["sessions"], list)
 
     @pytest.mark.asyncio
-    async def test_tenet_add_tool(self, mcp_server):
-        """Test the tenet_add tool."""
-        tenet_tool = mcp_server._mcp.tools["tenet_add"]
+    async def test_tenet_add_action(self, mcp_server):
+        """Test the tenets_tenet tool with add action."""
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
         result = await tenet_tool(
+            action="add",
             content="Always validate user input",
             priority="high",
             category="security",
         )
 
         assert isinstance(result, dict)
+        assert result["action"] == "add"
         assert "id" in result
         assert "content" in result
         assert result["content"] == "Always validate user input"
 
     @pytest.mark.asyncio
-    async def test_tenet_list_tool(self, mcp_server):
-        """Test the tenet_list tool."""
+    async def test_tenet_list_action(self, mcp_server):
+        """Test the tenets_tenet tool with list action."""
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+
         # First add a tenet
-        add_tool = mcp_server._mcp.tools["tenet_add"]
-        await add_tool(content="Test tenet")
+        await tenet_tool(action="add", content="Test tenet")
 
         # Then list tenets
-        list_tool = mcp_server._mcp.tools["tenet_list"]
-        result = await list_tool()
+        result = await tenet_tool(action="list")
 
         assert isinstance(result, dict)
+        assert result["action"] == "list"
         assert "tenets" in result
 
     @pytest.mark.asyncio
-    async def test_set_system_instruction_tool(self, mcp_server):
-        """Test the set_system_instruction tool."""
-        instruction_tool = mcp_server._mcp.tools["set_system_instruction"]
+    async def test_system_instruction_tool(self, mcp_server):
+        """Test the tenets_system_instruction tool."""
+        instruction_tool = mcp_server._mcp.tools["tenets_system_instruction"]
         result = await instruction_tool(
             instruction="You are a helpful coding assistant.",
             position="top",
@@ -568,12 +587,12 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_examine_tool(self, mcp_server, tmp_path):
-        """Test the examine tool."""
+        """Test the tenets_examine tool."""
         # Create some test files
         (tmp_path / "main.py").write_text("def main(): pass")
         (tmp_path / "utils.py").write_text("def util(): pass")
 
-        examine_tool = mcp_server._mcp.tools["examine"]
+        examine_tool = mcp_server._mcp.tools["tenets_examine"]
         result = await examine_tool(
             path=str(tmp_path),
             include_complexity=True,
@@ -584,8 +603,8 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_chronicle_tool(self, mcp_server, tmp_path):
-        """Test the chronicle tool (may return error if not git repo)."""
-        chronicle_tool = mcp_server._mcp.tools["chronicle"]
+        """Test the tenets_chronicle tool (may return error if not git repo)."""
+        chronicle_tool = mcp_server._mcp.tools["tenets_chronicle"]
         result = await chronicle_tool(
             path=str(tmp_path),
             since="1 week",
@@ -595,8 +614,8 @@ class TestMCPTools:
 
     @pytest.mark.asyncio
     async def test_momentum_tool(self, mcp_server, tmp_path):
-        """Test the momentum tool (may return error if not git repo)."""
-        momentum_tool = mcp_server._mcp.tools["momentum"]
+        """Test the tenets_momentum tool (may return error if not git repo)."""
+        momentum_tool = mcp_server._mcp.tools["tenets_momentum"]
         result = await momentum_tool(
             path=str(tmp_path),
             since="last-month",
@@ -606,45 +625,47 @@ class TestMCPTools:
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
-    async def test_session_pin_file_tool(self, mcp_server, tmp_path):
-        """Test the session_pin_file tool."""
+    async def test_session_pin_file_action(self, mcp_server, tmp_path):
+        """Test the tenets_session tool with pin_file action."""
         # Create session and file
         test_file = tmp_path / "pin_test.py"
         test_file.write_text("# test file")
 
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="pin-session")
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="pin-session")
 
-        pin_tool = mcp_server._mcp.tools["session_pin_file"]
-        result = await pin_tool(
-            session="pin-session",
+        result = await session_tool(
+            action="pin_file",
+            name="pin-session",
             file_path=str(test_file),
         )
 
         assert isinstance(result, dict)
+        assert result["action"] == "pin_file"
         assert "session" in result
         assert result["session"] == "pin-session"
 
     @pytest.mark.asyncio
-    async def test_session_pin_folder_tool(self, mcp_server, tmp_path):
-        """Test the session_pin_folder tool."""
+    async def test_session_pin_folder_action(self, mcp_server, tmp_path):
+        """Test the tenets_session tool with pin_folder action."""
         # Create session and folder with files
         folder = tmp_path / "src"
         folder.mkdir()
         (folder / "a.py").write_text("# a")
         (folder / "b.py").write_text("# b")
 
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="folder-pin-session")
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="folder-pin-session")
 
-        pin_tool = mcp_server._mcp.tools["session_pin_folder"]
-        result = await pin_tool(
-            session="folder-pin-session",
+        result = await session_tool(
+            action="pin_folder",
+            name="folder-pin-session",
             folder_path=str(folder),
             patterns=["*.py"],
         )
 
         assert isinstance(result, dict)
+        assert result["action"] == "pin_folder"
         assert "pinned_count" in result
 
 
@@ -654,9 +675,9 @@ class TestMCPResources:
     @pytest.mark.asyncio
     async def test_sessions_list_resource(self, mcp_server):
         """Test the sessions list resource."""
-        # Create a session first
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="resource-test-session")
+        # Create a session first using consolidated tool
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="resource-test-session")
 
         resource_func = mcp_server._mcp.resources["tenets://sessions/list"]
         result = await resource_func()
@@ -678,9 +699,9 @@ class TestMCPResources:
     @pytest.mark.asyncio
     async def test_session_state_resource(self, mcp_server, tmp_path):
         """Test the dynamic session state resource returns expected fields."""
-        # Create a session
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="state-session", description="State test")
+        # Create a session using consolidated tool
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="state-session", description="State test")
 
         # Access the resource with path parameter
         resource_func = mcp_server._mcp.resources["tenets://sessions/{name}/state"]
@@ -879,38 +900,45 @@ class TestMCPToolDocstrings:
     """Tests to verify tool docstrings are present and informative."""
 
     def test_distill_has_docstring(self, mcp_server):
-        """Test that distill tool has a proper docstring."""
-        tool = mcp_server._mcp.tools["distill"]
+        """Test that tenets_distill tool has a proper docstring."""
+        tool = mcp_server._mcp.tools["tenets_distill"]
         assert tool.__doc__ is not None
-        # Updated docstring check
+        # Updated docstring check - should have trigger phrases
+        assert "USE THIS TOOL" in tool.__doc__
         assert "context" in tool.__doc__.lower()
 
     def test_rank_files_has_docstring(self, mcp_server):
-        """Test that rank_files tool has a proper docstring."""
-        tool = mcp_server._mcp.tools["rank_files"]
+        """Test that tenets_rank_files tool has a proper docstring."""
+        tool = mcp_server._mcp.tools["tenets_rank_files"]
         assert tool.__doc__ is not None
         assert "relevant" in tool.__doc__.lower()
+        assert "USE THIS TOOL" in tool.__doc__
 
     def test_all_tools_have_docstrings(self, mcp_server):
         """Test that all tools have docstrings."""
         for name, tool in mcp_server._mcp.tools.items():
             assert tool.__doc__ is not None, f"Tool {name} missing docstring"
-            assert len(tool.__doc__) > 20, f"Tool {name} has too short docstring"
+            assert len(tool.__doc__) > 50, f"Tool {name} has too short docstring"
 
     def test_docstrings_have_args_section(self, mcp_server):
         """Test that tool docstrings include Args documentation."""
-        key_tools = ["distill", "rank_files", "tenet_add", "session_create"]
+        key_tools = ["tenets_distill", "tenets_rank_files", "tenets_tenet", "tenets_session"]
         for name in key_tools:
             tool = mcp_server._mcp.tools[name]
             assert "Args:" in tool.__doc__, f"Tool {name} missing Args section"
 
     def test_docstrings_have_returns_section(self, mcp_server):
         """Test that tool docstrings include Returns documentation."""
-        key_tools = ["distill", "rank_files", "tenet_add"]
+        key_tools = ["tenets_distill", "tenets_rank_files", "tenets_tenet"]
         for name in key_tools:
             tool = mcp_server._mcp.tools[name]
             # Returns can be in docstring or as Return:
             assert "return" in tool.__doc__.lower(), f"Tool {name} missing Returns section"
+
+    def test_docstrings_have_use_this_tool_trigger(self, mcp_server):
+        """Test that all tools have 'USE THIS TOOL' trigger phrases."""
+        for name, tool in mcp_server._mcp.tools.items():
+            assert "USE THIS TOOL" in tool.__doc__, f"Tool {name} missing trigger phrase"
 
 
 class TestMCPSessionPersistence:
@@ -919,14 +947,14 @@ class TestMCPSessionPersistence:
     @pytest.mark.asyncio
     async def test_session_persists_across_operations(self, mcp_server, tmp_path):
         """Test that session data persists correctly."""
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+
         # Create session
-        create_tool = mcp_server._mcp.tools["session_create"]
-        result = await create_tool(name="persist-test", description="Persistence test")
+        result = await session_tool(action="create", name="persist-test", description="Persistence test")
         session_id = result["id"]
 
         # Verify it appears in list
-        list_tool = mcp_server._mcp.tools["session_list"]
-        sessions = await list_tool()
+        sessions = await session_tool(action="list")
         session_names = [s["name"] for s in sessions["sessions"]]
         assert "persist-test" in session_names
 
@@ -937,27 +965,26 @@ class TestMCPSessionPersistence:
         test_file = tmp_path / "pinned.py"
         test_file.write_text("# Important file")
 
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+
         # Create session
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="pin-test")
+        await session_tool(action="create", name="pin-test")
 
         # Pin file
-        pin_tool = mcp_server._mcp.tools["session_pin_file"]
-        result = await pin_tool(session="pin-test", file_path=str(test_file))
+        result = await session_tool(action="pin_file", name="pin-test", file_path=str(test_file))
         assert result["success"] is True
 
     @pytest.mark.asyncio
     async def test_multiple_sessions_isolated(self, mcp_server):
         """Test that multiple sessions are isolated from each other."""
-        create_tool = mcp_server._mcp.tools["session_create"]
+        session_tool = mcp_server._mcp.tools["tenets_session"]
 
         # Create two sessions
-        await create_tool(name="session-a", description="Session A")
-        await create_tool(name="session-b", description="Session B")
+        await session_tool(action="create", name="session-a", description="Session A")
+        await session_tool(action="create", name="session-b", description="Session B")
 
         # Verify both exist
-        list_tool = mcp_server._mcp.tools["session_list"]
-        sessions = await list_tool()
+        sessions = await session_tool(action="list")
         session_names = [s["name"] for s in sessions["sessions"]]
         assert "session-a" in session_names
         assert "session-b" in session_names
@@ -965,8 +992,8 @@ class TestMCPSessionPersistence:
     @pytest.mark.asyncio
     async def test_session_metadata_preserved(self, mcp_server):
         """Test that session metadata is preserved."""
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="metadata-test", description="Test description")
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="metadata-test", description="Test description")
 
         resource_func = mcp_server._mcp.resources["tenets://sessions/{name}/state"]
         result = await resource_func(name="metadata-test")
@@ -981,10 +1008,11 @@ class TestMCPTenetOperations:
     @pytest.mark.asyncio
     async def test_tenet_priority_levels(self, mcp_server):
         """Test that all priority levels work."""
-        add_tool = mcp_server._mcp.tools["tenet_add"]
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
 
         for priority in ["low", "medium", "high", "critical"]:
-            result = await add_tool(
+            result = await tenet_tool(
+                action="add",
                 content=f"Test tenet with {priority} priority",
                 priority=priority,
             )
@@ -993,9 +1021,10 @@ class TestMCPTenetOperations:
     @pytest.mark.asyncio
     async def test_tenet_categories(self, mcp_server):
         """Test that categories are stored correctly."""
-        add_tool = mcp_server._mcp.tools["tenet_add"]
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
 
-        result = await add_tool(
+        result = await tenet_tool(
+            action="add",
             content="Always use HTTPS",
             priority="high",
             category="security",
@@ -1006,26 +1035,29 @@ class TestMCPTenetOperations:
     @pytest.mark.asyncio
     async def test_tenet_instill(self, mcp_server):
         """Test the tenet instill functionality."""
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+
         # Add a pending tenet
-        add_tool = mcp_server._mcp.tools["tenet_add"]
-        await add_tool(content="Pending tenet for instill test")
+        await tenet_tool(action="add", content="Pending tenet for instill test")
 
         # Instill it
-        instill_tool = mcp_server._mcp.tools["tenet_instill"]
-        result = await instill_tool()
+        result = await tenet_tool(action="instill")
 
         assert isinstance(result, dict)
+        assert result["action"] == "instill"
 
     @pytest.mark.asyncio
     async def test_tenet_with_session(self, mcp_server):
         """Test adding a tenet to a specific session."""
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+
         # Create session
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="tenet-session")
+        await session_tool(action="create", name="tenet-session")
 
         # Add tenet to session
-        add_tool = mcp_server._mcp.tools["tenet_add"]
-        result = await add_tool(
+        result = await tenet_tool(
+            action="add",
             content="Session-specific tenet",
             priority="medium",
             session="tenet-session",
@@ -1036,15 +1068,16 @@ class TestMCPTenetOperations:
     @pytest.mark.asyncio
     async def test_tenet_list_pending_only(self, mcp_server):
         """Test listing only pending tenets."""
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+
         # Add tenet
-        add_tool = mcp_server._mcp.tools["tenet_add"]
-        await add_tool(content="Test pending tenet")
+        await tenet_tool(action="add", content="Test pending tenet")
 
         # List with pending_only
-        list_tool = mcp_server._mcp.tools["tenet_list"]
-        result = await list_tool(pending_only=True)
+        result = await tenet_tool(action="list", pending_only=True)
 
         assert isinstance(result, dict)
+        assert result["action"] == "list"
         assert "tenets" in result
 
 
@@ -1054,12 +1087,12 @@ class TestMCPErrorHandling:
     @pytest.mark.asyncio
     async def test_session_pin_nonexistent_file(self, mcp_server):
         """Test pinning a nonexistent file."""
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="error-test-session")
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="error-test-session")
 
-        pin_tool = mcp_server._mcp.tools["session_pin_file"]
-        result = await pin_tool(
-            session="error-test-session",
+        result = await session_tool(
+            action="pin_file",
+            name="error-test-session",
             file_path="/nonexistent/file.py",
         )
 
@@ -1072,12 +1105,12 @@ class TestMCPErrorHandling:
         empty_folder = tmp_path / "empty"
         empty_folder.mkdir()
 
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="empty-folder-session")
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="empty-folder-session")
 
-        pin_tool = mcp_server._mcp.tools["session_pin_folder"]
-        result = await pin_tool(
-            session="empty-folder-session",
+        result = await session_tool(
+            action="pin_folder",
+            name="empty-folder-session",
             folder_path=str(empty_folder),
         )
 
@@ -1085,9 +1118,9 @@ class TestMCPErrorHandling:
         assert result["pinned_count"] == 0
 
     @pytest.mark.asyncio
-    async def test_set_system_instruction_positions(self, mcp_server):
+    async def test_system_instruction_positions(self, mcp_server):
         """Test all system instruction positions."""
-        instruction_tool = mcp_server._mcp.tools["set_system_instruction"]
+        instruction_tool = mcp_server._mcp.tools["tenets_system_instruction"]
 
         for position in ["top", "after_header", "before_content"]:
             result = await instruction_tool(
@@ -1096,6 +1129,28 @@ class TestMCPErrorHandling:
             )
             assert result["success"] is True
             assert result["position"] == position
+
+    @pytest.mark.asyncio
+    async def test_session_missing_required_params(self, mcp_server):
+        """Test consolidated session tool with missing required params."""
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+
+        # Create without name should return error
+        result = await session_tool(action="create")
+        assert "error" in result
+
+        # pin_file without name or file_path should return error
+        result = await session_tool(action="pin_file")
+        assert "error" in result
+
+    @pytest.mark.asyncio
+    async def test_tenet_missing_required_params(self, mcp_server):
+        """Test consolidated tenet tool with missing required params."""
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+
+        # Add without content should return error
+        result = await tenet_tool(action="add")
+        assert "error" in result
 
 
 class TestMCPIntegration:
@@ -1108,21 +1163,22 @@ class TestMCPIntegration:
         (tmp_path / "main.py").write_text("def main(): pass")
         (tmp_path / "utils.py").write_text("def util(): pass")
 
+        session_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_session"]
+
         # Create session
-        create_tool = mcp_server_with_mock_tenets._mcp.tools["session_create"]
-        session_result = await create_tool(name="workflow-test")
+        session_result = await session_tool(action="create", name="workflow-test")
         assert session_result["name"] == "workflow-test"
 
         # Pin a file
-        pin_tool = mcp_server_with_mock_tenets._mcp.tools["session_pin_file"]
-        pin_result = await pin_tool(
-            session="workflow-test",
+        pin_result = await session_tool(
+            action="pin_file",
+            name="workflow-test",
             file_path=str(tmp_path / "main.py"),
         )
         assert pin_result["success"] is True
 
         # Distill with session
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         distill_result = await distill_tool(
             prompt="find main function",
             path=str(tmp_path),
@@ -1135,9 +1191,11 @@ class TestMCPIntegration:
     @pytest.mark.asyncio
     async def test_tenet_workflow(self, mcp_server):
         """Test tenet workflow: add, list, instill."""
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+
         # Add tenet
-        add_tool = mcp_server._mcp.tools["tenet_add"]
-        add_result = await add_tool(
+        add_result = await tenet_tool(
+            action="add",
             content="Always write tests",
             priority="high",
             category="quality",
@@ -1146,13 +1204,11 @@ class TestMCPIntegration:
         assert tenet_id is not None
 
         # List tenets
-        list_tool = mcp_server._mcp.tools["tenet_list"]
-        list_result = await list_tool()
+        list_result = await tenet_tool(action="list")
         assert isinstance(list_result, dict)
 
         # Instill
-        instill_tool = mcp_server._mcp.tools["tenet_instill"]
-        instill_result = await instill_tool()
+        instill_result = await tenet_tool(action="instill")
         assert isinstance(instill_result, dict)
 
     @pytest.mark.asyncio
@@ -1163,7 +1219,7 @@ class TestMCPIntegration:
         (tmp_path / "main.py").write_text("def main(): pass")
 
         # Rank first
-        rank_tool = mcp_server_with_mock_tenets._mcp.tools["rank_files"]
+        rank_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_rank_files"]
         rank_result = await rank_tool(
             prompt="authentication",
             path=str(tmp_path),
@@ -1172,7 +1228,7 @@ class TestMCPIntegration:
         assert len(rank_result["files"]) > 0
 
         # Then distill
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         distill_result = await distill_tool(
             prompt="authentication",
             path=str(tmp_path),
@@ -1187,9 +1243,9 @@ class TestMCPResourceContent:
     @pytest.mark.asyncio
     async def test_sessions_resource_json_format(self, mcp_server):
         """Test that sessions resource returns valid JSON."""
-        # Create a session
-        create_tool = mcp_server._mcp.tools["session_create"]
-        await create_tool(name="json-test")
+        # Create a session using consolidated tool
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+        await session_tool(action="create", name="json-test")
 
         resource_func = mcp_server._mcp.resources["tenets://sessions/list"]
         result = await resource_func()
@@ -1214,9 +1270,9 @@ class TestMCPResourceContent:
     @pytest.mark.asyncio
     async def test_tenets_resource_json_format(self, mcp_server):
         """Test that tenets resource returns valid JSON."""
-        # Add a tenet
-        add_tool = mcp_server._mcp.tools["tenet_add"]
-        await add_tool(content="Resource format test")
+        # Add a tenet using consolidated tool
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+        await tenet_tool(action="add", content="Resource format test")
 
         resource_func = mcp_server._mcp.resources["tenets://tenets/list"]
         result = await resource_func()
@@ -1230,10 +1286,10 @@ class TestMCPEdgeCases:
 
     @pytest.mark.asyncio
     async def test_empty_prompt_distill(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill with minimal prompt."""
+        """Test tenets_distill with minimal prompt."""
         (tmp_path / "test.py").write_text("# test")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         result = await distill_tool(
             prompt="x",
             path=str(tmp_path),
@@ -1243,12 +1299,12 @@ class TestMCPEdgeCases:
 
     @pytest.mark.asyncio
     async def test_very_long_prompt(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill with very long prompt."""
+        """Test tenets_distill with very long prompt."""
         (tmp_path / "test.py").write_text("# test")
 
         long_prompt = "find " + "authentication " * 100
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         result = await distill_tool(
             prompt=long_prompt,
             path=str(tmp_path),
@@ -1259,8 +1315,9 @@ class TestMCPEdgeCases:
     @pytest.mark.asyncio
     async def test_unicode_in_tenet(self, mcp_server):
         """Test tenet with unicode characters."""
-        add_tool = mcp_server._mcp.tools["tenet_add"]
-        result = await add_tool(
+        tenet_tool = mcp_server._mcp.tools["tenets_tenet"]
+        result = await tenet_tool(
+            action="add",
             content="Always use UTF-8 encoding 🔒 für Sicherheit",
             priority="medium",
         )
@@ -1269,17 +1326,17 @@ class TestMCPEdgeCases:
     @pytest.mark.asyncio
     async def test_special_chars_in_session_name(self, mcp_server):
         """Test session with special characters in name."""
-        create_tool = mcp_server._mcp.tools["session_create"]
+        session_tool = mcp_server._mcp.tools["tenets_session"]
         # Use only safe characters
-        result = await create_tool(name="test-session_123")
+        result = await session_tool(action="create", name="test-session_123")
         assert result["name"] == "test-session_123"
 
     @pytest.mark.asyncio
     async def test_zero_max_tokens(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill with zero max_tokens (should use default)."""
+        """Test tenets_distill with zero max_tokens (should use default)."""
         (tmp_path / "test.py").write_text("# test")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         # Most implementations should treat 0 as "use default"
         result = await distill_tool(
             prompt="test",
@@ -1290,11 +1347,11 @@ class TestMCPEdgeCases:
 
     @pytest.mark.asyncio
     async def test_include_tests_flag(self, mcp_server_with_mock_tenets, tmp_path):
-        """Test distill with include_tests flag."""
+        """Test tenets_distill with include_tests flag."""
         (tmp_path / "main.py").write_text("def main(): pass")
         (tmp_path / "test_main.py").write_text("def test_main(): pass")
 
-        distill_tool = mcp_server_with_mock_tenets._mcp.tools["distill"]
+        distill_tool = mcp_server_with_mock_tenets._mcp.tools["tenets_distill"]
         result = await distill_tool(
             prompt="test main",
             path=str(tmp_path),
@@ -1306,15 +1363,15 @@ class TestMCPEdgeCases:
     @pytest.mark.asyncio
     async def test_multiple_tool_calls_same_server(self, mcp_server):
         """Test multiple sequential tool calls on same server instance."""
+        session_tool = mcp_server._mcp.tools["tenets_session"]
+
         # Create multiple sessions
-        create_tool = mcp_server._mcp.tools["session_create"]
         for i in range(5):
-            result = await create_tool(name=f"multi-test-{i}")
+            result = await session_tool(action="create", name=f"multi-test-{i}")
             assert result["name"] == f"multi-test-{i}"
 
         # Verify all created
-        list_tool = mcp_server._mcp.tools["session_list"]
-        sessions = await list_tool()
+        sessions = await session_tool(action="list")
         names = [s["name"] for s in sessions["sessions"]]
         for i in range(5):
             assert f"multi-test-{i}" in names
