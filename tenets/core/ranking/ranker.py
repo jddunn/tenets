@@ -19,6 +19,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 from tenets.config import TenetsConfig
 from tenets.models.analysis import FileAnalysis
 from tenets.models.context import PromptContext
+from tenets.utils.cache import cache_key, get_ranking_cache
 from tenets.utils.logger import get_logger
 
 from ..nlp.bm25 import BM25Calculator
@@ -609,6 +610,9 @@ class RelevanceRanker:
     ) -> RankedFile:
         """Rank a single file.
 
+        Uses caching to avoid recomputing scores for unchanged files
+        with the same prompt.
+
         Args:
             file: File to rank
             prompt_context: Prompt context
@@ -619,11 +623,56 @@ class RelevanceRanker:
         Returns:
             RankedFile object
         """
-        # Calculate ranking factors
+        # Generate cache key from prompt
+        prompt_hash = cache_key(prompt_context.text, prompt_context.keywords)
+        algorithm = strategy.__class__.__name__
+
+        # Try to get cached score
+        ranking_cache = get_ranking_cache()
+        file_mtime = getattr(file, "mtime", 0) or 0
+
+        cached = ranking_cache.get(
+            file_path=file.path,
+            prompt_hash=prompt_hash,
+            file_mtime=file_mtime,
+            algorithm=algorithm,
+        )
+
+        if cached is not None:
+            # Reconstruct RankedFile from cached data
+            factors = RankingFactors(**cached.get("factors", {}))
+            return RankedFile(
+                analysis=file,
+                score=cached["score"],
+                factors=factors,
+                explanation=f"[cached] Score: {cached['score']:.2f}",
+            )
+
+        # Calculate ranking factors (not cached)
         factors = strategy.rank_file(file, prompt_context, corpus_stats)
 
         # Calculate weighted score
         score = factors.get_weighted_score(weights)
+
+        # Cache the result
+        factors_dict = {
+            "keyword_match": factors.keyword_match,
+            "tfidf_similarity": factors.tfidf_similarity,
+            "semantic_similarity": factors.semantic_similarity,
+            "path_relevance": factors.path_relevance,
+            "import_centrality": factors.import_centrality,
+            "bm25_score": factors.bm25_score,
+            "code_patterns": factors.code_patterns,
+            "ast_relevance": factors.ast_relevance,
+        }
+        ranking_cache.set(
+            file_path=file.path,
+            prompt_hash=prompt_hash,
+            file_mtime=file_mtime,
+            score=score,
+            factors=factors_dict,
+            algorithm=algorithm,
+        )
 
         # Generate basic explanation
         top_factors = factors.get_top_factors(weights, n=3)
