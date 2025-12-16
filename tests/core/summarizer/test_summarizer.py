@@ -125,6 +125,20 @@ class TestSummarizer:
         assert SummarizationMode.EXTRACTIVE in summarizer.strategies
         assert SummarizationMode.COMPRESSIVE in summarizer.strategies
 
+    @patch("tenets.core.summarizer.summarizer.TextRankStrategy")
+    def test_initialization_without_sklearn(self, mock_textrank, config):
+        """Test summarizer gracefully handles missing sklearn for TextRank."""
+        # Simulate sklearn not installed
+        mock_textrank.side_effect = ImportError("No module named 'sklearn'")
+
+        summarizer = Summarizer(config=config)
+
+        # Core strategies should still be available
+        assert SummarizationMode.EXTRACTIVE in summarizer.strategies
+        assert SummarizationMode.COMPRESSIVE in summarizer.strategies
+        # TextRank should not be available
+        assert SummarizationMode.TEXTRANK not in summarizer.strategies
+
     def test_summarize_empty_text(self, summarizer):
         """Test summarizing empty text."""
         result = summarizer.summarize("")

@@ -162,8 +162,13 @@ class Summarizer:
         self.strategies: Dict[SummarizationMode, SummarizationStrategy] = {
             SummarizationMode.EXTRACTIVE: ExtractiveStrategy(),
             SummarizationMode.COMPRESSIVE: CompressiveStrategy(),
-            SummarizationMode.TEXTRANK: TextRankStrategy(),
         }
+
+        # Try to initialize TextRank (requires scikit-learn)
+        try:
+            self.strategies[SummarizationMode.TEXTRANK] = TextRankStrategy()
+        except ImportError:
+            self.logger.debug("TextRank unavailable (scikit-learn not installed)")
 
         # Try to initialize ML strategies
         self._init_ml_strategies()
