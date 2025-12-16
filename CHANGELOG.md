@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Improved MCP tool descriptions for better IDE agent discoverability with semantic triggers and error guidance
+- Standardized parameter defaults across chronicle/momentum tools (both now use "1 week")
+- Enhanced error messages with corrective retry patterns for all MCP tools
+- Condensed tool metadata from 45+ lines to 15-25 lines for faster scanning in tool pickers
+
 ## [0.9.0] - 2025-12-15
 
 ### Changed

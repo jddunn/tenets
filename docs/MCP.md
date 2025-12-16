@@ -188,8 +188,8 @@ The MCP server exposes 8 tools to AI assistants (consolidated from 13 in v0.8.0)
 
 | Tool | Description |
 |------|-------------|
-| `tenets_distill` | Build ranked, token-optimized context from codebase (markdown/xml/json/html) |
-| `tenets_rank_files` | Rank files by relevance without full content (supports include/exclude patterns, test filters) |
+| `tenets_distill` | Find and retrieve the most relevant code using semantic ranking. Returns context, files, and metadata. Use when exploring codebase or gathering context for tasks. |
+| `tenets_rank_files` | Identify most relevant files without fetching content (fast file discovery). Returns scored file list. ~500ms vs ~3s for distill. |
 
 Default distill timeout is 120s; pass the `timeout` argument (seconds, `0` to disable) to override.
 
@@ -197,22 +197,22 @@ Default distill timeout is 120s; pass the `timeout` argument (seconds, `0` to di
 
 | Tool | Description |
 |------|-------------|
-| `tenets_examine` | Analyze codebase structure and complexity |
-| `tenets_chronicle` | Analyze git history and patterns |
-| `tenets_momentum` | Track development velocity |
+| `tenets_examine` | Analyze codebase structure, complexity, and quality metrics from static analysis. Returns file counts, languages, complexity, hotspots. |
+| `tenets_chronicle` | Analyze git history and recent development activity. Returns commits, file churn, contributors, temporal insights. Default: last 1 week. |
+| `tenets_momentum` | Track development velocity and contribution patterns over time. Returns velocity, contributions, trends, health score. Default: last 1 week. |
 
 ### Session Tool (consolidated)
 
 | Tool | Description |
 |------|-------------|
-| `tenets_session` | Manage sessions with `action` parameter: `create`, `list`, `pin_file`, `pin_folder` |
+| `tenets_session` | Manage development sessions for persistent context across conversations. Actions: `create`, `list`, `pin_file`, `pin_folder`. Pinned files always included in distill. |
 
 ### Tenet Tools (consolidated)
 
 | Tool | Description |
 |------|-------------|
-| `tenets_tenet` | Manage guiding principles with `action` parameter: `add`, `list`, `instill` |
-| `tenets_system_instruction` | Set system-level instruction |
+| `tenets_tenet` | Manage guiding principles that auto-inject into all generated context to prevent drift. Actions: `add`, `list`, `instill`. Priorities: critical/high/medium/low. |
+| `tenets_system_instruction` | Set one-time system instruction injected into all generated context. Positions: top/after_header/before_content. For persistent behavioral guidance. |
 
 ## Available Resources
 

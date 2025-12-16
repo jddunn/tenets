@@ -215,50 +215,31 @@ class TenetsMCP:
             exclude_patterns: Optional[list[str]] = None,
             timeout: Optional[int] = 120,
         ) -> dict[str, Any]:
-            """Find and retrieve the most relevant code for a task.
+            """Find and retrieve the most relevant code for a task using semantic ranking.
 
-            USE THIS TOOL when you need to:
-            - Understand how a feature, module, or system works
-            - Find code related to a bug, error, or task
-            - Gather context BEFORE writing or modifying any code
-            - Answer "how does X work?" or "where is Y implemented?"
+            Use when: user asks "how does X work", "find code for", "where is Y implemented", "understand feature",
+            "gather context for bug/task", or needs codebase exploration before coding.
+            Do not use when: user already knows exact file paths or wants general project info (use tenets_examine).
 
-            IMPORTANT: This tool returns ranked, relevant code as a STARTING POINT.
-            After receiving results, you should:
-            1. Review the returned file list to understand the codebase structure
-            2. Read specific files directly for deeper understanding
-            3. Explore related files that weren't returned but seem relevant
-            4. Use the context to inform your next actions, not as the final answer
+            Inputs:
+            - prompt (required): Specific task description. Good: "OAuth2 JWT auth flow", "payment error handling".
+              Bad: "auth stuff", "the bug".
+            - path: Directory to search (default "." for current project).
+            - mode: "fast" (~1s keyword), "balanced" (~3s BM25+structure, recommended), "thorough" (~10s ML embeddings).
+            - max_tokens: Context budget (default 100k).
+            - format: "markdown" (default), "xml" (Claude-optimized), "json", "html".
+            - include_tests: True to include test files (default False).
+            - include_patterns/exclude_patterns: File filter globs (e.g., ["*.py"], ["*.min.js"]).
+            - session: Session name to include pinned files.
+            - timeout: Max seconds (default 120, <=0 disables).
 
-            Do NOT guess about code structure - always use this tool first.
-            The semantic ranking finds connections you might miss with keyword search.
+            Returns: {context: str, token_count: int, files: [str], metadata: {mode, timing, session}}.
+            The files list shows what was included—read specific files for deeper understanding.
 
-            Args:
-                prompt: Describe what you're looking for. Be specific for better results.
-                    Good: "OAuth2 authentication flow with JWT tokens"
-                    Good: "payment processing error handling"
-                    Bad: "auth stuff" or "the bug"
-                path: Directory to search. Use "." for current project.
-                mode: Speed vs accuracy tradeoff:
-                    - "fast": Quick keyword matching (~1s) - good for simple queries
-                    - "balanced": BM25 + structure analysis (~3s) - recommended default
-                    - "thorough": ML embeddings + deep analysis (~10s) - complex tasks
-                max_tokens: Token budget for returned context. Default 100k works for most models.
-                format: Output structure:
-                    - "markdown": Human-readable with headers (default)
-                    - "xml": Claude-optimized with semantic tags
-                    - "json": Structured for programmatic use
-                    - "html": Interactive report with full metadata
-                include_tests: Set True when debugging test failures or understanding test patterns.
-                include_git: Include git context (recent commits, contributors).
-                session: Link to a session for persistent pinned files.
-                include_patterns: Only include matching files (e.g., ["*.py", "*.ts"]).
-                exclude_patterns: Skip matching files (e.g., ["*.log", "*.min.js"]).
-                timeout: Timeout in seconds (<=0 disables; defaults to 120s).
-
-            Returns:
-                Dictionary with context, token_count, files list, and metadata.
-                Use the files list to identify what to explore further.
+            Common errors:
+            - Timeout → reduce max_tokens or use "fast" mode.
+            - No files found → check path exists and patterns allow target files.
+            - Too many files → use exclude_patterns or more specific prompt.
             """
             result = self.tenets.distill(
                 prompt=prompt,
@@ -287,42 +268,28 @@ class TenetsMCP:
             exclude_patterns: Optional[list[str]] = None,
             explain: bool = False,
         ) -> dict[str, Any]:
-            """Quickly identify which files are most relevant to a task (without fetching content).
+            """Identify the most relevant files for a task without fetching content (fast file discovery).
 
-            USE THIS TOOL when you want to:
-            - Get a quick overview of relevant files before deep diving
-            - Check if you're looking in the right area of the codebase
-            - Plan which files to read or modify
-            - Debug why certain files aren't being found by distill
-            - Scout the codebase structure before committing to a full context fetch
+            Use when: user asks "which files to check", "what files handle X", "scout codebase", "plan changes",
+            "quick file overview", or wants to verify search area before full context fetch.
+            Do not use when: user needs actual code content (use tenets_distill) or general stats (use tenets_examine).
 
-            FASTER than tenets_distill (~500ms vs ~3s). Use this workflow:
-            1. Call tenets_rank_files to see what's relevant
-            2. Review the ranked file list and scores
-            3. Read the top files directly to understand their contents
-            4. Use tenets_distill if you need aggregated context from multiple files
+            Inputs:
+            - prompt (required): Task description, same format as tenets_distill.
+            - path: Directory to search (default ".").
+            - mode: "fast" (keyword), "balanced" (BM25+structure, recommended), "thorough" (deep), "ml" (embeddings).
+            - top_n: Max files to return (default 20).
+            - include_tests/exclude_tests: Control test file inclusion (default: exclude).
+            - include_patterns/exclude_patterns: File filter globs (e.g., ["*.py"], ["*.min.js"]).
+            - explain: True to show ranking factors breakdown (default False).
 
-            Do NOT guess which files exist - use this tool to discover them.
+            Returns: {files: [{path: str, score: float, factors?: dict}], total_scanned: int, mode: str}.
+            Faster than distill (~500ms vs ~3s). Recommended workflow: rank_files → read top files → distill if needed.
 
-            Args:
-                prompt: What you're looking for. Same format as tenets_distill prompt.
-                path: Directory to search.
-                mode: Ranking algorithm:
-                    - "fast": Keyword matching
-                    - "balanced": BM25 + structure (recommended)
-                    - "thorough": Deep analysis
-                    - "ml": Machine learning embeddings
-                top_n: How many files to return. Default 20 is usually enough to start.
-                include_tests: Include test files in results.
-                exclude_tests: Force exclusion of tests (overrides include_tests).
-                include_patterns: Only include matching files (e.g., ["*.py"]).
-                exclude_patterns: Skip matching files (e.g., ["*.log"]).
-                explain: Add breakdown of why each file ranked where it did.
-                    Set True when debugging relevance issues.
-
-            Returns:
-                Dictionary with ranked files (path, score, optional factors),
-                total_scanned count, and mode used. Use this to decide what to read next.
+            Common errors:
+            - Empty files array → check path exists and patterns match target files.
+            - Low scores (<0.3) → prompt may be too vague or files don't match query.
+            - explain=True for debugging relevance issues.
             """
             result = self.tenets.rank_files(
                 prompt=prompt,
@@ -358,29 +325,23 @@ class TenetsMCP:
             include_complexity: bool = True,
             include_hotspots: bool = True,
         ) -> dict[str, Any]:
-            """Analyze codebase structure, complexity, and quality metrics.
+            """Analyze codebase structure, complexity, and quality metrics from static analysis.
 
-            USE THIS TOOL when asked about:
-            - Codebase overview: "what's in this repo?", "project structure"
-            - Code quality: "complex files", "hotspots", "tech debt areas"
-            - Language breakdown: "what languages?", "file counts", "line counts"
-            - Architecture: "how is this organized?", "main components"
+            Use when: user asks "what's in this repo", "project structure", "complex files", "hotspots",
+            "tech debt", "language breakdown", "file counts", "how is this organized", or needs architecture overview.
+            Do not use when: user wants specific code content (use tenets_distill) or file discovery (use tenets_rank_files).
 
-            Returns real metrics from static analysis - do NOT guess about
-            codebase structure, file counts, or complexity scores.
+            Inputs:
+            - path: Root directory to examine (default ".").
+            - include_complexity: Include cyclomatic complexity metrics (default True).
+            - include_hotspots: Identify high-churn + high-complexity areas (default True).
 
-            After examining, explore specific areas that seem interesting or
-            problematic based on the metrics. Use tenets_distill or tenets_rank_files
-            to dive deeper into high-complexity or high-churn areas identified.
+            Returns: {file_counts: dict, languages: dict, complexity: dict, hotspots: [str]}.
+            Use results to prioritize exploration—dive into hotspots or complex areas with tenets_distill/tenets_rank_files.
 
-            Args:
-                path: Root path to examine.
-                include_complexity: Include cyclomatic complexity metrics.
-                include_hotspots: Identify maintenance hotspots (high churn + complexity).
-
-            Returns:
-                Dictionary with file counts, language distribution, complexity
-                metrics, and hotspot identification. Use this to prioritize exploration.
+            Common errors:
+            - Empty results → verify path is a valid codebase directory.
+            - Missing git data → hotspots require git history; disable include_hotspots if not a git repo.
             """
             result = self.tenets.examine(
                 path=path,
@@ -394,29 +355,23 @@ class TenetsMCP:
             since: str = "1 week",
             author: Optional[str] = None,
         ) -> dict[str, Any]:
-            """Analyze git history and recent development activity.
+            """Analyze git history and recent development activity from commit data.
 
-            USE THIS TOOL when asked about:
-            - Recent changes: "what changed recently?", "what's new?", "recent commits"
-            - Contributors: "who worked on this?", "who modified X?"
-            - File history: "when was this changed?", "commit history for file"
-            - Code review prep: "what should I review?", "recent activity"
-            - Change patterns: "what files change together?", "hot areas"
+            Use when: user asks "what changed recently", "what's new", "recent commits", "who worked on X",
+            "file history", "commit history", "review prep", "recent activity", "change patterns", "hot areas".
+            Do not use when: user wants future plans (not in git) or non-git projects.
 
-            Queries actual git data - do NOT guess about commit history, authors,
-            or when files were modified.
+            Inputs:
+            - path: Repository directory (default ".").
+            - since: Time period like "1 week", "3 days", "1 month" (default "1 week").
+            - author: Filter by author name or email pattern (optional).
 
-            Use the results to identify files worth exploring further. High-churn
-            files often indicate active development or problematic areas.
+            Returns: {commits: [dict], file_churn: dict, contributors: dict, temporal: dict}.
+            High-churn files often indicate active development or problem areas—explore them with tenets_distill.
 
-            Args:
-                path: Repository path to analyze.
-                since: Time period (e.g., "1 week", "3 days", "1 month", "last month").
-                author: Optional author filter (name or email pattern).
-
-            Returns:
-                Dictionary with commit activity, file churn, contributor patterns,
-                and temporal insights. Use this to guide further exploration.
+            Common errors:
+            - Not a git repo → requires .git directory; returns empty if path is not a git repository.
+            - No commits in period → try longer 'since' value like "1 month" or "6 months".
             """
             result = self.tenets.track_changes(
                 path=path,
@@ -428,28 +383,27 @@ class TenetsMCP:
         @mcp.tool()
         async def tenets_momentum(
             path: str = ".",
-            since: str = "last-month",
+            since: str = "1 week",
             team: bool = False,
         ) -> dict[str, Any]:
-            """Track development velocity and contribution patterns over time.
+            """Track development velocity and contribution patterns over time from git metrics.
 
-            USE THIS TOOL when asked about:
-            - Velocity: "how fast is development?", "sprint progress", "throughput"
-            - Team activity: "who's contributing?", "team momentum", "bus factor"
-            - Trends: "development patterns", "activity over time", "slowdowns"
-            - Project health: "is this project active?", "maintenance status"
+            Use when: user asks "how fast is development", "sprint progress", "throughput", "who's contributing",
+            "team momentum", "bus factor", "development patterns", "activity trends", "slowdowns", "project health",
+            "is this active", "maintenance status".
+            Do not use when: user wants static analysis (use tenets_examine) or specific commits (use tenets_chronicle).
 
-            Returns real metrics derived from git history - useful for understanding
-            project health and identifying active vs stale areas of the codebase.
+            Inputs:
+            - path: Repository directory (default ".").
+            - since: Time period like "1 week", "1 month", "3 months" (default "1 week").
+            - team: True for team-wide stats, False for individual breakdown (default False).
 
-            Args:
-                path: Repository path to analyze.
-                since: Time period for analysis (e.g., "last-month", "3 months", "1 year").
-                team: Show team-wide statistics vs individual breakdown.
+            Returns: {velocity: dict, contributions: dict, trends: dict, health_score: float}.
+            Use to assess project health and identify active vs stale areas.
 
-            Returns:
-                Dictionary with velocity metrics, contribution patterns, and
-                development trends. Use to understand project dynamics.
+            Common errors:
+            - Not a git repo → requires .git directory.
+            - Low commit count → try longer 'since' period for meaningful trend analysis.
             """
             result = self.tenets.momentum(
                 path=path,
@@ -469,40 +423,31 @@ class TenetsMCP:
             folder_path: Optional[str] = None,
             patterns: Optional[list[str]] = None,
         ) -> dict[str, Any]:
-            """Manage development sessions for persistent context across conversations.
+            """Manage development sessions for persistent context that survives across conversations.
 
-            USE THIS TOOL when:
-            - Starting a focused task: create a session to track relevant context
-            - Certain files are always relevant: pin them so they're always included
-            - Resuming previous work: list sessions to find your previous context
-            - Building up context incrementally: pin files as you discover they matter
+            Use when: user says "start session", "create session", "resume work", "pin file", "track context",
+            "remember this file", "always include", or needs to maintain focus across multiple conversations.
+            Do not use when: user wants one-time context fetch (use tenets_distill directly).
 
-            Sessions persist across conversations. Pinned files are ALWAYS included
-            in tenets_distill results for that session, regardless of relevance ranking.
-            This is useful for config files, key modules, or files you're actively editing.
+            Actions (set via action parameter):
+            - "create": Start new session. Required: name. Optional: description.
+              Use when: "start session for X", "create session", "begin work on Y".
+            - "list": Show all sessions. No parameters needed.
+              Use when: "what sessions exist", "show sessions", "resume work" (to find session name).
+            - "pin_file": Pin single file to session. Required: name, file_path.
+              Use when: "always include this file", "pin config", "remember X.py".
+            - "pin_folder": Pin all matching files in folder. Required: name, folder_path. Optional: patterns.
+              Use when: "pin all tests", "remember entire module", "track folder".
 
-            Actions:
-            - "create": Start a new session
-                Required: name
-                Optional: description
-            - "list": Show all existing sessions
-                No parameters required
-            - "pin_file": Pin a single file to a session
-                Required: name (session name), file_path
-            - "pin_folder": Pin all matching files in a folder
-                Required: name (session name), folder_path
-                Optional: patterns (e.g., ["*.py", "*.ts"])
+            Pinned files are ALWAYS included in tenets_distill for that session regardless of ranking.
 
-            Args:
-                action: The operation to perform.
-                name: Session name (required for create, pin_file, pin_folder).
-                description: Optional description when creating a session.
-                file_path: Path to file to pin (for pin_file action).
-                folder_path: Path to folder to pin (for pin_folder action).
-                patterns: File patterns to include when pinning folder (e.g., ["*.py"]).
+            Inputs: action (required), name, description, file_path, folder_path, patterns (see action descriptions).
+            Returns: {action: str, ...action-specific fields}.
 
-            Returns:
-                Dictionary with action-specific results (session info, file list, etc.).
+            Common errors:
+            - Missing name → required for create/pin_file/pin_folder.
+            - Missing file_path/folder_path → required for respective pin actions.
+            - Session not found → use action="list" to see existing sessions.
             """
             from tenets.storage.session_db import SessionDB
 
@@ -577,45 +522,31 @@ class TenetsMCP:
             pending_only: bool = False,
             force: bool = False,
         ) -> dict[str, Any]:
-            """Manage guiding principles that get injected into all generated context.
+            """Manage guiding principles that get auto-injected into all generated context to prevent drift.
 
-            USE THIS TOOL when the user wants to:
-            - Set coding standards: "always use type hints", "no magic numbers"
-            - Enforce security rules: "validate all input", "never log secrets"
-            - Remember architectural decisions: "use repository pattern", "events over direct calls"
-            - Maintain consistency: "follow existing patterns", "match project style"
+            Use when: user says "always use X", "remember rule", "enforce standard", "coding guideline",
+            "never do Y", "architectural decision", "security rule", "maintain consistency", "follow pattern".
+            Do not use when: user wants one-time instruction (use tenets_system_instruction).
 
-            Tenets combat "context drift" in long conversations by repeatedly
-            injecting key principles into generated context. Higher priority = more
-            frequent injection. Use this to ensure important rules aren't forgotten
-            as the conversation progresses.
+            Actions (set via action parameter):
+            - "add": Create principle. Required: content. Optional: priority, category, session.
+              Use when: "always use type hints", "validate input", "no magic numbers".
+              Good content: "Validate all user input before DB queries" (specific, actionable).
+              Bad content: "Be careful with security" (vague).
+            - "list": Show existing tenets. Optional: session, pending_only.
+              Use when: "what are my rules", "show tenets", "check guidelines".
+            - "instill": Activate pending tenets. Optional: session, force.
+              Use when: "apply tenets", "activate rules" (usually automatic, rarely needed manually).
 
-            Actions:
-            - "add": Create a new tenet
-                Required: content (the principle text)
-                Optional: priority, category, session
-            - "list": Show existing tenets
-                Optional: session (filter by session), pending_only
-            - "instill": Activate pending tenets for injection
-                Optional: session, force (re-instill already active tenets)
+            Priority levels (for add): "critical" (every context), "high" (most contexts), "medium" (default),
+            "low" (occasional). Higher priority = more frequent injection to combat context drift.
 
-            Args:
-                action: The operation to perform.
-                content: The principle text (for add). Keep it concise and actionable.
-                    Good: "Validate all user input before database queries"
-                    Bad: "Be careful with security"
-                priority: Injection frequency (for add):
-                    - "critical": Every context generation (security rules)
-                    - "high": Most contexts (architecture decisions)
-                    - "medium": Regular contexts (style guidelines, default)
-                    - "low": Occasional reminder
-                category: Group related tenets (e.g., "security", "style", "architecture").
-                session: Bind tenet to specific session, or global if None.
-                pending_only: Only show pending (not yet instilled) tenets (for list).
-                force: Re-instill already instilled tenets (for instill).
+            Inputs: action (required), content, priority, category, session, pending_only, force.
+            Returns: {action: str, ...action-specific fields}.
 
-            Returns:
-                Dictionary with action-specific results (tenet info, list, etc.).
+            Common errors:
+            - Missing content → required for "add" action.
+            - Tenets not appearing → run action="instill" to activate pending tenets.
             """
             if action == "add":
                 if not content:
@@ -666,26 +597,22 @@ class TenetsMCP:
             instruction: str,
             position: Literal["top", "after_header", "before_content"] = "top",
         ) -> dict[str, Any]:
-            """Set a system instruction to be injected into all generated context.
+            """Set a one-time system instruction injected into all generated context.
 
-            USE THIS TOOL when the user wants to:
-            - Add persistent instructions: "always explain your reasoning"
-            - Set behavior guidelines: "be concise", "focus on security"
-            - Configure AI behavior for this project: "use TypeScript conventions"
-            - Add project-specific context: "this is a Django project using DRF"
+            Use when: user says "add instruction", "always explain reasoning", "be concise", "focus on security",
+            "use TypeScript conventions", "this is a Django project", or needs persistent behavioral guidance.
+            Do not use when: user wants repeating principles (use tenets_tenet for rules that auto-inject).
 
-            The instruction appears at the specified position in every tenets_distill
-            output, ensuring consistent behavior across all context generation.
+            Inputs:
+            - instruction (required): System instruction text. Be clear and specific.
+            - position: Injection location—"top" (default, highest visibility), "after_header", "before_content".
 
-            Args:
-                instruction: The system instruction text. Be clear and specific.
-                position: Where to inject in generated context:
-                    - "top": At the very beginning (default, highest visibility)
-                    - "after_header": After the context header/summary
-                    - "before_content": Just before the file contents
+            Returns: {success: bool, instruction_length: int, position: str}.
+            Instruction appears at specified position in every tenets_distill output for consistent behavior.
 
-            Returns:
-                Dictionary confirming the instruction was set with length and position.
+            Common errors:
+            - Instruction too vague → be specific (good: "Use TypeScript strict mode", bad: "use TS").
+            - Wrong tool → for repeating rules use tenets_tenet; this is for one-time project-wide instructions.
             """
             self.tenets.set_system_instruction(
                 instruction=instruction,
