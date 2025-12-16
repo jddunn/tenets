@@ -251,42 +251,42 @@ claude mcp add tenets -s user -- tenets-mcp
       <tbody>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_distill</code></td>
-          <td style="padding: 1rem;">Build optimized code context</td>
+          <td style="padding: 1rem;">Find relevant code using semantic ranking</td>
           <td style="padding: 1rem; opacity: 0.8;"><code>{"prompt": "implement OAuth"}</code></td>
         </tr>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_rank_files</code></td>
-          <td style="padding: 1rem;">Preview file relevance</td>
+          <td style="padding: 1rem;">Fast file discovery without content</td>
           <td style="padding: 1rem; opacity: 0.8;"><code>{"prompt": "auth bug", "top_n": 10}</code></td>
         </tr>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_examine</code></td>
-          <td style="padding: 1rem;">Analyze codebase structure</td>
+          <td style="padding: 1rem;">Analyze structure, complexity, quality</td>
           <td style="padding: 1rem; opacity: 0.8;"><code>{"path": "src/"}</code></td>
         </tr>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_session</code></td>
-          <td style="padding: 1rem;">Sessions & pinning (consolidated)</td>
+          <td style="padding: 1rem;">Persistent context across conversations</td>
           <td style="padding: 1rem; opacity: 0.8;"><code>{"action": "create", "name": "auth"}</code></td>
         </tr>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_tenet</code></td>
-          <td style="padding: 1rem;">Guiding principles (consolidated)</td>
+          <td style="padding: 1rem;">Auto-inject principles to prevent drift</td>
           <td style="padding: 1rem; opacity: 0.8;"><code>{"action": "add", "content": "..."}</code></td>
         </tr>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_chronicle</code></td>
-          <td style="padding: 1rem;">Query git history</td>
-          <td style="padding: 1rem; opacity: 0.8;"><code>{"since": "last week"}</code></td>
+          <td style="padding: 1rem;">Analyze git history and activity</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"since": "1 week"}</code></td>
         </tr>
         <tr style="border-bottom: 1px solid rgba(245, 158, 11, 0.1);">
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_momentum</code></td>
-          <td style="padding: 1rem;">Track development velocity</td>
-          <td style="padding: 1rem; opacity: 0.8;"><code>{"since": "last-month"}</code></td>
+          <td style="padding: 1rem;">Track velocity and contribution patterns</td>
+          <td style="padding: 1rem; opacity: 0.8;"><code>{"since": "1 week"}</code></td>
         </tr>
         <tr>
           <td style="padding: 1rem;"><code style="color: #f59e0b;">tenets_system_instruction</code></td>
-          <td style="padding: 1rem;">Set system instruction</td>
+          <td style="padding: 1rem;">One-time behavioral guidance</td>
           <td style="padding: 1rem; opacity: 0.8;"><code>{"instruction": "Be concise"}</code></td>
         </tr>
       </tbody>
