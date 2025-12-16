@@ -53,8 +53,9 @@ jobs:
       
       - name: Analyze commit message
         id: analyze_commit
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
           echo "Analyzing commit: $COMMIT_MSG"
           
           # Extract first line of commit message
@@ -108,9 +109,10 @@ jobs:
       - name: Determine version bump type
         id: determine_bump
         if: steps.analyze_commit.outputs.should_skip != 'true'
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          COMMIT_TITLE: ${{ steps.analyze_commit.outputs.commit_title }}
         run: |
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
-          COMMIT_TITLE="${{ steps.analyze_commit.outputs.commit_title }}"
           
           # Default to patch
           BUMP_TYPE="patch"
@@ -203,13 +205,14 @@ jobs:
       
       - name: Update CHANGELOG
         if: steps.analyze_commit.outputs.should_skip != 'true'
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
           COMMIT_SHA="${{ github.sha }}"
           BUMP_TYPE="${{ steps.determine_bump.outputs.bump_type }}"
           TODAY=$(date +%Y-%m-%d)
-          
+
           # Get commit title (first line)
           COMMIT_TITLE=$(echo "$COMMIT_MSG" | head -n 1)
           
