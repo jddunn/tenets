@@ -111,8 +111,10 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
 
 # Tools always available (not lazy loaded) - core discovery tools
 ALWAYS_AVAILABLE_TOOLS = {
-    "tenets_distill", "tenets_rank_files",
-    "tenets_search_tools", "tenets_get_tool_schema"
+    "tenets_distill",
+    "tenets_rank_files",
+    "tenets_search_tools",
+    "tenets_get_tool_schema",
 }
 
 
@@ -301,11 +303,13 @@ class TenetsMCP:
                     or query_lower in info["description"].lower()
                     or any(query_lower in kw for kw in info["keywords"])
                 ):
-                    results.append({
-                        "name": name,
-                        "category": info["category"],
-                        "description": info["description"],
-                    })
+                    results.append(
+                        {
+                            "name": name,
+                            "category": info["category"],
+                            "description": info["description"],
+                        }
+                    )
 
             return results
 
@@ -327,11 +331,27 @@ class TenetsMCP:
                     "name": "tenets_distill",
                     "description": "Find and retrieve relevant code using semantic ranking",
                     "parameters": {
-                        "prompt": {"type": "string", "required": True, "description": "Task description"},
-                        "path": {"type": "string", "default": ".", "description": "Directory to search"},
-                        "mode": {"type": "string", "enum": ["fast", "balanced", "thorough"], "default": "balanced"},
+                        "prompt": {
+                            "type": "string",
+                            "required": True,
+                            "description": "Task description",
+                        },
+                        "path": {
+                            "type": "string",
+                            "default": ".",
+                            "description": "Directory to search",
+                        },
+                        "mode": {
+                            "type": "string",
+                            "enum": ["fast", "balanced", "thorough"],
+                            "default": "balanced",
+                        },
                         "max_tokens": {"type": "integer", "default": 100000},
-                        "format": {"type": "string", "enum": ["markdown", "xml", "json", "html"], "default": "markdown"},
+                        "format": {
+                            "type": "string",
+                            "enum": ["markdown", "xml", "json", "html"],
+                            "default": "markdown",
+                        },
                     },
                 },
                 "tenets_rank_files": {
@@ -340,7 +360,11 @@ class TenetsMCP:
                     "parameters": {
                         "prompt": {"type": "string", "required": True},
                         "path": {"type": "string", "default": "."},
-                        "mode": {"type": "string", "enum": ["fast", "balanced", "thorough", "ml"], "default": "balanced"},
+                        "mode": {
+                            "type": "string",
+                            "enum": ["fast", "balanced", "thorough", "ml"],
+                            "default": "balanced",
+                        },
                         "top_n": {"type": "integer", "default": 20},
                         "explain": {"type": "boolean", "default": False},
                     },
@@ -403,7 +427,11 @@ class TenetsMCP:
                     "parameters": {
                         "session": {"type": "string", "required": True},
                         "folder_path": {"type": "string", "required": True},
-                        "patterns": {"type": "array", "items": {"type": "string"}, "optional": True},
+                        "patterns": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "optional": True,
+                        },
                     },
                 },
                 "tenets_tenet_add": {
@@ -411,7 +439,11 @@ class TenetsMCP:
                     "description": "Add a guiding principle",
                     "parameters": {
                         "content": {"type": "string", "required": True},
-                        "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"], "default": "medium"},
+                        "priority": {
+                            "type": "string",
+                            "enum": ["low", "medium", "high", "critical"],
+                            "default": "medium",
+                        },
                         "category": {"type": "string", "optional": True},
                         "session": {"type": "string", "optional": True},
                     },
@@ -437,7 +469,11 @@ class TenetsMCP:
                     "description": "Set a system instruction for AI interactions",
                     "parameters": {
                         "instruction": {"type": "string", "required": True},
-                        "position": {"type": "string", "enum": ["top", "after_header", "before_content"], "default": "top"},
+                        "position": {
+                            "type": "string",
+                            "enum": ["top", "after_header", "before_content"],
+                            "default": "top",
+                        },
                     },
                 },
             }

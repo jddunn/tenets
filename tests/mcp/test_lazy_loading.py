@@ -12,9 +12,17 @@ class TestToolRegistry:
         from tenets.mcp.server import TOOL_REGISTRY
 
         expected_tools = {
-            "tenets_examine", "tenets_chronicle", "tenets_momentum",
-            "tenets_session_create", "tenets_session_list", "tenets_session_pin_file", "tenets_session_pin_folder",
-            "tenets_tenet_add", "tenets_tenet_list", "tenets_tenet_instill", "tenets_set_system_instruction",
+            "tenets_examine",
+            "tenets_chronicle",
+            "tenets_momentum",
+            "tenets_session_create",
+            "tenets_session_list",
+            "tenets_session_pin_file",
+            "tenets_session_pin_folder",
+            "tenets_tenet_add",
+            "tenets_tenet_list",
+            "tenets_tenet_instill",
+            "tenets_set_system_instruction",
         }
         assert set(TOOL_REGISTRY.keys()) == expected_tools
 
@@ -57,12 +65,15 @@ class TestSearchTenetsTools:
                     or query_lower in info["description"].lower()
                     or any(query_lower in kw for kw in info["keywords"])
                 ):
-                    results.append({
-                        "name": name,
-                        "category": info["category"],
-                        "description": info["description"],
-                    })
+                    results.append(
+                        {
+                            "name": name,
+                            "category": info["category"],
+                            "description": info["description"],
+                        }
+                    )
             return results
+
         return search
 
     @pytest.mark.asyncio
@@ -102,7 +113,7 @@ class TestGetToolSchema:
                 },
             },
         }
-        
+
         result = tool_schemas.get("tenets_examine", {"error": "not found"})
         assert result["name"] == "tenets_examine"
         assert "parameters" in result
@@ -112,6 +123,6 @@ class TestGetToolSchema:
         """tenets_get_tool_schema should return error for unknown tools."""
         tool_schemas = {}
         tool_name = "nonexistent_tool"
-        
+
         result = tool_schemas.get(tool_name, {"error": f"Tool '{tool_name}' not found"})
         assert "error" in result

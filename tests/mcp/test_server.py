@@ -926,7 +926,9 @@ class TestMCPToolDocstrings:
         for name in key_tools:
             tool = mcp_server._mcp.tools[name]
             # v0.9.3 uses "Inputs:" pattern
-            assert "Inputs:" in tool.__doc__ or "Args:" in tool.__doc__, f"Tool {name} missing Inputs/Args section"
+            assert (
+                "Inputs:" in tool.__doc__ or "Args:" in tool.__doc__
+            ), f"Tool {name} missing Inputs/Args section"
 
     def test_docstrings_have_returns_section(self, mcp_server):
         """Test that tool docstrings include Returns documentation."""
@@ -939,7 +941,9 @@ class TestMCPToolDocstrings:
     def test_docstrings_have_use_this_tool_trigger(self, mcp_server):
         """Test that all tools have 'Use when' trigger phrases (v0.9.3+ pattern)."""
         for name, tool in mcp_server._mcp.tools.items():
-            assert "Use when" in tool.__doc__ or "USE THIS TOOL" in tool.__doc__, f"Tool {name} missing trigger phrase"
+            assert (
+                "Use when" in tool.__doc__ or "USE THIS TOOL" in tool.__doc__
+            ), f"Tool {name} missing trigger phrase"
 
 
 class TestMCPSessionPersistence:
