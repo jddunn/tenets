@@ -111,7 +111,7 @@ pip install tenets[all]      # Everything
     }
   }
   ```
-- **Tools exposed**: `distill`, `rank`, `examine`, `session_*`, `tenet_*` (same surface as CLI).
+- **Tools exposed**: `distill`, `rank`, `examine`, `session_*`, `tenet_*`, plus `search_tools` + `get_tool_schema` for on-demand discovery.
 - **Docs**: see `docs/MCP.md` for full endpoint/tool list, SSE/HTTP details, and IDE notes.
 
 ## MCP Server (AI assistant integration)

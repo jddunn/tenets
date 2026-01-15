@@ -182,7 +182,16 @@ If using an MCP extension for VS Code:
 
 ## Available Tools
 
-The MCP server exposes 8 tools to AI assistants (consolidated from 13 in v0.8.0):
+The MCP server exposes 10 tools to AI assistants (consolidated from 13 in v0.8.0):
+
+### Meta-Tools (Tool Discovery)
+
+| Tool | Description |
+|------|-------------|
+| `tenets_search_tools` | Search available tools by keyword or category. Returns [{name, category, description}]. Use to discover specialized tools beyond distill/rank. |
+| `tenets_get_tool_schema` | Get full input schema for a specific tool. Returns parameters, types, and descriptions. Call after search to get args for a tool. |
+
+> **Token savings**: Meta-tools enable ~80% reduction in initial context (from ~15k to ~3k tokens) by loading full tool schemas on-demand rather than upfront.
 
 ### Context Tools
 

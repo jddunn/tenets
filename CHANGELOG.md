@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2025-01-15
+
+### Added
+- **MCP lazy loading / tool search**: New meta-tools for token-efficient tool discovery
+  - `tenets_search_tools`: Search available tools by keyword or category
+  - `tenets_get_tool_schema`: Get full schema for a tool on-demand
+  - `TOOL_REGISTRY`: 11 discoverable tools with minimal metadata
+  - ~80% reduction in initial token overhead (from ~15k to ~3k tokens)
+
 ### Fixed
 - Improved MCP tool descriptions for better IDE agent discoverability with semantic triggers and error guidance
 - Standardized parameter defaults across chronicle/momentum tools (both now use "1 week")

@@ -46,6 +46,76 @@ def _check_mcp_available() -> bool:
     return _mcp_available
 
 
+# Tool registry for lazy loading - minimal metadata for discovery
+# Full schemas are loaded on-demand via tenets_get_tool_schema()
+TOOL_REGISTRY: dict[str, dict[str, Any]] = {
+    # Analysis tools
+    "tenets_examine": {
+        "category": "analysis",
+        "description": "Analyze codebase structure and complexity metrics",
+        "keywords": ["structure", "complexity", "examine", "analyze", "metrics", "overview"],
+    },
+    "tenets_chronicle": {
+        "category": "analysis",
+        "description": "Analyze git history and development patterns",
+        "keywords": ["git", "history", "commits", "changes", "chronicle", "blame"],
+    },
+    "tenets_momentum": {
+        "category": "analysis",
+        "description": "Track development velocity and team momentum",
+        "keywords": ["velocity", "momentum", "sprint", "team", "activity", "progress"],
+    },
+    # Session tools
+    "tenets_session_create": {
+        "category": "session",
+        "description": "Create a development session for stateful context",
+        "keywords": ["session", "create", "new", "workflow"],
+    },
+    "tenets_session_list": {
+        "category": "session",
+        "description": "List all development sessions",
+        "keywords": ["session", "list", "show", "all"],
+    },
+    "tenets_session_pin_file": {
+        "category": "session",
+        "description": "Pin a file to a session for guaranteed inclusion",
+        "keywords": ["pin", "file", "session", "include"],
+    },
+    "tenets_session_pin_folder": {
+        "category": "session",
+        "description": "Pin all files in a folder to a session",
+        "keywords": ["pin", "folder", "directory", "session"],
+    },
+    # Tenet tools
+    "tenets_tenet_add": {
+        "category": "tenet",
+        "description": "Add a guiding principle for consistent AI interactions",
+        "keywords": ["tenet", "add", "principle", "rule", "guideline"],
+    },
+    "tenets_tenet_list": {
+        "category": "tenet",
+        "description": "List all tenets with optional filtering",
+        "keywords": ["tenet", "list", "show", "principles"],
+    },
+    "tenets_tenet_instill": {
+        "category": "tenet",
+        "description": "Instill pending tenets, marking them active",
+        "keywords": ["tenet", "instill", "activate", "apply"],
+    },
+    "tenets_set_system_instruction": {
+        "category": "tenet",
+        "description": "Set a system instruction for AI interactions",
+        "keywords": ["system", "instruction", "prompt", "set"],
+    },
+}
+
+# Tools always available (not lazy loaded) - core discovery tools
+ALWAYS_AVAILABLE_TOOLS = {
+    "tenets_distill", "tenets_rank_files",
+    "tenets_search_tools", "tenets_get_tool_schema"
+}
+
+
 class TenetsMCP:
     """Tenets MCP Server.
 
@@ -198,6 +268,185 @@ class TenetsMCP:
         4. Encouragement to explore further after using the tool
         """
         mcp = self._mcp
+
+        # === Meta-Tools (Tool Discovery / Lazy Loading) ===
+
+        @mcp.tool()
+        async def tenets_search_tools(
+            query: str,
+            category: Optional[Literal["analysis", "session", "tenet"]] = None,
+        ) -> list[dict[str, Any]]:
+            """Search available tenets tools by keyword or category.
+
+            USE THIS TOOL when: you want to discover what tools are available beyond distill/rank,
+            need specialized functionality, or want to explore session/tenet management.
+
+            Args:
+            - query: Search term (matches name, description, or keywords).
+            - category: Optional filter: "analysis" (examine, chronicle, momentum),
+              "session" (session management), "tenet" (guiding principles).
+
+            Returns: List of matching tools [{name, category, description}].
+            Call tenets_get_tool_schema() with tool name to get full input parameters.
+            """
+            query_lower = query.lower()
+            results = []
+
+            for name, info in TOOL_REGISTRY.items():
+                if category and info["category"] != category:
+                    continue
+
+                if (
+                    query_lower in name.lower()
+                    or query_lower in info["description"].lower()
+                    or any(query_lower in kw for kw in info["keywords"])
+                ):
+                    results.append({
+                        "name": name,
+                        "category": info["category"],
+                        "description": info["description"],
+                    })
+
+            return results
+
+        @mcp.tool()
+        async def tenets_get_tool_schema(tool_name: str) -> dict[str, Any]:
+            """Get complete input schema for a specific tool.
+
+            USE THIS TOOL when: you found a tool via tenets_search_tools and need its parameters.
+
+            Args:
+            - tool_name: Exact tool name (e.g., "tenets_examine", "tenets_chronicle").
+
+            Returns: Full tool schema with parameters, types, descriptions.
+            If tool not found, returns {error, available} with list of valid names.
+            """
+            # Core tools schemas
+            core_schemas = {
+                "tenets_distill": {
+                    "name": "tenets_distill",
+                    "description": "Find and retrieve relevant code using semantic ranking",
+                    "parameters": {
+                        "prompt": {"type": "string", "required": True, "description": "Task description"},
+                        "path": {"type": "string", "default": ".", "description": "Directory to search"},
+                        "mode": {"type": "string", "enum": ["fast", "balanced", "thorough"], "default": "balanced"},
+                        "max_tokens": {"type": "integer", "default": 100000},
+                        "format": {"type": "string", "enum": ["markdown", "xml", "json", "html"], "default": "markdown"},
+                    },
+                },
+                "tenets_rank_files": {
+                    "name": "tenets_rank_files",
+                    "description": "Identify relevant files without fetching content",
+                    "parameters": {
+                        "prompt": {"type": "string", "required": True},
+                        "path": {"type": "string", "default": "."},
+                        "mode": {"type": "string", "enum": ["fast", "balanced", "thorough", "ml"], "default": "balanced"},
+                        "top_n": {"type": "integer", "default": 20},
+                        "explain": {"type": "boolean", "default": False},
+                    },
+                },
+            }
+
+            # Discoverable tool schemas
+            tool_schemas = {
+                "tenets_examine": {
+                    "name": "tenets_examine",
+                    "description": "Analyze codebase structure and quality metrics",
+                    "parameters": {
+                        "path": {"type": "string", "default": "."},
+                        "include_complexity": {"type": "boolean", "default": True},
+                        "include_hotspots": {"type": "boolean", "default": True},
+                    },
+                },
+                "tenets_chronicle": {
+                    "name": "tenets_chronicle",
+                    "description": "Analyze git history and development patterns",
+                    "parameters": {
+                        "path": {"type": "string", "default": "."},
+                        "since": {"type": "string", "default": "1 week"},
+                        "author": {"type": "string", "optional": True},
+                    },
+                },
+                "tenets_momentum": {
+                    "name": "tenets_momentum",
+                    "description": "Track development velocity and team momentum",
+                    "parameters": {
+                        "path": {"type": "string", "default": "."},
+                        "since": {"type": "string", "default": "last-month"},
+                        "team": {"type": "boolean", "default": False},
+                    },
+                },
+                "tenets_session_create": {
+                    "name": "tenets_session_create",
+                    "description": "Create a new development session",
+                    "parameters": {
+                        "name": {"type": "string", "required": True},
+                        "description": {"type": "string", "optional": True},
+                    },
+                },
+                "tenets_session_list": {
+                    "name": "tenets_session_list",
+                    "description": "List all development sessions",
+                    "parameters": {},
+                },
+                "tenets_session_pin_file": {
+                    "name": "tenets_session_pin_file",
+                    "description": "Pin a file to a session",
+                    "parameters": {
+                        "session": {"type": "string", "required": True},
+                        "file_path": {"type": "string", "required": True},
+                    },
+                },
+                "tenets_session_pin_folder": {
+                    "name": "tenets_session_pin_folder",
+                    "description": "Pin all files in a folder to a session",
+                    "parameters": {
+                        "session": {"type": "string", "required": True},
+                        "folder_path": {"type": "string", "required": True},
+                        "patterns": {"type": "array", "items": {"type": "string"}, "optional": True},
+                    },
+                },
+                "tenets_tenet_add": {
+                    "name": "tenets_tenet_add",
+                    "description": "Add a guiding principle",
+                    "parameters": {
+                        "content": {"type": "string", "required": True},
+                        "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"], "default": "medium"},
+                        "category": {"type": "string", "optional": True},
+                        "session": {"type": "string", "optional": True},
+                    },
+                },
+                "tenets_tenet_list": {
+                    "name": "tenets_tenet_list",
+                    "description": "List all tenets",
+                    "parameters": {
+                        "session": {"type": "string", "optional": True},
+                        "pending_only": {"type": "boolean", "default": False},
+                    },
+                },
+                "tenets_tenet_instill": {
+                    "name": "tenets_tenet_instill",
+                    "description": "Instill pending tenets",
+                    "parameters": {
+                        "session": {"type": "string", "optional": True},
+                        "force": {"type": "boolean", "default": False},
+                    },
+                },
+                "tenets_set_system_instruction": {
+                    "name": "tenets_set_system_instruction",
+                    "description": "Set a system instruction for AI interactions",
+                    "parameters": {
+                        "instruction": {"type": "string", "required": True},
+                        "position": {"type": "string", "enum": ["top", "after_header", "before_content"], "default": "top"},
+                    },
+                },
+            }
+
+            all_schemas = {**core_schemas, **tool_schemas}
+            if tool_name in all_schemas:
+                return all_schemas[tool_name]
+
+            return {"error": f"Tool '{tool_name}' not found", "available": list(all_schemas.keys())}
 
         # === Context Tools ===
 

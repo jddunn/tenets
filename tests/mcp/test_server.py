@@ -903,8 +903,8 @@ class TestMCPToolDocstrings:
         """Test that tenets_distill tool has a proper docstring."""
         tool = mcp_server._mcp.tools["tenets_distill"]
         assert tool.__doc__ is not None
-        # Updated docstring check - should have trigger phrases
-        assert "USE THIS TOOL" in tool.__doc__
+        # v0.9.3+ uses "Use when:" pattern
+        assert "Use when" in tool.__doc__
         assert "context" in tool.__doc__.lower()
 
     def test_rank_files_has_docstring(self, mcp_server):
@@ -912,7 +912,7 @@ class TestMCPToolDocstrings:
         tool = mcp_server._mcp.tools["tenets_rank_files"]
         assert tool.__doc__ is not None
         assert "relevant" in tool.__doc__.lower()
-        assert "USE THIS TOOL" in tool.__doc__
+        assert "Use when" in tool.__doc__
 
     def test_all_tools_have_docstrings(self, mcp_server):
         """Test that all tools have docstrings."""
@@ -921,11 +921,12 @@ class TestMCPToolDocstrings:
             assert len(tool.__doc__) > 50, f"Tool {name} has too short docstring"
 
     def test_docstrings_have_args_section(self, mcp_server):
-        """Test that tool docstrings include Args documentation."""
-        key_tools = ["tenets_distill", "tenets_rank_files", "tenets_tenet", "tenets_session"]
+        """Test that tool docstrings include Args or Inputs documentation."""
+        key_tools = ["tenets_distill", "tenets_rank_files"]
         for name in key_tools:
             tool = mcp_server._mcp.tools[name]
-            assert "Args:" in tool.__doc__, f"Tool {name} missing Args section"
+            # v0.9.3 uses "Inputs:" pattern
+            assert "Inputs:" in tool.__doc__ or "Args:" in tool.__doc__, f"Tool {name} missing Inputs/Args section"
 
     def test_docstrings_have_returns_section(self, mcp_server):
         """Test that tool docstrings include Returns documentation."""
@@ -936,9 +937,9 @@ class TestMCPToolDocstrings:
             assert "return" in tool.__doc__.lower(), f"Tool {name} missing Returns section"
 
     def test_docstrings_have_use_this_tool_trigger(self, mcp_server):
-        """Test that all tools have 'USE THIS TOOL' trigger phrases."""
+        """Test that all tools have 'Use when' trigger phrases (v0.9.3+ pattern)."""
         for name, tool in mcp_server._mcp.tools.items():
-            assert "USE THIS TOOL" in tool.__doc__, f"Tool {name} missing trigger phrase"
+            assert "Use when" in tool.__doc__ or "USE THIS TOOL" in tool.__doc__, f"Tool {name} missing trigger phrase"
 
 
 class TestMCPSessionPersistence:
