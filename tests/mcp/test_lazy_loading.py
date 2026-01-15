@@ -1,7 +1,8 @@
 """Tests for MCP lazy loading functionality."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestToolRegistry:
