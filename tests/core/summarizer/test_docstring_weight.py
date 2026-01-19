@@ -212,13 +212,11 @@ class APIHandler:
         # Create file with many functions
         functions = []
         for i in range(30):
-            functions.append(
-                f'''
+            functions.append(f'''
 def function_{i}():
     """Function {i} docstring."""
     pass
-'''
-            )
+''')
 
         code = "\n".join(functions)
 

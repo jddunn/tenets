@@ -55,18 +55,15 @@ class SessionDB:
         conn = self.db.connect()
         try:
             cur = conn.cursor()
-            cur.execute(
-                """
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS sessions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
                     created_at TIMESTAMP NOT NULL,
                     metadata TEXT
                 )
-                """
-            )
-            cur.execute(
-                """
+                """)
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS session_context (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     session_id INTEGER NOT NULL,
@@ -75,8 +72,7 @@ class SessionDB:
                     created_at TIMESTAMP NOT NULL,
                     FOREIGN KEY(session_id) REFERENCES sessions(id)
                 )
-                """
-            )
+                """)
             conn.commit()
         finally:
             conn.close()

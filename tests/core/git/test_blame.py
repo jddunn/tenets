@@ -42,14 +42,12 @@ def temp_git_repo_with_history(tmp_path):
 
     # Create initial file
     main_file = tmp_path / "main.py"
-    main_file.write_text(
-        """def hello():
+    main_file.write_text("""def hello():
     print("Hello")
 
 def world():
     print("World")
-"""
-    )
+""")
     repo.index.add(["main.py"])
     repo.index.commit("Initial commit by Alice")
 
@@ -59,8 +57,7 @@ def world():
         config.set_value("user", "email", "bob@example.com")
 
     # Bob modifies the file
-    main_file.write_text(
-        """def hello():
+    main_file.write_text("""def hello():
     print("Hello, everyone!")  # Bob's change
 
 def world():
@@ -68,8 +65,7 @@ def world():
 
 def goodbye():
     print("Goodbye")  # Bob added this
-"""
-    )
+""")
     repo.index.add(["main.py"])
     repo.index.commit("Bob's modifications")
 
@@ -79,8 +75,7 @@ def goodbye():
         config.set_value("user", "email", "charlie@example.com")
 
     # Charlie adds more
-    main_file.write_text(
-        """import sys  # Charlie added import
+    main_file.write_text("""import sys  # Charlie added import
 
 def hello():
     print("Hello, everyone!")  # Bob's change
@@ -96,19 +91,16 @@ def main():
     hello()
     world()
     goodbye()
-"""
-    )
+""")
     repo.index.add(["main.py"])
     repo.index.commit("Charlie adds main function")
 
     # Create another file for directory analysis
     utils_file = tmp_path / "utils.py"
-    utils_file.write_text(
-        """# Utility functions
+    utils_file.write_text("""# Utility functions
 def helper():
     pass
-"""
-    )
+""")
     repo.index.add(["utils.py"])
     repo.index.commit("Add utils by Charlie")
 

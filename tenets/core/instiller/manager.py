@@ -43,8 +43,7 @@ class TenetManager:
     def _init_database(self) -> None:
         """Initialize the tenet database."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS tenets (
                     id TEXT PRIMARY KEY,
                     content TEXT NOT NULL,
@@ -57,11 +56,9 @@ class TenetManager:
                     author TEXT,
                     data JSON NOT NULL
                 )
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS tenet_sessions (
                     tenet_id TEXT NOT NULL,
                     session_id TEXT NOT NULL,
@@ -69,11 +66,9 @@ class TenetManager:
                     PRIMARY KEY (tenet_id, session_id),
                     FOREIGN KEY (tenet_id) REFERENCES tenets(id)
                 )
-            """
-            )
+            """)
 
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS tenet_metrics (
                     tenet_id TEXT PRIMARY KEY,
                     injection_count INTEGER DEFAULT 0,
@@ -83,8 +78,7 @@ class TenetManager:
                     reinforcement_needed BOOLEAN DEFAULT FALSE,
                     FOREIGN KEY (tenet_id) REFERENCES tenets(id)
                 )
-            """
-            )
+            """)
 
             # Create indexes
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tenets_status ON tenets(status)")
@@ -97,13 +91,11 @@ class TenetManager:
         """Load active tenets into cache."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
-            cursor = conn.execute(
-                """
+            cursor = conn.execute("""
                 SELECT * FROM tenets
                 WHERE status IN ('pending', 'instilled')
                 ORDER BY created_at DESC
-            """
-            )
+            """)
 
             for row in cursor:
                 tenet_data = json.loads(row["data"])

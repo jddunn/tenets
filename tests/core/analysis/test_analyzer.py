@@ -47,8 +47,7 @@ def temp_project(tmp_path):
 
     # Create Python files
     main_py = src_dir / "main.py"
-    main_py.write_text(
-        """
+    main_py.write_text("""
 '''Main module for the application.'''
 import os
 import sys
@@ -72,12 +71,10 @@ class Application:
 
 if __name__ == "__main__":
     main()
-"""
-    )
+""")
 
     utils_py = src_dir / "utils.py"
-    utils_py.write_text(
-        """
+    utils_py.write_text("""
 '''Utility functions.'''
 
 def helper_function():
@@ -96,13 +93,11 @@ def complex_function(a, b, c):
             return a - b
     else:
         return 0
-"""
-    )
+""")
 
     # Create a JavaScript file
     js_file = src_dir / "app.js"
-    js_file.write_text(
-        """
+    js_file.write_text("""
 // Main JavaScript application
 import React from 'react';
 import { render } from 'react-dom';
@@ -112,22 +107,19 @@ function App() {
 }
 
 export default App;
-"""
-    )
+""")
 
     # Create test file
     test_dir = tmp_path / "tests"
     test_dir.mkdir()
     test_py = test_dir / "test_main.py"
-    test_py.write_text(
-        """
+    test_py.write_text("""
 import pytest
 from src.main import main
 
 def test_main():
     assert main() == 42
-"""
-    )
+""")
 
     # Create config file
     config_file = tmp_path / "config.json"

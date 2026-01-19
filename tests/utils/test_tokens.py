@@ -289,8 +289,7 @@ class ExampleClass:
 
     def test_chunk_text_mixed_content(self):
         """Test chunking mixed content (prose and code)."""
-        content = (
-            """
+        content = """
 # Documentation
 
 This is some documentation about the following code:
@@ -301,9 +300,7 @@ def hello():
 ```
 
 And here's more text after the code block.
-"""
-            * 10
-        )  # Repeat to make longer
+""" * 10  # Repeat to make longer
 
         chunks = chunk_text(content, max_tokens=100)
 
@@ -334,8 +331,7 @@ And here's more text after the code block.
 
     def test_chunk_text_unicode_handling(self):
         """Test chunking with unicode characters."""
-        text = (
-            """
+        text = """
         English text
         中文文本
         Текст на русском
@@ -343,9 +339,7 @@ And here's more text after the code block.
         한국어 텍스트
         عربي نص
         🚀 Emoji line 🎉
-        """
-            * 5
-        )
+        """ * 5
 
         chunks = chunk_text(text, max_tokens=50)
 

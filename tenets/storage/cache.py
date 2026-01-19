@@ -88,8 +88,7 @@ class DiskCache:
     def _init_db(self):
         """Initialize the cache database."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS cache (
                     key TEXT PRIMARY KEY,
                     value BLOB NOT NULL,
@@ -98,8 +97,7 @@ class DiskCache:
                     ttl INTEGER,
                     metadata JSON
                 )
-            """
-            )
+            """)
 
             conn.execute("CREATE INDEX IF NOT EXISTS idx_accessed ON cache(accessed_at)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_ttl ON cache(ttl)")
@@ -213,16 +211,14 @@ class DiskCache:
 
             if size_mb > max_size_mb:
                 # Delete least recently used until under limit
-                cursor = conn.execute(
-                    """
+                cursor = conn.execute("""
                     DELETE FROM cache
                     WHERE key IN (
                         SELECT key FROM cache
                         ORDER BY accessed_at ASC
                         LIMIT (SELECT COUNT(*) / 4 FROM cache)
                     )
-                """
-                )
+                """)
                 deleted += cursor.rowcount
 
                 # VACUUM to reclaim space

@@ -578,16 +578,13 @@ function simple() {
         simple_metrics = analyzer.calculate_complexity(simple_code, Path("simple.txt"))
 
         # Complex file
-        complex_code = (
-            """
+        complex_code = """
 if (a) { if (b) { if (c) { if (d) { if (e) {
     for (i = 0; i < 100; i++) {
         while (x) { switch(y) { case 1: case 2: case 3: break; }}
     }
 }}}}}
-"""
-            * 50
-        )  # Make it very long and complex
+""" * 50  # Make it very long and complex
 
         complex_metrics = analyzer.calculate_complexity(complex_code, Path("complex.txt"))
 

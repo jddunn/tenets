@@ -204,7 +204,9 @@ class MarkdownReporter:
 
         total_issues = metadata.get("total_issues", 0)
         if total_issues > 0:
-            lines.append(f"- ⚠️ Total of **{total_issues} issues** identified across all categories")
+            lines.append(
+                f"- ⚠️ Total of **{total_issues} issues** identified across all categories"
+            )
 
         lines.append(
             f"- 📊 Analyzed **{summary.get('total_files', 0)} files** with **{summary.get('total_lines', 0):,} lines** of code"

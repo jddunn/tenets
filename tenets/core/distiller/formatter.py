@@ -1222,8 +1222,7 @@ class ContextFormatter:
 
             # Store content in a data attribute to avoid inline JavaScript with content
             escaped_content = self._escape_html(content)
-            files_section.append(
-                f"""
+            files_section.append(f"""
             <div class="file-card" data-file-id="{file_id}" data-content-length="{len(content)}">
                 <button class="copy-button" id="copy-{file_id}"
                         data-file-id="{file_id}">
@@ -1248,8 +1247,7 @@ class ContextFormatter:
                     Show Full
                 </button>
             </div>
-            """
-            )
+            """)
 
         files_section.append("</section>")
 

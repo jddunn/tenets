@@ -52,48 +52,40 @@ def temp_project(tmp_path):
     src_dir = tmp_path / "src"
     src_dir.mkdir()
 
-    (src_dir / "main.py").write_text(
-        """
+    (src_dir / "main.py").write_text("""
 def main():
     print("Hello, World!")
 
 if __name__ == "__main__":
     main()
-"""
-    )
+""")
 
-    (src_dir / "utils.py").write_text(
-        """
+    (src_dir / "utils.py").write_text("""
 def helper(x, y):
     return x + y
 
 class Utility:
     def process(self, data):
         return data * 2
-"""
-    )
+""")
 
     # Create test files
     test_dir = tmp_path / "tests"
     test_dir.mkdir()
 
-    (test_dir / "test_main.py").write_text(
-        """
+    (test_dir / "test_main.py").write_text("""
 import pytest
 from src.main import main
 
 def test_main():
     assert main() is None
-"""
-    )
+""")
 
     # Create config file
-    (tmp_path / ".tenets.yml").write_text(
-        """
+    (tmp_path / ".tenets.yml").write_text("""
 ranking:
   threshold: 0.1
-"""
-    )
+""")
 
     return tmp_path
 

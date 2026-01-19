@@ -1117,14 +1117,12 @@ class HTMLReporter:
             tooltip = metric_tooltips.get(key, "")
             tooltip_attr = f'data-tooltip="{tooltip}"' if tooltip else ""
 
-            cards.append(
-                f"""
+            cards.append(f"""
             <div class="metric-card" {tooltip_attr}>
                 <div class="metric-label">{key}</div>
                 <div class="metric-value">{value}</div>
             </div>
-            """
-            )
+            """)
 
         return f'<div class="metrics-grid">{"".join(cards)}</div>'
 
@@ -1171,18 +1169,15 @@ class HTMLReporter:
 
             config = self._generate_chart_config(chart_type, data)
 
-            scripts.append(
-                f"""
+            scripts.append(f"""
     var ctx_{chart_id} = document.getElementById('{chart_id}');
     if (ctx_{chart_id}) {{
         new Chart(ctx_{chart_id}.getContext('2d'), {json.dumps(config)});
     }}
-            """
-            )
+            """)
 
         # Add collapsible section handlers
-        scripts.append(
-            """
+        scripts.append("""
     // Collapsible sections
     document.querySelectorAll('.collapsible').forEach(function(element) {
         element.addEventListener('click', function() {
@@ -1203,8 +1198,7 @@ class HTMLReporter:
             this.classList.add('active');
         });
     });
-        """
-        )
+        """)
 
         scripts.append("});")
         scripts.append("</script>")

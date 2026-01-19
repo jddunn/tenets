@@ -34,8 +34,7 @@ def get_tenet_manager():
 
             def _init_db(self):
                 with sqlite3.connect(self.db_path) as conn:
-                    conn.execute(
-                        """
+                    conn.execute("""
                         CREATE TABLE IF NOT EXISTS tenets (
                             id TEXT PRIMARY KEY,
                             content TEXT NOT NULL,
@@ -46,8 +45,7 @@ def get_tenet_manager():
                             instilled_at TIMESTAMP,
                             status TEXT DEFAULT 'pending'
                         )
-                    """
-                    )
+                    """)
                     conn.commit()
 
             def add_tenet(

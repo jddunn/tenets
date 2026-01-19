@@ -55,8 +55,7 @@ def temp_files(tmp_path):
     """Create temporary test files."""
     # Python file with docstring
     python_file = tmp_path / "module.py"
-    python_file.write_text(
-        '''
+    python_file.write_text('''
 """This is a module docstring.
 
 This module provides utility functions for
@@ -79,13 +78,11 @@ class DataProcessor:
     def add(self, item):
         """Add an item to the processor."""
         self.data.append(item)
-'''
-    )
+''')
 
     # Python file with comments
     comment_file = tmp_path / "commented.py"
-    comment_file.write_text(
-        """
+    comment_file.write_text("""
 # This file contains utility functions
 # for string manipulation and text processing
 #
@@ -97,8 +94,7 @@ def reverse_string(s):
 
 def capitalize_words(text):
     return ' '.join(word.capitalize() for word in text.split())
-"""
-    )
+""")
 
     # Large text for summarization
     large_text_file = tmp_path / "large.txt"

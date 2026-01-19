@@ -170,14 +170,12 @@ class TestDatabase:
 
         # Create table with datetime
         cursor = conn.cursor()
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE test_types (
                 id INTEGER,
                 created_at TIMESTAMP
             )
-        """
-        )
+        """)
 
         from datetime import datetime
 
