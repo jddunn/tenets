@@ -822,8 +822,11 @@ class RelevanceRanker:
     def _corpus_sig(self, files: List[FileAnalysis]) -> str:
         """Signature of the (prompt-independent) corpus, for memoizing _analyze_corpus.
 
-        Keyed on each file's path + content hash (already computed by the analyzer),
-        so an edited file invalidates the memo. Falls back to size when hash is absent.
+        Keyed on each file's path + content hash (so an edit invalidates the memo)
+        AND its resolved imports. The corpus analysis depth varies with the analysis
+        mode/deadline (imports drive the import graph + dependency tree), so folding
+        the imports in prevents a deeper re-analysis being served a shallow memo (or
+        vice versa). Falls back to size when the content hash is absent.
         """
         import hashlib
 
@@ -834,6 +837,11 @@ class RelevanceRanker:
             if not token:
                 token = getattr(f, "size", None)
             h.update(str(token).encode("utf-8", "replace"))
+            imports = getattr(f, "imports", None) or []
+            h.update(b"|imports:" + str(len(imports)).encode())
+            for imp in imports:
+                mod = getattr(imp, "module", None)
+                h.update(b"|" + str(mod if mod is not None else imp).encode("utf-8", "replace"))
         return h.hexdigest()
 
     def _get_corpus_index(self):
