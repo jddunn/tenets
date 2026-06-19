@@ -1649,6 +1649,27 @@ def _configure_mcp_logging(transport: str) -> None:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 
+def _chdir_to_project_root() -> None:
+    """Pin the working directory to the project root for config discovery.
+
+    ``.tenets.yml`` is discovered relative to the process cwd, but an MCP stdio
+    server's spawn cwd is not guaranteed to be the project root. Claude Code sets
+    ``CLAUDE_PROJECT_DIR`` in the spawned server's environment to the project root;
+    honor that (and a generic ``TENETS_PROJECT_ROOT`` override) so the project's
+    ``.tenets.yml`` is reliably loaded regardless of where the server was launched.
+    """
+    import os
+
+    for var in ("TENETS_PROJECT_ROOT", "CLAUDE_PROJECT_DIR"):
+        root = os.environ.get(var)
+        if root and os.path.isdir(root):
+            try:
+                os.chdir(root)
+            except OSError:
+                pass
+            return
+
+
 def main() -> None:
     """CLI entry point for tenets-mcp server.
 
@@ -1697,6 +1718,9 @@ def main() -> None:
 
     # Configure logging BEFORE importing anything else
     _configure_mcp_logging(args.transport)
+
+    # Pin cwd to the project root so .tenets.yml is discovered reliably
+    _chdir_to_project_root()
 
     try:
         server = create_server()
