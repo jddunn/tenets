@@ -1,6 +1,7 @@
 """The import-graph build memoizes per-module resolution to kill the O(N^2)
 _resolve_import scan — WITHOUT changing the resulting graph (so import_centrality,
 a 0.10-weight ranking factor, stays byte-identical)."""
+
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -15,8 +16,12 @@ def _mod(m):
 
 def _fa(path, imports):
     return FileAnalysis(
-        path=path, content="x", language="python", size=1,
-        imports=[_mod(m) for m in imports], hash=path,
+        path=path,
+        content="x",
+        language="python",
+        size=1,
+        imports=[_mod(m) for m in imports],
+        hash=path,
     )
 
 
