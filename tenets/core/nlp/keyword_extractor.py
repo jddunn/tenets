@@ -767,6 +767,66 @@ class TFIDFCalculator:
             f"Corpus built: {self.document_count} documents, {len(self.vocabulary)} unique terms"
         )
 
+    def remove_document(self, doc_id: str) -> None:
+        """Remove a document from the corpus (mirror of add_document).
+
+        Decrements document frequencies for the document's terms, drops them from
+        the vocabulary when df hits zero, and deletes its vector/norm. Used by the
+        persistent index to apply incremental deltas for changed/deleted files.
+        """
+        if doc_id not in self.document_vectors:
+            return
+        vector = self.document_vectors[doc_id]
+        if vector:  # empty documents were never counted / have no df entries
+            for term in vector:
+                self.document_frequency[term] -= 1
+                if self.document_frequency[term] <= 0:
+                    self.document_frequency.pop(term, None)
+                    self.vocabulary.discard(term)
+            self.document_count -= 1
+        del self.document_vectors[doc_id]
+        self.document_norms.pop(doc_id, None)
+        # Document frequencies changed → IDF cache is stale
+        self.idf_cache.clear()
+
+    def to_state(self) -> Dict:
+        """Serialize the corpus into a plain-dict state (picklable / JSON-able).
+
+        Restoring this reproduces compute_similarity() exactly for an UNCHANGED
+        corpus. Note: document_vectors bake in insertion-time IDF, so this is a
+        faithful snapshot of THIS corpus, not necessarily byte-equal to a corpus
+        built from the same files in a different order.
+        """
+        return {
+            "version": 1,
+            "params": {"use_stopwords": self.use_stopwords, "stopword_set": self.stopword_set},
+            "document_count": self.document_count,
+            "document_frequency": dict(self.document_frequency),
+            "document_vectors": self.document_vectors,
+            "document_norms": dict(self.document_norms),
+            "vocabulary": list(self.vocabulary),
+        }
+
+    def load_state(self, state: Dict) -> None:
+        """Restore corpus structures from a to_state() dict (in place)."""
+        self.document_count = state["document_count"]
+        self.document_frequency = defaultdict(int, state["document_frequency"])
+        self.document_vectors = {k: dict(v) for k, v in state["document_vectors"].items()}
+        self.document_norms = dict(state["document_norms"])
+        self.vocabulary = set(state["vocabulary"])
+        self.idf_cache = {}
+
+    @classmethod
+    def from_state(cls, state: Dict) -> "TFIDFCalculator":
+        """Construct a TFIDFCalculator from a to_state() dict."""
+        p = state.get("params", {})
+        calc = cls(
+            use_stopwords=p.get("use_stopwords", False),
+            stopword_set=p.get("stopword_set", "code"),
+        )
+        calc.load_state(state)
+        return calc
+
     def get_top_terms(self, doc_id: str, n: int = 10) -> List[Tuple[str, float]]:
         """Return top-n terms by TF-IDF weight for a document.
 

@@ -878,6 +878,7 @@ class CacheConfig:
     """
 
     enabled: bool = True
+    index_enabled: bool = True  # persistent incremental BM25/TF-IDF corpus index
     directory: Optional[Path] = None
     ttl_days: int = 7
     max_size_mb: int = 500

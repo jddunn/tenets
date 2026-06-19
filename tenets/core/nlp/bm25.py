@@ -131,6 +131,7 @@ class BM25Calculator:
         self.document_lengths: Dict[str, int] = {}
         self.document_tokens: Dict[str, List[str]] = {}
         self.average_doc_length = 0.0
+        self._total_length = 0  # running sum of document_lengths.values() (avoids O(N^2) avgdl)
         self.vocabulary: Set[str] = set()
 
         # Caching structures for performance
@@ -184,6 +185,8 @@ class BM25Calculator:
 
         # Handle empty documents
         if not tokens:
+            # keep _total_length == sum(document_lengths.values()) even on update-to-empty
+            self._total_length -= self.document_lengths.get(doc_id, 0)
             self.document_lengths[doc_id] = 0
             self.document_tokens[doc_id] = []
             self.logger.debug(f"Added empty document: {doc_id}")
@@ -204,9 +207,9 @@ class BM25Calculator:
             self.document_frequency[term] += 1
             self.vocabulary.add(term)
 
-        # Update average document length incrementally
-        total_length = sum(self.document_lengths.values())
-        self.average_doc_length = total_length / max(1, self.document_count)
+        # Update average document length incrementally (O(1) running total)
+        self._total_length += len(tokens)
+        self.average_doc_length = self._total_length / max(1, self.document_count)
 
         # Invalidate caches
         self.idf_cache.clear()
@@ -238,9 +241,16 @@ class BM25Calculator:
                 self.vocabulary.discard(term)
 
         # Remove document data
+        self._total_length -= self.document_lengths.get(doc_id, 0)
         del self.document_tokens[doc_id]
         del self.document_lengths[doc_id]
-        self.document_count -= 1
+        if tokens:  # empty documents were never counted in document_count
+            self.document_count -= 1
+        self.average_doc_length = self._total_length / max(1, self.document_count)
+
+        # Corpus changed → invalidate derived caches
+        self.idf_cache.clear()
+        self._score_cache.clear()
 
     def build_corpus(self, documents: List[Tuple[str, str]]) -> None:
         """Build BM25 corpus from multiple documents efficiently.
@@ -291,6 +301,7 @@ class BM25Calculator:
                 self.vocabulary.add(term)
 
         # Calculate average document length
+        self._total_length = total_length
         self.average_doc_length = total_length / max(1, self.document_count)
 
         self.stats["documents_added"] = self.document_count
@@ -300,6 +311,56 @@ class BM25Calculator:
             f"{len(self.vocabulary)} unique terms, "
             f"avg length: {self.average_doc_length:.1f} tokens"
         )
+
+    def to_state(self) -> Dict:
+        """Serialize the corpus into a plain-dict state (picklable / JSON-able).
+
+        Captures everything score_document() depends on. The idf/score caches are
+        derived and rebuilt lazily, so they are intentionally omitted.
+        """
+        return {
+            "version": 1,
+            "params": {
+                "k1": self.k1,
+                "b": self.b,
+                "epsilon": self.epsilon,
+                "use_stopwords": self.use_stopwords,
+                "stopword_set": self.stopword_set,
+            },
+            "document_count": self.document_count,
+            "document_frequency": dict(self.document_frequency),
+            "document_lengths": dict(self.document_lengths),
+            "document_tokens": self.document_tokens,
+            "average_doc_length": self.average_doc_length,
+            "total_length": self._total_length,
+            "vocabulary": list(self.vocabulary),
+        }
+
+    def load_state(self, state: Dict) -> None:
+        """Restore corpus structures from a to_state() dict (in place)."""
+        self.document_count = state["document_count"]
+        self.document_frequency = defaultdict(int, state["document_frequency"])
+        self.document_lengths = dict(state["document_lengths"])
+        self.document_tokens = {k: list(v) for k, v in state["document_tokens"].items()}
+        self.average_doc_length = state["average_doc_length"]
+        self._total_length = state.get("total_length", sum(self.document_lengths.values()))
+        self.vocabulary = set(state["vocabulary"])
+        self.idf_cache = {}
+        self._score_cache = {}
+
+    @classmethod
+    def from_state(cls, state: Dict) -> "BM25Calculator":
+        """Construct a BM25Calculator from a to_state() dict."""
+        p = state.get("params", {})
+        calc = cls(
+            k1=p.get("k1", 1.2),
+            b=p.get("b", 0.75),
+            epsilon=p.get("epsilon", 0.25),
+            use_stopwords=p.get("use_stopwords", False),
+            stopword_set=p.get("stopword_set", "code"),
+        )
+        calc.load_state(state)
+        return calc
 
     def compute_idf(self, term: str) -> float:
         """Compute IDF (Inverse Document Frequency) for a term.

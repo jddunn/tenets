@@ -754,15 +754,37 @@ class RelevanceRanker:
                     if imported_file:
                         stats["import_graph"][imported_file].add(file.path)
 
-        # Build text similarity corpus
+        # Build text similarity corpus — persistent incremental index when enabled,
+        # otherwise the original per-call build. Both paths produce byte-identical
+        # BM25 scoring for an unchanged corpus.
         if documents:
-            if tfidf_calc:
-                tfidf_calc.build_corpus(documents)
-                stats["tfidf_calculator"] = tfidf_calc
+            index = self._get_corpus_index()
+            if index is not None:
+                from tenets.core.nlp.keyword_extractor import TFIDFCalculator as _NLPTFIDF
+                from tenets.core.ranking.corpus_index import corpus_root_key
 
-            if bm25_calc:
-                bm25_calc.build_corpus(documents)
-                stats["bm25_calculator"] = bm25_calc
+                config_sig = f"sw={use_sw}|algo={text_sim_algo}"
+                idx_bm25, idx_tfidf = index.build(
+                    corpus_root_key(documents),
+                    documents,
+                    make_bm25=lambda: BM25Calculator(use_stopwords=use_sw),
+                    make_tfidf=lambda: _NLPTFIDF(use_stopwords=use_sw, stopword_set="code"),
+                    config_sig=config_sig,
+                )
+                if tfidf_calc is not None:
+                    # inject the indexed inner calculator into the ranking wrapper
+                    tfidf_calc._calculator = idx_tfidf
+                    stats["tfidf_calculator"] = tfidf_calc
+                if bm25_calc is not None:
+                    stats["bm25_calculator"] = idx_bm25
+            else:
+                if tfidf_calc:
+                    tfidf_calc.build_corpus(documents)
+                    stats["tfidf_calculator"] = tfidf_calc
+
+                if bm25_calc:
+                    bm25_calc.build_corpus(documents)
+                    stats["bm25_calculator"] = bm25_calc
 
         # Calculate additional statistics
         if stats["file_sizes"]:
@@ -783,6 +805,29 @@ class RelevanceRanker:
         )
 
         return stats
+
+    def _get_corpus_index(self):
+        """Lazily construct the persistent corpus index (None if disabled).
+
+        Controlled by ``config.cache.enabled`` AND ``config.cache.index_enabled``;
+        either off → the ranker falls back to the original per-call build_corpus.
+        """
+        if not hasattr(self, "_corpus_index"):
+            self._corpus_index = None
+            try:
+                cache = getattr(self.config, "cache", None)
+                enabled = getattr(cache, "enabled", True) and getattr(cache, "index_enabled", True)
+                if enabled:
+                    from pathlib import Path
+
+                    from tenets.core.ranking.corpus_index import CorpusIndex
+
+                    cache_dir = Path(self.config.cache_dir) / "index"
+                    self._corpus_index = CorpusIndex(cache_dir=cache_dir)
+            except Exception as e:
+                self.logger.warning(f"corpus index unavailable, using direct build: {e}")
+                self._corpus_index = None
+        return self._corpus_index
 
     def _resolve_import(
         self, module_name: str, from_file: str, all_files: List[FileAnalysis]
