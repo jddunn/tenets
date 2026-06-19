@@ -185,8 +185,11 @@ class BM25Calculator:
 
         # Handle empty documents
         if not tokens:
-            # keep _total_length == sum(document_lengths.values()) even on update-to-empty
-            self._total_length -= self.document_lengths.get(doc_id, 0)
+            # If updating an existing non-empty doc to empty, drop its old
+            # contributions (document_frequency / vocabulary / count / length /
+            # caches) first so the corpus stays consistent with a fresh build_corpus.
+            if doc_id in self.document_tokens:
+                self._remove_document(doc_id)
             self.document_lengths[doc_id] = 0
             self.document_tokens[doc_id] = []
             self.logger.debug(f"Added empty document: {doc_id}")
@@ -317,6 +320,10 @@ class BM25Calculator:
 
         Captures everything score_document() depends on. The idf/score caches are
         derived and rebuilt lazily, so they are intentionally omitted.
+
+        Note: ``document_tokens`` is returned by reference (not copied) to keep
+        memory bounded on large corpora — serialize the result immediately and do
+        not mutate the calculator while holding it.
         """
         return {
             "version": 1,

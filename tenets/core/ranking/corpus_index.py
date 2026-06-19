@@ -87,7 +87,12 @@ class CorpusIndex:
         else:
             bm25, tfidf = make_bm25(), make_tfidf()
             prior_sigs: Dict[str, str] = {}
-            blob = self._disk.get(self._key(root_key)) if self._disk is not None else None
+            blob = None
+            if self._disk is not None:
+                try:
+                    blob = self._disk.get(self._key(root_key))
+                except Exception as e:  # sqlite lock / read error under concurrency -> cold rebuild
+                    self.logger.warning(f"corpus index read failed, rebuilding: {e}")
             if blob is not None and blob.get("config_sig") == config_sig:
                 try:
                     bm25.load_state(blob["bm25"])

@@ -763,7 +763,11 @@ class RelevanceRanker:
                 from tenets.core.nlp.keyword_extractor import TFIDFCalculator as _NLPTFIDF
                 from tenets.core.ranking.corpus_index import corpus_root_key
 
-                config_sig = f"sw={use_sw}|algo={text_sim_algo}"
+                _rk = getattr(self.config, "ranking", None)
+                config_sig = (
+                    f"sw={use_sw}|algo={text_sim_algo}|ss=code"
+                    f"|k1={getattr(_rk, 'bm25_k1', 1.2)}|b={getattr(_rk, 'bm25_b', 0.75)}"
+                )
                 idx_bm25, idx_tfidf = index.build(
                     corpus_root_key(documents),
                     documents,

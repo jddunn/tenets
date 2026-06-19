@@ -230,7 +230,9 @@ def configure_logging(
 
     if log_file:
         try:
-            os.makedirs(os.path.dirname(log_file), exist_ok=True)
+            log_dir = os.path.dirname(log_file)
+            if log_dir:
+                os.makedirs(log_dir, exist_ok=True)
             file_handler = logging.FileHandler(log_file)
             file_handler.setLevel(file_level)
             file_handler.addFilter(_MinLevelFilter(file_level))

@@ -98,3 +98,43 @@ def test_index_matches_fresh_build_corpus(tmp_path):
     fresh.build_corpus(DOCS)
     q = "FileHandler read file write"
     assert bm25_idx.get_scores(q) == fresh.get_scores(q)
+
+
+# --- byte-identical parity through CorpusIndex under edits/empties/deletes ---
+
+PQ = "FileHandler read file write open"
+
+
+def _fresh_bm25_scores(docs, query):
+    bm = BM25Calculator()
+    bm.build_corpus(docs)
+    return bm.get_scores(query)
+
+
+def _indexed_bm25_after(tmp_path, first_docs, second_docs):
+    idx = CorpusIndex(cache_dir=tmp_path)
+    mk_b, mk_t = _factories()
+    idx.build("root", first_docs, make_bm25=mk_b, make_tfidf=mk_t)
+    bm25, _ = idx.build("root", second_docs, make_bm25=mk_b, make_tfidf=mk_t)
+    return bm25
+
+
+def test_parity_after_editing_a_file(tmp_path):
+    edited = [("a.py", "class FileHandler:\n    def read_file(self): pass  # changed body now"), DOCS[1]]
+    bm25 = _indexed_bm25_after(tmp_path, DOCS, edited)
+    assert bm25.get_scores(PQ) == _fresh_bm25_scores(edited, PQ)
+
+
+def test_parity_after_emptying_a_file(tmp_path):
+    # editing a tracked file to empty (or all-stopword) must drop its old corpus
+    # contributions — this is the path that previously corrupted BM25.
+    emptied = [("a.py", ""), DOCS[1]]
+    bm25 = _indexed_bm25_after(tmp_path, DOCS, emptied)
+    assert bm25.document_count == 1
+    assert bm25.get_scores(PQ) == _fresh_bm25_scores(emptied, PQ)
+
+
+def test_parity_after_deleting_a_file(tmp_path):
+    remaining = [DOCS[1]]
+    bm25 = _indexed_bm25_after(tmp_path, DOCS, remaining)
+    assert bm25.get_scores(PQ) == _fresh_bm25_scores(remaining, PQ)

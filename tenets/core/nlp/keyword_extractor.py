@@ -795,7 +795,9 @@ class TFIDFCalculator:
         Restoring this reproduces compute_similarity() exactly for an UNCHANGED
         corpus. Note: document_vectors bake in insertion-time IDF, so this is a
         faithful snapshot of THIS corpus, not necessarily byte-equal to a corpus
-        built from the same files in a different order.
+        built from the same files in a different order. ``document_vectors`` is
+        returned by reference (not copied) to keep memory bounded; serialize the
+        result immediately and do not mutate the calculator while holding it.
         """
         return {
             "version": 1,
