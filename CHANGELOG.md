@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-06-19
+
+### Performance
+- perf(ranking): memoize prompt-independent _analyze_corpus (skips O(N^2) import-graph rebuild) (d9e40bf)
+
+
+
 ## [0.12.3] - 2026-06-19
 
 ### Fixed
