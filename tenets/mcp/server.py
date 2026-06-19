@@ -1629,18 +1629,23 @@ def _configure_mcp_logging(transport: str) -> None:
     os.environ["NO_COLOR"] = "1"
     os.environ["FORCE_COLOR"] = "0"
 
-    # For stdio transport, redirect all logging to stderr
+    # For stdio transport, keep stderr quiet (the MCP client tags it [ERROR]) and
+    # send detailed logs to a file instead. A filter on the stderr handler keeps
+    # INFO out even as modules re-raise the log level during request handling.
     if transport == "stdio":
-        # Configure root logger to use stderr with no colors
-        logging.basicConfig(
-            level=logging.WARNING,  # Only warnings and errors
-            format="%(levelname)s: %(message)s",
-            stream=sys.stderr,
-            force=True,  # Override any existing configuration
+        from pathlib import Path
+
+        from tenets.utils.logger import configure_logging
+
+        log_file = str(Path.home() / ".tenets" / "logs" / "tenets-mcp.log")
+        configure_logging(
+            stderr_level=logging.WARNING,
+            file_level=logging.INFO,
+            log_file=log_file,
         )
 
-        # Suppress verbose loggers
-        for logger_name in ["tenets", "mcp", "httpx", "httpcore", "asyncio"]:
+        # Suppress verbose third-party loggers on stderr
+        for logger_name in ["mcp", "httpx", "httpcore", "asyncio"]:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 

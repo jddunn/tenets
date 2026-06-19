@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from typing import Optional
 
 # Lazy load Rich to improve import performance
@@ -185,3 +186,65 @@ def get_logger(name: Optional[str] = None, level: Optional[int] = None) -> loggi
         logger.setLevel(resolved_level)
 
     return logger
+
+
+class _MinLevelFilter(logging.Filter):
+    """Drop records below a minimum level, independent of handler.setLevel().
+
+    The root logger's handler levels get re-synced whenever get_logger() runs at
+    a new level; a filter survives that, so the MCP stderr stream stays clean even
+    as modules log at INFO during request handling.
+    """
+
+    def __init__(self, min_level: int):
+        super().__init__()
+        self.min_level = min_level
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno >= self.min_level
+
+
+def configure_logging(
+    stderr_level: int = logging.WARNING,
+    file_level: int = logging.INFO,
+    log_file: Optional[str] = None,
+) -> None:
+    """Route detailed logs to a file while keeping stderr quiet.
+
+    Used by the MCP server: stderr (which the MCP client surfaces as ``[ERROR]``)
+    receives only ``stderr_level`` and above, enforced by a filter that survives
+    later level changes; ``log_file`` receives ``file_level`` and above for
+    debugging. Replaces the previous basicConfig that leaked INFO onto stderr.
+    """
+    global _CONFIGURED, _CURRENT_LEVEL
+
+    root = logging.getLogger()
+    for h in list(root.handlers):
+        root.removeHandler(h)
+
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    stderr_handler.setLevel(stderr_level)
+    stderr_handler.addFilter(_MinLevelFilter(stderr_level))
+    stderr_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    root.addHandler(stderr_handler)
+
+    if log_file:
+        try:
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setLevel(file_level)
+            file_handler.addFilter(_MinLevelFilter(file_level))
+            file_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s %(levelname)-8s %(name)s:%(lineno)d %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                )
+            )
+            root.addHandler(file_handler)
+        except OSError:
+            pass
+
+    effective = min(stderr_level, file_level)
+    root.setLevel(effective)
+    _CONFIGURED = True
+    _CURRENT_LEVEL = effective

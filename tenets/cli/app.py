@@ -104,6 +104,11 @@ from tenets.cli.commands.rank import rank
 
 app.command(name="rank", help="Rank files by relevance without content")(rank)
 
+# Manage the persistent corpus index (lightweight)
+from tenets.cli.commands.index import index_app
+
+app.add_typer(index_app, name="index", help="Manage the persistent corpus index")
+
 # Register the heavy main commands - these are what's slowing us down
 # We'll import them conditionally only when they're actually needed
 import sys as _sys
