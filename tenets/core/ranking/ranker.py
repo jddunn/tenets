@@ -698,6 +698,14 @@ class RelevanceRanker:
         Returns:
             Dictionary of corpus statistics
         """
+        # Memoize this prompt-independent analysis. A long-lived ranker (the MCP
+        # server) re-runs _analyze_corpus on every query, and its import-graph build
+        # is O(N^2); reuse the result whenever the file set + contents are unchanged.
+        _sig = self._corpus_sig(files)
+        _memo = getattr(self, "_corpus_memo", None)
+        if _memo is not None and _memo[0] == _sig:
+            return _memo[1]
+
         self.logger.debug(f"Analyzing corpus of {len(files)} files")
 
         stats = {
@@ -808,7 +816,25 @@ class RelevanceRanker:
             f"{stats['total_imports']} imports"
         )
 
+        self._corpus_memo = (_sig, stats)
         return stats
+
+    def _corpus_sig(self, files: List[FileAnalysis]) -> str:
+        """Signature of the (prompt-independent) corpus, for memoizing _analyze_corpus.
+
+        Keyed on each file's path + content hash (already computed by the analyzer),
+        so an edited file invalidates the memo. Falls back to size when hash is absent.
+        """
+        import hashlib
+
+        h = hashlib.md5()
+        for f in sorted(files, key=lambda x: getattr(x, "path", "") or ""):
+            h.update((getattr(f, "path", "") or "").encode("utf-8", "replace"))
+            token = getattr(f, "hash", None)
+            if not token:
+                token = getattr(f, "size", None)
+            h.update(str(token).encode("utf-8", "replace"))
+        return h.hexdigest()
 
     def _get_corpus_index(self):
         """Lazily construct the persistent corpus index (None if disabled).
