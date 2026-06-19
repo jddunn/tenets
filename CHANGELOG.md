@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.5] - 2026-06-19
+
+### Fixed
+- fix(ranking): include resolved imports in _analyze_corpus memo key (c8b2266)
+
+
+
 ## [0.12.4] - 2026-06-19
 
 ### Performance
