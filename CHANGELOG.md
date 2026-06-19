@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.6] - 2026-06-19
+
+### Performance
+- perf(ranking): memoize per-module import resolution (kills O(N^2) import-graph build) (1ea0607)
+
+
+
 ## [0.12.5] - 2026-06-19
 
 ### Fixed
