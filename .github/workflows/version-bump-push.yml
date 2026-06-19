@@ -226,8 +226,8 @@ jobs:
           
           new_version = "${{ steps.new_version.outputs.new_version }}"
           today = date.today().strftime('%Y-%m-%d')
-          commit_title = """${COMMIT_TITLE}"""
-          commit_sha = "${COMMIT_SHA}"[:7]
+          commit_title = """${{ steps.analyze_commit.outputs.commit_title }}"""
+          commit_sha = "${{ github.sha }}"[:7]
           
           # Find the Unreleased section
           unreleased_pattern = r'## \[Unreleased\](.*?)(?=## \[|$)'

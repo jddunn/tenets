@@ -19,7 +19,8 @@ def test_configure_logging_routes_info_to_file(tmp_path):
     logging.getLogger("tenets.x").warning("hello-warn-line")
     for h in logging.getLogger().handlers:
         h.flush()
-    content = open(log_file).read()
+    with open(log_file) as f:
+        content = f.read()
     assert "hello-info-line" in content
     assert "hello-warn-line" in content
 

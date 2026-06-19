@@ -4,6 +4,7 @@ The index builds automatically on the first rank/distill and is reused after; th
 commands let you inspect, warm, or clear it.
 """
 
+import contextlib
 import shutil
 import sqlite3
 from pathlib import Path
@@ -24,10 +25,9 @@ def _index_dir() -> Path:
 def _cached_roots(db_path: Path) -> list:
     """Scan roots that have a persisted index (keys are ``corpus_index::<root>``)."""
     try:
-        conn = sqlite3.connect(str(db_path))
-        rows = conn.execute("SELECT key FROM cache").fetchall()
-        conn.close()
-    except Exception:
+        with contextlib.closing(sqlite3.connect(str(db_path))) as conn:
+            rows = conn.execute("SELECT key FROM cache").fetchall()
+    except sqlite3.Error:
         return []
     return sorted(
         r[0].split("corpus_index::", 1)[-1] for r in rows if "corpus_index::" in (r[0] or "")

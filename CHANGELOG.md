@@ -9,22 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.12.1] - 2026-06-19
 
-### Changed
-- ${COMMIT_TITLE} (${COMMI)
+### Fixed
+- Pin the MCP server's working directory to the project root (`CLAUDE_PROJECT_DIR` / `TENETS_PROJECT_ROOT`) so `.tenets.yml` is discovered reliably regardless of where the server is spawned.
 
 
 
 ## [0.12.0] - 2026-06-19
 
-### Changed
-- ${COMMIT_TITLE} (${COMMI)
+### Added
+- `tenets index` command (`status` / `clear` / `build`) to inspect, warm, or wipe the persistent corpus index.
+- Clean MCP logging: detailed logs route to `~/.tenets/logs/tenets-mcp.log` while stderr stays at WARNING+ (no more `INFO` surfacing as `[ERROR]` in MCP clients).
 
 
 
 ## [0.11.0] - 2026-06-19
 
-### Changed
-- ${COMMIT_TITLE} (${COMMI)
+### Added
+- Persistent incremental BM25/TF-IDF corpus index: the lexical corpus is built once and reused instead of rebuilt on every `rank`/`distill`. Unchanged files are never re-tokenized (in-memory warm layer + `DiskCache`); warm corpus build drops ~280x. Indexed BM25 scoring is byte-identical to a fresh build; controlled by `cache.index_enabled` (default on).
 
 
 
