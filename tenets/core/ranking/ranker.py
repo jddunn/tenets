@@ -741,6 +741,11 @@ class RelevanceRanker:
 
         # Build corpus and collect statistics
         documents = []
+        # Resolve each distinct module once. Re-scanning all files per import occurrence
+        # made the import-graph build O(N^2); non-relative resolution is independent of
+        # the importing file, and relative imports also key on the from-file, so the
+        # resulting graph (and the import_centrality factor) stays byte-identical.
+        _resolve_cache = {}
 
         for file in files:
             # Language distribution
@@ -753,12 +758,18 @@ class RelevanceRanker:
             if file.content:
                 documents.append((file.path, file.content))
 
-            # Build import graph
+            # Build import graph (resolution memoized per distinct module)
             for imp in file.imports:
                 if hasattr(imp, "module"):
                     module = imp.module
-                    # Try to resolve import to file
-                    imported_file = self._resolve_import(module, file.path, files)
+                    cache_key = (
+                        module if not (module or "").startswith(".") else (module, file.path)
+                    )
+                    if cache_key in _resolve_cache:
+                        imported_file = _resolve_cache[cache_key]
+                    else:
+                        imported_file = self._resolve_import(module, file.path, files)
+                        _resolve_cache[cache_key] = imported_file
                     if imported_file:
                         stats["import_graph"][imported_file].add(file.path)
 
