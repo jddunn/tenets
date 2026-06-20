@@ -162,6 +162,7 @@ class TenetsMCP:
         self._mcp = None
         self._warmed = False
         self._last_activity = time.monotonic()
+        self._inflight = 0
         self._setup_server()
 
     @classmethod
@@ -281,8 +282,16 @@ class TenetsMCP:
         def _wrap(original):
             @functools.wraps(original)
             async def tracked(*args, **kwargs):
+                # Count in-flight requests so the watchdog never reaps the server
+                # mid-call; refresh last_activity on both entry and completion so
+                # the idle clock only starts once the last request finishes.
+                self._inflight += 1
                 self._last_activity = time.monotonic()
-                return await original(*args, **kwargs)
+                try:
+                    return await original(*args, **kwargs)
+                finally:
+                    self._inflight -= 1
+                    self._last_activity = time.monotonic()
 
             return tracked
 
@@ -1606,6 +1615,7 @@ class TenetsMCP:
             get_last_activity=lambda: self._last_activity,
             idle_timeout=idle_timeout,
             log=logger.info,
+            get_inflight=lambda: self._inflight,
         )
 
     def run(

@@ -29,14 +29,22 @@ from typing import Callable, Optional, Tuple
 ORPHAN_PPID = 1
 
 
-def should_terminate(idle_seconds: float, idle_timeout: float, ppid: int) -> Tuple[bool, str]:
+def should_terminate(
+    idle_seconds: float, idle_timeout: float, ppid: int, inflight: int = 0
+) -> Tuple[bool, str]:
     """Pure decision: should the server self-terminate now?
 
-    Orphan detection (``ppid == 1``) is always active. The idle check fires only
-    when ``idle_timeout > 0`` and the server has been idle longer than it.
+    Orphan detection (``ppid == 1``) is always active — a dead parent means the
+    client is gone, so an in-flight request's result has nowhere to go anyway.
+    Otherwise, a request currently being processed (``inflight > 0``) means the
+    server is busy, never idle: a long-running call is never reaped mid-flight,
+    however small the timeout. The idle check fires only when nothing is in flight,
+    ``idle_timeout > 0``, and the server has been idle longer than it.
     """
     if ppid == ORPHAN_PPID:
         return True, "orphaned (parent process exited)"
+    if inflight > 0:
+        return False, ""
     if idle_timeout > 0 and idle_seconds > idle_timeout:
         return True, f"idle {idle_seconds:.0f}s > {idle_timeout:.0f}s timeout"
     return False, ""
@@ -60,20 +68,24 @@ def start_idle_watchdog(
     getppid: Callable[[], int] = os.getppid,
     sleep: Callable[[float], None] = time.sleep,
     terminate: Optional[Callable[[str, Optional[Callable[[str], None]]], None]] = None,
+    get_inflight: Optional[Callable[[], int]] = None,
 ) -> threading.Thread:
     """Start a daemon thread that self-terminates the process when abandoned.
 
     ``get_last_activity`` returns the ``time.monotonic()`` timestamp of the most
-    recent MCP request. The clock / ppid / sleep / terminate seams are injectable
-    so the loop is testable without real threads-of-control or signals.
+    recent MCP request; ``get_inflight`` returns the number of requests currently
+    being processed, so a long-running call is never reaped mid-flight. The clock /
+    ppid / sleep / terminate seams are injectable so the loop is testable without
+    real threads-of-control or signals.
     """
     terminate = terminate or _default_terminate
+    get_inflight = get_inflight or (lambda: 0)
 
     def _loop() -> None:
         while True:
             sleep(poll_interval)
             idle = monotonic() - get_last_activity()
-            stop, reason = should_terminate(idle, idle_timeout, getppid())
+            stop, reason = should_terminate(idle, idle_timeout, getppid(), get_inflight())
             if stop:
                 terminate(reason, log)
                 return

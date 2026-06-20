@@ -73,3 +73,38 @@ def test_watchdog_thread_fires_on_orphan_even_with_idle_disabled():
         terminate=fake_terminate,
     )
     assert fired.wait(2.0)
+
+
+def test_inflight_request_is_never_idle():
+    # idle far past the timeout, but a request is in flight -> not reaped.
+    stop, _ = should_terminate(idle_seconds=99999, idle_timeout=5, ppid=500, inflight=1)
+    assert not stop
+
+
+def test_orphan_terminates_even_with_inflight():
+    # a dead parent means the result has nowhere to go -> reap regardless of inflight.
+    stop, reason = should_terminate(idle_seconds=0, idle_timeout=600, ppid=1, inflight=3)
+    assert stop and "orphan" in reason
+
+
+def test_watchdog_waits_for_inflight_to_drain():
+    # "idle" past the timeout, but a call is in flight -> not reaped until it drains.
+    fired = threading.Event()
+    inflight = {"n": 1}
+
+    def fake_terminate(reason, log):
+        fired.set()
+
+    start_idle_watchdog(
+        get_last_activity=lambda: 0.0,
+        idle_timeout=5.0,
+        poll_interval=0.0,
+        monotonic=lambda: 100.0,  # idle = 100 > 5
+        getppid=lambda: 500,
+        sleep=lambda s: time.sleep(0.005),
+        terminate=fake_terminate,
+        get_inflight=lambda: inflight["n"],
+    )
+    assert not fired.wait(0.2)  # busy -> survives despite looking idle
+    inflight["n"] = 0  # request completes
+    assert fired.wait(2.0)  # now reaped
