@@ -3,7 +3,7 @@
   "displayName": "Tenets MCP Server",
   "description": "Intelligent code context for AI assistants via MCP",
   "version": "0.1.1",
-  "publisher": "jddunn",
+  "publisher": "ManicAgency",
   "icon": "icon.png",
   "repository": {
     "type": "git",
