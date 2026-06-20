@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-06-20
+
+### Fixed
+- fix(mcp): never reap the stdio server while a request is in flight (73aa078)
+
+
+
 ## [0.13.0] - 2026-06-20
 
 ### Added
