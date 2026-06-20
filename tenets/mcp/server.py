@@ -15,9 +15,11 @@ behavior between CLI, Python API, and MCP interfaces.
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
@@ -159,6 +161,7 @@ class TenetsMCP:
         self._tenets: Optional[Tenets] = None
         self._mcp = None
         self._warmed = False
+        self._last_activity = time.monotonic()
         self._setup_server()
 
     @classmethod
@@ -258,6 +261,33 @@ class TenetsMCP:
         self._register_tools()
         self._register_resources()
         self._register_prompts()
+        self._install_activity_tracking()
+
+    def _install_activity_tracking(self) -> None:
+        """Record the time of every incoming MCP request so the idle watchdog can
+        distinguish an in-use server (pings / list / call keep arriving) from one a
+        client spawned and then abandoned.
+
+        Wraps the FastMCP low-level request handlers — a single chokepoint that
+        covers every request type (ping, list_tools, call_tool, ...).
+        """
+        server = getattr(self._mcp, "_mcp_server", None)
+        handlers = getattr(server, "request_handlers", None)
+        if not handlers:
+            # FastMCP internals changed; idle tracking is unavailable, but the
+            # watchdog's orphan detection still works without it.
+            return
+
+        def _wrap(original):
+            @functools.wraps(original)
+            async def tracked(*args, **kwargs):
+                self._last_activity = time.monotonic()
+                return await original(*args, **kwargs)
+
+            return tracked
+
+        for req_type, handler in list(handlers.items()):
+            handlers[req_type] = _wrap(handler)
 
     def _register_tools(self) -> None:
         """Register all MCP tools.
@@ -1552,6 +1582,32 @@ class TenetsMCP:
             )
             return "\n".join(parts)
 
+    def _start_idle_watchdog(self) -> None:
+        """Start the stdio self-termination watchdog (orphan + idle).
+
+        Bounds the one-process-per-reconnect leak that happens when a client spawns
+        a fresh server and abandons the old one without closing its stdin (no EOF)
+        or sending SIGTERM. Tunable via TENETS_MCP_IDLE_TIMEOUT_SECONDS (<= 0
+        disables the idle check; orphan detection is always on). stdio only — the
+        client transparently respawns the server on next use.
+        """
+        import os
+
+        from .watchdog import start_idle_watchdog
+
+        raw = os.environ.get("TENETS_MCP_IDLE_TIMEOUT_SECONDS")
+        try:
+            idle_timeout = float(raw) if raw is not None else 900.0
+        except ValueError:
+            idle_timeout = 900.0
+
+        logger = logging.getLogger(__name__)
+        start_idle_watchdog(
+            get_last_activity=lambda: self._last_activity,
+            idle_timeout=idle_timeout,
+            log=logger.info,
+        )
+
     def run(
         self,
         transport: Literal["stdio", "sse", "http"] = "stdio",
@@ -1572,6 +1628,7 @@ class TenetsMCP:
             self.warm_components()
 
         if transport == "stdio":
+            self._start_idle_watchdog()
             self._mcp.run(transport="stdio")
         elif transport == "sse":
             self._mcp.run(transport="sse", host=host, port=port)
