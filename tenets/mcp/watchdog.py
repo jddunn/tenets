@@ -59,7 +59,7 @@ def _default_terminate(reason: str, log: Optional[Callable[[str], None]]) -> Non
 
 
 def start_idle_watchdog(
-    get_last_activity: Callable[[], float],
+    get_state: Callable[[], Tuple[float, int]],
     idle_timeout: float,
     *,
     poll_interval: float = 20.0,
@@ -68,24 +68,26 @@ def start_idle_watchdog(
     getppid: Callable[[], int] = os.getppid,
     sleep: Callable[[float], None] = time.sleep,
     terminate: Optional[Callable[[str, Optional[Callable[[str], None]]], None]] = None,
-    get_inflight: Optional[Callable[[], int]] = None,
 ) -> threading.Thread:
     """Start a daemon thread that self-terminates the process when abandoned.
 
-    ``get_last_activity`` returns the ``time.monotonic()`` timestamp of the most
-    recent MCP request; ``get_inflight`` returns the number of requests currently
-    being processed, so a long-running call is never reaped mid-flight. The clock /
-    ppid / sleep / terminate seams are injectable so the loop is testable without
-    real threads-of-control or signals.
+    ``get_state`` returns a *consistent* snapshot ``(last_activity_monotonic,
+    inflight)`` read atomically. Reading both together is the point: if the watchdog
+    read the timestamp and the in-flight count separately, a long request could
+    finish between the two reads and the watchdog would pair a stale (request-start)
+    timestamp with a freshly-decremented count of 0 — reaping the server right as the
+    request completes, before its response is flushed. The clock / ppid / sleep /
+    terminate seams are injectable so the loop is testable without real
+    threads-of-control or signals.
     """
     terminate = terminate or _default_terminate
-    get_inflight = get_inflight or (lambda: 0)
 
     def _loop() -> None:
         while True:
             sleep(poll_interval)
-            idle = monotonic() - get_last_activity()
-            stop, reason = should_terminate(idle, idle_timeout, getppid(), get_inflight())
+            last_activity, inflight = get_state()
+            idle = monotonic() - last_activity
+            stop, reason = should_terminate(idle, idle_timeout, getppid(), inflight)
             if stop:
                 terminate(reason, log)
                 return

@@ -163,6 +163,7 @@ class TenetsMCP:
         self._warmed = False
         self._last_activity = time.monotonic()
         self._inflight = 0
+        self._activity_lock = threading.Lock()
         self._setup_server()
 
     @classmethod
@@ -283,20 +284,31 @@ class TenetsMCP:
             @functools.wraps(original)
             async def tracked(*args, **kwargs):
                 # Count in-flight requests so the watchdog never reaps the server
-                # mid-call; refresh last_activity on both entry and completion so
-                # the idle clock only starts once the last request finishes.
-                self._inflight += 1
-                self._last_activity = time.monotonic()
+                # mid-call; refresh last_activity on both entry and completion so the
+                # idle clock only starts once the last request finishes. The lock
+                # keeps the (last_activity, inflight) pair consistent for the
+                # watchdog thread's snapshot.
+                with self._activity_lock:
+                    self._inflight += 1
+                    self._last_activity = time.monotonic()
                 try:
                     return await original(*args, **kwargs)
                 finally:
-                    self._inflight -= 1
-                    self._last_activity = time.monotonic()
+                    with self._activity_lock:
+                        self._inflight -= 1
+                        self._last_activity = time.monotonic()
 
             return tracked
 
         for req_type, handler in list(handlers.items()):
             handlers[req_type] = _wrap(handler)
+
+    def _activity_state(self) -> tuple[float, int]:
+        """Atomic snapshot of (last_activity_monotonic, inflight) for the watchdog,
+        so it never pairs a stale timestamp with a freshly-decremented count (which
+        would reap a server right as a long request completes)."""
+        with self._activity_lock:
+            return (self._last_activity, self._inflight)
 
     def _register_tools(self) -> None:
         """Register all MCP tools.
@@ -1612,10 +1624,9 @@ class TenetsMCP:
 
         logger = logging.getLogger(__name__)
         start_idle_watchdog(
-            get_last_activity=lambda: self._last_activity,
+            get_state=self._activity_state,
             idle_timeout=idle_timeout,
             log=logger.info,
-            get_inflight=lambda: self._inflight,
         )
 
     def run(

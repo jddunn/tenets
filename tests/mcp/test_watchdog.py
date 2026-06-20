@@ -45,7 +45,7 @@ def test_watchdog_thread_fires_on_idle():
         fired.set()
 
     start_idle_watchdog(
-        get_last_activity=lambda: 0.0,
+        get_state=lambda: (0.0, 0),  # (last_activity, inflight)
         idle_timeout=5.0,
         poll_interval=0.0,
         monotonic=lambda: 100.0,  # idle = 100 - 0 = 100 > 5
@@ -64,7 +64,7 @@ def test_watchdog_thread_fires_on_orphan_even_with_idle_disabled():
         fired.set()
 
     start_idle_watchdog(
-        get_last_activity=lambda: 99.0,
+        get_state=lambda: (99.0, 0),
         idle_timeout=0,  # idle disabled
         poll_interval=0.0,
         monotonic=lambda: 100.0,
@@ -96,15 +96,32 @@ def test_watchdog_waits_for_inflight_to_drain():
         fired.set()
 
     start_idle_watchdog(
-        get_last_activity=lambda: 0.0,
+        get_state=lambda: (0.0, inflight["n"]),
         idle_timeout=5.0,
         poll_interval=0.0,
         monotonic=lambda: 100.0,  # idle = 100 > 5
         getppid=lambda: 500,
         sleep=lambda s: time.sleep(0.005),
         terminate=fake_terminate,
-        get_inflight=lambda: inflight["n"],
     )
     assert not fired.wait(0.2)  # busy -> survives despite looking idle
     inflight["n"] = 0  # request completes
     assert fired.wait(2.0)  # now reaped
+
+
+def test_not_reaped_immediately_when_long_request_completes():
+    # A request that ran far longer than the timeout just finished: the atomic
+    # snapshot reports inflight=0 paired with a FRESH last_activity (set at
+    # completion), so idle is ~0 and the server is NOT reaped at completion.
+    now = 1000.0
+    fired = threading.Event()
+    start_idle_watchdog(
+        get_state=lambda: (now, 0),  # fresh completion timestamp, drained
+        idle_timeout=5.0,
+        poll_interval=0.0,
+        monotonic=lambda: now + 1.0,  # idle = 1s < 5s
+        getppid=lambda: 500,
+        sleep=lambda s: time.sleep(0.005),
+        terminate=lambda r, l: fired.set(),
+    )
+    assert not fired.wait(0.2)
