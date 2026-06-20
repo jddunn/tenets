@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-06-20
+
+### Added
+- feat(mcp): self-terminate abandoned stdio servers (idle + orphan watchdog) (2a74287)
+
+
+
 ## [0.12.6] - 2026-06-19
 
 ### Performance
