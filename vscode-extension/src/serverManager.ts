@@ -45,8 +45,7 @@ export class TenetsServerManager {
 
     // Try common locations
     const locations = [
-      '/Users/johnn/.local/bin/tenets-mcp',  // pipx default
-      '~/.local/bin/tenets-mcp',
+      '~/.local/bin/tenets-mcp',  // pipx default (~ expands per-user)
       'tenets-mcp',  // PATH
     ];
 

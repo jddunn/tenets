@@ -2,7 +2,7 @@
   "name": "tenets-mcp-server",
   "displayName": "Tenets MCP Server",
   "description": "Intelligent code context for AI assistants via MCP",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "jddunn",
   "icon": "icon.png",
   "repository": {
