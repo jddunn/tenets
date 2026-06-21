@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.3] - 2026-06-21
+
+### Fixed
+- fix(ranking): load ML model before capturing weights so --ml actually weights semantic (6323ec6)
+
+
+
 ## [0.13.2] - 2026-06-20
 
 ### Fixed
