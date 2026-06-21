@@ -20,3 +20,27 @@ def test_explicit_mode_wins_over_ml_flag():
 
 def test_no_ml_flag_keeps_default():
     assert resolve_mode(mode=None, ml=False) == "balanced"
+
+
+# --- Task 2: ML weights stable once a backend is configured ----------------
+
+
+def test_ml_weights_stable_before_model_loads():
+    from tenets.core.ranking.strategies import MLRankingStrategy
+
+    s = MLRankingStrategy()
+    s._backend_configured = True  # backend configured, model NOT yet loaded
+    s._model = None
+    w = s.get_weights()
+    assert w.get("semantic_similarity", 0) > 0, "semantic must be weighted before lazy load"
+
+
+def test_ml_weights_unchanged_when_no_backend():
+    """With no backend configured and no model loaded (today's default),
+    ml weights must fall back to thorough weights — no semantic weighting."""
+    from tenets.core.ranking.strategies import MLRankingStrategy, ThoroughRankingStrategy
+
+    s = MLRankingStrategy()
+    assert s._backend_configured is False
+    assert s._model is None
+    assert s.get_weights() == ThoroughRankingStrategy().get_weights()

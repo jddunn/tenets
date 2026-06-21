@@ -902,6 +902,12 @@ class MLRankingStrategy(RankingStrategy):
 
         self.logger = get_logger(__name__)
         self._model = None
+        # Whether a semantic backend is *configured* (selected via config). This
+        # gates ML weights independently of whether the model is *loaded* yet, so
+        # weight capture (which happens before the first file is ranked) does not
+        # race the lazy model load. Defaults False so today's behavior is
+        # unchanged until a backend is explicitly configured (Phase 1).
+        self._backend_configured = False
         # Use OrderedDict with size limit for embeddings cache
         self._embeddings_cache = OrderedDict()
         self._cache_max_size = 1000  # Limit cache size to prevent unbounded growth
@@ -959,8 +965,14 @@ class MLRankingStrategy(RankingStrategy):
         return factors
 
     def get_weights(self) -> Dict[str, float]:
-        """Get weights for ML ranking."""
-        if self._model:
+        """Get weights for ML ranking.
+
+        Returns the semantic-weighted ML profile whenever a backend is loaded
+        *or* configured, so that weight capture before the first file is ranked
+        does not race the lazy model load. Falls back to thorough weights when
+        no semantic backend is available (today's default).
+        """
+        if self._model or self._backend_configured:
             return {
                 "semantic_similarity": 0.35,
                 "keyword_match": 0.10,
