@@ -591,11 +591,15 @@ class TestThoroughRankingStrategy:
         return ThoroughRankingStrategy()
 
     def test_ml_model_loading(self):
-        """Test ML model loading for semantic similarity."""
+        """ML model loads LAZILY (first semantic use), never at construction (Phase 0 de-eager)."""
         with patch("tenets.core.ranking.ranker.SentenceTransformer") as mock_st:
             strategy = ThoroughRankingStrategy()
 
-            # Should attempt to load model
+            # De-eager: construction must NOT load the model
+            mock_st.assert_not_called()
+
+            # ... it is loaded lazily on first semantic use
+            strategy._ensure_embedding_model()
             mock_st.assert_called_once_with("all-MiniLM-L6-v2")
 
     def test_semantic_similarity_calculation(self):

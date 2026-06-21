@@ -573,13 +573,17 @@ class ThoroughRankingStrategy(RankingStrategy):
                 # Import directly from sentence_transformers
                 from sentence_transformers import SentenceTransformer as _ST
 
-            if _ST is not None:
-                # Tests expect this exact constructor call
-                self._embedding_model = _ST("all-MiniLM-L6-v2")
-            else:
-                self._embedding_model = None
+            # De-eager (Phase 0): remember the class but DO NOT instantiate here.
+            # The model is built lazily on first semantic use (see
+            # _ensure_embedding_model), so constructing a strategy / the ranker /
+            # MCP warmup never loads a model.
+            self._embedding_model_class = _ST
+            self._embedding_model = None
+            self._embedding_model_loaded = False
         except Exception:
             self._embedding_model = None
+            self._embedding_model_class = None
+            self._embedding_model_loaded = False
 
             # Fallback simple cosine if import failed
             def _fallback_cos(a, b):
@@ -628,6 +632,23 @@ class ThoroughRankingStrategy(RankingStrategy):
                     return 0.0
 
             self._cosine_similarity = _fallback_cos
+
+    def _ensure_embedding_model(self):
+        """Lazily instantiate the embedding model on first semantic use.
+
+        Never called at construction, so constructing a strategy / the ranker /
+        MCP warmup stays free of any model load (Phase 0 de-eager).
+        """
+        if getattr(self, "_embedding_model_loaded", False):
+            return
+        self._embedding_model_loaded = True
+        cls = getattr(self, "_embedding_model_class", None)
+        if cls is None:
+            return
+        try:  # pragma: no cover - optional dependency
+            self._embedding_model = cls("all-MiniLM-L6-v2")
+        except Exception:
+            self._embedding_model = None
 
     def rank_file(
         self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
@@ -678,6 +699,7 @@ class ThoroughRankingStrategy(RankingStrategy):
 
         # Semantic similarity (lightweight embedding-based) if model available
         try:
+            self._ensure_embedding_model()
             if self._embedding_model and file.content and prompt_context.text:
                 # Typical usage encodes to tensor; tests provide a mock with unsqueeze
                 f_emb = self._embedding_model.encode(file.content, convert_to_tensor=True)

@@ -93,3 +93,49 @@ def test_semantic_for_file_zero_without_query_vec():
     s._model_loaded = True
     # no embed_query_for_pass() call -> no cached query vec
     assert s.semantic_for_file("def f(): ...") == 0.0
+
+
+# --- Task 4: no embedding model loads at construction / MCP warmup ---------
+
+
+def test_constructing_thorough_strategy_loads_no_embedding_model(monkeypatch):
+    """ThoroughRankingStrategy() must not instantiate an embedding model.
+
+    The model is resolved lazily only when semantic similarity is actually
+    needed. We patch the ranker-module SentenceTransformer symbol (the one the
+    strategy resolves first) with a tripwire and assert it is never called
+    during construction.
+    """
+    import tenets.core.ranking.ranker as ranker_mod
+    from tenets.core.ranking.strategies import ThoroughRankingStrategy
+
+    loaded = {"n": 0}
+
+    class Tripwire:
+        def __init__(self, *a, **k):
+            loaded["n"] += 1
+
+    monkeypatch.setattr(ranker_mod, "SentenceTransformer", Tripwire, raising=False)
+
+    ThoroughRankingStrategy()  # construction must not load a model
+    assert loaded["n"] == 0
+
+
+def test_constructing_ranker_loads_no_embedding_model(monkeypatch):
+    """Constructing the RelevanceRanker (which pre-populates the THOROUGH
+    strategy and is touched by MCP warmup) must not load an embedding model."""
+    import tenets.core.ranking.ranker as ranker_mod
+
+    loaded = {"n": 0}
+
+    class Tripwire:
+        def __init__(self, *a, **k):
+            loaded["n"] += 1
+
+    monkeypatch.setattr(ranker_mod, "SentenceTransformer", Tripwire, raising=False)
+
+    from tenets.config import TenetsConfig
+    from tenets.core.ranking.ranker import RelevanceRanker
+
+    RelevanceRanker(TenetsConfig())  # construction must not load a model
+    assert loaded["n"] == 0
