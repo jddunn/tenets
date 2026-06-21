@@ -28,6 +28,24 @@ from tenets.utils.timing import CommandTimer
 console = Console()
 
 
+def resolve_mode(mode: Optional[str], ml: bool, default: str = "balanced") -> str:
+    """Resolve the ranking mode from the --mode / --ml flags.
+
+    A bare ``--ml`` selects ``ml`` mode; an explicit ``--mode`` always wins.
+
+    Args:
+        mode: The value passed to ``--mode`` (``None`` if the user did not pass it).
+        ml: Whether ``--ml`` was passed.
+        default: Mode to use when neither ``--mode`` nor ``--ml`` is given.
+
+    Returns:
+        The ranking mode string to hand to the ranker.
+    """
+    if mode:
+        return mode
+    return "ml" if ml else default
+
+
 def _get_language_from_extension(file_path: Path) -> str:
     """Get programming language from file extension.
 
@@ -104,8 +122,8 @@ def rank(
         None, "--output", "-o", help="Save output to file instead of stdout"
     ),
     # Ranking options
-    mode: str = typer.Option(
-        "balanced",  # Use same default as distill command for consistency
+    mode: Optional[str] = typer.Option(
+        None,  # Default resolved via resolve_mode() so a bare --ml can select ml mode
         "--mode",
         "-m",
         help="Ranking mode: fast (keyword only), balanced (TF-IDF + structure), thorough (deep analysis)",
@@ -217,6 +235,9 @@ def rank(
         # Initialize tenets with same distiller pipeline
         tenets_instance: Tenets = Tenets()
 
+        # Resolve ranking mode: a bare --ml selects ml mode unless --mode is explicit
+        resolved_mode: str = resolve_mode(mode, ml)
+
         # Override ML settings if specified
         if ml or reranker:
             # Enable ML features in config
@@ -238,7 +259,7 @@ def rank(
         result: Any = tenets_instance.rank_files(
             prompt=prompt,
             paths=[path] if path else None,
-            mode=mode,
+            mode=resolved_mode,
             include_patterns=include.split(",") if include else None,
             exclude_patterns=exclude.split(",") if exclude else None,
             include_tests=include_tests if include_tests else None,

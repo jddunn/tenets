@@ -14,6 +14,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from tenets import Tenets
+from tenets.cli.commands.rank import resolve_mode
 from tenets.utils.timing import CommandTimer
 
 console = Console()
@@ -40,8 +41,8 @@ def distill(
         None, "--output", "-o", help="Save output to file instead of stdout"
     ),
     # Analysis options
-    mode: str = typer.Option(
-        "balanced",
+    mode: Optional[str] = typer.Option(
+        None,  # Default resolved via resolve_mode() so a bare --ml can select ml mode
         "--mode",
         "-m",
         help="Analysis mode: fast (keywords only), balanced (default), thorough (deep analysis)",
@@ -188,6 +189,9 @@ def distill(
         # Initialize tenets
         tenets = Tenets()
 
+        # Resolve ranking mode: a bare --ml selects ml mode unless --mode is explicit
+        resolved_mode: str = resolve_mode(mode, ml)
+
         # Override ML settings if specified
         if ml or reranker:
             # Enable ML features in config
@@ -244,7 +248,7 @@ def distill(
                     format=format,
                     model=model,
                     max_tokens=max_tokens,
-                    mode=mode,
+                    mode=resolved_mode,
                     include_git=not no_git,
                     session_name=session,
                     include_patterns=include_patterns,
@@ -265,7 +269,7 @@ def distill(
                 format=format,
                 model=model,
                 max_tokens=max_tokens,
-                mode=mode,
+                mode=resolved_mode,
                 include_git=not no_git,
                 session_name=session,
                 include_patterns=include_patterns,
