@@ -139,3 +139,52 @@ def test_constructing_ranker_loads_no_embedding_model(monkeypatch):
 
     RelevanceRanker(TenetsConfig())  # construction must not load a model
     assert loaded["n"] == 0
+
+
+# --- Task 5: --ml weights semantic (model availability determined BEFORE weights) ---
+
+
+def test_ml_mode_loads_model_before_capturing_weights():
+    """When ml mode runs, the model is loaded (availability determined) BEFORE
+    weights are captured, so a present semantic backend is actually weighted
+    (semantic_similarity > 0), not given thorough weights. This is the difference
+    between --ml *routing* to ml mode and --ml actually *weighting* semantics.
+    """
+    from unittest.mock import MagicMock
+
+    import numpy as np
+
+    from tenets.config import TenetsConfig
+    from tenets.core.ranking.ranker import RelevanceRanker
+    from tenets.core.ranking.strategies import MLRankingStrategy
+
+    order = []
+    s = MLRankingStrategy()
+
+    class FakeModel:
+        def encode(self, texts, **kw):
+            n = len(texts) if isinstance(texts, list) else 1
+            return np.ones((n, 8), dtype="float32")
+
+    def fake_load():
+        order.append("load")
+        s._model = FakeModel()
+
+    s._load_model = fake_load
+    _orig_weights = s.get_weights
+
+    def spy_weights():
+        order.append("weights")
+        return _orig_weights()
+
+    s.get_weights = spy_weights
+
+    pc = MagicMock()
+    pc.text = "find retry logic"
+    RelevanceRanker(TenetsConfig())._rank_with_strategy([], pc, {}, s, False)
+
+    assert "load" in order and "weights" in order
+    assert order.index("load") < order.index(
+        "weights"
+    ), "model must load before weights are captured"
+    assert s.get_weights().get("semantic_similarity", 0) > 0, "present model -> semantic weighting"

@@ -472,10 +472,12 @@ class RelevanceRanker:
             List of RankedFile objects
         """
         ranked_files = []
-        weights = strategy.get_weights()
 
-        # For ML ranking, embed the query once for the whole pass so it is not
-        # re-embedded per file. Loads the model lazily on first use.
+        # For ML ranking, load the model + embed the query once for the whole pass
+        # BEFORE capturing weights, so get_weights() reflects actual semantic
+        # availability: --ml weights semantic similarity when a model is present,
+        # and falls back to thorough weights only when none is (no silent
+        # thorough-weighting of an explicit ml run). The load is lazy on first use.
         primed_ml_query = False
         if isinstance(strategy, MLRankingStrategy):
             if not getattr(strategy, "_model_loaded", False):
@@ -484,6 +486,8 @@ class RelevanceRanker:
             if getattr(strategy, "_model", None) is not None:
                 strategy.embed_query_for_pass(prompt_context.text)
                 primed_ml_query = True
+
+        weights = strategy.get_weights()
 
         try:
             ranked_files = self._rank_with_strategy_inner(
