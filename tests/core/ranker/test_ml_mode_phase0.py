@@ -44,3 +44,52 @@ def test_ml_weights_unchanged_when_no_backend():
     assert s._backend_configured is False
     assert s._model is None
     assert s.get_weights() == ThoroughRankingStrategy().get_weights()
+
+
+# --- Task 3: query embedded once per ranking pass --------------------------
+
+
+def test_query_embedded_once_for_many_files():
+    from tenets.core.ranking.strategies import MLRankingStrategy
+
+    calls = {"n": 0}
+
+    class FakeModel:
+        def encode(self, texts, **kw):
+            # one call may batch; count *every* encode invocation
+            calls["n"] += 1
+            import numpy as np
+
+            n = len(texts) if isinstance(texts, list) else 1
+            # non-zero so cosine is well-defined (norm != 0)
+            return np.ones((n, 8), dtype="float32")
+
+    s = MLRankingStrategy()
+    s._model = FakeModel()
+    s._model_loaded = True
+    s.embed_query_for_pass("find the retry logic")  # embed query once
+    for _ in range(5):
+        s.semantic_for_file("def f(): ...")  # reuses cached query vec
+    # 1 query encode + up to 5 file encodes; the query must NOT be re-embedded
+    # per file (that would be 10). Assert the query side stays single.
+    assert calls["n"] <= 6, "query must be embedded once, not re-embedded per file"
+    assert s._query_vec is not None
+
+
+def test_semantic_for_file_zero_without_query_vec():
+    """semantic_for_file returns 0.0 if no query was embedded for the pass."""
+    from tenets.core.ranking.strategies import MLRankingStrategy
+
+    s = MLRankingStrategy()
+
+    class FakeModel:
+        def encode(self, texts, **kw):
+            import numpy as np
+
+            n = len(texts) if isinstance(texts, list) else 1
+            return np.ones((n, 8), dtype="float32")
+
+    s._model = FakeModel()
+    s._model_loaded = True
+    # no embed_query_for_pass() call -> no cached query vec
+    assert s.semantic_for_file("def f(): ...") == 0.0

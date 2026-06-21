@@ -902,6 +902,10 @@ class MLRankingStrategy(RankingStrategy):
 
         self.logger = get_logger(__name__)
         self._model = None
+        # Query embedding cached for the duration of one ranking pass, so the
+        # query is embedded once (not re-embedded per file). Set by
+        # ``embed_query_for_pass`` and consumed by ``semantic_for_file``.
+        self._query_vec = None
         # Whether a semantic backend is *configured* (selected via config). This
         # gates ML weights independently of whether the model is *loaded* yet, so
         # weight capture (which happens before the first file is ranked) does not
@@ -938,6 +942,53 @@ class MLRankingStrategy(RankingStrategy):
                 "Neural reranker not available. Install with: pip install tenets[ml]"
             )
 
+    @staticmethod
+    def _truncate_for_embedding(text: str, max_length: int = 512) -> str:
+        """Truncate long text for embedding by keeping the head and tail."""
+        if len(text) > max_length * 4:
+            return text[: max_length * 2] + " ... " + text[-max_length * 2 :]
+        return text
+
+    def embed_query_for_pass(self, query: str) -> None:
+        """Embed the query once for an entire ranking pass.
+
+        Caches the query vector on ``self._query_vec`` so that
+        ``semantic_for_file`` can reuse it for every file instead of
+        re-embedding the query per file. Call once before iterating files and
+        ``clear_query_for_pass`` afterwards.
+        """
+        if not self._model:
+            self._query_vec = None
+            return
+        try:
+            vec = self._model.encode([self._truncate_for_embedding(query)])
+            self._query_vec = vec[0]
+        except Exception as e:  # pragma: no cover - defensive
+            self.logger.warning(f"Query embedding failed: {e}")
+            self._query_vec = None
+
+    def clear_query_for_pass(self) -> None:
+        """Drop the per-pass cached query vector."""
+        self._query_vec = None
+
+    def semantic_for_file(self, content: str) -> float:
+        """Semantic similarity of ``content`` against the per-pass query vector.
+
+        Reuses the query embedding cached by ``embed_query_for_pass`` so the
+        query is embedded once per pass, not once per file. Returns 0.0 when no
+        model is loaded or no query has been embedded for the pass.
+        """
+        if self._model is None or self._query_vec is None or not content:
+            return 0.0
+        try:
+            from tenets.core.nlp.similarity import cosine_similarity
+
+            fv = self._model.encode([self._truncate_for_embedding(content)])[0]
+            return max(0.0, float(cosine_similarity(self._query_vec, fv)))
+        except Exception as e:
+            self.logger.warning(f"Semantic similarity calculation failed: {e}")
+            return 0.0
+
     def rank_file(
         self, file: FileAnalysis, prompt_context: PromptContext, corpus_stats: Dict[str, Any]
     ) -> RankingFactors:
@@ -953,9 +1004,15 @@ class MLRankingStrategy(RankingStrategy):
 
         # Add semantic similarity if model is available
         if self._model and file.content:
-            factors.semantic_similarity = self._calculate_semantic_similarity(
-                file.content, prompt_context.text
-            )
+            # Prefer the per-pass cached query vector (query embedded once); fall
+            # back to the legacy per-call path when no pass query was primed (e.g.
+            # rank_file invoked directly outside a ranking pass).
+            if self._query_vec is not None:
+                factors.semantic_similarity = self.semantic_for_file(file.content)
+            else:
+                factors.semantic_similarity = self._calculate_semantic_similarity(
+                    file.content, prompt_context.text
+                )
 
             # Boost other factors based on semantic similarity
             if factors.semantic_similarity > 0.7:

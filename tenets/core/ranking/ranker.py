@@ -474,6 +474,43 @@ class RelevanceRanker:
         ranked_files = []
         weights = strategy.get_weights()
 
+        # For ML ranking, embed the query once for the whole pass so it is not
+        # re-embedded per file. Loads the model lazily on first use.
+        primed_ml_query = False
+        if isinstance(strategy, MLRankingStrategy):
+            if not getattr(strategy, "_model_loaded", False):
+                strategy._load_model()
+                strategy._model_loaded = True
+            if getattr(strategy, "_model", None) is not None:
+                strategy.embed_query_for_pass(prompt_context.text)
+                primed_ml_query = True
+
+        try:
+            ranked_files = self._rank_with_strategy_inner(
+                files, prompt_context, corpus_stats, strategy, weights, parallel, deadline
+            )
+        finally:
+            if primed_ml_query:
+                strategy.clear_query_for_pass()
+        return ranked_files
+
+    def _rank_with_strategy_inner(
+        self,
+        files: List[FileAnalysis],
+        prompt_context: PromptContext,
+        corpus_stats: Dict[str, Any],
+        strategy: RankingStrategy,
+        weights: Dict[str, float],
+        parallel: bool,
+        deadline: Optional[float] = None,
+    ) -> List[RankedFile]:
+        """Iterate files for a strategy with the weights already resolved.
+
+        Split out from ``_rank_with_strategy`` so the ML per-pass query
+        embedding (primed/cleared by the caller) wraps the whole iteration.
+        """
+        ranked_files = []
+
         if parallel and len(files) > 10 and self.executor is not None:
             # Parallel ranking (only if executor is available)
             self.logger.info(
