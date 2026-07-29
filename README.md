@@ -1,5 +1,7 @@
 # **tenets**
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fjddunn%2Ftenets.svg)](https://mcptoplist.com/server/glama%2Fjddunn%2Ftenets)
+
 <a href="https://tenets.dev"><img src="https://raw.githubusercontent.com/jddunn/tenets/master/docs/logos/tenets_dark_icon_transparent.png" alt="tenets logo" width="140" /></a>
 
 **MCP server for context that feeds your prompts.**
