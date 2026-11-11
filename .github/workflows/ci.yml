@@ -28,9 +28,53 @@ env:
   CACHE_VERSION: v1 # Increment to bust all caches
 
 jobs:
-  # Quick pre-flight checks before expensive jobs
+  # A scheduled run ends here, in seconds, when the branch is still at the
+  # commit the newest earlier run of this workflow on it took, whatever its
+  # result (a cancelled run aside): this work only changes when the code does.
+  # Any other event, a re-run, and a lookup or a check that fails run the work.
+  changed:
+    name: Skip an unchanged scheduled run
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - name: Compare with the last run
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          SHA: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          run=true
+          if [ "$EVENT" = schedule ] && [ "$RUN_ATTEMPT" = 1 ]; then
+            if wf=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .workflow_id) &&
+               last=$(gh api "repos/$REPO/actions/workflows/$wf/runs?branch=$BRANCH&per_page=100" \
+                 --jq "[.workflow_runs[] | select(.id != $RUN_ID and .conclusion != \"cancelled\" and .event != \"pull_request\")][0].head_sha // \"\""); then
+              if [ "$last" = "$SHA" ]; then
+                run=false
+                echo "$BRANCH is at $SHA, which the last run of this workflow took: nothing changed, the run ends here."
+              else
+                echo "$BRANCH is at $SHA; the last run took ${last:-no commit yet}."
+              fi
+            else
+              echo "Could not read the last run; the run goes ahead."
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+  # Quick pre-flight checks before expensive jobs; every job below needs it,
+  # so a scheduled run the changed job ends skips them all.
   pre-check:
     name: Pre-checks
+    needs: changed
+    if: ${{ !cancelled() && needs.changed.outputs.run != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -476,8 +520,8 @@ jobs:
   all-checks:
     name: All checks passed
     runs-on: ubuntu-latest
-    needs: [quality, test, build] # Removed optional jobs from requirements
-    if: always()
+    needs: [changed, quality, test, build] # Removed optional jobs from requirements
+    if: always() && needs.changed.outputs.run != 'false'
     steps:
       - name: Verify critical checks passed
         run: |
