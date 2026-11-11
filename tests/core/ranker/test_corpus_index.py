@@ -120,7 +120,10 @@ def _indexed_bm25_after(tmp_path, first_docs, second_docs):
 
 
 def test_parity_after_editing_a_file(tmp_path):
-    edited = [("a.py", "class FileHandler:\n    def read_file(self): pass  # changed body now"), DOCS[1]]
+    edited = [
+        ("a.py", "class FileHandler:\n    def read_file(self): pass  # changed body now"),
+        DOCS[1],
+    ]
     bm25 = _indexed_bm25_after(tmp_path, DOCS, edited)
     assert bm25.get_scores(PQ) == _fresh_bm25_scores(edited, PQ)
 

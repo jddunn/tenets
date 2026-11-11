@@ -1,4 +1,5 @@
 """`tenets index` — status / clear management commands."""
+
 import sqlite3
 
 import pytest

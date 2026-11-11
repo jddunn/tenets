@@ -1,5 +1,6 @@
 """_analyze_corpus is prompt-independent and O(N^2) (import graph) — memoize it so a
 long-lived ranker (the MCP server) doesn't recompute it on every query."""
+
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -10,8 +11,12 @@ from tenets.models.analysis import FileAnalysis
 
 def _fa(path, content, h, imports=()):
     return FileAnalysis(
-        path=path, content=content, language="python", size=len(content),
-        imports=list(imports), hash=h,
+        path=path,
+        content=content,
+        language="python",
+        size=len(content),
+        imports=list(imports),
+        hash=h,
     )
 
 
@@ -23,8 +28,10 @@ def _ranker():
 
 def test_analyze_corpus_is_memoized_for_unchanged_files():
     r = _ranker()
-    files = [_fa("a.py", "import os\nclass FileHandler: pass", "h1"),
-             _fa("b.py", "def write_file(): pass", "h2")]
+    files = [
+        _fa("a.py", "import os\nclass FileHandler: pass", "h1"),
+        _fa("b.py", "def write_file(): pass", "h2"),
+    ]
     pc = MagicMock()
     with patch.object(r, "_build_dependency_tree", wraps=r._build_dependency_tree) as spy:
         s1 = r._analyze_corpus(files, pc)
@@ -51,8 +58,14 @@ def test_memo_invalidates_when_analysis_depth_changes():
     r = _ranker()
     pc = MagicMock()
     shallow = [_fa("a.py", "import os\nimport sys", "h1")]  # imports = ()
-    deep = [_fa("a.py", "import os\nimport sys", "h1",
-                imports=[SimpleNamespace(module="os"), SimpleNamespace(module="sys")])]
+    deep = [
+        _fa(
+            "a.py",
+            "import os\nimport sys",
+            "h1",
+            imports=[SimpleNamespace(module="os"), SimpleNamespace(module="sys")],
+        )
+    ]
     with patch.object(r, "_build_dependency_tree", wraps=r._build_dependency_tree) as spy:
         r._analyze_corpus(shallow, pc)
         r._analyze_corpus(deep, pc)

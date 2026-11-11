@@ -1,4 +1,5 @@
 """tenets-mcp pins cwd to the project root so .tenets.yml is discovered."""
+
 import os
 
 from tenets.mcp.server import _chdir_to_project_root

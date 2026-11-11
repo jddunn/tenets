@@ -1,4 +1,5 @@
 """configure_logging: keep MCP stderr quiet, route detailed logs to a file."""
+
 import logging
 
 from tenets.utils import logger as tlog
