@@ -31,7 +31,7 @@ jobs:
   # A scheduled run ends here, in seconds, when the branch is still at the
   # commit the newest earlier run of this workflow on it took, whatever its
   # result (a cancelled run aside): this work only changes when the code does.
-  # Any other event always runs, and a lookup that fails runs the work.
+  # Any other event, a re-run, and a lookup or a check that fails run the work.
   changed:
     name: Skip an unchanged scheduled run
     runs-on: ubuntu-latest
@@ -48,13 +48,14 @@ jobs:
           EVENT: ${{ github.event_name }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
           SHA: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
         run: |
           run=true
-          if [ "$EVENT" = schedule ]; then
+          if [ "$EVENT" = schedule ] && [ "$RUN_ATTEMPT" = 1 ]; then
             if wf=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .workflow_id) &&
-               last=$(gh api "repos/$REPO/actions/workflows/$wf/runs?branch=$BRANCH&per_page=20" \
+               last=$(gh api "repos/$REPO/actions/workflows/$wf/runs?branch=$BRANCH&per_page=100" \
                  --jq "[.workflow_runs[] | select(.id != $RUN_ID and .conclusion != \"cancelled\" and .event != \"pull_request\")][0].head_sha // \"\""); then
               if [ "$last" = "$SHA" ]; then
                 run=false
@@ -73,7 +74,7 @@ jobs:
   pre-check:
     name: Pre-checks
     needs: changed
-    if: needs.changed.outputs.run == 'true'
+    if: ${{ !cancelled() && needs.changed.outputs.run != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -520,7 +521,7 @@ jobs:
     name: All checks passed
     runs-on: ubuntu-latest
     needs: [changed, quality, test, build] # Removed optional jobs from requirements
-    if: always() && needs.changed.outputs.run == 'true'
+    if: always() && needs.changed.outputs.run != 'false'
     steps:
       - name: Verify critical checks passed
         run: |
