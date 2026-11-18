@@ -281,9 +281,10 @@ class LLMSummarizer:
                         {"role": "system", "content": self.config.system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
                     timeout=self.config.timeout,
+                    **_openai_sampling(
+                        self.config.model, self.config.temperature, self.config.max_tokens
+                    ),
                 )
                 return response.choices[0].message.content
             else:
@@ -439,6 +440,27 @@ class LLMSummaryStrategy:
             Cost estimate dictionary
         """
         return self.summarizer.estimate_cost(text)
+
+
+def _openai_sampling(model: str, temperature: float, max_tokens: int) -> dict:
+    """Sampling and length fields an OpenAI chat request may send to ``model``.
+
+    GPT-5 and later and the o-series refuse ``max_tokens`` (the cap is
+    ``max_completion_tokens``, which also counts reasoning tokens), and a
+    reasoning model refuses any ``temperature`` but 1. gpt-6-luna at reasoning
+    effort ``none`` has no reasoning step and keeps ``temperature``.
+    https://developers.openai.com/api/docs/guides/reasoning
+    """
+    name = model.split("/")[-1]
+    if name.startswith("gpt-6-luna"):
+        return {
+            "reasoning_effort": "none",
+            "temperature": temperature,
+            "max_completion_tokens": max_tokens,
+        }
+    if name.startswith(("gpt-5", "gpt-6", "o1", "o3", "o4")):
+        return {"reasoning_effort": "low", "max_completion_tokens": max_tokens}
+    return {"temperature": temperature, "max_tokens": max_tokens}
 
 
 def create_llm_summarizer(

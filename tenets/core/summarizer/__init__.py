@@ -320,7 +320,7 @@ def summarize_code(
 
 # LLM integration helpers
 def estimate_llm_cost(
-    text: str, provider: str = "openai", model: str = "gpt-3.5-turbo", target_ratio: float = 0.3
+    text: str, provider: str = "openai", model: str = "gpt-6-luna", target_ratio: float = 0.3
 ) -> dict:
     """Estimate cost of LLM summarization.
 
@@ -337,7 +337,7 @@ def estimate_llm_cost(
 
     Example:
         >>> from tenets.core.summarizer import estimate_llm_cost
-        >>> cost = estimate_llm_cost(text, "openai", "gpt-4")
+        >>> cost = estimate_llm_cost(text, "openai", "gpt-6.2-sol")
         >>> print(f"Estimated cost: ${cost['total_cost']:.4f}")
     """
     try:

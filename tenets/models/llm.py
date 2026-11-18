@@ -28,7 +28,11 @@ class ModelLimits:
 
 # Best-effort defaults; adjust as needed without strict guarantees.
 _PRICING: dict[str, ModelPricing] = {
-    # OpenAI
+    # OpenAI (the GPT-6 rows from https://developers.openai.com/api/docs/pricing,
+    # read 2026-11-17)
+    "gpt-6.2-sol": ModelPricing(input_per_1k=0.002, output_per_1k=0.010),
+    "gpt-6.2-astra": ModelPricing(input_per_1k=0.008, output_per_1k=0.040),
+    "gpt-6-luna": ModelPricing(input_per_1k=0.0001, output_per_1k=0.0005),
     "gpt-4o": ModelPricing(input_per_1k=0.005, output_per_1k=0.015),
     "gpt-4o-mini": ModelPricing(input_per_1k=0.00015, output_per_1k=0.0006),
     "gpt-4.1": ModelPricing(input_per_1k=0.005, output_per_1k=0.015),
@@ -42,6 +46,9 @@ _PRICING: dict[str, ModelPricing] = {
 }
 
 _LIMITS: dict[str, ModelLimits] = {
+    "gpt-6.2-sol": ModelLimits(max_context=1_050_000, max_output=128_000),
+    "gpt-6.2-astra": ModelLimits(max_context=1_050_000, max_output=128_000),
+    "gpt-6-luna": ModelLimits(max_context=1_050_000, max_output=128_000),
     "gpt-4o": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4o-mini": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4.1": ModelLimits(max_context=128_000, max_output=4_096),
