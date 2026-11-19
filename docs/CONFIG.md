@@ -293,7 +293,7 @@ llm:
   # Model selection
   models:
     default: gpt-4o-mini
-    summarization: gpt-3.5-turbo
+    summarization: gpt-6-luna
     analysis: gpt-4o
     embeddings: text-embedding-3-small
     code_generation: gpt-4o
