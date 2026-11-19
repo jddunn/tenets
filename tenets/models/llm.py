@@ -72,7 +72,8 @@ def get_model_pricing(model: Optional[str]) -> ModelPricing:
     """
     if not model:
         return ModelPricing(0.0, 0.0)
-    return _PRICING.get(model, ModelPricing(0.0, 0.0))
+    # An OpenRouter id such as "openai/gpt-6.2-sol" is priced by its model name.
+    return _PRICING.get(model) or _PRICING.get(model.split("/")[-1], ModelPricing(0.0, 0.0))
 
 
 def get_model_limits(model: Optional[str]) -> ModelLimits:
@@ -86,7 +87,9 @@ def get_model_limits(model: Optional[str]) -> ModelLimits:
     """
     if not model:
         return ModelLimits(max_context=100_000, max_output=4_096)
-    return _LIMITS.get(model, ModelLimits(max_context=100_000, max_output=4_096))
+    return _LIMITS.get(model) or _LIMITS.get(
+        model.split("/")[-1], ModelLimits(max_context=100_000, max_output=4_096)
+    )
 
 
 def estimate_cost(input_tokens: int, output_tokens: int, model: Optional[str]) -> dict[str, float]:

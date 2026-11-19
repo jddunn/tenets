@@ -295,8 +295,9 @@ class LLMSummarizer:
                         {"role": "system", "content": self.config.system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
+                    **_openai_sampling(
+                        self.config.model, self.config.temperature, self.config.max_tokens
+                    ),
                 )
                 return response.choices[0].message.content
         except Exception as e:
@@ -342,6 +343,10 @@ class LLMSummarizer:
         pricing = {
             "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
             "gpt-4o": {"input": 0.005, "output": 0.015},
+            # https://developers.openai.com/api/docs/pricing, read 2026-11-17
+            "gpt-6-luna": {"input": 0.0001, "output": 0.0005},
+            "gpt-6.2-sol": {"input": 0.002, "output": 0.010},
+            "gpt-6.2-astra": {"input": 0.008, "output": 0.040},
             "gpt-4": {"input": 0.03, "output": 0.06},
             "gpt-4-turbo": {"input": 0.01, "output": 0.03},
             "claude-3-opus": {"input": 0.015, "output": 0.075},
@@ -349,7 +354,9 @@ class LLMSummarizer:
             "claude-3-haiku": {"input": 0.00025, "output": 0.00125},
         }
 
-        model_pricing = pricing.get(self.config.model, {"input": 0.001, "output": 0.002})
+        model_pricing = pricing.get(
+            self.config.model.split("/")[-1], {"input": 0.001, "output": 0.002}
+        )
 
         input_cost = (input_tokens / 1000) * model_pricing["input"]
         output_cost = (output_tokens / 1000) * model_pricing["output"]
@@ -442,6 +449,10 @@ class LLMSummaryStrategy:
         return self.summarizer.estimate_cost(text)
 
 
+# Tokens added to a reasoning model's cap for its reasoning at effort low.
+REASONING_HEADROOM = 4000
+
+
 def _openai_sampling(model: str, temperature: float, max_tokens: int) -> dict:
     """Sampling and length fields an OpenAI chat request may send to ``model``.
 
@@ -459,7 +470,12 @@ def _openai_sampling(model: str, temperature: float, max_tokens: int) -> dict:
             "max_completion_tokens": max_tokens,
         }
     if name.startswith(("gpt-5", "gpt-6", "o1", "o3", "o4")):
-        return {"reasoning_effort": "low", "max_completion_tokens": max_tokens}
+        # The cap counts reasoning tokens too, so add room for them and keep
+        # max_tokens available for the summary itself.
+        return {
+            "reasoning_effort": "low",
+            "max_completion_tokens": max_tokens + REASONING_HEADROOM,
+        }
     return {"temperature": temperature, "max_tokens": max_tokens}
 
 
