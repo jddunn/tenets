@@ -133,8 +133,7 @@ for path in src_paths:
 
 # Create main tenets package index (special case)
 with mkdocs_gen_files.open("api/tenets/index.md", "w") as fd:
-    fd.write(
-        """# `tenets` Package
+    fd.write("""# `tenets` Package
 
 Main package for Tenets - Context that feeds your prompts.
 
@@ -157,13 +156,11 @@ Main package for Tenets - Context that feeds your prompts.
 ## Direct Modules
 
 - [`config`](config.md) - Configuration management
-"""
-    )
+""")
 
 # Create the core package index with all its subpackages
 with mkdocs_gen_files.open("api/tenets/core/index.md", "w") as fd:
-    fd.write(
-        """# `tenets.core` Package
+    fd.write("""# `tenets.core` Package
 
 Core functionality and algorithms for Tenets.
 
@@ -187,13 +184,11 @@ Core functionality and algorithms for Tenets.
 - [`reporting`](reporting/index.md) - Report generation
 - [`session`](session/index.md) - Session state management
 - [`summarizer`](summarizer/index.md) - Content summarization
-"""
-    )
+""")
 
 # Create CLI commands subpackage index
 with mkdocs_gen_files.open("api/tenets/cli/commands/index.md", "w") as fd:
-    fd.write(
-        """# `tenets.cli.commands` Package
+    fd.write("""# `tenets.cli.commands` Package
 
 CLI command implementations.
 
@@ -219,13 +214,11 @@ CLI command implementations.
 ## Utility Modules
 
 - [`_utils`](_utils.md) - Shared command utilities
-"""
-    )
+""")
 
 # Create the main API index
 with mkdocs_gen_files.open("api/index.md", "w") as fd:
-    fd.write(
-        """# API Reference
+    fd.write("""# API Reference
 
 Welcome to the Tenets API documentation. This section provides comprehensive documentation for all modules, classes, and functions in the Tenets package.
 
@@ -323,8 +316,7 @@ session.pin_file("auth.py")
     - Each module page shows all classes and functions
     - Look for "Examples" sections in docstrings
     - Check return types and parameters for usage hints
-"""
-    )
+""")
 
 # Write the navigation summary
 with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
