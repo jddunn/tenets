@@ -28,7 +28,11 @@ class ModelLimits:
 
 # Best-effort defaults; adjust as needed without strict guarantees.
 _PRICING: dict[str, ModelPricing] = {
-    # OpenAI
+    # OpenAI (the GPT-6 rows from https://developers.openai.com/api/docs/pricing,
+    # read 2026-11-17)
+    "gpt-6.2-sol": ModelPricing(input_per_1k=0.002, output_per_1k=0.010),
+    "gpt-6.2-astra": ModelPricing(input_per_1k=0.008, output_per_1k=0.040),
+    "gpt-6-luna": ModelPricing(input_per_1k=0.0001, output_per_1k=0.0005),
     "gpt-4o": ModelPricing(input_per_1k=0.005, output_per_1k=0.015),
     "gpt-4o-mini": ModelPricing(input_per_1k=0.00015, output_per_1k=0.0006),
     "gpt-4.1": ModelPricing(input_per_1k=0.005, output_per_1k=0.015),
@@ -42,6 +46,9 @@ _PRICING: dict[str, ModelPricing] = {
 }
 
 _LIMITS: dict[str, ModelLimits] = {
+    "gpt-6.2-sol": ModelLimits(max_context=1_050_000, max_output=128_000),
+    "gpt-6.2-astra": ModelLimits(max_context=1_050_000, max_output=128_000),
+    "gpt-6-luna": ModelLimits(max_context=1_050_000, max_output=128_000),
     "gpt-4o": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4o-mini": ModelLimits(max_context=128_000, max_output=4_096),
     "gpt-4.1": ModelLimits(max_context=128_000, max_output=4_096),
@@ -65,7 +72,8 @@ def get_model_pricing(model: Optional[str]) -> ModelPricing:
     """
     if not model:
         return ModelPricing(0.0, 0.0)
-    return _PRICING.get(model, ModelPricing(0.0, 0.0))
+    # An OpenRouter id such as "openai/gpt-6.2-sol" is priced by its model name.
+    return _PRICING.get(model) or _PRICING.get(model.split("/")[-1], ModelPricing(0.0, 0.0))
 
 
 def get_model_limits(model: Optional[str]) -> ModelLimits:
@@ -79,7 +87,9 @@ def get_model_limits(model: Optional[str]) -> ModelLimits:
     """
     if not model:
         return ModelLimits(max_context=100_000, max_output=4_096)
-    return _LIMITS.get(model, ModelLimits(max_context=100_000, max_output=4_096))
+    return _LIMITS.get(model) or _LIMITS.get(
+        model.split("/")[-1], ModelLimits(max_context=100_000, max_output=4_096)
+    )
 
 
 def estimate_cost(input_tokens: int, output_tokens: int, model: Optional[str]) -> dict[str, float]:

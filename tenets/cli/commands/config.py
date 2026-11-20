@@ -69,7 +69,7 @@ summarizer:
 
     # LLM configuration (optional, costs $)
     # llm_provider: openai    # openai, anthropic, openrouter
-    # llm_model: gpt-3.5-turbo
+    # llm_model: gpt-6-luna
     # llm_temperature: 0.3
 
     # ML configuration
@@ -549,7 +549,7 @@ def _show_summarizer_info():
     console.print("  default_mode: auto")
     console.print("  target_ratio: 0.3")
     console.print("  llm_provider: openai")
-    console.print("  llm_model: gpt-3.5-turbo")
+    console.print("  llm_model: gpt-6-luna")
 
     console.print("\n[bold]Environment Variables:[/bold]")
     console.print("  TENETS_SUMMARIZER_DEFAULT_MODE=extractive")
